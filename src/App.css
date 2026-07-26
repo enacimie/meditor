@@ -1,0 +1,944 @@
+@font-face {
+  font-family: "Latin Modern Roman";
+  src: url("./assets/fonts/lmroman10-regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Latin Modern Roman";
+  src: url("./assets/fonts/lmroman10-bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Latin Modern Roman";
+  src: url("./assets/fonts/lmroman10-italic.otf") format("opentype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Latin Modern Roman";
+  src: url("./assets/fonts/lmroman10-bolditalic.otf") format("opentype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Latin Modern Mono";
+  src: url("./assets/fonts/lmmono10-regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Latin Modern Mono";
+  src: url("./assets/fonts/lmmono10-italic.otf") format("opentype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+  --bg: #ffffff;
+  --bg-alt: #f6f6f6;
+  --fg: #1f2328;
+  --border: #d0d7de;
+  --accent: #0969da;
+  --code-bg: #f6f8fa;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--fg);
+  background-color: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1e1e1e;
+    --bg-alt: #252526;
+    --fg: #d4d4d4;
+    --border: #3c3c3c;
+    --accent: #4493f8;
+    --code-bg: #2d2d2d;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-alt);
+  flex-shrink: 0;
+}
+
+.brand {
+  font-weight: 700;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+}
+
+.actions button {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.actions button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.tabbar {
+  display: flex;
+  align-items: stretch;
+  background: var(--bg-alt);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-right: 1px solid var(--border);
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--fg);
+  user-select: none;
+  max-width: 200px;
+}
+
+.tab:hover {
+  background: var(--bg);
+}
+
+.tab.active {
+  background: var(--bg);
+  font-weight: 600;
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+
+.tab-dirty {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.tab-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tab-close {
+  border: none;
+  background: transparent;
+  color: var(--fg);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 3px;
+  border-radius: 3px;
+  opacity: 0.6;
+}
+
+.tab-close:hover {
+  opacity: 1;
+  background: var(--border);
+}
+
+.tab-add {
+  border: none;
+  background: transparent;
+  color: var(--fg);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0 12px;
+}
+
+.tab-add:hover {
+  background: var(--bg);
+}
+
+.split {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.pane {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-host {
+  flex: 1;
+  overflow: hidden;
+}
+
+.preview-scroll {
+  flex: 1;
+  overflow: auto;
+  padding: 16px 24px;
+}
+
+.pane-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  background: var(--bg-alt);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.pane-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  opacity: 0.55;
+}
+
+.sync-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  border-radius: 6px;
+  padding: 3px 9px;
+  font-size: 12px;
+  cursor: pointer;
+  opacity: 0.75;
+  transition:
+    opacity 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.sync-btn:hover {
+  opacity: 1;
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.sync-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+.split-divider {
+  flex: 0 0 6px;
+  cursor: col-resize;
+  position: relative;
+  z-index: 5;
+  background: transparent;
+}
+
+.split-divider::after {
+  content: "";
+  position: absolute;
+  left: 2.5px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border);
+  transition:
+    left 0.15s ease,
+    width 0.15s ease,
+    background 0.15s ease;
+}
+
+.split-divider:hover::after,
+.split.dragging .split-divider::after {
+  left: 1px;
+  width: 4px;
+  background: var(--accent);
+}
+
+.split.dragging {
+  user-select: none;
+  cursor: col-resize;
+}
+
+.split.dragging .editor-host,
+.split.dragging .preview-scroll {
+  pointer-events: none;
+}
+
+.sync-flash {
+  animation: syncFlash 1.3s ease;
+  border-radius: 3px;
+}
+
+.sync-marked {
+  outline: 2px solid rgba(9, 105, 218, 0.45);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+@keyframes syncFlash {
+  0%,
+  25% {
+    box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 0 3px rgba(9, 105, 218, 0);
+  }
+}
+
+.markdown-body {
+  max-width: 820px;
+  margin: 0 auto;
+  width: 100%;
+  color: var(--fg);
+}
+
+.markdown-body h1,
+.markdown-body h2 {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.3em;
+}
+
+.markdown-body a {
+  color: var(--accent);
+}
+
+.markdown-body code {
+  background: var(--code-bg);
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 85%;
+}
+
+.markdown-body pre {
+  background: var(--code-bg);
+  padding: 12px;
+  border-radius: 6px;
+  overflow: auto;
+}
+
+.markdown-body pre code {
+  background: transparent;
+  padding: 0;
+  font-size: 90%;
+}
+
+.markdown-body blockquote {
+  border-left: 4px solid var(--border);
+  margin: 0;
+  padding: 0 1em;
+  opacity: 0.85;
+}
+
+.markdown-body table {
+  border-collapse: collapse;
+  display: block;
+  overflow: auto;
+}
+
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+}
+
+.markdown-body tr:nth-child(2n) {
+  background: var(--bg-alt);
+}
+
+.markdown-body img {
+  max-width: 100%;
+}
+
+.markdown-body mark {
+  background: #fff3a3;
+  color: #1f2328;
+}
+
+.markdown-body hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1.5em 0;
+}
+
+.markdown-body .mermaid {
+  text-align: center;
+  margin: 1em 0;
+}
+
+.markdown-body .mermaid-error {
+  color: #d1242f;
+  background: #ffebe9;
+  padding: 8px 12px;
+  border-radius: 6px;
+  white-space: pre-wrap;
+  font-family: ui-monospace, monospace;
+  font-size: 85%;
+}
+
+.markdown-body .task-list-item {
+  list-style: none;
+}
+
+.markdown-body .task-list-item input {
+  margin-right: 0.5em;
+}
+
+.markdown-body .warning {
+  border-left: 4px solid #d29922;
+  background: #fff8c5;
+  padding: 8px 16px;
+  border-radius: 4px;
+  color: #1f2328;
+}
+
+.markdown-body .note {
+  border-left: 4px solid var(--accent);
+  background: var(--bg-alt);
+  padding: 8px 16px;
+  border-radius: 4px;
+}
+
+.markdown-body .footnotes {
+  border-top: 1px solid var(--border);
+  margin-top: 2em;
+  font-size: 90%;
+}
+
+.view-toggle {
+  display: flex;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.view-toggle button {
+  border: none;
+  background: transparent;
+  color: var(--fg);
+  padding: 4px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.view-toggle button:hover {
+  opacity: 1;
+}
+
+.view-toggle button.on {
+  background: var(--accent);
+  color: #ffffff;
+  opacity: 1;
+  font-weight: 600;
+}
+
+.preview-scroll.doc-bg {
+  background: var(--bg-alt);
+  padding: 28px 20px 60px;
+}
+
+.markdown-body.doc {
+  color: #000000;
+  font-family: "Latin Modern Roman", "LM Roman 10", "CMU Serif",
+    "EB Garamond", Georgia, "Times New Roman", serif;
+  font-size: 11pt;
+  line-height: 1.45;
+}
+
+.markdown-body.doc p,
+.markdown-body.doc li {
+  text-align: justify;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  orphans: 3;
+  widows: 3;
+}
+
+.markdown-body.doc p {
+  margin: 0 0 0.35em;
+}
+
+.markdown-body.doc p + p {
+  text-indent: 1.6em;
+}
+
+.markdown-body.doc h1,
+.markdown-body.doc h2,
+.markdown-body.doc h3,
+.markdown-body.doc h4 {
+  border: none;
+  padding: 0;
+  hyphens: manual;
+  -webkit-hyphens: manual;
+  line-height: 1.25;
+  color: #000000;
+}
+
+.markdown-body.doc h1 {
+  font-size: 20pt;
+  font-weight: bold;
+  text-align: center;
+  margin: 0 0 0.7em;
+}
+
+.markdown-body.doc h2 {
+  font-size: 14.5pt;
+  font-weight: bold;
+  margin: 1.5em 0 0.5em;
+}
+
+.markdown-body.doc h3 {
+  font-size: 12pt;
+  font-weight: bold;
+  margin: 1.2em 0 0.4em;
+}
+
+.markdown-body.doc h4 {
+  font-size: 11pt;
+  font-weight: bold;
+  font-style: italic;
+  margin: 1em 0 0.3em;
+}
+
+.markdown-body.doc ul,
+.markdown-body.doc ol {
+  margin: 0.5em 0;
+  padding-left: 1.6em;
+}
+
+.markdown-body.doc li {
+  margin: 0.15em 0;
+}
+
+.markdown-body.doc li > p {
+  margin: 0;
+  text-indent: 0;
+}
+
+.markdown-body.doc code {
+  font-family: "Latin Modern Mono", "LM Mono 10", "DejaVu Sans Mono",
+    "Courier New", monospace;
+  font-size: 0.86em;
+  background: none;
+  padding: 0;
+  color: #000000;
+}
+
+.markdown-body.doc pre {
+  background: #fbfbfb;
+  border: 0.5pt solid #bbbbbb;
+  border-radius: 0;
+  padding: 8pt 10pt;
+  margin: 0.8em 0;
+  line-height: 1.35;
+}
+
+.markdown-body.doc pre code {
+  font-size: 8.5pt;
+  background: none;
+}
+
+.markdown-body.doc table {
+  display: table;
+  width: auto;
+  margin: 1em auto;
+  border-collapse: collapse;
+  font-size: 10pt;
+}
+
+.markdown-body.doc th,
+.markdown-body.doc td {
+  border: none;
+  padding: 3.5pt 12pt;
+  text-align: left;
+  background: none;
+  color: #000000;
+}
+
+.markdown-body.doc th {
+  border-top: 1.2pt solid #000000;
+  border-bottom: 0.6pt solid #000000;
+  font-weight: bold;
+}
+
+.markdown-body.doc tbody tr:last-child td {
+  border-bottom: 1.2pt solid #000000;
+}
+
+.markdown-body.doc tr:nth-child(2n) {
+  background: none;
+}
+
+.markdown-body.doc blockquote {
+  margin: 0.8em 2.2em;
+  padding: 0;
+  border-left: none;
+  opacity: 1;
+  font-size: 10.5pt;
+}
+
+.markdown-body.doc a {
+  color: #000000;
+  text-decoration: none;
+}
+
+.markdown-body.doc hr {
+  border: none;
+  border-top: 0.5pt solid #000000;
+  width: 35%;
+  margin: 1.5em auto;
+}
+
+.markdown-body.doc .katex-display {
+  margin: 0.9em 0;
+}
+
+.markdown-body.doc .mermaid {
+  text-align: center;
+  margin: 1em 0;
+}
+
+.markdown-body.doc .mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.markdown-body.doc .warning,
+.markdown-body.doc .note {
+  border: 0.5pt solid #999999;
+  border-left: 2.5pt solid #555555;
+  background: #f7f7f7;
+  color: #000000;
+  padding: 7pt 12pt;
+  margin: 0.8em 0;
+  border-radius: 0;
+}
+
+.markdown-body.doc .footnotes {
+  font-size: 9pt;
+  margin-top: 1.8em;
+  border-top: 0.5pt solid #000000;
+  padding-top: 0.5em;
+}
+
+.markdown-body.doc .task-list-item input {
+  margin-right: 0.4em;
+}
+
+.markdown-body.doc img {
+  max-width: 100%;
+}
+
+.preview-source {
+  position: absolute;
+  left: -10000px;
+  top: 0;
+  width: 21cm;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.paged-view .pagedjs_pages {
+  display: block;
+}
+
+.paged-view .pagedjs_page {
+  margin: 0 auto 24px;
+  background: #ffffff;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.22),
+    0 8px 28px rgba(0, 0, 0, 0.18);
+}
+
+@page {
+  size: A4;
+  margin: 2.5cm;
+}
+
+@media print {
+  :root {
+    --bg: #ffffff;
+    --bg-alt: #ffffff;
+    --fg: #000000;
+    --border: #000000;
+    --accent: #000000;
+    --code-bg: #ffffff;
+  }
+
+  body {
+    background: #ffffff;
+  }
+
+  .topbar,
+  .tabbar {
+    display: none !important;
+  }
+
+  .app {
+    height: auto;
+  }
+
+  .split {
+    display: block;
+  }
+
+  .pane {
+    display: none;
+  }
+
+  .pane.preview-scroll {
+    display: block;
+    overflow: visible;
+    padding: 0;
+    border: none;
+  }
+
+  .markdown-body {
+    max-width: 100%;
+    font-family: "Latin Modern Roman", "LM Roman 10", "CMU Serif",
+      "EB Garamond", Georgia, "Times New Roman", serif;
+    font-size: 11pt;
+    line-height: 1.45;
+    color: #000;
+  }
+
+  .markdown-body p,
+  .markdown-body li {
+    text-align: justify;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+    orphans: 3;
+    widows: 3;
+  }
+
+  .markdown-body p {
+    margin: 0 0 0.35em;
+  }
+
+  .markdown-body p + p {
+    text-indent: 1.6em;
+  }
+
+  .markdown-body h1,
+  .markdown-body h2,
+  .markdown-body h3,
+  .markdown-body h4 {
+    border: none;
+    hyphens: manual;
+    -webkit-hyphens: manual;
+    line-height: 1.25;
+    font-family: inherit;
+    color: #000;
+  }
+
+  .markdown-body h1 {
+    font-size: 20pt;
+    font-weight: bold;
+    text-align: center;
+    margin: 0 0 0.7em;
+  }
+
+  .markdown-body h2 {
+    font-size: 14.5pt;
+    font-weight: bold;
+    margin: 1.5em 0 0.5em;
+  }
+
+  .markdown-body h3 {
+    font-size: 12pt;
+    font-weight: bold;
+    margin: 1.2em 0 0.4em;
+  }
+
+  .markdown-body h4 {
+    font-size: 11pt;
+    font-weight: bold;
+    font-style: italic;
+    margin: 1em 0 0.3em;
+  }
+
+  .markdown-body ul,
+  .markdown-body ol {
+    margin: 0.5em 0;
+    padding-left: 1.6em;
+  }
+
+  .markdown-body li {
+    margin: 0.15em 0;
+  }
+
+  .markdown-body li > p {
+    margin: 0;
+    text-indent: 0;
+  }
+
+  .markdown-body code {
+    font-family: "Latin Modern Mono", "LM Mono 10", "DejaVu Sans Mono",
+      "Courier New", monospace;
+    font-size: 0.86em;
+    background: none;
+    padding: 0;
+    color: #000;
+  }
+
+  .markdown-body pre {
+    background: #fbfbfb;
+    border: 0.5pt solid #bbb;
+    border-radius: 0;
+    padding: 8pt 10pt;
+    margin: 0.8em 0;
+    break-inside: avoid;
+    line-height: 1.35;
+  }
+
+  .markdown-body pre code {
+    font-size: 8.5pt;
+    background: none;
+  }
+
+  .markdown-body table {
+    display: table;
+    width: auto;
+    margin: 1em auto;
+    border-collapse: collapse;
+    font-size: 10pt;
+    break-inside: avoid;
+  }
+
+  .markdown-body th,
+  .markdown-body td {
+    border: none;
+    padding: 3.5pt 12pt;
+    text-align: left;
+    background: none;
+  }
+
+  .markdown-body th {
+    border-top: 1.2pt solid #000;
+    border-bottom: 0.6pt solid #000;
+    font-weight: bold;
+  }
+
+  .markdown-body tbody tr:last-child td {
+    border-bottom: 1.2pt solid #000;
+  }
+
+  .markdown-body tr:nth-child(2n) {
+    background: none;
+  }
+
+  .markdown-body blockquote {
+    margin: 0.8em 2.2em;
+    padding: 0;
+    border-left: none;
+    opacity: 1;
+    font-size: 10.5pt;
+  }
+
+  .markdown-body a {
+    color: #000;
+    text-decoration: none;
+  }
+
+  .markdown-body hr {
+    border: none;
+    border-top: 0.5pt solid #000;
+    width: 35%;
+    margin: 1.5em auto;
+  }
+
+  .markdown-body .katex-display {
+    margin: 0.9em 0;
+    break-inside: avoid;
+    -webkit-region-break-inside: avoid;
+  }
+
+  .markdown-body .mermaid {
+    text-align: center;
+    margin: 1em 0;
+    break-inside: avoid;
+  }
+
+  .markdown-body .mermaid svg {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .markdown-body .warning,
+  .markdown-body .note {
+    border: 0.5pt solid #999;
+    border-left: 2.5pt solid #555;
+    background: #f7f7f7;
+    color: #000;
+    padding: 7pt 12pt;
+    margin: 0.8em 0;
+    border-radius: 0;
+    break-inside: avoid;
+  }
+
+  .markdown-body .footnotes {
+    font-size: 9pt;
+    margin-top: 1.8em;
+    border-top: 0.5pt solid #000;
+    padding-top: 0.5em;
+  }
+
+  .markdown-body .task-list-item input {
+    margin-right: 0.4em;
+  }
+
+  .markdown-body img {
+    max-width: 100%;
+  }
+}

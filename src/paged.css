@@ -1,0 +1,200 @@
+@page {
+  size: A4;
+  margin: 2.5cm;
+}
+
+.markdown-body.doc {
+  font-family: "Latin Modern Roman", "LM Roman 10", "CMU Serif",
+    "EB Garamond", Georgia, "Times New Roman", serif;
+  font-size: 11pt;
+  line-height: 1.45;
+  color: #000000;
+}
+
+.markdown-body.doc p,
+.markdown-body.doc li {
+  text-align: justify;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  orphans: 3;
+  widows: 3;
+}
+
+.markdown-body.doc p {
+  margin: 0 0 0.35em;
+}
+
+.markdown-body.doc p + p {
+  text-indent: 1.6em;
+}
+
+.markdown-body.doc h1,
+.markdown-body.doc h2,
+.markdown-body.doc h3,
+.markdown-body.doc h4 {
+  border: none;
+  padding: 0;
+  hyphens: manual;
+  -webkit-hyphens: manual;
+  line-height: 1.25;
+  color: #000000;
+}
+
+.markdown-body.doc h1 {
+  font-size: 20pt;
+  font-weight: bold;
+  text-align: center;
+  margin: 0 0 0.7em;
+}
+
+.markdown-body.doc h2 {
+  font-size: 14.5pt;
+  font-weight: bold;
+  margin: 1.5em 0 0.5em;
+}
+
+.markdown-body.doc h3 {
+  font-size: 12pt;
+  font-weight: bold;
+  margin: 1.2em 0 0.4em;
+}
+
+.markdown-body.doc h4 {
+  font-size: 11pt;
+  font-weight: bold;
+  font-style: italic;
+  margin: 1em 0 0.3em;
+}
+
+.markdown-body.doc ul,
+.markdown-body.doc ol {
+  margin: 0.5em 0;
+  padding-left: 1.6em;
+}
+
+.markdown-body.doc li {
+  margin: 0.15em 0;
+}
+
+.markdown-body.doc li > p {
+  margin: 0;
+  text-indent: 0;
+}
+
+.markdown-body.doc code {
+  font-family: "Latin Modern Mono", "LM Mono 10", "DejaVu Sans Mono",
+    "Courier New", monospace;
+  font-size: 0.86em;
+  background: none;
+  padding: 0;
+  color: #000000;
+}
+
+.markdown-body.doc pre {
+  background: #fbfbfb;
+  border: 0.5pt solid #bbbbbb;
+  border-radius: 0;
+  padding: 8pt 10pt;
+  margin: 0.8em 0;
+  line-height: 1.35;
+  break-inside: avoid;
+}
+
+.markdown-body.doc pre code {
+  font-size: 8.5pt;
+  background: none;
+}
+
+.markdown-body.doc table {
+  display: table;
+  width: auto;
+  margin: 1em auto;
+  border-collapse: collapse;
+  font-size: 10pt;
+  break-inside: avoid;
+}
+
+.markdown-body.doc th,
+.markdown-body.doc td {
+  border: none;
+  padding: 3.5pt 12pt;
+  text-align: left;
+  background: none;
+  color: #000000;
+}
+
+.markdown-body.doc th {
+  border-top: 1.2pt solid #000000;
+  border-bottom: 0.6pt solid #000000;
+  font-weight: bold;
+}
+
+.markdown-body.doc tbody tr:last-child td {
+  border-bottom: 1.2pt solid #000000;
+}
+
+.markdown-body.doc blockquote {
+  margin: 0.8em 2.2em;
+  padding: 0;
+  border-left: none;
+  font-size: 10.5pt;
+}
+
+.markdown-body.doc a {
+  color: #000000;
+  text-decoration: none;
+}
+
+.markdown-body.doc hr {
+  border: none;
+  border-top: 0.5pt solid #000000;
+  width: 35%;
+  margin: 1.5em auto;
+}
+
+.markdown-body.doc .katex-display {
+  margin: 0.9em 0;
+  break-inside: avoid;
+}
+
+.markdown-body.doc .mermaid {
+  text-align: center;
+  margin: 1em 0;
+  break-inside: avoid;
+}
+
+.markdown-body.doc .mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.markdown-body.doc .warning,
+.markdown-body.doc .note {
+  border: 0.5pt solid #999999;
+  border-left: 2.5pt solid #555555;
+  background: #f7f7f7;
+  color: #000000;
+  padding: 7pt 12pt;
+  margin: 0.8em 0;
+  border-radius: 0;
+  break-inside: avoid;
+}
+
+.markdown-body.doc .footnotes {
+  font-size: 9pt;
+  margin-top: 1.8em;
+  border-top: 0.5pt solid #000000;
+  padding-top: 0.5em;
+}
+
+.markdown-body.doc .task-list-item {
+  list-style: none;
+}
+
+.markdown-body.doc .task-list-item input {
+  margin-right: 0.4em;
+}
+
+.markdown-body.doc img {
+  max-width: 100%;
+}

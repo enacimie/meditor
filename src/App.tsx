@@ -1,0 +1,434 @@
+import {
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
+import { invoke, isTauri } from "@tauri-apps/api/core";
+import {
+  open as openDialog,
+  save as saveDialog,
+} from "@tauri-apps/plugin-dialog";
+import Editor, { type EditorHandle } from "./Editor";
+import Preview, { type PreviewHandle } from "./Preview";
+import { SAMPLE } from "./sample";
+import "./App.css";
+
+type Doc = {
+  id: string;
+  name: string;
+  path: string | null;
+  content: string;
+  dirty: boolean;
+};
+
+let untitledCounter = 0;
+
+function baseName(path: string): string {
+  return path.split("/").pop() ?? path;
+}
+
+function makeDoc(content: string, path: string | null = null, name?: string): Doc {
+  untitledCounter += 1;
+  return {
+    id: crypto.randomUUID(),
+    path,
+    content,
+    dirty: false,
+    name: name ?? (path ? baseName(path) : `Documento ${untitledCounter}`),
+  };
+}
+
+export default function App() {
+  const [ready, setReady] = useState(false);
+  const [docs, setDocs] = useState<Doc[]>([]);
+  const [activeId, setActiveId] = useState("");
+  const [docView, setDocView] = useState(true);
+  const [split, setSplit] = useState(50);
+  const [dragging, setDragging] = useState(false);
+  const sessionFile = useRef<string | null>(null);
+  const editorRef = useRef<EditorHandle>(null);
+  const previewRef = useRef<PreviewHandle>(null);
+  const splitRef = useRef<HTMLDivElement>(null);
+
+  const active = docs.find((d) => d.id === activeId) ?? docs[0];
+
+  useEffect(() => {
+    (async () => {
+      let restored: { docs: Doc[]; activeId: string } | null = null;
+      if (isTauri()) {
+        try {
+          sessionFile.current = await invoke<string>("session_path");
+          const raw = await invoke<string>("read_file", {
+            path: sessionFile.current,
+          });
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed?.docs) && parsed.docs.length) {
+            restored = parsed;
+          }
+        } catch {
+          restored = null;
+        }
+      }
+      if (restored) {
+        setDocs(restored.docs);
+        setActiveId(restored.activeId);
+      } else {
+        const d = makeDoc(SAMPLE);
+        setDocs([d]);
+        setActiveId(d.id);
+      }
+      setReady(true);
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (!ready || !isTauri() || !sessionFile.current) return;
+    const file = sessionFile.current;
+    const t = setTimeout(() => {
+      invoke("write_file", {
+        path: file,
+        content: JSON.stringify({ docs, activeId }),
+      }).catch(() => {});
+    }, 500);
+    return () => clearTimeout(t);
+  }, [docs, activeId, ready]);
+
+  useEffect(() => {
+    document.title = active?.name ?? "meditor";
+  }, [active?.name]);
+
+  function updateContent(content: string) {
+    setDocs((prev) =>
+      prev.map((d) =>
+        d.id === activeId && d.content !== content
+          ? { ...d, content, dirty: true }
+          : d,
+      ),
+    );
+  }
+
+  function newTab() {
+    const doc = makeDoc("");
+    setDocs((prev) => [...prev, doc]);
+    setActiveId(doc.id);
+  }
+
+  async function openFiles() {
+    if (!isTauri()) return;
+    const picked = await openDialog({
+      multiple: true,
+      filters: [{ name: "Markdown", extensions: ["md", "markdown", "txt"] }],
+    });
+    if (!picked) return;
+    const paths = Array.isArray(picked) ? picked : [picked];
+    for (const p of paths) {
+      const existing = docs.find((d) => d.path === p);
+      if (existing) {
+        setActiveId(existing.id);
+        continue;
+      }
+      try {
+        const content = await invoke<string>("read_file", { path: p });
+        const doc = makeDoc(content, p);
+        setDocs((prev) => [...prev, doc]);
+        setActiveId(doc.id);
+      } catch (e) {
+        console.error("No se pudo abrir", p, e);
+      }
+    }
+  }
+
+  async function saveAs() {
+    if (!active || !isTauri()) return;
+    const defaultPath = active.name.endsWith(".md")
+      ? active.name
+      : `${active.name}.md`;
+    const path = await saveDialog({ defaultPath });
+    if (!path) return;
+    await invoke("write_file", { path, content: active.content });
+    const id = active.id;
+    setDocs((prev) =>
+      prev.map((d) =>
+        d.id === id ? { ...d, path, name: baseName(path), dirty: false } : d,
+      ),
+    );
+  }
+
+  async function save() {
+    if (!active || !isTauri()) return;
+    if (!active.path) {
+      await saveAs();
+      return;
+    }
+    await invoke("write_file", { path: active.path, content: active.content });
+    const id = active.id;
+    setDocs((prev) =>
+      prev.map((d) => (d.id === id ? { ...d, dirty: false } : d)),
+    );
+  }
+
+  async function exportPdf() {
+    if (!active || !isTauri()) return;
+    const base = active.name.replace(/\.(md|markdown|txt)$/i, "") || "documento";
+    const path = await saveDialog({
+      defaultPath: `${base}.pdf`,
+      filters: [{ name: "PDF", extensions: ["pdf"] }],
+    });
+    if (!path) return;
+    try {
+      await invoke("export_pdf", { path });
+    } catch (e) {
+      window.alert("Error al exportar PDF: " + String(e));
+    }
+  }
+
+  function closeTab(id: string) {
+    const doc = docs.find((d) => d.id === id);
+    if (
+      doc?.dirty &&
+      !window.confirm(
+        `"${doc.name}" tiene cambios sin guardar. ¿Cerrar de todos modos?`,
+      )
+    ) {
+      return;
+    }
+    const idx = docs.findIndex((d) => d.id === id);
+    const next = docs.filter((d) => d.id !== id);
+    if (next.length === 0) {
+      const fresh = makeDoc("");
+      setDocs([fresh]);
+      setActiveId(fresh.id);
+      return;
+    }
+    setDocs(next);
+    if (id === activeId) setActiveId(next[Math.max(0, idx - 1)].id);
+  }
+
+  function renameTab(id: string) {
+    const current = docs.find((d) => d.id === id);
+    if (!current) return;
+    const name = window.prompt("Nombre del documento", current.name);
+    if (name && name.trim()) {
+      const clean = name.trim();
+      setDocs((prev) =>
+        prev.map((d) => (d.id === id ? { ...d, name: clean } : d)),
+      );
+    }
+  }
+
+  function handleReverseSync(line: number) {
+    editorRef.current?.scrollToLine(line);
+  }
+
+  function handleForwardSync() {
+    const line = editorRef.current?.getCursorLine() ?? 0;
+    previewRef.current?.scrollToLine(line);
+  }
+
+  function handleReverseSyncButton() {
+    const line = previewRef.current?.getTargetLine() ?? 0;
+    editorRef.current?.scrollToLine(line);
+  }
+
+  function onDividerDown(e: ReactPointerEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragging(true);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+
+  function onDividerMove(e: ReactPointerEvent<HTMLDivElement>) {
+    if (!dragging) return;
+    const rect = splitRef.current?.getBoundingClientRect();
+    if (!rect || rect.width === 0) return;
+    const pct = ((e.clientX - rect.left) / rect.width) * 100;
+    setSplit(Math.max(20, Math.min(80, pct)));
+  }
+
+  function onDividerUp(e: ReactPointerEvent<HTMLDivElement>) {
+    setDragging(false);
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+  }
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (!ready || !(e.ctrlKey || e.metaKey)) return;
+      const k = e.key.toLowerCase();
+      if (k === "s") {
+        e.preventDefault();
+        if (e.shiftKey) saveAs();
+        else save();
+      } else if (k === "o") {
+        e.preventDefault();
+        openFiles();
+      } else if (k === "n") {
+        e.preventDefault();
+        newTab();
+      } else if (k === "e") {
+        e.preventDefault();
+        exportPdf();
+      } else if (k === "w") {
+        e.preventDefault();
+        closeTab(activeId);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
+  if (!ready) {
+    return (
+      <div className="app">
+        <header className="topbar">
+          <span className="brand">meditor</span>
+        </header>
+      </div>
+    );
+  }
+
+  return (
+    <div className="app">
+      <header className="topbar">
+        <span className="brand">meditor</span>
+        <div className="actions">
+          <button onClick={newTab} title="Nuevo (Ctrl+N)">
+            Nuevo
+          </button>
+          <button onClick={openFiles} title="Abrir (Ctrl+O)">
+            Abrir
+          </button>
+          <button onClick={save} title="Guardar (Ctrl+S)">
+            Guardar
+          </button>
+          <button onClick={saveAs} title="Guardar como (Ctrl+Shift+S)">
+            Guardar como
+          </button>
+          <button onClick={exportPdf} title="Exportar PDF (Ctrl+E)">
+            PDF
+          </button>
+        </div>
+      </header>
+      <div className="tabbar">
+        {docs.map((d) => (
+          <div
+            key={d.id}
+            className={"tab" + (d.id === activeId ? " active" : "")}
+            onClick={() => setActiveId(d.id)}
+            onDoubleClick={() => renameTab(d.id)}
+            title={d.path ?? d.name}
+          >
+            {d.dirty && <span className="tab-dirty">•</span>}
+            <span className="tab-name">{d.name}</span>
+            <button
+              className="tab-close"
+              aria-label="Cerrar pestaña"
+              onClick={(e) => {
+                e.stopPropagation();
+                closeTab(d.id);
+              }}
+            >
+              ×
+            </button>
+          </div>
+        ))}
+        <button className="tab-add" aria-label="Nueva pestaña" onClick={newTab}>
+          +
+        </button>
+      </div>
+      <div className={"split" + (dragging ? " dragging" : "")} ref={splitRef}>
+        <div className="pane" style={{ flex: `0 0 ${split}%` }}>
+          <div className="pane-header">
+            <span className="pane-title">Editor</span>
+            <button
+              className="sync-btn"
+              onClick={handleForwardSync}
+              title="Ir a la posición del cursor en el preview"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M5 12h14" />
+                <path d="m13 6 6 6-6 6" />
+              </svg>
+              Ir al preview
+            </button>
+          </div>
+          <Editor
+            ref={editorRef}
+            activeId={activeId}
+            ids={docs.map((d) => d.id)}
+            content={active?.content ?? ""}
+            onChange={updateContent}
+          />
+        </div>
+        <div
+          className="split-divider"
+          onPointerDown={onDividerDown}
+          onPointerMove={onDividerMove}
+          onPointerUp={onDividerUp}
+          onPointerCancel={onDividerUp}
+          title="Arrastra para redimensionar"
+        />
+        <div className="pane" style={{ flex: "1 1 0" }}>
+          <div className="pane-header">
+            <span className="pane-title">Preview</span>
+            <div className="view-toggle" role="group" aria-label="Vista previa">
+              <button
+                className={docView ? "" : "on"}
+                onClick={() => setDocView(false)}
+              >
+                Web
+              </button>
+              <button
+                className={docView ? "on" : ""}
+                onClick={() => setDocView(true)}
+              >
+                Documento
+              </button>
+            </div>
+            <button
+              className="sync-btn"
+              onClick={handleReverseSyncButton}
+              title="Ir al código en la posición marcada (haz clic en el preview para marcar)"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M19 12H5" />
+                <path d="m11 18-6-6 6-6" />
+              </svg>
+              Ir al código
+            </button>
+          </div>
+          <div
+            className={"preview-scroll" + (docView ? " doc-bg" : "")}
+            onClick={(e) => {
+              if (!(e.target as HTMLElement).closest("[data-line]")) {
+                previewRef.current?.clearMark();
+              }
+            }}
+          >
+            <Preview
+              ref={previewRef}
+              value={active?.content ?? ""}
+              docView={docView}
+              onReverseSync={handleReverseSync}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
