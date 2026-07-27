@@ -82,7 +82,6 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
   const sourceRef = useRef<HTMLDivElement>(null);
   const webRef = useRef<HTMLDivElement>(null);
   const pagedRef = useRef<HTMLDivElement>(null);
-  const previewerRef = useRef<Previewer | null>(null);
   const markedLineRef = useRef<number | null>(null);
   const markedElRef = useRef<HTMLElement | null>(null);
   const docViewRef = useRef(docView);
@@ -197,10 +196,11 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
         if (!source || !paged) return;
         await renderContent(source, value);
         if (cancelled) return;
-        if (!previewerRef.current) previewerRef.current = new Previewer();
+        paged.innerHTML = "";
+        const previewer = new Previewer();
         try {
           const html = `<div class="markdown-body doc">${source.innerHTML}</div>`;
-          await previewerRef.current.preview(html, collectStyles(), paged);
+          await previewer.preview(html, collectStyles(), paged);
         } catch (e) {
           console.error("paged.js:", e);
         }
