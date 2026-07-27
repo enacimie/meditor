@@ -9,6 +9,7 @@ import {
   open as openDialog,
   save as saveDialog,
 } from "@tauri-apps/plugin-dialog";
+import { listen } from "@tauri-apps/api/event";
 import Editor, { type EditorHandle } from "./Editor";
 import Preview, { type PreviewHandle } from "./Preview";
 import { SAMPLE } from "./sample";
@@ -50,13 +51,21 @@ export default function App() {
   const editorRef = useRef<EditorHandle>(null);
   const previewRef = useRef<PreviewHandle>(null);
   const splitRef = useRef<HTMLDivElement>(null);
+  const docsRef = useRef<Doc[]>([]);
 
   const active = docs.find((d) => d.id === activeId) ?? docs[0];
 
   useEffect(() => {
     (async () => {
-      let restored: { docs: Doc[]; activeId: string } | null = null;
+      let base: Doc[] = [];
+      let startActive = "";
+      let cliFiles: string[] = [];
       if (isTauri()) {
+        try {
+          cliFiles = await invoke<string[]>("cli_files");
+        } catch {
+          cliFiles = [];
+        }
         try {
           sessionFile.current = await invoke<string>("session_path");
           const raw = await invoke<string>("read_file", {
@@ -64,22 +73,59 @@ export default function App() {
           });
           const parsed = JSON.parse(raw);
           if (Array.isArray(parsed?.docs) && parsed.docs.length) {
-            restored = parsed;
+            base = parsed.docs;
+            startActive = parsed.activeId;
           }
         } catch {
-          restored = null;
+          base = [];
         }
       }
-      if (restored) {
-        setDocs(restored.docs);
-        setActiveId(restored.activeId);
-      } else {
+      if (!base.length) {
         const d = makeDoc(SAMPLE);
-        setDocs([d]);
-        setActiveId(d.id);
+        base = [d];
+        startActive = d.id;
       }
+      let cliActive = "";
+      for (const p of cliFiles) {
+        const ex = base.find((d) => d.path === p);
+        if (ex) {
+          if (!cliActive) cliActive = ex.id;
+          continue;
+        }
+        try {
+          const content = await invoke<string>("read_file", { path: p });
+          const doc = makeDoc(content, p);
+          base.push(doc);
+          if (!cliActive) cliActive = doc.id;
+        } catch (e) {
+          console.error("No se pudo abrir", p, e);
+        }
+      }
+      if (cliActive) startActive = cliActive;
+      setDocs(base);
+      setActiveId(startActive);
       setReady(true);
     })();
+  }, []);
+
+  useEffect(() => {
+    docsRef.current = docs;
+  }, [docs]);
+
+  useEffect(() => {
+    if (!isTauri()) return;
+    let cancelled = false;
+    let unlisten: (() => void) | undefined;
+    listen<string[]>("open-files", (e) => {
+      void openPaths(e.payload);
+    }).then((f) => {
+      if (cancelled) f();
+      else unlisten = f;
+    });
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
   }, []);
 
   useEffect(() => {
@@ -114,6 +160,33 @@ export default function App() {
     setActiveId(doc.id);
   }
 
+  async function openPaths(paths: string[]) {
+    const loaded: { path: string; content: string }[] = [];
+    for (const p of paths) {
+      try {
+        const content = await invoke<string>("read_file", { path: p });
+        loaded.push({ path: p, content });
+      } catch (e) {
+        console.error("No se pudo abrir", p, e);
+      }
+    }
+    if (!loaded.length) return;
+    const next = [...docsRef.current];
+    let activateId = "";
+    for (const { path, content } of loaded) {
+      const ex = next.find((d) => d.path === path);
+      if (ex) {
+        if (!activateId) activateId = ex.id;
+        continue;
+      }
+      const doc = makeDoc(content, path);
+      next.push(doc);
+      if (!activateId) activateId = doc.id;
+    }
+    setDocs(next);
+    if (activateId) setActiveId(activateId);
+  }
+
   async function openFiles() {
     if (!isTauri()) return;
     const picked = await openDialog({
@@ -122,21 +195,7 @@ export default function App() {
     });
     if (!picked) return;
     const paths = Array.isArray(picked) ? picked : [picked];
-    for (const p of paths) {
-      const existing = docs.find((d) => d.path === p);
-      if (existing) {
-        setActiveId(existing.id);
-        continue;
-      }
-      try {
-        const content = await invoke<string>("read_file", { path: p });
-        const doc = makeDoc(content, p);
-        setDocs((prev) => [...prev, doc]);
-        setActiveId(doc.id);
-      } catch (e) {
-        console.error("No se pudo abrir", p, e);
-      }
-    }
+    await openPaths(paths);
   }
 
   async function saveAs() {

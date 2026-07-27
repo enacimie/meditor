@@ -1,4 +1,20 @@
-use tauri::Manager;
+use tauri::{Emitter, Manager};
+
+fn files_from_args(args: &[String]) -> Vec<String> {
+    args.iter()
+        .skip(1)
+        .filter(|a| !a.starts_with('-'))
+        .filter_map(|a| std::fs::canonicalize(a).ok())
+        .filter(|p| p.is_file())
+        .map(|p| p.to_string_lossy().to_string())
+        .collect()
+}
+
+#[tauri::command]
+fn cli_files() -> Vec<String> {
+    let args: Vec<String> = std::env::args().collect();
+    files_from_args(&args)
+}
 
 #[tauri::command]
 fn read_file(path: String) -> Result<String, String> {
@@ -81,13 +97,23 @@ fn export_pdf(window: tauri::WebviewWindow, path: String) -> Result<(), String> 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            let files = files_from_args(&args);
+            if !files.is_empty() {
+                let _ = app.emit("open-files", files);
+            }
+            if let Some(win) = app.get_webview_window("main") {
+                let _ = win.set_focus();
+            }
+        }))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             read_file,
             write_file,
             session_path,
-            export_pdf
+            export_pdf,
+            cli_files
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
