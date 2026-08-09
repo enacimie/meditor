@@ -19,17 +19,6 @@ use std::os::windows::ffi::OsStrExt;
 #[cfg(target_os = "windows")]
 use std::ptr;
 
-#[cfg(any(
-    target_os = "linux",
-    target_os = "dragonfly",
-    target_os = "freebsd",
-    target_os = "netbsd",
-    target_os = "openbsd"
-))]
-fn run_on_gtk_main<F: FnOnce() + Send + 'static>(f: F) {
-    gtk::glib::MainContext::default().invoke(f);
-}
-
 fn files_from_args(args: &[String]) -> Vec<String> {
     args.iter()
         .skip(1)
@@ -85,8 +74,9 @@ fn confirm(message: String) -> bool {
         target_os = "openbsd"
     ))]
     {
-        let (tx, rx) = std::sync::mpsc::channel();
-        run_on_gtk_main(move || {
+        use std::sync::mpsc;
+        let (tx, rx) = mpsc::channel();
+        gtk::glib::MainContext::default().invoke(move || {
             let dlg = gtk::MessageDialog::new(
                 None::<&gtk::Window>,
                 gtk::DialogFlags::MODAL,
@@ -97,6 +87,11 @@ fn confirm(message: String) -> bool {
             let resp = dlg.run();
             let _ = tx.send(resp == gtk::ResponseType::Yes);
         });
+        // Iterar el main loop mientras esperamos la respuesta
+        let ctx = gtk::glib::MainContext::default();
+        while rx.try_recv().is_err() {
+            ctx.iteration(true);
+        }
         rx.recv().unwrap_or(false)
     }
     #[cfg(target_os = "windows")]
@@ -151,7 +146,7 @@ fn alert(message: String) {
     ))]
     {
         let (tx, rx) = std::sync::mpsc::channel();
-        run_on_gtk_main(move || {
+        gtk::glib::MainContext::default().invoke(move || {
             let dlg = gtk::MessageDialog::new(
                 None::<&gtk::Window>,
                 gtk::DialogFlags::MODAL,
@@ -162,6 +157,10 @@ fn alert(message: String) {
             dlg.run();
             let _ = tx.send(());
         });
+        let ctx = gtk::glib::MainContext::default();
+        while rx.try_recv().is_err() {
+            ctx.iteration(true);
+        }
         rx.recv().ok();
     }
     #[cfg(target_os = "windows")]
