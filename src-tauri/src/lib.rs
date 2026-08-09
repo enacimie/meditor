@@ -1,5 +1,14 @@
 use tauri::{Emitter, Manager};
 
+#[cfg(any(
+    target_os = "linux",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd"
+))]
+use gtk::prelude::DialogExt;
+
 fn files_from_args(args: &[String]) -> Vec<String> {
     args.iter()
         .skip(1)
@@ -43,6 +52,39 @@ fn write_file(path: String, content: String) -> Result<(), String> {
         let _ = std::fs::remove_file(&tmp);
         e.to_string()
     })
+}
+
+#[tauri::command]
+fn confirm(message: String) -> bool {
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))]
+    {
+        let dlg = gtk::MessageDialog::new(
+            None::<&gtk::Window>,
+            gtk::DialogFlags::MODAL,
+            gtk::MessageType::Warning,
+            gtk::ButtonsType::YesNo,
+            &message,
+        );
+        let resp = dlg.run();
+        return resp == gtk::ResponseType::Yes;
+    }
+    #[cfg(not(any(
+        target_os = "linux",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    )))]
+    {
+        let _ = message;
+        true
+    }
 }
 
 #[tauri::command]
@@ -132,7 +174,8 @@ pub fn run() {
             write_file,
             session_path,
             export_pdf,
-            cli_files
+            cli_files,
+            confirm
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

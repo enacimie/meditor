@@ -9,7 +9,6 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   open as openDialog,
   save as saveDialog,
-  ask as confirmDialog,
 } from "@tauri-apps/plugin-dialog";
 import { listen } from "@tauri-apps/api/event";
 import Editor, { type EditorHandle } from "./Editor";
@@ -148,10 +147,9 @@ export default function App() {
     const unlisten = win.onCloseRequested((e) => {
       if (!docs.some((d) => d.dirty)) return;
       e.preventDefault();
-      void confirmDialog(
-        "Hay documentos con cambios sin guardar. ¿Salir de todos modos?",
-        { title: "Salir de meditor", kind: "warning" },
-      ).then((ok) => {
+      void invoke<boolean>("confirm", {
+        message: "Hay documentos con cambios sin guardar. ¿Salir de todos modos?",
+      }).then((ok) => {
         if (ok) win.close();
       });
     });
@@ -309,10 +307,9 @@ export default function App() {
   async function closeTab(id: string) {
     const doc = docs.find((d) => d.id === id);
     if (doc?.dirty) {
-      const ok = await confirmDialog(
-        `"${doc.name}" tiene cambios sin guardar. ¿Cerrar de todos modos?`,
-        { title: "Cerrar pestaña", kind: "warning" },
-      );
+      const ok = await invoke<boolean>("confirm", {
+        message: `"${doc.name}" tiene cambios sin guardar. ¿Cerrar de todos modos?`,
+      });
       if (!ok) return;
     }
     const idx = docs.findIndex((d) => d.id === id);
