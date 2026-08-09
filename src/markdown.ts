@@ -54,7 +54,10 @@ md.renderer.rules.fence = (tokens, idx, options, env, self) => {
     ? highlightFence(tokens, idx, options, env, self)
     : self.renderToken(tokens, idx, options);
   if (token.map && token.map.length) {
-    return html.replace(/^<pre/, `<pre data-line="${token.map[0]}"`);
+    const marked = html.replace(/^<pre/, `<pre data-line="${token.map[0]}"`);
+    return marked === html
+      ? html.replace(/^<([a-z]+)/, `<$1 data-line="${token.map[0]}"`)
+      : marked;
   }
   return html;
 };

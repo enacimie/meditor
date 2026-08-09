@@ -28,6 +28,7 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   const suppress = useRef(false);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+  const lastIdsRef = useRef<string[]>([]);
 
   useImperativeHandle(ref, () => ({
     scrollToLine(line: number) {
@@ -96,20 +97,32 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
 
   useEffect(() => {
     const view = viewRef.current;
-    if (!view || activeId === activeIdRef.current) return;
-    states.current.set(activeIdRef.current, view.state);
-    let next = states.current.get(activeId);
-    if (!next) {
-      next = EditorState.create({ doc: content, extensions: extRef.current });
+    if (!view) return;
+    const idChanged = activeId !== activeIdRef.current;
+    if (!idChanged && content === view.state.doc.toString()) return;
+    if (idChanged) {
+      states.current.set(activeIdRef.current, view.state);
+      let next = states.current.get(activeId);
+      if (!next) {
+        next = EditorState.create({ doc: content, extensions: extRef.current });
+        states.current.set(activeId, next);
+      }
+      activeIdRef.current = activeId;
+    } else {
+      const next = EditorState.create({ doc: content, extensions: extRef.current });
       states.current.set(activeId, next);
     }
     suppress.current = true;
-    view.setState(next);
+    view.setState(states.current.get(activeId)!);
     suppress.current = false;
-    activeIdRef.current = activeId;
   }, [activeId, content]);
 
   useEffect(() => {
+    const prev = lastIdsRef.current;
+    const same =
+      prev.length === ids.length && prev.every((id, i) => id === ids[i]);
+    if (same) return;
+    lastIdsRef.current = ids;
     const alive = new Set(ids);
     for (const key of Array.from(states.current.keys())) {
       if (!alive.has(key)) states.current.delete(key);

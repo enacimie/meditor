@@ -1,3 +1,63 @@
+.splash {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg, #1e1e1e);
+  color: var(--fg, #e0e0e0);
+  z-index: 9999;
+}
+
+.splash-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.splash-logo {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  opacity: 0;
+  animation: splash-fade 0.6s ease forwards;
+}
+
+.splash-bar {
+  width: 180px;
+  height: 3px;
+  background: var(--fg, #e0e0e0);
+  border-radius: 2px;
+  overflow: hidden;
+  opacity: 0;
+  animation: splash-fade 0.6s ease 0.15s forwards;
+}
+
+.splash-bar-fill {
+  height: 100%;
+  width: 30%;
+  background: var(--accent, #4a9eff);
+  border-radius: 2px;
+  animation: splash-progress 1.2s ease-in-out infinite;
+}
+
+.splash-hint {
+  font-size: 13px;
+  opacity: 0;
+  animation: splash-fade 0.6s ease 0.3s forwards;
+}
+
+@keyframes splash-fade {
+  to { opacity: 1; }
+}
+
+@keyframes splash-progress {
+  0%   { transform: translateX(-100%); }
+  50%  { transform: translateX(120%); }
+  100% { transform: translateX(320%); }
+}
+
 @font-face {
   font-family: "Latin Modern Roman";
   src: url("./assets/fonts/lmroman10-regular.otf") format("opentype");
@@ -733,15 +793,25 @@ body,
     display: block;
   }
 
-  .pane {
+  .split-divider {
+    display: none !important;
+  }
+
+  .pane:first-child {
     display: none;
   }
 
-  .pane.preview-scroll {
+  .pane ~ .pane {
     display: block;
     overflow: visible;
     padding: 0;
     border: none;
+    flex: none;
+    width: 100%;
+  }
+
+  .preview-scroll {
+    overflow: visible;
   }
 
   .markdown-body {

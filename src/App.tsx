@@ -5,6 +5,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   open as openDialog,
   save as saveDialog,
@@ -26,13 +27,20 @@ type Doc = {
 let untitledCounter = 0;
 
 function baseName(path: string): string {
-  return path.split("/").pop() ?? path;
+  return path.split(/[/\\]/).pop() ?? path;
+}
+
+function newId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
 }
 
 function makeDoc(content: string, path: string | null = null, name?: string): Doc {
   untitledCounter += 1;
   return {
-    id: crypto.randomUUID(),
+    id: newId(),
     path,
     content,
     dirty: false,
@@ -103,6 +111,9 @@ export default function App() {
       }
       if (cliActive) startActive = cliActive;
       setDocs(base);
+      if (!startActive || !base.some((d) => d.id === startActive)) {
+        startActive = base[0]?.id ?? "";
+      }
       setActiveId(startActive);
       setReady(true);
     })();
@@ -127,6 +138,23 @@ export default function App() {
       unlisten?.();
     };
   }, []);
+
+  useEffect(() => {
+    if (!isTauri()) return;
+    const win = getCurrentWindow();
+    const unlisten = win.onCloseRequested((e) => {
+      if (docs.some((d) => d.dirty)) {
+        e.preventDefault();
+        const ok = window.confirm(
+          "Hay documentos con cambios sin guardar. ¿Salir de todos modos?",
+        );
+        if (ok) win.close();
+      }
+    });
+    return () => {
+      void unlisten.then((f) => f());
+    };
+  }, [docs]);
 
   useEffect(() => {
     if (!ready || !isTauri() || !sessionFile.current) return;
@@ -171,19 +199,24 @@ export default function App() {
       }
     }
     if (!loaded.length) return;
-    const next = [...docsRef.current];
-    let activateId = "";
-    for (const { path, content } of loaded) {
-      const ex = next.find((d) => d.path === path);
-      if (ex) {
-        if (!activateId) activateId = ex.id;
-        continue;
-      }
-      const doc = makeDoc(content, path);
-      next.push(doc);
-      if (!activateId) activateId = doc.id;
-    }
-    setDocs(next);
+    const activateId = await new Promise<string>((resolve) => {
+      setDocs((prev) => {
+        const next = [...prev];
+        let firstId = "";
+        for (const { path, content } of loaded) {
+          const ex = next.find((d) => d.path === path);
+          if (ex) {
+            if (!firstId) firstId = ex.id;
+            continue;
+          }
+          const doc = makeDoc(content, path);
+          next.push(doc);
+          if (!firstId) firstId = doc.id;
+        }
+        resolve(firstId);
+        return next;
+      });
+    });
     if (activateId) setActiveId(activateId);
   }
 
@@ -205,11 +238,19 @@ export default function App() {
       : `${active.name}.md`;
     const path = await saveDialog({ defaultPath });
     if (!path) return;
-    await invoke("write_file", { path, content: active.content });
+    const savedContent = active.content;
+    try {
+      await invoke("write_file", { path, content: savedContent });
+    } catch (e) {
+      window.alert("No se pudo guardar: " + String(e));
+      return;
+    }
     const id = active.id;
     setDocs((prev) =>
       prev.map((d) =>
-        d.id === id ? { ...d, path, name: baseName(path), dirty: false } : d,
+        d.id === id && d.content === savedContent
+          ? { ...d, path, name: baseName(path), dirty: false }
+          : d,
       ),
     );
   }
@@ -220,10 +261,18 @@ export default function App() {
       await saveAs();
       return;
     }
-    await invoke("write_file", { path: active.path, content: active.content });
+    const savedContent = active.content;
+    try {
+      await invoke("write_file", { path: active.path, content: savedContent });
+    } catch (e) {
+      window.alert("No se pudo guardar: " + String(e));
+      return;
+    }
     const id = active.id;
     setDocs((prev) =>
-      prev.map((d) => (d.id === id ? { ...d, dirty: false } : d)),
+      prev.map((d) =>
+        d.id === id && d.content === savedContent ? { ...d, dirty: false } : d,
+      ),
     );
   }
 
@@ -339,10 +388,14 @@ export default function App() {
 
   if (!ready) {
     return (
-      <div className="app">
-        <header className="topbar">
-          <span className="brand">meditor</span>
-        </header>
+      <div className="splash">
+        <div className="splash-inner">
+          <div className="splash-logo">meditor</div>
+          <div className="splash-bar">
+            <div className="splash-bar-fill" />
+          </div>
+          <div className="splash-hint">Cargando...</div>
+        </div>
       </div>
     );
   }
