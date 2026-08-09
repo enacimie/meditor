@@ -22,6 +22,23 @@ const PAGED_STYLES: Array<Record<string, string>> = [
 
 let seq = 0;
 
+const CODE_BLOCK_MAX_LINES = 45;
+
+function splitLongCodeBlocks(src: string): string {
+  const FENCE_RE = /(^|\n)((```|~~~)[ \t]*[^\n]*)\n([\s\S]*?)\n\3[ \t]*(?=\n|$)/g;
+  return src.replace(FENCE_RE, (match, pre, open, marker, body) => {
+    const bodyLines = body.split("\n");
+    if (bodyLines.length <= CODE_BLOCK_MAX_LINES) return match;
+    const chunks: string[] = [];
+    for (let i = 0; i < bodyLines.length; i += CODE_BLOCK_MAX_LINES) {
+      chunks.push(
+        open + "\n" + bodyLines.slice(i, i + CODE_BLOCK_MAX_LINES).join("\n") + "\n" + marker,
+      );
+    }
+    return pre + chunks.join("\n");
+  });
+}
+
 async function renderContent(el: HTMLElement, value: string): Promise<void> {
   el.innerHTML = renderMarkdown(value);
   const nodes = Array.from(el.querySelectorAll("code.language-mermaid"));
@@ -194,7 +211,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
         const source = sourceRef.current;
         const paged = pagedRef.current;
         if (!source || !paged) return;
-        await renderContent(source, value);
+        await renderContent(source, splitLongCodeBlocks(value));
         if (cancelled) return;
         paged.innerHTML = "";
         const previewer = new Previewer();
