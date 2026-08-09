@@ -150,7 +150,7 @@ export default function App() {
       void invoke<boolean>("confirm", {
         message: "Hay documentos con cambios sin guardar. ¿Salir de todos modos?",
       }).then((ok) => {
-        if (ok) win.close();
+        if (ok) win.destroy();
       });
     });
     return () => {
