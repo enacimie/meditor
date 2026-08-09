@@ -14,7 +14,7 @@ import "katex/dist/katex.min.css";
 import "highlight.js/styles/github.css";
 import pagedCss from "./paged.css?inline";
 
-mermaid.initialize({ startOnLoad: false, securityLevel: "strict" });
+mermaid.initialize({ startOnLoad: false, securityLevel: "strict", suppressErrorRendering: true });
 
 const PAGED_STYLES: Array<Record<string, string>> = [
   { "meditor-paged.css": pagedCss },
@@ -22,21 +22,49 @@ const PAGED_STYLES: Array<Record<string, string>> = [
 
 let seq = 0;
 
+let flashTimer: number | undefined;
+
+let token = 0;
+let activePreviewer: Previewer | undefined;
+
+function getPreviewer(): Previewer {
+  if (activePreviewer) {
+    const { polisher, chunker } = activePreviewer as unknown as {
+      polisher: { destroy(): void };
+      chunker: { destroy(): void };
+    };
+    polisher.destroy();
+    chunker.destroy();
+  }
+  activePreviewer = new Previewer();
+  return activePreviewer;
+}
+
 const CODE_BLOCK_MAX_LINES = 45;
 
-function splitLongCodeBlocks(src: string): string {
-  const FENCE_RE = /(^|\n)((```|~~~)[ \t]*[^\n]*)\n([\s\S]*?)\n\3[ \t]*(?=\n|$)/g;
-  return src.replace(FENCE_RE, (match, pre, open, marker, body) => {
-    const bodyLines = body.split("\n");
-    if (bodyLines.length <= CODE_BLOCK_MAX_LINES) return match;
+function splitLongCodeBlocks(el: HTMLElement): void {
+  const pres = Array.from(el.querySelectorAll("pre"));
+  for (const pre of pres) {
+    const code = pre.querySelector("code");
+    if (!code) continue;
+    const lines = code.innerHTML.split("\n");
+    if (lines.length && lines[lines.length - 1] === "") lines.pop();
+    if (lines.length <= CODE_BLOCK_MAX_LINES) continue;
+    const baseLine = parseInt(pre.getAttribute("data-line") || "0", 10);
+    const codeClass = code.getAttribute("class") || "";
     const chunks: string[] = [];
-    for (let i = 0; i < bodyLines.length; i += CODE_BLOCK_MAX_LINES) {
+    for (let i = 0; i < lines.length; i += CODE_BLOCK_MAX_LINES) {
+      const chunkDataLine = baseLine + i;
       chunks.push(
-        open + "\n" + bodyLines.slice(i, i + CODE_BLOCK_MAX_LINES).join("\n") + "\n" + marker,
+        `<pre data-line="${chunkDataLine}"><code class="${codeClass}">${lines
+          .slice(i, i + CODE_BLOCK_MAX_LINES)
+          .join("\n")}</code></pre>`,
       );
     }
-    return pre + chunks.join("\n");
-  });
+    const wrap = document.createElement("span");
+    wrap.innerHTML = chunks.join("");
+    pre.replaceWith(...Array.from(wrap.childNodes));
+  }
 }
 
 async function renderContent(el: HTMLElement, value: string): Promise<void> {
@@ -57,7 +85,7 @@ async function renderContent(el: HTMLElement, value: string): Promise<void> {
     } catch (err) {
       div = document.createElement("div");
       div.className = "mermaid-error";
-      div.textContent = "Mermaid: " + (err as Error).message;
+      div.textContent = "Mermaid: " + (err instanceof Error ? err.message : String(err));
     }
     if (line) div.setAttribute("data-line", line);
     pre.replaceWith(div);
@@ -129,7 +157,11 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
       target.classList.remove("sync-flash");
       void target.offsetWidth;
       target.classList.add("sync-flash");
-      window.setTimeout(() => target.classList.remove("sync-flash"), 1300);
+      flashTimer && clearTimeout(flashTimer);
+      flashTimer = window.setTimeout(() => {
+        flashTimer = undefined;
+        target?.classList.remove("sync-flash");
+      }, 1300);
     },
     getTargetLine() {
       if (markedLineRef.current !== null) return markedLineRef.current;
@@ -169,11 +201,6 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
     const link = (e.target as HTMLElement).closest("a[href]");
     if (link) {
       const href = link.getAttribute("href") || "";
-      if (/^https?:\/\//i.test(href)) {
-        e.preventDefault();
-        void openExternal(href);
-        return;
-      }
       if (href.startsWith("#")) {
         e.preventDefault();
         try {
@@ -186,6 +213,9 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
         }
         return;
       }
+      e.preventDefault();
+      void openExternal(href);
+      return;
     }
     const el = (e.target as HTMLElement).closest<HTMLElement>("[data-line]");
     if (el) markElement(el);
@@ -211,10 +241,13 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
         const source = sourceRef.current;
         const paged = pagedRef.current;
         if (!source || !paged) return;
-        await renderContent(source, splitLongCodeBlocks(value));
-        if (cancelled) return;
+        token++;
+        const myToken = token;
+        await renderContent(source, value);
+        if (cancelled || myToken !== token) return;
+        splitLongCodeBlocks(source);
         paged.innerHTML = "";
-        const previewer = new Previewer();
+        const previewer = getPreviewer();
         try {
           const html = `<div class="markdown-body doc">${source.innerHTML}</div>`;
           await previewer.preview(html, collectStyles(), paged);

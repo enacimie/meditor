@@ -733,15 +733,25 @@ body,
     display: block;
   }
 
-  .pane {
+  .split-divider {
+    display: none !important;
+  }
+
+  .pane:first-child {
     display: none;
   }
 
-  .pane.preview-scroll {
+  .pane ~ .pane {
     display: block;
     overflow: visible;
     padding: 0;
     border: none;
+    flex: none;
+    width: 100%;
+  }
+
+  .preview-scroll {
+    overflow: visible;
   }
 
   .markdown-body {

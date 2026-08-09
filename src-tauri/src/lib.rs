@@ -23,10 +23,26 @@ fn read_file(path: String) -> Result<String, String> {
 
 #[tauri::command]
 fn write_file(path: String, content: String) -> Result<(), String> {
-    if let Some(parent) = std::path::Path::new(&path).parent() {
+    let path = std::path::Path::new(&path);
+    if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
-    std::fs::write(&path, content).map_err(|e| e.to_string())
+    let mut tmp = path.to_path_buf();
+    let ext = tmp.extension().map_or_else(String::new, |e| {
+        let mut s = String::from(".");
+        s.push_str(e.to_string_lossy().as_ref());
+        s
+    });
+    tmp.set_file_name(format!(
+        ".{}.tmp{}",
+        path.file_name().unwrap_or_default().to_string_lossy(),
+        ext
+    ));
+    std::fs::write(&tmp, content).map_err(|e| e.to_string())?;
+    std::fs::rename(&tmp, path).map_err(|e| {
+        let _ = std::fs::remove_file(&tmp);
+        e.to_string()
+    })
 }
 
 #[tauri::command]
@@ -46,6 +62,9 @@ fn export_pdf(window: tauri::WebviewWindow, path: String) -> Result<(), String> 
         target_os = "openbsd"
     ))]
     {
+        let url = url::Url::from_file_path(&path)
+            .map_err(|_| format!("Ruta inválida para exportar: {path}"))?;
+        let uri = url.as_str().to_string();
         window
             .with_webview(move |webview| {
                 use webkit2gtk::{PrintOperationExt, SettingsExt, WebViewExt};
@@ -60,7 +79,6 @@ fn export_pdf(window: tauri::WebviewWindow, path: String) -> Result<(), String> 
                 let printer = glib::dgettext(Some("gtk30"), "Print to File");
                 print_settings.set_printer(&printer);
                 print_settings.set("output-file-format", Some("pdf"));
-                let uri = format!("file://{}", path);
                 print_settings.set("output-uri", Some(uri.as_str()));
 
                 let page_setup = gtk::PageSetup::new();
@@ -79,7 +97,8 @@ fn export_pdf(window: tauri::WebviewWindow, path: String) -> Result<(), String> 
                 });
                 op.print();
             })
-            .map_err(|e| e.to_string())
+            .map_err(|e| e.to_string())?;
+        Ok(())
     }
     #[cfg(not(any(
         target_os = "linux",
