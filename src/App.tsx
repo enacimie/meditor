@@ -388,10 +388,14 @@ export default function App() {
 
   if (!ready) {
     return (
-      <div className="app">
-        <header className="topbar">
-          <span className="brand">meditor</span>
-        </header>
+      <div className="splash">
+        <div className="splash-inner">
+          <div className="splash-logo">meditor</div>
+          <div className="splash-bar">
+            <div className="splash-bar-fill" />
+          </div>
+          <div className="splash-hint">Cargando...</div>
+        </div>
       </div>
     );
   }
