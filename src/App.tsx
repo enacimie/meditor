@@ -55,11 +55,13 @@ export default function App() {
   const [docView, setDocView] = useState(true);
   const [split, setSplit] = useState(50);
   const [dragging, setDragging] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const sessionFile = useRef<string | null>(null);
   const editorRef = useRef<EditorHandle>(null);
   const previewRef = useRef<PreviewHandle>(null);
   const splitRef = useRef<HTMLDivElement>(null);
   const docsRef = useRef<Doc[]>([]);
+  const menuRef = useRef<HTMLButtonElement>(null);
 
   const active = docs.find((d) => d.id === activeId) ?? docs[0];
 
@@ -171,6 +173,17 @@ export default function App() {
   useEffect(() => {
     document.title = active?.name ?? "meditor";
   }, [active?.name]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [menuOpen]);
 
   function updateContent(content: string) {
     setDocs((prev) =>
@@ -406,20 +419,39 @@ export default function App() {
         <span className="brand">meditor</span>
         <div className="actions">
           <button onClick={newTab} title="Nuevo (Ctrl+N)">
-            Nuevo
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+            <span className="btn-label">Nuevo</span>
           </button>
           <button onClick={openFiles} title="Abrir (Ctrl+O)">
-            Abrir
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+            <span className="btn-label">Abrir</span>
           </button>
           <button onClick={save} title="Guardar (Ctrl+S)">
-            Guardar
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
+            <span className="btn-label">Guardar</span>
           </button>
-          <button onClick={saveAs} title="Guardar como (Ctrl+Shift+S)">
-            Guardar como
-          </button>
-          <button onClick={exportPdf} title="Exportar PDF (Ctrl+E)">
-            PDF
-          </button>
+          <div className="menu-dropdown">
+            <button className="menu-toggle" title="Más opciones" ref={menuRef} onClick={() => setMenuOpen((v) => !v)}>
+              <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+            </button>
+            {menuOpen && (
+              <div className="menu-panel" onMouseLeave={() => setMenuOpen(false)}>
+                <button onClick={() => { saveAs(); setMenuOpen(false); }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
+                  Guardar como<span className="shortcut">Ctrl+Shift+S</span>
+                </button>
+                <button onClick={() => { exportPdf(); setMenuOpen(false); }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15l3 3 3-3"/></svg>
+                  Exportar PDF<span className="shortcut">Ctrl+E</span>
+                </button>
+                <div className="menu-sep" />
+                <button onClick={() => { newTab(); setMenuOpen(false); }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                  Nueva pestaña<span className="shortcut">Ctrl+N</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
       <div className="tabbar">
