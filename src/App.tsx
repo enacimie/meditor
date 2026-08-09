@@ -56,6 +56,7 @@ export default function App() {
   const [split, setSplit] = useState(50);
   const [dragging, setDragging] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [wrap, setWrap] = useState(true);
   const sessionFile = useRef<string | null>(null);
   const editorRef = useRef<EditorHandle>(null);
   const previewRef = useRef<PreviewHandle>(null);
@@ -63,6 +64,7 @@ export default function App() {
   const docsRef = useRef<Doc[]>([]);
   const menuRef = useRef<HTMLButtonElement>(null);
   const idsRef = useRef<string[]>([]);
+  const splitRatioRef = useRef(50);
 
   const active = docs.find((d) => d.id === activeId) ?? docs[0];
 
@@ -86,6 +88,9 @@ export default function App() {
           if (Array.isArray(parsed?.docs) && parsed.docs.length) {
             base = parsed.docs;
             startActive = parsed.activeId;
+          }
+          if (typeof parsed?.split === "number") {
+            splitRatioRef.current = Math.max(20, Math.min(80, parsed.split));
           }
         } catch {
           base = [];
@@ -118,6 +123,7 @@ export default function App() {
         startActive = base[0]?.id ?? "";
       }
       setActiveId(startActive);
+      setSplit(splitRatioRef.current);
       setReady(true);
     })();
   }, []);
@@ -169,7 +175,7 @@ export default function App() {
     const t = setTimeout(() => {
       invoke("write_file", {
         path: file,
-        content: JSON.stringify({ docs, activeId }),
+        content: JSON.stringify({ docs, activeId, split: splitRatioRef.current }),
       }).catch(() => {});
     }, 500);
     return () => clearTimeout(t);
@@ -374,6 +380,7 @@ export default function App() {
     if (e.currentTarget.hasPointerCapture(e.pointerId)) {
       e.currentTarget.releasePointerCapture(e.pointerId);
     }
+    splitRatioRef.current = split;
   }
 
   useEffect(() => {
@@ -468,16 +475,18 @@ export default function App() {
           >
             {d.dirty && <span className="tab-dirty">•</span>}
             <span className="tab-name">{d.name}</span>
-            <button
-              className="tab-close"
-              aria-label="Cerrar pestaña"
-              onClick={(e) => {
-                e.stopPropagation();
-                closeTab(d.id);
-              }}
-            >
-              ×
-            </button>
+            {docs.length > 1 && (
+              <button
+                className="tab-close"
+                aria-label="Cerrar pestaña"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  closeTab(d.id);
+                }}
+              >
+                ×
+              </button>
+            )}
           </div>
         ))}
         <button className="tab-add" aria-label="Nueva pestaña" onClick={newTab}>
@@ -506,6 +515,17 @@ export default function App() {
               </svg>
               Ir al preview
             </button>
+            <button
+              className={wrap ? "sync-btn on" : "sync-btn"}
+              onClick={() => setWrap((w) => !w)}
+              title="Toggle word wrap"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12H3" />
+                <path d="M21 6H3" />
+                <path d="M21 18H3" />
+              </svg>
+            </button>
           </div>
           <Editor
             ref={editorRef}
@@ -513,6 +533,7 @@ export default function App() {
             ids={idsRef.current}
             content={active?.content ?? ""}
             onChange={updateContent}
+            wrap={wrap}
           />
         </div>
         <div

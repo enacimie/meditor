@@ -1,8 +1,10 @@
 import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef } from "react";
 import { EditorView, basicSetup } from "codemirror";
-import { EditorState, type Extension } from "@codemirror/state";
+import { EditorState, type Extension, StateEffect } from "@codemirror/state";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { languages } from "@codemirror/language-data";
+
+const setLineWrapping = StateEffect.define<boolean>();
 
 export type EditorHandle = {
   scrollToLine: (line: number) => void;
@@ -14,10 +16,11 @@ type Props = {
   ids: string[];
   content: string;
   onChange: (content: string) => void;
+  wrap: boolean;
 };
 
 const Editor = forwardRef<EditorHandle, Props>(function Editor(
-  { activeId, ids, content, onChange },
+  { activeId, ids, content, onChange, wrap },
   ref,
 ) {
   const host = useRef<HTMLDivElement>(null);
@@ -97,6 +100,12 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
       states.current.clear();
     };
   }, []);
+
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch({ effects: setLineWrapping.of(wrap) });
+  }, [wrap]);
 
   useEffect(() => {
     const view = viewRef.current;

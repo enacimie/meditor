@@ -216,8 +216,12 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
       return;
     }
     const el = (e.target as HTMLElement).closest<HTMLElement>("[data-line]");
-    if (el) markElement(el);
-    else clearMark();
+    if (el) {
+      markElement(el);
+      if (markedLineRef.current !== null) {
+        onReverseSyncRef.current(markedLineRef.current);
+      }
+    } else clearMark();
   }
 
   function handleDblClick(e: MouseEvent) {
