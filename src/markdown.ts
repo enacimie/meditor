@@ -24,7 +24,7 @@ function addLineNumbers(md: MarkdownIt) {
 }
 
 export const md = new MarkdownIt({
-  html: true,
+  html: false,
   linkify: true,
   typographer: true,
 })

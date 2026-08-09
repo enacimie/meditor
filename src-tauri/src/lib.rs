@@ -9,6 +9,16 @@ use tauri::{Emitter, Manager};
 ))]
 use gtk::prelude::DialogExt;
 
+#[cfg(target_os = "windows")]
+use winapi::um::winuser::{MessageBoxW, MB_YESNO, MB_ICONWARNING, MB_SYSTEMMODAL, MB_OK, MB_ICONERROR, IDYES};
+
+#[cfg(target_os = "windows")]
+use std::ffi::OsStr;
+#[cfg(target_os = "windows")]
+use std::os::windows::ffi::OsStrExt;
+#[cfg(target_os = "windows")]
+use std::ptr;
+
 fn files_from_args(args: &[String]) -> Vec<String> {
     args.iter()
         .skip(1)
@@ -74,16 +84,86 @@ fn confirm(message: String) -> bool {
         let resp = dlg.run();
         return resp == gtk::ResponseType::Yes;
     }
+    #[cfg(target_os = "windows")]
+    {
+        let title: Vec<u16> = OsStr::new("Confirmar").encode_wide().chain(Some(0)).collect();
+        let text: Vec<u16> = OsStr::new(&message).encode_wide().chain(Some(0)).collect();
+        let result = unsafe {
+            MessageBoxW(ptr::null_mut(), text.as_ptr(), title.as_ptr(), MB_YESNO | MB_ICONWARNING | MB_SYSTEMMODAL)
+        };
+        return result == IDYES;
+    }
+    #[cfg(target_os = "macos")]
+    {
+        use std::process::Command;
+        let output = Command::new("osascript")
+            .args([
+                "-e",
+                &format!(
+                    "display dialog \"{}\" with title \"Confirmar\" buttons {{\"No\", \"Yes\"}} default button \"Yes\" with icon caution",
+                    message.replace('"', "\\\"")
+                ),
+            ])
+            .output();
+        match output {
+            Ok(out) => String::from_utf8_lossy(&out.stdout).contains("Yes"),
+            Err(_) => false,
+        }
+    }
     #[cfg(not(any(
         target_os = "linux",
         target_os = "dragonfly",
         target_os = "freebsd",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "windows",
+        target_os = "macos"
     )))]
     {
         let _ = message;
-        true
+        false
+    }
+}
+
+#[tauri::command]
+fn alert(message: String) {
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))]
+    {
+        let dlg = gtk::MessageDialog::new(
+            None::<&gtk::Window>,
+            gtk::DialogFlags::MODAL,
+            gtk::MessageType::Error,
+            gtk::ButtonsType::Ok,
+            &message,
+        );
+        dlg.run();
+    }
+    #[cfg(target_os = "windows")]
+    {
+        let title: Vec<u16> = OsStr::new("Error").encode_wide().chain(Some(0)).collect();
+        let text: Vec<u16> = OsStr::new(&message).encode_wide().chain(Some(0)).collect();
+        unsafe {
+            MessageBoxW(ptr::null_mut(), text.as_ptr(), title.as_ptr(), MB_OK | MB_ICONERROR | MB_SYSTEMMODAL);
+        }
+    }
+    #[cfg(target_os = "macos")]
+    {
+        use std::process::Command;
+        let _ = Command::new("osascript")
+            .args([
+                "-e",
+                &format!(
+                    "display dialog \"{}\" with title \"Error\" buttons {{\"OK\"}} default button \"OK\" with icon stop",
+                    message.replace('"', "\\\"")
+                ),
+            ])
+            .output();
     }
 }
 
@@ -175,7 +255,8 @@ pub fn run() {
             session_path,
             export_pdf,
             cli_files,
-            confirm
+            confirm,
+            alert
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

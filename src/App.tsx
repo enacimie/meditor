@@ -62,6 +62,7 @@ export default function App() {
   const splitRef = useRef<HTMLDivElement>(null);
   const docsRef = useRef<Doc[]>([]);
   const menuRef = useRef<HTMLButtonElement>(null);
+  const idsRef = useRef<string[]>([]);
 
   const active = docs.find((d) => d.id === activeId) ?? docs[0];
 
@@ -123,6 +124,10 @@ export default function App() {
 
   useEffect(() => {
     docsRef.current = docs;
+    const newIds = docs.map((d) => d.id);
+    const same = idsRef.current.length === newIds.length && 
+      idsRef.current.every((id, i) => id === newIds[i]);
+    if (!same) idsRef.current = newIds;
   }, [docs]);
 
   useEffect(() => {
@@ -255,7 +260,7 @@ export default function App() {
     try {
       await invoke("write_file", { path, content: savedContent });
     } catch (e) {
-      window.alert("No se pudo guardar: " + String(e));
+      await invoke("alert", { message: "No se pudo guardar: " + String(e) });
       return;
     }
     const id = active.id;
@@ -278,7 +283,7 @@ export default function App() {
     try {
       await invoke("write_file", { path: active.path, content: savedContent });
     } catch (e) {
-      window.alert("No se pudo guardar: " + String(e));
+      await invoke("alert", { message: "No se pudo guardar: " + String(e) });
       return;
     }
     const id = active.id;
@@ -300,7 +305,7 @@ export default function App() {
     try {
       await invoke("export_pdf", { path });
     } catch (e) {
-      window.alert("Error al exportar PDF: " + String(e));
+      await invoke("alert", { message: "Error al exportar PDF: " + String(e) });
     }
   }
 
@@ -505,7 +510,7 @@ export default function App() {
           <Editor
             ref={editorRef}
             activeId={activeId}
-            ids={docs.map((d) => d.id)}
+            ids={idsRef.current}
             content={active?.content ?? ""}
             onChange={updateContent}
           />

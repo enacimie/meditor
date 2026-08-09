@@ -20,76 +20,31 @@ const PAGED_STYLES: Array<Record<string, string>> = [
   { "meditor-paged.css": pagedCss },
 ];
 
-let seq = 0;
-
-let flashTimer: number | undefined;
-
-let token = 0;
-let activePreviewer: Previewer | undefined;
-
-function getPreviewer(): Previewer {
-  if (activePreviewer) {
-    const { polisher, chunker } = activePreviewer as unknown as {
-      polisher: { destroy(): void };
-      chunker: { destroy(): void };
-    };
-    polisher.destroy();
-    chunker.destroy();
-  }
-  activePreviewer = new Previewer();
-  return activePreviewer;
-}
-
 const CODE_BLOCK_MAX_LINES = 45;
 
-function splitLongCodeBlocks(el: HTMLElement): void {
-  const pres = Array.from(el.querySelectorAll("pre"));
-  for (const pre of pres) {
-    const code = pre.querySelector("code");
-    if (!code) continue;
-    const lines = code.innerHTML.split("\n");
-    if (lines.length && lines[lines.length - 1] === "") lines.pop();
-    if (lines.length <= CODE_BLOCK_MAX_LINES) continue;
-    const baseLine = parseInt(pre.getAttribute("data-line") || "0", 10);
-    const codeClass = code.getAttribute("class") || "";
-    const chunks: string[] = [];
-    for (let i = 0; i < lines.length; i += CODE_BLOCK_MAX_LINES) {
-      const chunkDataLine = baseLine + i;
-      chunks.push(
-        `<pre data-line="${chunkDataLine}"><code class="${codeClass}">${lines
-          .slice(i, i + CODE_BLOCK_MAX_LINES)
-          .join("\n")}</code></pre>`,
-      );
-    }
-    const wrap = document.createElement("span");
-    wrap.innerHTML = chunks.join("");
-    pre.replaceWith(...Array.from(wrap.childNodes));
-  }
-}
-
-async function renderContent(el: HTMLElement, value: string): Promise<void> {
+async function renderContent(el: HTMLElement, value: string, seqRef: React.MutableRefObject<number>): Promise<void> {
   el.innerHTML = renderMarkdown(value);
   const nodes = Array.from(el.querySelectorAll("code.language-mermaid"));
-  for (const code of nodes) {
-    const pre = code.parentElement;
-    if (!pre) continue;
-    const src = code.textContent ?? "";
-    const id = `mmd-${seq++}`;
-    const line = pre.getAttribute("data-line");
-    let div: HTMLDivElement;
-    try {
-      const { svg } = await mermaid.render(id, src);
-      div = document.createElement("div");
-      div.className = "mermaid";
-      div.innerHTML = svg;
-    } catch (err) {
-      div = document.createElement("div");
-      div.className = "mermaid-error";
-      div.textContent = "Mermaid: " + (err instanceof Error ? err.message : String(err));
+    for (const code of nodes) {
+      const pre = code.parentElement;
+      if (!pre) continue;
+      const src = code.textContent ?? "";
+      const id = `mmd-${seqRef.current++}`;
+      const line = pre.getAttribute("data-line");
+      let div: HTMLDivElement;
+      try {
+        const { svg } = await mermaid.render(id, src);
+        div = document.createElement("div");
+        div.className = "mermaid";
+        div.innerHTML = svg;
+      } catch (err) {
+        div = document.createElement("div");
+        div.className = "mermaid-error";
+        div.textContent = "Mermaid: " + (err instanceof Error ? err.message : String(err));
+      }
+      if (line) div.setAttribute("data-line", line);
+      pre.replaceWith(div);
     }
-    if (line) div.setAttribute("data-line", line);
-    pre.replaceWith(div);
-  }
 }
 
 function collectStyles(): Array<Record<string, string>> {
@@ -134,6 +89,49 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
   const onReverseSyncRef = useRef(onReverseSync);
   onReverseSyncRef.current = onReverseSync;
 
+  const seqRef = useRef(0);
+  const tokenRef = useRef(0);
+  const flashTimerRef = useRef<number | undefined>(undefined);
+  const activePreviewerRef = useRef<Previewer | undefined>(undefined);
+
+  function getPreviewer(): Previewer {
+    if (activePreviewerRef.current) {
+      const { polisher, chunker } = activePreviewerRef.current as unknown as {
+        polisher: { destroy(): void };
+        chunker: { destroy(): void };
+      };
+      polisher.destroy();
+      chunker.destroy();
+    }
+    activePreviewerRef.current = new Previewer();
+    return activePreviewerRef.current;
+  }
+
+  function splitLongCodeBlocks(el: HTMLElement): void {
+    const pres = Array.from(el.querySelectorAll("pre"));
+    for (const pre of pres) {
+      const code = pre.querySelector("code");
+      if (!code) continue;
+      const lines = code.innerHTML.split("\n");
+      if (lines.length && lines[lines.length - 1] === "") lines.pop();
+      if (lines.length <= CODE_BLOCK_MAX_LINES) continue;
+      const baseLine = parseInt(pre.getAttribute("data-line") || "0", 10);
+      const codeClass = code.getAttribute("class") || "";
+      const chunks: string[] = [];
+      for (let i = 0; i < lines.length; i += CODE_BLOCK_MAX_LINES) {
+        const chunkDataLine = baseLine + i;
+        chunks.push(
+          `<pre data-line="${chunkDataLine}"><code class="${codeClass}">${lines
+            .slice(i, i + CODE_BLOCK_MAX_LINES)
+            .join("\n")}</code></pre>`,
+        );
+      }
+      const wrap = document.createElement("span");
+      wrap.innerHTML = chunks.join("");
+      pre.replaceWith(...Array.from(wrap.childNodes));
+    }
+  }
+
   function activeContainer(): HTMLElement | null {
     return docViewRef.current ? pagedRef.current : webRef.current;
   }
@@ -157,9 +155,9 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
       target.classList.remove("sync-flash");
       void target.offsetWidth;
       target.classList.add("sync-flash");
-      flashTimer && clearTimeout(flashTimer);
-      flashTimer = window.setTimeout(() => {
-        flashTimer = undefined;
+      flashTimerRef.current && clearTimeout(flashTimerRef.current);
+      flashTimerRef.current = window.setTimeout(() => {
+        flashTimerRef.current = undefined;
         target?.classList.remove("sync-flash");
       }, 1300);
     },
@@ -231,8 +229,9 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
     }
   }
 
-  useEffect(() => {
+useEffect(() => {
     let cancelled = false;
+    let debounceTimer: number | undefined;
 
     const run = async () => {
       markedLineRef.current = null;
@@ -241,10 +240,10 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
         const source = sourceRef.current;
         const paged = pagedRef.current;
         if (!source || !paged) return;
-        token++;
-        const myToken = token;
-        await renderContent(source, value);
-        if (cancelled || myToken !== token) return;
+        tokenRef.current++;
+        const myToken = tokenRef.current;
+        await renderContent(source, value, seqRef);
+        if (cancelled || myToken !== tokenRef.current) return;
         splitLongCodeBlocks(source);
         paged.innerHTML = "";
         const previewer = getPreviewer();
@@ -257,20 +256,19 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
       } else {
         const web = webRef.current;
         if (!web) return;
-        await renderContent(web, value);
+        await renderContent(web, value, seqRef);
       }
     };
 
-    if (docView) {
-      const t = setTimeout(run, 250);
-      return () => {
-        cancelled = true;
-        clearTimeout(t);
-      };
-    }
-    run();
+    const schedule = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = window.setTimeout(run, docView ? 250 : 50);
+    };
+
+    schedule();
     return () => {
       cancelled = true;
+      if (debounceTimer) clearTimeout(debounceTimer);
     };
   }, [value, docView]);
 

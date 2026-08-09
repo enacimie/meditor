@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef } from "react";
 import { EditorView, basicSetup } from "codemirror";
 import { EditorState, type Extension } from "@codemirror/state";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
@@ -27,8 +27,11 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   const activeIdRef = useRef(activeId);
   const suppress = useRef(false);
   const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
   const lastIdsRef = useRef<string[]>([]);
+
+  useLayoutEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
   useImperativeHandle(ref, () => ({
     scrollToLine(line: number) {
