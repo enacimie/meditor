@@ -9,6 +9,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   open as openDialog,
   save as saveDialog,
+  ask as confirmDialog,
 } from "@tauri-apps/plugin-dialog";
 import { listen } from "@tauri-apps/api/event";
 import Editor, { type EditorHandle } from "./Editor";
@@ -145,13 +146,14 @@ export default function App() {
     if (!isTauri()) return;
     const win = getCurrentWindow();
     const unlisten = win.onCloseRequested((e) => {
-      if (docs.some((d) => d.dirty)) {
-        e.preventDefault();
-        const ok = window.confirm(
-          "Hay documentos con cambios sin guardar. ¿Salir de todos modos?",
-        );
+      if (!docs.some((d) => d.dirty)) return;
+      e.preventDefault();
+      void confirmDialog(
+        "Hay documentos con cambios sin guardar. ¿Salir de todos modos?",
+        { title: "Salir de meditor", kind: "warning" },
+      ).then((ok) => {
         if (ok) win.close();
-      }
+      });
     });
     return () => {
       void unlisten.then((f) => f());
@@ -304,15 +306,14 @@ export default function App() {
     }
   }
 
-  function closeTab(id: string) {
+  async function closeTab(id: string) {
     const doc = docs.find((d) => d.id === id);
-    if (
-      doc?.dirty &&
-      !window.confirm(
+    if (doc?.dirty) {
+      const ok = await confirmDialog(
         `"${doc.name}" tiene cambios sin guardar. ¿Cerrar de todos modos?`,
-      )
-    ) {
-      return;
+        { title: "Cerrar pestaña", kind: "warning" },
+      );
+      if (!ok) return;
     }
     const idx = docs.findIndex((d) => d.id === id);
     const next = docs.filter((d) => d.id !== id);
