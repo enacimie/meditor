@@ -19,6 +19,17 @@ use std::os::windows::ffi::OsStrExt;
 #[cfg(target_os = "windows")]
 use std::ptr;
 
+#[cfg(any(
+    target_os = "linux",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd"
+))]
+fn run_on_gtk_main<F: FnOnce() + Send + 'static>(f: F) {
+    gtk::glib::MainContext::default().invoke(f);
+}
+
 fn files_from_args(args: &[String]) -> Vec<String> {
     args.iter()
         .skip(1)
@@ -74,15 +85,19 @@ fn confirm(message: String) -> bool {
         target_os = "openbsd"
     ))]
     {
-        let dlg = gtk::MessageDialog::new(
-            None::<&gtk::Window>,
-            gtk::DialogFlags::MODAL,
-            gtk::MessageType::Warning,
-            gtk::ButtonsType::YesNo,
-            &message,
-        );
-        let resp = dlg.run();
-        return resp == gtk::ResponseType::Yes;
+        let (tx, rx) = std::sync::mpsc::channel();
+        run_on_gtk_main(move || {
+            let dlg = gtk::MessageDialog::new(
+                None::<&gtk::Window>,
+                gtk::DialogFlags::MODAL,
+                gtk::MessageType::Warning,
+                gtk::ButtonsType::YesNo,
+                &message,
+            );
+            let resp = dlg.run();
+            let _ = tx.send(resp == gtk::ResponseType::Yes);
+        });
+        rx.recv().unwrap_or(false)
     }
     #[cfg(target_os = "windows")]
     {
@@ -135,14 +150,19 @@ fn alert(message: String) {
         target_os = "openbsd"
     ))]
     {
-        let dlg = gtk::MessageDialog::new(
-            None::<&gtk::Window>,
-            gtk::DialogFlags::MODAL,
-            gtk::MessageType::Error,
-            gtk::ButtonsType::Ok,
-            &message,
-        );
-        dlg.run();
+        let (tx, rx) = std::sync::mpsc::channel();
+        run_on_gtk_main(move || {
+            let dlg = gtk::MessageDialog::new(
+                None::<&gtk::Window>,
+                gtk::DialogFlags::MODAL,
+                gtk::MessageType::Error,
+                gtk::ButtonsType::Ok,
+                &message,
+            );
+            dlg.run();
+            let _ = tx.send(());
+        });
+        rx.recv().ok();
     }
     #[cfg(target_os = "windows")]
     {
