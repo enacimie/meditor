@@ -10,7 +10,18 @@ import abbr from "markdown-it-abbr";
 import { full as emoji } from "markdown-it-emoji";
 import container from "markdown-it-container";
 import texmath from "markdown-it-texmath";
-import highlightjs from "markdown-it-highlightjs";
+import highlightjs from "markdown-it-highlightjs/core";
+import hljs from "highlight.js/lib/core";
+import javascript from "highlight.js/lib/languages/javascript";
+import typescript from "highlight.js/lib/languages/typescript";
+import json from "highlight.js/lib/languages/json";
+import bash from "highlight.js/lib/languages/bash";
+import css from "highlight.js/lib/languages/css";
+import xml from "highlight.js/lib/languages/xml";
+import markdownLanguage from "highlight.js/lib/languages/markdown";
+import python from "highlight.js/lib/languages/python";
+import rust from "highlight.js/lib/languages/rust";
+import sql from "highlight.js/lib/languages/sql";
 import katex from "katex";
 
 function addLineNumbers(md: MarkdownIt) {
@@ -28,7 +39,30 @@ export const md = new MarkdownIt({
   linkify: true,
   typographer: true,
 })
-  .use(highlightjs)
+  .use(highlightjs, {
+    hljs,
+    auto: true,
+    code: true,
+    register: {
+      javascript,
+      typescript,
+      json,
+      bash,
+      css,
+      xml,
+      markdown: markdownLanguage,
+      python,
+      rust,
+      sql,
+    },
+    registerAliases: {
+      javascript: ["js", "jsx"],
+      typescript: ["ts", "tsx"],
+      bash: ["sh", "shell", "zsh"],
+      xml: ["html", "xhtml", "svg"],
+      markdown: ["md"],
+    },
+  })
   .use(taskLists, { enabled: true })
   .use(footnote)
   .use(mark)

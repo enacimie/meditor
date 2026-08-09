@@ -1,3 +1,10 @@
+declare module "markdown-it-highlightjs/core" {
+  const plugin: (
+    md: import("markdown-it").default,
+    options?: Record<string, unknown>,
+  ) => void;
+  export default plugin;
+}
 declare module "markdown-it-task-lists";
 declare module "markdown-it-footnote";
 declare module "markdown-it-mark";

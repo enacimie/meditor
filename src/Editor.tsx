@@ -1,10 +1,12 @@
 import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef } from "react";
 import { EditorView, basicSetup } from "codemirror";
-import { EditorState, type Extension, StateEffect } from "@codemirror/state";
+import {
+  Compartment,
+  EditorState,
+  type Extension,
+} from "@codemirror/state";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { languages } from "@codemirror/language-data";
-
-const setLineWrapping = StateEffect.define<boolean>();
 
 export type EditorHandle = {
   scrollToLine: (line: number) => void;
@@ -27,6 +29,7 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   const viewRef = useRef<EditorView | null>(null);
   const states = useRef(new Map<string, EditorState>());
   const extRef = useRef<Extension[]>([]);
+  const wrapCompartment = useRef(new Compartment());
   const activeIdRef = useRef(activeId);
   const suppress = useRef(false);
   const onChangeRef = useRef(onChange);
@@ -61,7 +64,7 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
     const extensions: Extension[] = [
       basicSetup,
       markdown({ base: markdownLanguage, codeLanguages: languages }),
-      EditorView.lineWrapping,
+      wrapCompartment.current.of(wrap ? EditorView.lineWrapping : []),
       EditorView.updateListener.of((u) => {
         if (u.docChanged && !suppress.current) {
           onChangeRef.current(u.state.doc.toString());
@@ -104,7 +107,11 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   useEffect(() => {
     const view = viewRef.current;
     if (!view) return;
-    view.dispatch({ effects: setLineWrapping.of(wrap) });
+    view.dispatch({
+        effects: wrapCompartment.current.reconfigure(
+          wrap ? EditorView.lineWrapping : [],
+        ),
+      });
   }, [wrap]);
 
   useEffect(() => {
@@ -126,6 +133,12 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
     }
     suppress.current = true;
     view.setState(states.current.get(activeId)!);
+    view.dispatch({
+      effects: wrapCompartment.current.reconfigure(
+        wrap ? EditorView.lineWrapping : [],
+      ),
+    });
+    states.current.set(activeId, view.state);
     suppress.current = false;
   }, [activeId, content]);
 
