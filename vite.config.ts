@@ -13,6 +13,18 @@ export default defineConfig(async () => ({
   base: "./",
   plugins: [wasm(), react()],
 
+  optimizeDeps: {
+    // Prevent Vite from pre-bundling @myriaddreamin packages in dev mode.
+    // These packages use .wasm?url imports internally, and the vite-plugin-wasm
+    // plugin handles them. Pre-bundling would double-process and break WASM
+    // resolution in the Vite 7 dev server.
+    exclude: [
+      "@myriaddreamin/typst.ts",
+      "@myriaddreamin/typst-ts-web-compiler",
+      "@myriaddreamin/typst-ts-renderer",
+    ],
+  },
+
   worker: {
     format: "es",
   },
