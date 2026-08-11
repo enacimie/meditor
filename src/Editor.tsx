@@ -20,10 +20,16 @@ import "./Editor.css";
 
 // Lazy-load the Typst language mode so the WASM/Lezer binary doesn't block
 // the initial render or break E2E tests (which only use markdown docs).
+// Resets on failure so the user can retry after a transient error.
 let typstLangPromise: Promise<Extension> | null = null;
 function getTypstLang(): Promise<Extension> {
   if (!typstLangPromise) {
-    typstLangPromise = import("codemirror-lang-typst").then((m) => m.typst_lezer());
+    typstLangPromise = import("codemirror-lang-typst")
+      .then((m) => m.typst_lezer())
+      .catch((e) => {
+        typstLangPromise = null; // allow retry
+        throw e;
+      });
   }
   return typstLangPromise;
 }

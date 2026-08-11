@@ -32,6 +32,7 @@ import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 
 import type { Doc, DocKind } from "./types";
 import type { Theme } from "./components/types";
+import { getTypst } from "./TypstPreview";
 import "./App.css";
 
 type FileOperation = "open" | "save" | "saveAs" | "export";
@@ -640,8 +641,9 @@ export default function App() {
     try {
       const base = active.name.replace(/\.(md|markdown|txt|typ|typst)$/i, "") || t("doc.defaultExport");
       if (active.kind === "typst") {
-        // Typst: compile to PDF via WASM, then save via Tauri dialog
-        const { $typst } = await import("@myriaddreamin/typst.ts");
+        // Typst: compile to PDF via WASM (reuses the same cached module as
+        // the preview), then save via Tauri dialog.
+        const { $typst } = await getTypst();
         const pdfBytes = await $typst.pdf({ mainContent: active.content });
         if (!pdfBytes) throw new Error("Typst compilation produced no output");
         const defaultName = `${base}.pdf`;

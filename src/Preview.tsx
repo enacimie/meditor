@@ -327,7 +327,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
 
   if (kind === "typst") {
     return (
-      <Suspense fallback={<div className="typst-loading" role="status">{t("preview.typstCompiling")}</div>}>
+      <Suspense fallback={<div className="typst-loading" role="status"><span className="typst-spinner" aria-hidden="true" />{t("preview.typstCompiling")}</div>}>
         <TypstPreview value={value} t={t} onReverseSync={onReverseSync} />
       </Suspense>
     );

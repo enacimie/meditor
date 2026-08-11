@@ -11,10 +11,16 @@ import "./Preview.css";
 
 // Lazy-load the Typst compiler — ~3 MB WASM binary that we only fetch when
 // the user opens a .typ document. Cached so every Typst tab reuses the same
-// module instance.
+// module instance. Resets on failure so the user can retry after a transient
+// network error or corrupted cache.
 let typstModule: Promise<typeof import("@myriaddreamin/typst.ts")> | null = null;
-function getTypst() {
-  typstModule ??= import("@myriaddreamin/typst.ts");
+export function getTypst() {
+  if (!typstModule) {
+    typstModule = import("@myriaddreamin/typst.ts").catch((e) => {
+      typstModule = null; // allow retry
+      throw e;
+    });
+  }
   return typstModule;
 }
 
