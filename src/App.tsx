@@ -33,6 +33,7 @@ import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import type { Doc, DocKind } from "./types";
 import type { Theme } from "./components/types";
 import { getTypst } from "./TypstPreview";
+import { compileLatexToPdf } from "./LatexPreview";
 import "./App.css";
 
 type FileOperation = "open" | "save" | "saveAs" | "export";
@@ -657,8 +658,11 @@ export default function App() {
         const defaultName = `${base}.pdf`;
         await invoke("write_pdf_bytes", { pdfBytes: Array.from(pdfBytes), defaultName });
       } else if (active.kind === "latex") {
-        // LaTeX: compilation not yet integrated — export as raw .tex source.
-        await invoke("export_pdf", { defaultName: `${base}.pdf` });
+        // LaTeX: compile to PDF via SwiftLaTeX WASM, then save via Tauri dialog.
+        const pdfBytes = await compileLatexToPdf(active.content);
+        if (!pdfBytes) throw new Error("LaTeX compilation produced no output");
+        const defaultName = `${base}.pdf`;
+        await invoke("write_pdf_bytes", { pdfBytes: Array.from(pdfBytes), defaultName });
       } else {
         await invoke("export_pdf", { defaultName: `${base}.pdf` });
       }

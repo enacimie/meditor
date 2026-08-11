@@ -189,6 +189,8 @@ export const zh = {
   "preview.typstError": "Typst：",
   "preview.pages": "pages",
   "preview.latexNotice": "LaTeX compilation coming soon — showing raw source.",
+  "preview.latexCompiling": "Compiling LaTeX...",
+  "preview.latexError": "LaTeX:",
   "preview.latexEmpty": "Empty LaTeX document.",
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",

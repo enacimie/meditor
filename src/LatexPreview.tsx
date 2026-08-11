@@ -1,11 +1,88 @@
 import {
   forwardRef,
+  useEffect,
   useImperativeHandle,
   useRef,
-  type MouseEvent,
+  useState,
 } from "react";
 import type { TranslationFn } from "./i18n/translations";
 import "./Preview.css";
+
+// ---- SwiftLaTeX lazy loader ----
+
+interface CompileResult {
+  pdf: Uint8Array | undefined;
+  status: number;
+  log: string;
+}
+
+interface PdfTeXEngineClass {
+  new(): PdfTeXEngineInstance;
+}
+
+interface PdfTeXEngineInstance {
+  loadEngine(): Promise<void>;
+  writeMemFSFile(filename: string, content: string | Uint8Array): void;
+  setEngineMainFile(filename: string): void;
+  compileLaTeX(): Promise<CompileResult>;
+  flushCache(): void;
+  closeWorker(): void;
+}
+
+let enginePromise: Promise<PdfTeXEngineClass> | null = null;
+
+const SWIFTLATEX_BASE = "/swiftlatex/";
+
+async function fetchAndPatchEngine(): Promise<PdfTeXEngineClass> {
+  const resp = await fetch(SWIFTLATEX_BASE + "PdfTeXEngine.js");
+  if (!resp.ok) throw new Error(`Failed to load PdfTeXEngine.js: ${resp.status}`);
+  let code = await resp.text();
+
+  // Patch the hardcoded relative ENGINE_PATH to absolute URL so the Web Worker
+  // can resolve swiftlatexpdftex.js (and its .wasm) from the correct origin.
+  code = code.replace(
+    "var ENGINE_PATH = 'swiftlatexpdftex.js'",
+    `var ENGINE_PATH = '${SWIFTLATEX_BASE}swiftlatexpdftex.js'`,
+  );
+
+  // PdfTeXEngine.js is a UMD module that assigns to a local `exports` variable.
+  // Execute it in a scoped Function so we can capture that exports object.
+  const exports: Record<string, unknown> = {};
+  new Function("exports", code)(exports);
+  return exports.PdfTeXEngine as PdfTeXEngineClass;
+}
+
+function getLatexEngineClass(): Promise<PdfTeXEngineClass> {
+  if (!enginePromise) {
+    enginePromise = fetchAndPatchEngine()
+      .then((cls) => cls)
+      .catch((e) => {
+        enginePromise = null; // allow retry
+        throw e;
+      });
+  }
+  return enginePromise;
+}
+
+/** One-shot compilation: LaTeX source → PDF Uint8Array. */
+export async function compileLatexToPdf(source: string): Promise<Uint8Array> {
+  const cls = await getLatexEngineClass();
+  const eng = new cls();
+  await eng.loadEngine();
+  try {
+    eng.writeMemFSFile("main.tex", source);
+    eng.setEngineMainFile("main.tex");
+    const result = await eng.compileLaTeX();
+    if (result.status !== 0 || !result.pdf) {
+      throw new Error(result.log || `Exit status ${result.status}`);
+    }
+    return result.pdf;
+  } finally {
+    eng.closeWorker();
+  }
+}
+
+// ---- Component ----
 
 export type LatexPreviewHandle = {
   scrollToLine: (line: number) => void;
@@ -20,66 +97,151 @@ type Props = {
 };
 
 const LatexPreview = forwardRef<LatexPreviewHandle, Props>(
-  function LatexPreview({ value, t, onReverseSync }, ref) {
+  function LatexPreview({ value, t, onReverseSync: _onReverseSync }, ref) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const preRef = useRef<HTMLPreElement>(null);
-    const markedLineRef = useRef<number | null>(null);
-
-    /** Read the actual line-height from the <pre> element's computed style. */
-    function getLineHeight(): number {
-      const pre = preRef.current;
-      if (!pre) return 22; // fallback to CSS default
-      const style = getComputedStyle(pre);
-      const lh = parseFloat(style.lineHeight);
-      return isNaN(lh) || lh <= 0 ? 22 : lh;
-    }
+    const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+    const [log, setLog] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [retryToken, setRetryToken] = useState(0);
+    const engineRef = useRef<PdfTeXEngineInstance | null>(null);
+    const seqRef = useRef(0);
 
     useImperativeHandle(ref, () => ({
-      scrollToLine(line: number) {
-        const pre = preRef.current;
-        if (!pre || !containerRef.current) return;
-        // LaTeX source: each line is a text node or <span> inside the <pre>
-        const lines = pre.innerText.split("\n");
-        const targetLine = Math.min(line, lines.length - 1);
-        // Scroll the container so the target line is roughly centered
-        const lineHeight = getLineHeight();
-        const scrollTarget = Math.max(0, targetLine * lineHeight - containerRef.current.clientHeight / 2);
-        containerRef.current.scrollTo({ top: scrollTarget, behavior: "smooth" });
+      scrollToLine(_line: number) {
+        // PDF embedded in iframe — line-level sync not yet supported.
+        // Future: could use SyncTeX data from SwiftLaTeX.
       },
       getTargetLine(): number {
-        if (markedLineRef.current !== null) return markedLineRef.current;
-        const container = containerRef.current;
-        if (!container) return 0;
-        const scrollTop = container.scrollTop;
-        const lineHeight = getLineHeight();
-        return Math.floor(scrollTop / lineHeight);
+        return 0;
       },
       clearMark() {
-        markedLineRef.current = null;
+        /* no-op for PDF view */
       },
     }));
 
-    function handleClick(e: MouseEvent) {
-      const pre = preRef.current;
-      if (!pre) return;
-      // Approximate clicked line from click position
-      const rect = pre.getBoundingClientRect();
-      const clickY = e.clientY - rect.top;
-      const lineHeight = getLineHeight();
-      const line = Math.floor(clickY / lineHeight);
-      markedLineRef.current = line;
-      if (line >= 0) onReverseSync(line);
-    }
+    // Compile LaTeX → PDF via SwiftLaTeX WASM
+    useEffect(() => {
+      if (!value.trim()) {
+        setPdfUrl(null);
+        setLog(null);
+        setError(null);
+        return;
+      }
+
+      let cancelled = false;
+      const run = async () => {
+        // Obtain engine class (lazy, cached across compilations)
+        let cls: PdfTeXEngineClass;
+        try {
+          cls = await getLatexEngineClass();
+        } catch {
+          if (!cancelled) setError("Could not load LaTeX engine");
+          return;
+        }
+        if (cancelled) return;
+
+        setLoading(true);
+        setError(null);
+        seqRef.current++;
+        const mySeq = seqRef.current;
+
+        try {
+          // Reuse the same engine instance across recompilations, just
+          // flushing the virtual filesystem between runs.
+          if (!engineRef.current) {
+            const eng = new cls();
+            await eng.loadEngine();
+            engineRef.current = eng;
+          }
+          const eng = engineRef.current;
+          eng.flushCache();
+          eng.writeMemFSFile("main.tex", value);
+          eng.setEngineMainFile("main.tex");
+
+          const result = await eng.compileLaTeX();
+          if (cancelled || mySeq !== seqRef.current) return;
+
+          setLog(result.log);
+
+          if (result.status === 0 && result.pdf) {
+            // Revoke previous blob to avoid memory leaks
+            if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+            const blob = new Blob([result.pdf], { type: "application/pdf" });
+            setPdfUrl(URL.createObjectURL(blob));
+          } else {
+            setPdfUrl(null);
+            const msg = result.log || `Exit status ${result.status}`;
+            setError(`${t("preview.latexError")} ${msg}`);
+          }
+          setLoading(false);
+        } catch (e) {
+          if (cancelled || mySeq !== seqRef.current) return;
+          const message = e instanceof Error ? e.message : String(e);
+          setError(`${t("preview.latexError")} ${message}`);
+          setLoading(false);
+        }
+      };
+
+      const timer = window.setTimeout(() => {
+        void run();
+      }, 300); // slightly longer debounce — LaTeX is heavier than Markdown
+      return () => {
+        cancelled = true;
+        window.clearTimeout(timer);
+      };
+    }, [value, t, retryToken]);
+
+    // Cleanup blob URL and engine worker on unmount
+    useEffect(() => {
+      return () => {
+        if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+        engineRef.current?.closeWorker();
+        engineRef.current = null;
+      };
+    }, []);
 
     return (
-      <div ref={containerRef} className="latex-preview" onClick={handleClick}>
-        <div className="latex-notice">
-          <span className="latex-notice-icon" aria-hidden="true">📄</span>
-          <span>{t("preview.latexNotice")}</span>
-        </div>
-        <pre ref={preRef} className="latex-source">
-          {value || t("preview.latexEmpty")}
-        </pre>
+      <div ref={containerRef} className="latex-preview">
+        {loading && !pdfUrl && (
+          <div className="typst-loading" role="status">
+            <span className="typst-spinner" aria-hidden="true" />
+            {t("preview.latexCompiling")}
+          </div>
+        )}
+
+        {error && (
+          <div className="preview-error" role="alert" aria-live="assertive">
+            <strong>{t("preview.unavailable")}</strong>
+            {log && <pre className="latex-log">{log}</pre>}
+            <pre className="latex-log">{error}</pre>
+            <button type="button" onClick={() => setRetryToken((t) => t + 1)}>
+              {t("preview.retry")}
+            </button>
+          </div>
+        )}
+
+        {pdfUrl && (
+          <iframe
+            className="latex-iframe"
+            src={pdfUrl}
+            title="LaTeX PDF preview"
+            sandbox="allow-scripts"
+          />
+        )}
+
+        {!loading && !pdfUrl && !error && value.trim() && (
+          <div className="latex-notice">
+            <span className="latex-notice-icon" aria-hidden="true">📄</span>
+            <span>{t("preview.latexNotice")}</span>
+          </div>
+        )}
+
+        {!value.trim() && (
+          <div className="latex-notice">
+            <span>{t("preview.latexEmpty")}</span>
+          </div>
+        )}
       </div>
     );
   },

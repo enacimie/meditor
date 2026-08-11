@@ -702,12 +702,46 @@
   }
 }
 
-/* ---- LaTeX preview (raw source without compilation) ---- */
+/* ---- LaTeX preview (SwiftLaTeX WASM compilation) ---- */
 .latex-preview {
   flex: 1;
   overflow: auto;
   background: var(--bg);
-  scroll-behavior: smooth;
+  display: flex;
+  flex-direction: column;
+}
+
+.latex-iframe {
+  flex: 1;
+  width: 100%;
+  border: none;
+  background: #ffffff;
+}
+
+:root[data-theme="dark"] .latex-iframe {
+  background: #1a1a2e;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"] .latex-iframe {
+    background: #1a1a2e;
+  }
+}
+
+.latex-log {
+  margin: 8px 0 0;
+  padding: 8px 12px;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  max-height: 200px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--fg);
 }
 
 .latex-notice {
