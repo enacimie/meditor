@@ -183,6 +183,7 @@ export const zh = {
   "doc.typstSample": "typst-sample",
   "preview.typstCompiling": "正在编译 Typst…",
   "preview.typstError": "Typst：",
+  "preview.pages": "pages",
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
 
 };

@@ -437,29 +437,90 @@
 .typst-preview {
   flex: 1;
   overflow: auto;
-  background: var(--bg);
+  scroll-behavior: smooth;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.015) 2px,
+      rgba(0, 0, 0, 0.015) 4px
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--bg) 97%, var(--border)) 0%,
+      var(--bg) 30%
+    );
+  transition: background 0.3s ease;
+}
+
+/* Desk / workspace feel in dark mode */
+:root[data-theme="dark"] .typst-preview {
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(255, 255, 255, 0.012) 2px,
+      rgba(255, 255, 255, 0.012) 4px
+    ),
+    linear-gradient(
+      180deg,
+      var(--bg-alt) 0%,
+      color-mix(in srgb, var(--bg) 60%, #0d1117) 100%
+    );
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"] .typst-preview {
+    background:
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(255, 255, 255, 0.012) 2px,
+        rgba(255, 255, 255, 0.012) 4px
+      ),
+      linear-gradient(
+        180deg,
+        var(--bg-alt) 0%,
+        color-mix(in srgb, var(--bg) 60%, #0d1117) 100%
+      );
+  }
+}
+
+/* Contrast theme: flat black, no texture */
+:root[data-theme="contrast"] .typst-preview {
+  background: #000000;
 }
 
 .typst-loading {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  padding: 48px 16px;
+  gap: 16px;
+  padding: 64px 16px;
   color: var(--fg);
   font-size: 14px;
   opacity: 0.72;
   user-select: none;
+  animation: typst-loading-fade 0.35s ease;
+}
+
+@keyframes typst-loading-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 0.72; transform: translateY(0); }
 }
 
 .typst-spinner {
   display: inline-block;
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   border: 2.5px solid var(--border);
   border-top-color: var(--accent);
   border-radius: 50%;
-  animation: typst-spin 0.7s linear infinite;
+  animation: typst-spin 0.65s linear infinite;
 }
 
 @keyframes typst-spin {
@@ -467,44 +528,244 @@
 }
 
 .typst-output {
-  padding: 24px;
+  padding: 32px 28px 48px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
+  gap: 28px;
+  animation: typst-output-fade 0.4s ease;
 }
 
-/* Typst SVGs are full-page — center them on a subtle background */
-.typst-output > svg {
+@keyframes typst-output-fade {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Page counter — subtle pill at the top */
+.typst-page-counter {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg);
+  opacity: 0.45;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 12px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--bg);
+  user-select: none;
+  transition:
+    opacity 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.typst-page-counter:hover {
+  opacity: 0.72;
+  border-color: var(--accent);
+}
+
+/* SVG wrapper — ensures overflow containment */
+.typst-svg-wrapper {
+  max-width: 100%;
+  min-width: 0;
+  display: contents;
+}
+
+/* Page SVGs — paper-like with deep, realistic shadows */
+.typst-output svg {
   max-width: 100%;
   height: auto;
   background: #ffffff;
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.12),
-    0 8px 24px rgba(0, 0, 0, 0.08);
   border-radius: 2px;
+  box-shadow:
+    /* Fine edge highlight */
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    /* Close shadow for depth */
+    0 1px 2px rgba(0, 0, 0, 0.08),
+    /* Mid shadow */
+    0 4px 8px rgba(0, 0, 0, 0.06),
+    /* Far ambient shadow */
+    0 12px 32px rgba(0, 0, 0, 0.07),
+    /* Deep cast shadow */
+    0 24px 56px rgba(0, 0, 0, 0.05);
+  transition:
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+  will-change: transform;
 }
 
-:root[data-theme="dark"] .typst-output > svg {
+/* Subtle lift on hover */
+.typst-output svg:hover {
+  transform: translateY(-1px);
   box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.4),
-    0 8px 24px rgba(0, 0, 0, 0.3);
+    0 0 0 1px rgba(0, 0, 0, 0.07),
+    0 2px 4px rgba(0, 0, 0, 0.10),
+    0 6px 12px rgba(0, 0, 0, 0.08),
+    0 16px 40px rgba(0, 0, 0, 0.09),
+    0 32px 64px rgba(0, 0, 0, 0.06);
+}
+
+/* Dark mode: paper glows subtly */
+:root[data-theme="dark"] .typst-output svg {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    0 6px 16px rgba(0, 0, 0, 0.25),
+    0 18px 40px rgba(0, 0, 0, 0.3),
+    0 32px 72px rgba(0, 0, 0, 0.35);
+}
+
+:root[data-theme="dark"] .typst-output svg:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 3px 6px rgba(0, 0, 0, 0.35),
+    0 8px 20px rgba(0, 0, 0, 0.3),
+    0 24px 48px rgba(0, 0, 0, 0.35),
+    0 40px 80px rgba(0, 0, 0, 0.4);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root[data-theme="system"] .typst-output > svg {
+  :root[data-theme="system"] .typst-output svg {
     box-shadow:
-      0 1px 3px rgba(0, 0, 0, 0.4),
-      0 8px 24px rgba(0, 0, 0, 0.3);
+      0 0 0 1px rgba(255, 255, 255, 0.04),
+      0 2px 4px rgba(0, 0, 0, 0.3),
+      0 6px 16px rgba(0, 0, 0, 0.25),
+      0 18px 40px rgba(0, 0, 0, 0.3),
+      0 32px 72px rgba(0, 0, 0, 0.35);
   }
+
+  :root[data-theme="system"] .typst-output svg:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.06),
+      0 3px 6px rgba(0, 0, 0, 0.35),
+      0 8px 20px rgba(0, 0, 0, 0.3),
+      0 24px 48px rgba(0, 0, 0, 0.35),
+      0 40px 80px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* Contrast theme: high-contrast outlines */
+:root[data-theme="contrast"] .typst-output svg {
+  box-shadow:
+    0 0 0 2px #ffffff,
+    0 0 0 4px #000000;
+  border-radius: 0;
+}
+
+:root[data-theme="contrast"] .typst-output svg:hover {
+  transform: none;
+  box-shadow:
+    0 0 0 2px #ffff00,
+    0 0 0 4px #000000;
 }
 
 /* Typst source-loc marked element */
 .typst-output .sync-marked {
   outline: 2px solid rgba(9, 105, 218, 0.55);
-  outline-offset: 1px;
+  outline-offset: 2px;
+  border-radius: 2px;
+  transition: outline-color 0.2s ease;
+}
+
+:root[data-theme="dark"] .typst-output .sync-marked {
+  outline-color: rgba(68, 147, 248, 0.6);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"] .typst-output .sync-marked {
+    outline-color: rgba(68, 147, 248, 0.6);
+  }
+}
+
+:root[data-theme="contrast"] .typst-output .sync-marked {
+  outline: 3px solid #ffff00;
+  outline-offset: 3px;
 }
 
 .typst-output .sync-flash {
-  animation: syncFlash 1.3s ease;
+  animation: typst-sync-flash 1.3s ease;
+}
+
+@keyframes typst-sync-flash {
+  0%,
+  20% {
+    box-shadow:
+      inset 0 0 0 3px rgba(9, 105, 218, 0.5),
+      0 0 0 4px rgba(9, 105, 218, 0.25);
+  }
+  100% {
+    box-shadow:
+      inset 0 0 0 3px rgba(9, 105, 218, 0),
+      0 0 0 4px rgba(9, 105, 218, 0);
+  }
+}
+
+/* ---- Print: Typst ---- */
+@media print {
+  .typst-preview {
+    background: #ffffff !important;
+    overflow: visible;
+  }
+
+  .typst-output {
+    padding: 0;
+    gap: 0;
+  }
+
+  .typst-output svg {
+    box-shadow: none;
+    border-radius: 0;
+    max-width: 100%;
+    page-break-after: always;
+  }
+
+  .typst-output svg:last-child {
+    page-break-after: avoid;
+  }
+
+  .typst-page-counter {
+    display: none;
+  }
+
+  .typst-loading {
+    display: none;
+  }
+}
+
+/* ---- Responsive: Typst ---- */
+@media (max-width: 760px) {
+  .typst-preview {
+    background: var(--bg);
+  }
+
+  :root[data-theme="dark"] .typst-preview {
+    background: var(--bg);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root[data-theme="system"] .typst-preview {
+      background: var(--bg);
+    }
+  }
+
+  .typst-output {
+    padding: 16px 12px 32px;
+    gap: 16px;
+  }
+
+  .typst-output svg {
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.1),
+      0 4px 12px rgba(0, 0, 0, 0.08);
+    border-radius: 2px;
+  }
+
+  .typst-output svg:hover {
+    transform: none;
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.1),
+      0 4px 12px rgba(0, 0, 0, 0.08);
+  }
 }

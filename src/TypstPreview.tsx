@@ -52,6 +52,7 @@ const TypstPreview = forwardRef<TypstPreviewHandle, Props>(
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [retryToken, setRetryToken] = useState(0);
+    const [pageCount, setPageCount] = useState(0);
     const seqRef = useRef(0);
     const markedElRef = useRef<Element | null>(null);
     const markedLineRef = useRef<number | null>(null);
@@ -139,6 +140,9 @@ const TypstPreview = forwardRef<TypstPreviewHandle, Props>(
           if (cancelled || mySeq !== seqRef.current) return;
           setSvg(result);
           setLoading(false);
+          // Count <svg> elements to know how many pages were rendered
+          const count = (result.match(/<svg[\s>]/g) || []).length;
+          setPageCount(count);
         } catch (e) {
           if (cancelled || mySeq !== seqRef.current) return;
           const message = e instanceof Error ? e.message : String(e);
@@ -208,8 +212,14 @@ const TypstPreview = forwardRef<TypstPreviewHandle, Props>(
             ref={outputRef}
             className="typst-output"
             aria-label="Typst preview"
-            dangerouslySetInnerHTML={{ __html: svg }}
-          />
+          >
+            {pageCount > 1 && (
+              <span className="typst-page-counter" aria-live="polite">
+                {pageCount} {t("preview.pages")}
+              </span>
+            )}
+            <div className="typst-svg-wrapper" dangerouslySetInnerHTML={{ __html: svg }} />
+          </div>
         )}
       </div>
     );

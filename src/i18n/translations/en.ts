@@ -97,6 +97,7 @@ export const en = {
   "preview.mermaidError": "Mermaid:",
   "preview.typstCompiling": "Compiling Typst...",
   "preview.typstError": "Typst:",
+  "preview.pages": "pages",
   // Session
   "session.restoreError": "Could not restore session",
   "session.saveError": "Could not save session",

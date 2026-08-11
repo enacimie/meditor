@@ -183,6 +183,7 @@ export const de = {
   "doc.typstSample": "typst-sample",
   "preview.typstCompiling": "Typst wird kompiliert…",
   "preview.typstError": "Typst:",
+  "preview.pages": "pages",
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
 
 };

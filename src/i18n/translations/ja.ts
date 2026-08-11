@@ -183,6 +183,7 @@ export const ja = {
   "doc.typstSample": "typst-sample",
   "preview.typstCompiling": "Typstをコンパイル中…",
   "preview.typstError": "Typst：",
+  "preview.pages": "pages",
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
 
 };

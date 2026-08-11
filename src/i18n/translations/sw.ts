@@ -183,6 +183,7 @@ export const sw = {
   "doc.typstSample": "typst-sample",
   "preview.typstCompiling": "Inakusanya Typst…",
   "preview.typstError": "Typst:",
+  "preview.pages": "pages",
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
 
 };

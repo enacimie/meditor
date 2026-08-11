@@ -183,6 +183,7 @@ export const bn = {
   "doc.typstSample": "typst-sample",
   "preview.typstCompiling": "Typst কম্পাইল হচ্ছে…",
   "preview.typstError": "Typst:",
+  "preview.pages": "pages",
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
 
 };

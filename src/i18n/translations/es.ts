@@ -160,6 +160,7 @@ export const es = {
   "doc.typstSample": "typst-sample",
   "preview.typstCompiling": "Compilando Typst…",
   "preview.typstError": "Typst:",
+  "preview.pages": "pages",
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
 
 };

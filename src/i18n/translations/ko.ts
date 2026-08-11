@@ -183,6 +183,7 @@ export const ko = {
   "doc.typstSample": "typst-sample",
   "preview.typstCompiling": "Typst 컴파일 중…",
   "preview.typstError": "Typst:",
+  "preview.pages": "pages",
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
 
 };

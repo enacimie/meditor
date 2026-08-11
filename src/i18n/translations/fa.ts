@@ -158,6 +158,7 @@ export const fa = {
   "doc.typstSample": "typst-sample",
   "preview.typstCompiling": "…در حال کامپایل Typst",
   "preview.typstError": ":Typst",
+  "preview.pages": "pages",
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
 
 };

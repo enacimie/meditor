@@ -183,6 +183,7 @@ export const hi = {
   "doc.typstSample": "typst-sample",
   "preview.typstCompiling": "Typst संकलित हो रहा है…",
   "preview.typstError": "Typst:",
+  "preview.pages": "pages",
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
 
 };

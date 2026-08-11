@@ -158,6 +158,7 @@ export const vi = {
   "doc.typstSample": "typst-sample",
   "preview.typstCompiling": "Đang biên dịch Typst…",
   "preview.typstError": "Typst:",
+  "preview.pages": "pages",
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
 
 };
