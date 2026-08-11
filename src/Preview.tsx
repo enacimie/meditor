@@ -1,5 +1,7 @@
 import {
   forwardRef,
+  lazy,
+  Suspense,
   useDeferredValue,
   useEffect,
   useImperativeHandle,
@@ -15,7 +17,10 @@ import pagedCss from "./paged.css?inline";
 import latexHighlightCss from "./latex-highlight.css?inline";
 import { clearMermaidCache, destroyMermaidPool } from "./mermaidPool";
 import { renderContent, splitLongFencedBlocks } from "./previewRenderer";
+import type { DocKind } from "./types";
 import "./Preview.css";
+
+const TypstPreview = lazy(() => import("./TypstPreview"));
 
 const PAGED_STYLES: Array<Record<string, string>> = [
   { "meditor-paged.css": pagedCss },
@@ -60,6 +65,7 @@ export type PreviewHandle = {
 type Props = {
   value: string;
   docView: boolean;
+  kind: DocKind;
   onReverseSync: (line: number) => void;
 };
 
@@ -82,7 +88,7 @@ function destroyPreviewer(previewer: Previewer | undefined): void {
 }
 
 const Preview = forwardRef<PreviewHandle, Props>(function Preview(
-  { value, docView, onReverseSync },
+  { value, docView, kind, onReverseSync },
   ref,
 ) {
   const { t } = useTranslation();
@@ -314,6 +320,14 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
       destroyMermaidPool();
     };
   }, []);
+
+  if (kind === "typst") {
+    return (
+      <Suspense fallback={<div className="typst-loading" role="status">{t("preview.typstCompiling")}</div>}>
+        <TypstPreview value={value} t={t} onReverseSync={onReverseSync} />
+      </Suspense>
+    );
+  }
 
   return (
     <>

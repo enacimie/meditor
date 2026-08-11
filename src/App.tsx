@@ -951,6 +951,7 @@ export default function App() {
             ref={previewRef}
             value={active?.content ?? ""}
             docView={docView}
+            kind={active?.kind ?? "markdown"}
             onReverseSync={handleReverseSync}
           />
         </div>
