@@ -2,6 +2,7 @@ import {
   forwardRef,
   lazy,
   Suspense,
+  useCallback,
   useDeferredValue,
   useEffect,
   useImperativeHandle,
@@ -88,6 +89,14 @@ function destroyPreviewer(previewer: Previewer | undefined): void {
   }
 }
 
+/** Shared handle shape so we can proxy between the MD implementation
+ *  and the Typst/LaTeX child components transparently. */
+interface ChildPreviewHandle {
+  scrollToLine(line: number): void;
+  getTargetLine(): number;
+  clearMark(): void;
+}
+
 const Preview = forwardRef<PreviewHandle, Props>(function Preview(
   { value, docView, kind, onReverseSync },
   ref,
@@ -98,6 +107,9 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
   const pagedRef = useRef<HTMLDivElement>(null);
   const markedLineRef = useRef<number | null>(null);
   const markedElRef = useRef<HTMLElement | null>(null);
+  // When kind is typst/latex, the child component writes its imperative
+  // handle here so the PreviewHandle proxy delegates to it.
+  const childHandleRef = useRef<ChildPreviewHandle | null>(null);
   const docViewRef = useRef(docView);
   docViewRef.current = docView;
   const onReverseSyncRef = useRef(onReverseSync);
@@ -149,6 +161,10 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
 
   useImperativeHandle(ref, () => ({
     scrollToLine(line: number) {
+      if (childHandleRef.current) {
+        childHandleRef.current.scrollToLine(line);
+        return;
+      }
       const container = activeContainer();
       if (!container) return;
       const nodes = Array.from(
@@ -173,6 +189,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
       }, 1300);
     },
     getTargetLine() {
+      if (childHandleRef.current) return childHandleRef.current.getTargetLine();
       if (markedLineRef.current !== null) return markedLineRef.current;
       const container = activeContainer();
       if (!container) return 0;
@@ -188,14 +205,26 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
       }
       return 0;
     },
-    clearMark,
-  }));
+    clearMark() {
+      if (childHandleRef.current) {
+        childHandleRef.current.clearMark();
+        return;
+      }
+      clearMark();
+    },
+  }), [kind]);
 
   function clearMark() {
     if (markedElRef.current) markedElRef.current.classList.remove("sync-marked");
     markedElRef.current = null;
     markedLineRef.current = null;
   }
+
+  // Callback ref that captures the child's imperative handle when
+  // kind === "typst" or "latex".
+  const setChildHandle = useCallback((h: ChildPreviewHandle | null) => {
+    childHandleRef.current = h;
+  }, []);
 
   function markElement(el: HTMLElement) {
     if (markedElRef.current && markedElRef.current !== el) {
@@ -329,7 +358,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
   if (kind === "typst") {
     return (
       <Suspense fallback={<div className="typst-loading" role="status"><span className="typst-spinner" aria-hidden="true" />{t("preview.typstCompiling")}</div>}>
-        <TypstPreview value={value} t={t} onReverseSync={onReverseSync} />
+        <TypstPreview ref={setChildHandle} value={value} t={t} onReverseSync={onReverseSync} />
       </Suspense>
     );
   }
@@ -337,7 +366,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
   if (kind === "latex") {
     return (
       <Suspense fallback={<div className="typst-loading" role="status"><span className="typst-spinner" aria-hidden="true" />{t("app.loading")}</div>}>
-        <LatexPreview value={value} t={t} onReverseSync={onReverseSync} />
+        <LatexPreview ref={setChildHandle} value={value} t={t} onReverseSync={onReverseSync} />
       </Suspense>
     );
   }

@@ -57,9 +57,9 @@ function loadTypstLang(): Extension {
   return [];
 }
 
-function applyTypstLang(view: EditorView, compartment: Compartment) {
+function applyTypstLang(view: EditorView, compartment: Compartment, seq: number, seqRef: { current: number }) {
   getTypstLang().then((ext) => {
-    if (view.viewport) {
+    if (view.viewport && seqRef.current === seq) {
       view.dispatch({ effects: compartment.reconfigure(ext) });
     }
   });
@@ -71,9 +71,9 @@ function loadLatexLang(): Extension {
   return [];
 }
 
-function applyLatexLang(view: EditorView, compartment: Compartment) {
+function applyLatexLang(view: EditorView, compartment: Compartment, seq: number, seqRef: { current: number }) {
   getLatexLang().then((ext) => {
-    if (view.viewport) {
+    if (view.viewport && seqRef.current === seq) {
       view.dispatch({ effects: compartment.reconfigure(ext) });
     }
   });
@@ -111,6 +111,7 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   const wrapCompartment = useRef(new Compartment());
   const placeholderCompartment = useRef(new Compartment());
   const languageCompartment = useRef(new Compartment());
+  const kindSeqRef = useRef(0);
   const activeIdRef = useRef(activeId);
   const suppress = useRef(false);
   const onChangeRef = useRef(onChange);
@@ -272,10 +273,14 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
     if (!view) return;
     const isTypst = kind === "typst";
     const isLatex = kind === "latex";
+    // Increment sequence so in-flight async lang loads don't overwrite
+    // a newer kind after a quick tab switch or language toggle.
+    kindSeqRef.current++;
+    const seq = kindSeqRef.current;
     if (isTypst) {
-      applyTypstLang(view, languageCompartment.current);
+      applyTypstLang(view, languageCompartment.current, seq, kindSeqRef);
     } else if (isLatex) {
-      applyLatexLang(view, languageCompartment.current);
+      applyLatexLang(view, languageCompartment.current, seq, kindSeqRef);
     } else {
       view.dispatch({
         effects: languageCompartment.current.reconfigure(
