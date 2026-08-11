@@ -153,6 +153,9 @@ importers:
       vite:
         specifier: ^7.0.4
         version: 7.3.6
+      vite-plugin-wasm:
+        specifier: ^3.6.0
+        version: 3.6.0(vite@7.3.6)
       vitest:
         specifier: ^4.1.10
         version: 4.1.10(jsdom@30.0.1)(vite@7.3.6)
@@ -2216,6 +2219,11 @@ packages:
   uuid@14.0.1:
     resolution: {integrity: sha512-6ZxzVpzDXDa3bJWaHilVayA+BH/1zmxCJoVgvmqJnid/gPoKHxUrS/aC/T6LGQtNHT+XHG9fXPJB4d+IrU30Ew==}
     hasBin: true
+
+  vite-plugin-wasm@3.6.0:
+    resolution: {integrity: sha512-mL/QPziiIA4RAA6DkaZZzOstdwbW5jO4Vz7Zenj0wieKWBlNvIvX5L5ljum9lcUX0ShNfBgCNLKTjNkRVVqcsw==}
+    peerDependencies:
+      vite: ^2 || ^3 || ^4 || ^5 || ^6 || ^7 || ^8
 
   vite@7.3.6:
     resolution: {integrity: sha512-4XP60spRGjSZFf1qYH+dJIkK2znL3zQfl9KkOV9MkkRR/3Dls0dxaBsQPTloEc5BLXWPL9vsOxopxyKoMmDueg==}
@@ -4574,6 +4582,10 @@ snapshots:
       punycode: 2.3.1
 
   uuid@14.0.1: {}
+
+  vite-plugin-wasm@3.6.0(vite@7.3.6):
+    dependencies:
+      vite: 7.3.6
 
   vite@7.3.6:
     dependencies:

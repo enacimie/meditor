@@ -1,6 +1,7 @@
 /// <reference types="vitest/config" />
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import wasm from "vite-plugin-wasm";
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
@@ -10,7 +11,7 @@ export default defineConfig(async () => ({
   // Relative base enables file:// and offline usage (e.g. E2E tests).
   // Tauri's webview serves from a local server so relative paths work too.
   base: "./",
-  plugins: [react()],
+  plugins: [wasm(), react()],
 
   worker: {
     format: "es",
