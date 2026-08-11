@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# E2E artifacts (screenshots, etc.)
+tests/e2e/artifacts/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

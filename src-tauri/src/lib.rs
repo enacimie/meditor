@@ -1,3 +1,6 @@
+mod locale;
+
+use locale::{t, tf, Locale};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -26,7 +29,7 @@ use std::time::Duration;
     target_os = "netbsd",
     target_os = "openbsd"
 ))]
-use gtk::prelude::DialogExt as GtkDialogExt;
+use gtk::prelude::{DialogExt as GtkDialogExt, GtkWindowExt};
 
 #[cfg(target_os = "windows")]
 use winapi::um::winuser::{
@@ -44,6 +47,10 @@ const MAX_FILE_BYTES: u64 = 64 * 1024 * 1024;
 const MAX_SESSION_BYTES: u64 = 25 * 1024 * 1024;
 const SESSION_VERSION: u32 = 2;
 static NEXT_HANDLE: AtomicU64 = AtomicU64::new(1);
+
+fn max_file_mib() -> u64 {
+    MAX_FILE_BYTES / (1024 * 1024)
+}
 
 struct DocumentRegistry(Mutex<HashMap<String, PathBuf>>);
 
@@ -117,66 +124,68 @@ fn next_handle() -> String {
     )
 }
 
-fn base_name(path: &Path) -> String {
+fn base_name(locale: Locale, path: &Path) -> String {
     path.file_name()
         .map(|name| name.to_string_lossy().into_owned())
-        .unwrap_or_else(|| "Documento".to_string())
+        .unwrap_or_else(|| t(locale, "doc.untitled"))
 }
 
-fn normalize_path(path: &Path) -> Result<PathBuf, String> {
+fn normalize_path(locale: Locale, path: &Path) -> Result<PathBuf, String> {
     if path.as_os_str().is_empty() || path.file_name().is_none() {
-        return Err("Ruta de archivo vacía o inválida".to_string());
+        return Err(t(locale, "file.emptyPath"));
     }
     if path.exists() {
         if path.is_dir() {
-            return Err("La ruta apunta a un directorio".to_string());
+            return Err(t(locale, "file.isDirectory"));
         }
         return std::fs::canonicalize(path).map_err(|e| e.to_string());
     }
     let parent = path
         .parent()
-        .ok_or_else(|| "La ruta no tiene carpeta padre".to_string())?;
+        .ok_or_else(|| t(locale, "file.noParent"))?;
     let file_name = path
         .file_name()
-        .ok_or_else(|| "La ruta no tiene nombre de archivo".to_string())?;
+        .ok_or_else(|| t(locale, "file.noFileName"))?;
     let parent = std::fs::canonicalize(parent).map_err(|e| e.to_string())?;
     Ok(parent.join(file_name))
 }
 
-fn register_normalized(registry: &DocumentRegistry, path: PathBuf) -> Result<String, String> {
+fn register_normalized(
+    locale: Locale,
+    registry: &DocumentRegistry,
+    path: PathBuf,
+) -> Result<String, String> {
     let handle = next_handle();
     registry
         .0
         .lock()
-        .map_err(|_| "No se pudo acceder al registro de documentos".to_string())?
+        .map_err(|_| t(locale, "file.registryLock"))?
         .insert(handle.clone(), path);
     Ok(handle)
 }
 
-fn read_path(path: &Path) -> Result<String, String> {
+fn read_path(locale: Locale, path: &Path) -> Result<String, String> {
     let metadata = std::fs::metadata(path).map_err(|e| e.to_string())?;
     if !metadata.is_file() {
-        return Err("La ruta no apunta a un archivo".to_string());
+        return Err(t(locale, "file.notFound"));
     }
     if metadata.len() > MAX_FILE_BYTES {
-        return Err(format!(
-            "El archivo supera el límite de {} MiB",
-            MAX_FILE_BYTES / (1024 * 1024)
-        ));
+        return Err(tf(locale, "file.tooLarge", &max_file_mib().to_string()));
     }
     std::fs::read_to_string(path).map_err(|e| e.to_string())
 }
 
 fn document_from_path(
+    locale: Locale,
     path: PathBuf,
     registry: &DocumentRegistry,
 ) -> Result<NativeDocument, String> {
-    let normalized = normalize_path(&path)?;
-    let content = read_path(&normalized)?;
-    let handle = register_normalized(registry, normalized.clone())?;
+    let normalized = normalize_path(locale, &path)?;
+    let content = read_path(locale, &normalized)?;
+    let handle = register_normalized(locale, registry, normalized.clone())?;
     Ok(NativeDocument {
         id: next_handle(),
-        name: base_name(&normalized),
+        name: base_name(locale, &normalized),
         path: Some(normalized.to_string_lossy().into_owned()),
         content,
         dirty: false,
@@ -194,15 +203,16 @@ fn files_from_args(args: &[String]) -> Vec<PathBuf> {
 }
 
 fn documents_from_paths(
+    locale: Locale,
     paths: impl IntoIterator<Item = PathBuf>,
     registry: &DocumentRegistry,
 ) -> Vec<NativeDocument> {
     paths
         .into_iter()
-        .filter_map(|path| match document_from_path(path, registry) {
+        .filter_map(|path| match document_from_path(locale, path, registry) {
             Ok(document) => Some(document),
             Err(error) => {
-                eprintln!("No se pudo abrir el documento: {error}");
+                eprintln!("{}", tf(locale, "file.openFailed", &error));
                 None
             }
         })
@@ -215,18 +225,19 @@ fn session_file_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     Ok(dir.join("session.json"))
 }
 
-fn write_atomic(path: &Path, content: &str) -> Result<(), String> {
+fn write_atomic(locale: Locale, path: &Path, content: &str) -> Result<(), String> {
     if content.len() as u64 > MAX_FILE_BYTES {
-        return Err(format!(
-            "El contenido supera el límite de {} MiB",
-            MAX_FILE_BYTES / (1024 * 1024)
+        return Err(tf(
+            locale,
+            "file.contentTooLarge",
+            &max_file_mib().to_string(),
         ));
     }
     let parent = path
         .parent()
-        .ok_or_else(|| "La ruta no tiene carpeta padre".to_string())?;
+        .ok_or_else(|| t(locale, "file.noParent"))?;
     if !parent.is_dir() {
-        return Err("La carpeta de destino no existe".to_string());
+        return Err(t(locale, "file.directoryMissing"));
     }
     let mut temporary = path.to_path_buf();
     let extension = path
@@ -268,16 +279,17 @@ fn write_atomic(path: &Path, content: &str) -> Result<(), String> {
 }
 
 fn saved_document(
+    locale: Locale,
     path: PathBuf,
     content: String,
     registry: &DocumentRegistry,
 ) -> Result<NativeDocument, String> {
-    let normalized = normalize_path(&path)?;
-    write_atomic(&normalized, &content)?;
-    let handle = register_normalized(registry, normalized.clone())?;
+    let normalized = normalize_path(locale, &path)?;
+    write_atomic(locale, &normalized, &content)?;
+    let handle = register_normalized(locale, registry, normalized.clone())?;
     Ok(NativeDocument {
         id: next_handle(),
-        name: base_name(&normalized),
+        name: base_name(locale, &normalized),
         path: Some(normalized.to_string_lossy().into_owned()),
         content,
         dirty: false,
@@ -285,11 +297,17 @@ fn saved_document(
     })
 }
 
+fn parse_locale(raw: Option<String>) -> Locale {
+    raw.as_deref().map(Locale::from_str).unwrap_or(Locale::En)
+}
+
 #[tauri::command]
 fn open_files(
     app: tauri::AppHandle,
     registry: tauri::State<'_, DocumentRegistry>,
+    locale: Option<String>,
 ) -> Result<Vec<NativeDocument>, String> {
+    let loc = parse_locale(locale);
     let selected = app
         .dialog()
         .file()
@@ -302,7 +320,7 @@ fn open_files(
             .collect::<Result<Vec<_>, _>>()?,
         None => return Ok(Vec::new()),
     };
-    Ok(documents_from_paths(paths, &registry))
+    Ok(documents_from_paths(loc, paths, &registry))
 }
 
 #[tauri::command]
@@ -311,7 +329,9 @@ fn save_as(
     content: String,
     default_name: String,
     registry: tauri::State<'_, DocumentRegistry>,
+    locale: Option<String>,
 ) -> Result<Option<NativeDocument>, String> {
+    let loc = parse_locale(locale);
     let selected = app
         .dialog()
         .file()
@@ -322,7 +342,7 @@ fn save_as(
         Some(path) => path.into_path().map_err(|e| e.to_string())?,
         None => return Ok(None),
     };
-    saved_document(path, content, &registry).map(Some)
+    saved_document(loc, path, content, &registry).map(Some)
 }
 
 #[tauri::command]
@@ -330,15 +350,17 @@ fn save_document(
     handle: String,
     content: String,
     registry: tauri::State<'_, DocumentRegistry>,
+    locale: Option<String>,
 ) -> Result<(), String> {
+    let loc = parse_locale(locale);
     let path = registry
         .0
         .lock()
-        .map_err(|_| "No se pudo acceder al registro de documentos".to_string())?
+        .map_err(|_| t(loc, "file.registryLock"))?
         .get(&handle)
         .cloned()
-        .ok_or_else(|| "El documento ya no está disponible para guardar".to_string())?;
-    write_atomic(&path, &content)
+        .ok_or_else(|| t(loc, "file.documentUnavailable"))?;
+    write_atomic(loc, &path, &content)
 }
 
 #[tauri::command]
@@ -385,7 +407,9 @@ fn save_session(
     app: tauri::AppHandle,
     input: SessionInput,
     registry: tauri::State<'_, DocumentRegistry>,
+    locale: Option<String>,
 ) -> Result<(), String> {
+    let loc = parse_locale(locale);
     if input.docs.is_empty() {
         return Ok(());
     }
@@ -397,17 +421,17 @@ fn save_session(
     let mut docs = Vec::with_capacity(input.docs.len());
     for document in input.docs {
         if document.content.len() as u64 > MAX_FILE_BYTES {
-            return Err("Un documento supera el límite permitido".to_string());
+            return Err(t(loc, "file.docTooLarge"));
         }
         let path = match document.handle {
             Some(handle) => {
                 let path = registry
                     .0
                     .lock()
-                    .map_err(|_| "No se pudo acceder al registro de documentos".to_string())?
+                    .map_err(|_| t(loc, "file.registryLock"))?
                     .get(&handle)
                     .cloned()
-                    .ok_or_else(|| "Un documento ya no está disponible".to_string())?;
+                    .ok_or_else(|| t(loc, "file.sessionUnavailable"))?;
                 Some(path.to_string_lossy().into_owned())
             }
             None => document.path,
@@ -428,97 +452,37 @@ fn save_session(
     };
     let content = serde_json::to_string(&stored).map_err(|e| e.to_string())?;
     if content.len() as u64 > MAX_SESSION_BYTES {
-        return Err("La sesión supera el límite permitido".to_string());
+        return Err(t(loc, "file.sessionTooLarge"));
     }
     let path = session_file_path(&app)?;
-    write_atomic(&path, &content)
+    write_atomic(loc, &path, &content)
 }
 
 #[tauri::command]
-fn cli_files(registry: tauri::State<'_, DocumentRegistry>) -> Vec<NativeDocument> {
+fn cli_files(
+    registry: tauri::State<'_, DocumentRegistry>,
+    locale: Option<String>,
+) -> Vec<NativeDocument> {
+    let loc = parse_locale(locale);
     let args: Vec<String> = std::env::args().collect();
-    documents_from_paths(files_from_args(&args), &registry)
+    documents_from_paths(loc, files_from_args(&args), &registry)
+}
+
+/// Force-exit the application. The JS `window.close()`/`window.destroy()`
+/// calls are unreliable on Linux/WebKitGTK once an `onCloseRequested` JS
+/// listener is registered (Tauri auto-prevent_close's the request and the
+/// destroy does not tear the window down), so the close guard finishes by
+/// exiting the whole app instead.
+#[tauri::command]
+fn exit_app(app: tauri::AppHandle) {
+    app.exit(0);
 }
 
 #[tauri::command]
-fn confirm(message: String) -> bool {
-    #[cfg(any(
-        target_os = "linux",
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ))]
-    {
-        let (tx, rx) = mpsc::channel();
-        gtk::glib::MainContext::default().invoke(move || {
-            let dlg = gtk::MessageDialog::new(
-                None::<&gtk::Window>,
-                gtk::DialogFlags::MODAL,
-                gtk::MessageType::Warning,
-                gtk::ButtonsType::YesNo,
-                &message,
-            );
-            let resp = dlg.run();
-            let _ = tx.send(resp == gtk::ResponseType::Yes);
-        });
-        let ctx = gtk::glib::MainContext::default();
-        while rx.try_recv().is_err() {
-            ctx.iteration(true);
-        }
-        rx.recv().unwrap_or(false)
-    }
-    #[cfg(target_os = "windows")]
-    {
-        let title: Vec<u16> = OsStr::new("Confirmar")
-            .encode_wide()
-            .chain(Some(0))
-            .collect();
-        let text: Vec<u16> = OsStr::new(&message).encode_wide().chain(Some(0)).collect();
-        let result = unsafe {
-            MessageBoxW(
-                ptr::null_mut(),
-                text.as_ptr(),
-                title.as_ptr(),
-                MB_YESNO | MB_ICONWARNING | MB_SYSTEMMODAL,
-            )
-        };
-        return result == IDYES;
-    }
-    #[cfg(target_os = "macos")]
-    {
-        use std::process::Command;
-        let output = Command::new("osascript")
-            .args([
-                "-e",
-                &format!(
-                    "display dialog \"{}\" with title \"Confirmar\" buttons {{\"No\", \"Yes\"}} default button \"Yes\" with icon caution",
-                    message.replace('"', "\\\"")
-                ),
-            ])
-            .output();
-        return match output {
-            Ok(out) => String::from_utf8_lossy(&out.stdout).contains("Yes"),
-            Err(_) => false,
-        };
-    }
-    #[cfg(not(any(
-        target_os = "linux",
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd",
-        target_os = "windows",
-        target_os = "macos"
-    )))]
-    {
-        let _ = message;
-        false
-    }
-}
+fn alert(message: String, locale: Option<String>) {
+    let loc = parse_locale(locale);
+    let title = t(loc, "alert.title");
 
-#[tauri::command]
-fn alert(message: String) {
     #[cfg(any(
         target_os = "linux",
         target_os = "dragonfly",
@@ -536,6 +500,7 @@ fn alert(message: String) {
                 gtk::ButtonsType::Ok,
                 &message,
             );
+            dlg.set_title(&title);
             dlg.run();
             let _ = tx.send(());
         });
@@ -547,13 +512,16 @@ fn alert(message: String) {
     }
     #[cfg(target_os = "windows")]
     {
-        let title: Vec<u16> = OsStr::new("Error").encode_wide().chain(Some(0)).collect();
+        let title_wide: Vec<u16> = OsStr::new(&title)
+            .encode_wide()
+            .chain(Some(0))
+            .collect();
         let text: Vec<u16> = OsStr::new(&message).encode_wide().chain(Some(0)).collect();
         unsafe {
             MessageBoxW(
                 ptr::null_mut(),
                 text.as_ptr(),
-                title.as_ptr(),
+                title_wide.as_ptr(),
                 MB_OK | MB_ICONERROR | MB_SYSTEMMODAL,
             );
         }
@@ -565,8 +533,9 @@ fn alert(message: String) {
             .args([
                 "-e",
                 &format!(
-                    "display dialog \"{}\" with title \"Error\" buttons {{\"OK\"}} default button \"OK\" with icon stop",
-                    message.replace('"', "\\\"")
+                    "display dialog \"{}\" with title \"{}\" buttons {{\"OK\"}} default button \"OK\" with icon stop",
+                    message.replace('\"', "\\\""),
+                    title.replace('\"', "\\\""),
                 ),
             ])
             .output();
@@ -578,7 +547,10 @@ async fn export_pdf(
     app: tauri::AppHandle,
     window: tauri::WebviewWindow,
     default_name: String,
+    locale: Option<String>,
 ) -> Result<(), String> {
+    let loc = parse_locale(locale);
+
     #[cfg(not(any(
         target_os = "linux",
         target_os = "dragonfly",
@@ -587,8 +559,8 @@ async fn export_pdf(
         target_os = "openbsd"
     )))]
     {
-        let _ = (app, window, default_name);
-        return Err("Exportar PDF solo está soportado en Linux por ahora".to_string());
+        let _ = (app, window, default_name, loc);
+        return Err(t(loc, "pdf.notSupported"));
     }
 
     #[cfg(any(
@@ -617,7 +589,7 @@ async fn export_pdf(
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
-    let path = normalize_path(&path)?;
+    let path = normalize_path(loc, &path)?;
     #[cfg(any(
         target_os = "linux",
         target_os = "dragonfly",
@@ -627,7 +599,7 @@ async fn export_pdf(
     ))]
     if let Some(parent) = path.parent() {
         if !parent.exists() {
-            return Err("La carpeta de destino no existe".to_string());
+            return Err(t(loc, "pdf.directoryMissing"));
         }
     }
     #[cfg(any(
@@ -639,7 +611,7 @@ async fn export_pdf(
     ))]
     {
         let url = url::Url::from_file_path(&path)
-            .map_err(|_| format!("Ruta inválida para exportar: {}", path.display()))?;
+            .map_err(|_| t(loc, "pdf.invalidPath"))?;
         let uri = url.as_str().to_string();
         let (result_tx, result_rx) = mpsc::channel::<Result<(), String>>();
         window
@@ -665,9 +637,10 @@ async fn export_pdf(
                 operation.set_print_settings(&print_settings);
                 operation.set_page_setup(&page_setup);
 
-                // `print()` es asíncrono: conservar la operación hasta que WebKitGTK
-                // emita `finished` o `failed`, y liberarla después para evitar ciclos.
-                let keepalive = std::rc::Rc::new(std::cell::RefCell::new(Some(operation.clone())));
+                // `print()` is asynchronous: hold the operation until WebKitGTK
+                // emits `finished` or `failed`, then drop it to avoid cycles.
+                let keepalive =
+                    std::rc::Rc::new(std::cell::RefCell::new(Some(operation.clone())));
                 let keepalive_failed = std::rc::Rc::clone(&keepalive);
                 let keepalive_finished = std::rc::Rc::clone(&keepalive);
                 let failed_tx = result_tx.clone();
@@ -682,24 +655,24 @@ async fn export_pdf(
                 operation.print();
             })
             .map_err(|e| e.to_string())?;
+        let loc_clone = loc;
         let completion = tauri::async_runtime::spawn_blocking(move || {
             result_rx.recv_timeout(Duration::from_secs(60))
         })
         .await
-        .map_err(|error| format!("La espera de exportación PDF falló: {error}"))?;
-        let result =
-            completion.map_err(|_| "La exportación PDF no terminó a tiempo".to_string())?;
+        .map_err(|error| tf(loc_clone, "pdf.waitFailed", &error.to_string()))?;
+        let result = completion.map_err(|_| t(loc, "pdf.timeout"))?;
         result?;
         let metadata = std::fs::metadata(&path).map_err(|e| e.to_string())?;
         if metadata.len() == 0 {
-            return Err("La exportación PDF produjo un archivo vacío".to_string());
+            return Err(t(loc, "pdf.emptyFile"));
         }
         let mut header = [0_u8; 5];
         let mut file = std::fs::File::open(&path).map_err(|e| e.to_string())?;
         use std::io::Read;
         file.read_exact(&mut header).map_err(|e| e.to_string())?;
         if &header != b"%PDF-" {
-            return Err("La exportación no produjo un archivo PDF válido".to_string());
+            return Err(t(loc, "pdf.invalidPdf"));
         }
         Ok(())
     }
@@ -711,8 +684,8 @@ mod tests {
 
     #[test]
     fn rejects_empty_and_directory_paths() {
-        assert!(normalize_path(Path::new("")).is_err());
-        assert!(normalize_path(Path::new(".")).is_err());
+        assert!(normalize_path(Locale::En, Path::new("")).is_err());
+        assert!(normalize_path(Locale::En, Path::new(".")).is_err());
     }
 
     #[test]
@@ -720,9 +693,9 @@ mod tests {
         let root = std::env::temp_dir().join(format!("meditor-test-{}", std::process::id()));
         std::fs::create_dir_all(&root).unwrap();
         let path = root.join("document.md");
-        write_atomic(&path, "uno").unwrap();
-        write_atomic(&path, "dos").unwrap();
-        assert_eq!(std::fs::read_to_string(&path).unwrap(), "dos");
+        write_atomic(Locale::En, &path, "one").unwrap();
+        write_atomic(Locale::En, &path, "two").unwrap();
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "two");
         let _ = std::fs::remove_dir_all(root);
     }
 }
@@ -732,7 +705,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             let registry = app.state::<DocumentRegistry>();
-            let documents = documents_from_paths(files_from_args(&args), &registry);
+            let documents = documents_from_paths(Locale::En, files_from_args(&args), &registry);
             if !documents.is_empty() {
                 let _ = app.emit("open-documents", documents);
             }
@@ -751,8 +724,8 @@ pub fn run() {
             save_session,
             cli_files,
             export_pdf,
-            confirm,
-            alert
+            alert,
+            exit_app
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

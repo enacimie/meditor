@@ -1,13 +1,12 @@
 import {
   lazy,
   Suspense,
+  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
   useState,
-  type KeyboardEvent as ReactKeyboardEvent,
   type MutableRefObject,
-  type PointerEvent as ReactPointerEvent,
 } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -17,18 +16,29 @@ import type { EditorHandle } from "./Editor";
 const Editor = lazy(() => import("./Editor"));
 import Preview, { type PreviewHandle } from "./Preview";
 import { SAMPLE } from "./sample";
+import Topbar from "./components/Topbar";
+import TabBar from "./components/TabBar";
+import StatusBar from "./components/StatusBar";
+import ConfirmDialog from "./components/ConfirmDialog";
+import RenameDialog from "./components/RenameDialog";
+import ShortcutsOverlay from "./components/ShortcutsOverlay";
+import Outline from "./components/Outline";
+import { parseHeadings } from "./components/outlineUtils";
+import { useTranslation } from "./i18n/I18nProvider";
+import { useThemeEffect } from "./hooks/useThemeEffect";
+import { useSplitDivider } from "./hooks/useSplitDivider";
+import { useNotice } from "./hooks/useNotice";
+import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 
 import type { Doc } from "./types";
+import type { Theme } from "./components/types";
 import "./App.css";
 
-type Notice = {
-  kind: "info" | "success" | "error";
-  message: string;
-};
-
 type FileOperation = "open" | "save" | "saveAs" | "export";
-type Theme = "system" | "light" | "dark";
 
+// Editor/preview preferences. The interface language is NOT part of this
+// object: I18nProvider owns it (meditor.language.v1, with all 20 languages
+// validated) so there is a single source of truth for the locale.
 type Preferences = {
   docView: boolean;
   wrap: boolean;
@@ -51,11 +61,16 @@ function loadPreferences(): Preferences {
     const value: unknown = JSON.parse(raw);
     if (!value || typeof value !== "object") return DEFAULT_PREFERENCES;
     const stored = value as Partial<Preferences>;
-    const theme = stored.theme === "light" || stored.theme === "dark" || stored.theme === "system"
-      ? stored.theme
-      : DEFAULT_PREFERENCES.theme;
+    const theme =
+      stored.theme === "light" ||
+      stored.theme === "dark" ||
+      stored.theme === "system" ||
+      stored.theme === "contrast"
+        ? stored.theme
+        : DEFAULT_PREFERENCES.theme;
     return {
-      docView: typeof stored.docView === "boolean" ? stored.docView : DEFAULT_PREFERENCES.docView,
+      docView:
+        typeof stored.docView === "boolean" ? stored.docView : DEFAULT_PREFERENCES.docView,
       wrap: typeof stored.wrap === "boolean" ? stored.wrap : DEFAULT_PREFERENCES.wrap,
       theme,
     };
@@ -69,7 +84,7 @@ function savePreferences(preferences: Preferences): void {
   try {
     window.localStorage.setItem(PREFERENCES_KEY, JSON.stringify(preferences));
   } catch {
-    // El almacenamiento puede estar deshabilitado o no disponible en un WebView.
+    // Storage may be disabled or unavailable in a WebView.
   }
 }
 
@@ -77,7 +92,7 @@ async function showNativeAlert(message: string): Promise<void> {
   try {
     await invoke("alert", { message });
   } catch (error) {
-    console.error("No se pudo mostrar el aviso nativo", error);
+    console.error("Could not show native alert", error);
   }
 }
 
@@ -85,38 +100,29 @@ function isOperationBusy(ref: MutableRefObject<FileOperation | null>): boolean {
   return ref.current !== null;
 }
 
-function operationNotice(operation: FileOperation): string {
-  return operation === "open"
-    ? "Abriendo archivos…"
-    : operation === "save"
-      ? "Guardando…"
-      : operation === "saveAs"
-        ? "Guardando como…"
-        : "Exportando PDF…";
+function operationNotice(t: ReturnType<typeof useTranslation>["t"], op: FileOperation): string {
+  if (op === "open") return t("op.opening");
+  if (op === "save") return t("op.saving");
+  if (op === "saveAs") return t("op.savingAs");
+  return t("op.exporting");
 }
 
-function operationNoticeDone(operation: FileOperation): string {
-  return operation === "open"
-    ? "Archivos abiertos"
-    : operation === "export"
-      ? "PDF exportado"
-      : "Documento guardado";
+function operationNoticeDone(t: ReturnType<typeof useTranslation>["t"], op: FileOperation): string {
+  if (op === "open") return t("op.opened");
+  if (op === "export") return t("op.pdfExported");
+  return t("op.saved");
 }
 
-function operationNoticeError(operation: FileOperation): string {
-  return operation === "open"
-    ? "No se pudieron abrir los archivos"
-    : operation === "export"
-      ? "No se pudo exportar el PDF"
-      : "No se pudo guardar el documento";
+function operationNoticeError(t: ReturnType<typeof useTranslation>["t"], op: FileOperation): string {
+  if (op === "open") return t("op.openError");
+  if (op === "export") return t("op.exportError");
+  return t("op.saveError");
 }
 
-function operationErrorPrefix(operation: FileOperation): string {
-  return operation === "open"
-    ? "No se pudieron abrir los archivos: "
-    : operation === "export"
-      ? "Error al exportar PDF: "
-      : "No se pudo guardar: ";
+function operationErrorPrefix(t: ReturnType<typeof useTranslation>["t"], op: FileOperation): string {
+  if (op === "open") return t("op.openErrorPrefix");
+  if (op === "export") return t("op.exportErrorPrefix");
+  return t("op.saveErrorPrefix");
 }
 
 const INITIAL_PREFERENCES = loadPreferences();
@@ -141,7 +147,7 @@ function makeDoc(content: string, path: string | null = null, name?: string): Do
     path,
     content,
     dirty: false,
-    name: name ?? (path ? baseName(path) : `Documento ${untitledCounter}`),
+    name: name ?? (path ? baseName(path) : `Doc ${untitledCounter}`),
   };
 }
 
@@ -160,26 +166,40 @@ function waitForCloseTasks(tasks: Promise<unknown>[], timeoutMs = 5000): Promise
 }
 
 export default function App() {
+  const { t, lang, setLanguage } = useTranslation();
   const [ready, setReady] = useState(false);
   const [docs, setDocs] = useState<Doc[]>([]);
   const [activeId, setActiveId] = useState("");
   const [docView, setDocView] = useState(INITIAL_PREFERENCES.docView);
-  const [split, setSplit] = useState(50);
-  const [dragging, setDragging] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [wrap, setWrap] = useState(INITIAL_PREFERENCES.wrap);
   const [theme, setTheme] = useState<Theme>(INITIAL_PREFERENCES.theme);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [zenMode, setZenMode] = useState(false);
   const [compactLayout, setCompactLayout] = useState(false);
-  const [notice, setNotice] = useState<Notice | null>(null);
   const [busyOperation, setBusyOperation] = useState<FileOperation | null>(null);
+  const [confirmRequest, setConfirmRequest] = useState<{
+    message: string;
+    resolve: (ok: boolean) => void;
+  } | null>(null);
+  const [renameRequest, setRenameRequest] = useState<{
+    id: string;
+    name: string;
+    resolve: (name: string | null) => void;
+  } | null>(null);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [outlineOpen, setOutlineOpen] = useState(false);
+  const [cursorLine, setCursorLine] = useState(0);
+
+  // Extracted hooks
+  useThemeEffect(theme);
+  const { split, setSplit, dragging, splitRef, splitRatioRef, onDividerDown, onDividerMove, onDividerUp } =
+    useSplitDivider(50);
+  const { notice, showNotice } = useNotice();
+
   const editorRef = useRef<EditorHandle>(null);
   const previewRef = useRef<PreviewHandle>(null);
-  const splitRef = useRef<HTMLDivElement>(null);
   const docsRef = useRef<Doc[]>([]);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const menuToggleRef = useRef<HTMLButtonElement>(null);
   const idsRef = useRef<string[]>([]);
-  const splitRatioRef = useRef(50);
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
   const sessionSaveQueueRef = useRef<Promise<void>>(Promise.resolve());
   const sessionTimerRef = useRef<number | undefined>(undefined);
@@ -187,18 +207,44 @@ export default function App() {
   const openQueueRef = useRef<Promise<void>>(Promise.resolve());
   const pendingOpenDocsRef = useRef<Doc[]>([]);
   const closingRef = useRef(false);
-  const noticeTimerRef = useRef<number | undefined>(undefined);
   const busyOperationRef = useRef<FileOperation | null>(null);
-  const operationRefs = useRef({
-    save: () => {},
-    saveAs: () => {},
-    openFiles: () => {},
-    exportPdf: () => {},
-    closeTab: (_id: string) => {},
-  });
-
+  // Latest translation function, read by the (once-registered) close guard.
+  const closeTRef = useRef(t);
+  closeTRef.current = t;
+  // Ensures the close guard is registered exactly once (StrictMode's dev
+  // double-mount must not leave duplicate listeners that re-swallow closes).
+  // The resolved value is never used; the promise only acts as a guard.
+  const closeGuardRef = useRef<Promise<unknown> | null>(null);
   const active = docs.find((d) => d.id === activeId) ?? docs[0];
   activeIdRef.current = activeId;
+  const headings = active ? parseHeadings(active.content) : [];
+
+  const mergeDocuments = useCallback((incoming: Doc[]): void => {
+    if (!incoming.length) return;
+    const next = [...docsRef.current];
+    let activateId = "";
+    for (const incomingDoc of incoming) {
+      const ex = next.find((d) => d.path === incomingDoc.path);
+      if (ex) {
+        if (!activateId) activateId = ex.id;
+        continue;
+      }
+      const doc = { ...incomingDoc, id: newId() };
+      next.push(doc);
+      if (!activateId) activateId = doc.id;
+    }
+    docsRef.current = next;
+    setDocs(next);
+    if (activateId) setActiveId(activateId);
+  }, []);
+
+  const openPaths = useCallback((documents: Doc[]): Promise<void> => {
+    const next = openQueueRef.current.then(() => {
+      mergeDocuments(documents);
+    });
+    openQueueRef.current = next.catch(() => undefined);
+    return next;
+  }, [mergeDocuments]);
 
   useEffect(() => {
     let cancelled = false;
@@ -225,7 +271,7 @@ export default function App() {
             splitRatioRef.current = restored.split;
           }
         } catch (error) {
-          console.warn("No se pudo restaurar la sesión", error);
+          console.warn("Could not restore session", error);
           base = [];
         }
       }
@@ -258,7 +304,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [setSplit, splitRatioRef]);
 
   useLayoutEffect(() => {
     docsRef.current = docs;
@@ -280,7 +326,7 @@ export default function App() {
             0,
             pendingOpenDocsRef.current.length - MAX_PENDING_OPEN_DOCS,
           );
-          console.warn("Se descartaron aperturas externas antiguas por exceso de cola");
+          console.warn("Dropped stale external opens due to queue overflow");
         }
       } else {
         void openPaths(e.payload);
@@ -293,60 +339,72 @@ export default function App() {
       cancelled = true;
       unlisten?.();
     };
-  }, []);
+  }, [openPaths]);
 
   useEffect(() => {
     if (!isTauri()) return;
     const win = getCurrentWindow();
-    const unlisten = win.onCloseRequested((e) => {
-      e.preventDefault();
-      if (closingRef.current) return;
-      closingRef.current = true;
-
-      void (async () => {
-        try {
-          const hasDirtyDocuments = docsRef.current.some((d) => d.dirty);
-          if (hasDirtyDocuments) {
-            const ok = await invoke<boolean>("confirm", {
-              message: "Hay documentos con cambios sin guardar. ¿Salir de todos modos?",
-            });
-            if (!ok) return;
-          }
-          if (sessionTimerRef.current !== undefined) {
-            window.clearTimeout(sessionTimerRef.current);
-            sessionTimerRef.current = undefined;
-          }
-          const finalSession = writeSessionOrdered(
-            docsRef.current,
-            activeIdRef.current,
-            splitRatioRef.current,
-          );
-          await waitForCloseTasks([
-            saveQueueRef.current,
-            finalSession,
-            sessionSaveQueueRef.current,
-          ]);
+    if (!closeGuardRef.current) {
+      // The guard runs the cleanup (dirty confirm + final session save) while
+      // the window is kept open via preventDefault, then finishes by exiting
+      // the whole app through Rust. We cannot rely on window.close()/
+      // destroy() here: on Linux/WebKitGTK, once this JS listener is
+      // registered, Tauri auto-prevent_close()s the request and the JS
+      // destroy() does not tear the window down (first click is swallowed).
+      closeGuardRef.current = win
+        .onCloseRequested(async (e) => {
+          e.preventDefault();
+          if (closingRef.current) return;
+          closingRef.current = true;
           try {
-            await win.destroy();
-          } catch (destroyError) {
-            console.error("No se pudo destruir la ventana; se reintentará el cierre", destroyError);
-            try {
-              await unlisten.then((remove) => remove());
-              await win.close();
-            } catch (closeError) {
-              console.error("No se pudo cerrar la ventana", closeError);
+            const hasDirtyDocuments = docsRef.current.some((d) => d.dirty);
+            if (hasDirtyDocuments) {
+              const ok = await confirmDialog(
+                closeTRef.current("confirm.unsavedClose"),
+              );
+              if (!ok) return;
             }
+            if (sessionTimerRef.current !== undefined) {
+              window.clearTimeout(sessionTimerRef.current);
+              sessionTimerRef.current = undefined;
+            }
+            const finalSession = writeSessionOrdered(
+              docsRef.current,
+              activeIdRef.current,
+              splitRatioRef.current,
+            );
+            await waitForCloseTasks([
+              saveQueueRef.current,
+              finalSession,
+              sessionSaveQueueRef.current,
+            ]);
+            await invoke("exit_app");
+          } catch (error) {
+            console.error("Could not close application", error);
+            // Last resort: try a plain destroy. It is unreliable on
+            // WebKitGTK, but works on other platforms and sometimes here.
+            try {
+              await win.destroy();
+            } catch {
+              // The window stays open; the user can retry the close.
+            }
+          } finally {
+            closingRef.current = false;
           }
-        } catch (error) {
-          console.error("No se pudo cerrar la aplicación", error);
-        } finally {
-          closingRef.current = false;
-        }
-      })();
-    });
+        })
+        .catch(() => {
+          // Registration failed (IPC error): allow a future render to retry.
+          closeGuardRef.current = null;
+        });
+    }
     return () => {
-      void unlisten.then((f) => f());
+      // Intentionally keep the close guard registered for the app's lifetime.
+      // Re-registering on re-renders (or on StrictMode's dev double-mount,
+      // where the async unlisten cannot be applied during the synchronous
+      // cleanup) previously left zero or duplicate listeners that swallowed
+      // the first close request or skipped the final session save.
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -357,7 +415,7 @@ export default function App() {
     sessionTimerRef.current = window.setTimeout(() => {
       sessionTimerRef.current = undefined;
       writeSessionOrdered(docs, activeId, splitRatioRef.current).catch((error) =>
-        console.error("No se pudo guardar la sesión", error),
+        console.error("Could not save session", error),
       );
     }, 500);
     return () => {
@@ -366,51 +424,24 @@ export default function App() {
         sessionTimerRef.current = undefined;
       }
     };
-  }, [docs, activeId, ready]);
+  }, [docs, activeId, ready, splitRatioRef]);
 
   useEffect(() => {
     document.title = active?.name ?? "meditor";
   }, [active?.name]);
 
-  useEffect(() => {
-    const root = document.documentElement;
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const updateTheme = () => {
-      const dark = theme === "dark" || (theme === "system" && media.matches);
-      if (theme === "system") {
-        delete root.dataset.theme;
-        root.style.colorScheme = "light dark";
-      } else {
-        root.dataset.theme = theme;
-        root.style.colorScheme = theme;
-      }
-      const themeColor = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
-      themeColor?.setAttribute("content", dark ? "#1e1e1e" : "#0969da");
-    };
-    updateTheme();
-    if (theme !== "system") return;
-    media.addEventListener("change", updateTheme);
-    return () => media.removeEventListener("change", updateTheme);
-  }, [theme]);
+
 
   useEffect(() => {
     if (!ready) return;
     savePreferences({ docView, wrap, theme });
   }, [docView, wrap, theme, ready]);
 
-  useEffect(() => {
-    return () => {
-      if (noticeTimerRef.current !== undefined) {
-        window.clearTimeout(noticeTimerRef.current);
-      }
-    };
-  }, []);
-
   function beginOperation(operation: FileOperation): boolean {
     if (isOperationBusy(busyOperationRef)) return false;
     busyOperationRef.current = operation;
     setBusyOperation(operation);
-    showNotice(operationNotice(operation), "info", 0);
+    showNotice(operationNotice(t, operation), "info", 0);
     return true;
   }
 
@@ -422,24 +453,6 @@ export default function App() {
     if (pending.length) void openPaths(pending);
   }
 
-  function showNotice(
-    message: string,
-    kind: Notice["kind"] = "info",
-    duration = 3500,
-  ) {
-    if (noticeTimerRef.current !== undefined) {
-      window.clearTimeout(noticeTimerRef.current);
-      noticeTimerRef.current = undefined;
-    }
-    setNotice({ message, kind });
-    if (duration > 0) {
-      noticeTimerRef.current = window.setTimeout(() => {
-        noticeTimerRef.current = undefined;
-        setNotice(null);
-      }, duration);
-    }
-  }
-
   useEffect(() => {
     const media = window.matchMedia("(max-width: 760px)");
     const update = () => setCompactLayout(media.matches);
@@ -448,86 +461,44 @@ export default function App() {
     return () => media.removeEventListener("change", update);
   }, []);
 
-  useEffect(() => {
-    if (!menuOpen) return;
-    const firstItem = menuRef.current?.querySelector<HTMLElement>("[role=menuitem]");
-    firstItem?.focus();
-
-    function onClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-        menuToggleRef.current?.focus();
-      }
-    }
-    document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
-  }, [menuOpen]);
-
-  function handleMenuKeyDown(e: ReactKeyboardEvent<HTMLDivElement>) {
-    const items = Array.from(
-      e.currentTarget.querySelectorAll<HTMLElement>(
-        '[role="menuitem"], [role="menuitemradio"]',
-      ),
-    );
-    if (!items.length) return;
-    const current = items.indexOf(document.activeElement as HTMLElement);
-    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-      e.preventDefault();
-      const delta = e.key === "ArrowDown" ? 1 : -1;
-      items[(current + delta + items.length) % items.length].focus();
-    } else if (e.key === "Home" || e.key === "End") {
-      e.preventDefault();
-      items[e.key === "Home" ? 0 : items.length - 1].focus();
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      setMenuOpen(false);
-      menuToggleRef.current?.focus();
-    }
-  }
-
-  function updateContent(content: string) {
+  const updateContent = useCallback((content: string) => {
     setDocs((prev) =>
       prev.map((d) =>
-        d.id === activeId && d.content !== content
+        d.id === activeIdRef.current && d.content !== content
           ? { ...d, content, dirty: true }
           : d,
       ),
     );
-  }
+  }, []);
 
-  function newTab() {
+  const newTab = useCallback(() => {
     if (isOperationBusy(busyOperationRef)) return;
     const doc = makeDoc("");
     setDocs((prev) => [...prev, doc]);
     setActiveId(doc.id);
-  }
+  }, []);
 
-  function mergeDocuments(incoming: Doc[]): void {
-    if (!incoming.length) return;
-    const next = [...docsRef.current];
-    let activateId = "";
-    for (const incomingDoc of incoming) {
-      const ex = next.find((d) => d.path === incomingDoc.path);
-      if (ex) {
-        if (!activateId) activateId = ex.id;
-        continue;
-      }
-      const doc = { ...incomingDoc, id: newId() };
-      next.push(doc);
-      if (!activateId) activateId = doc.id;
-    }
-    docsRef.current = next;
-    setDocs(next);
-    if (activateId) setActiveId(activateId);
-  }
+  const toggleZen = useCallback(() => {
+    setZenMode((z) => !z);
+  }, []);
 
-  function openPaths(documents: Doc[]): Promise<void> {
-    const next = openQueueRef.current.then(() => {
-      mergeDocuments(documents);
+  // In-window confirmation (replaces the native GTK/system dialog). Stable
+  // identity so the once-registered close guard can reference it safely.
+  const confirmDialog = useCallback((message: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      setConfirmRequest({ message, resolve });
     });
-    openQueueRef.current = next.catch(() => undefined);
-    return next;
-  }
+  }, []);
+
+  // In-window rename dialog (replaces the native window.prompt).
+  const renameDialog = useCallback(
+    (id: string, name: string): Promise<string | null> => {
+      return new Promise((resolve) => {
+        setRenameRequest({ id, name, resolve });
+      });
+    },
+    [],
+  );
 
   async function openFiles() {
     if (!isTauri() || !beginOperation("open")) return;
@@ -536,15 +507,15 @@ export default function App() {
       if (opened.length) {
         await openPaths(opened);
         showNotice(
-          `${opened.length} archivo${opened.length === 1 ? "" : "s"} abierto${opened.length === 1 ? "" : "s"}`,
+          t("op.filesOpened", opened.length),
           "success",
         );
       } else {
-        showNotice("Apertura cancelada", "info");
+        showNotice(t("op.cancelled"), "info");
       }
     } catch (error) {
-      showNotice(operationNoticeError("open"), "error", 0);
-      await showNativeAlert(operationErrorPrefix("open") + String(error));
+      showNotice(operationNoticeError(t, "open"), "error", 0);
+      await showNativeAlert(operationErrorPrefix(t, "open") + String(error));
     } finally {
       endOperation("open");
     }
@@ -596,7 +567,7 @@ export default function App() {
         defaultName,
       });
       if (!saved) {
-        showNotice("Guardado cancelado", "info");
+        showNotice(t("op.cancelled"), "info");
         return;
       }
       setDocs((prev) =>
@@ -612,10 +583,10 @@ export default function App() {
             : d,
         ),
       );
-      showNotice(operationNoticeDone("saveAs"), "success");
+      showNotice(operationNoticeDone(t, "saveAs"), "success");
     } catch (e) {
-      showNotice(operationNoticeError("saveAs"), "error", 0);
-      await showNativeAlert(operationErrorPrefix("saveAs") + String(e));
+      showNotice(operationNoticeError(t, "saveAs"), "error", 0);
+      await showNativeAlert(operationErrorPrefix(t, "saveAs") + String(e));
     } finally {
       endOperation("saveAs");
     }
@@ -637,10 +608,10 @@ export default function App() {
           d.id === id && d.content === savedContent ? { ...d, dirty: false } : d,
         ),
       );
-      showNotice(operationNoticeDone("save"), "success");
+      showNotice(operationNoticeDone(t, "save"), "success");
     } catch (e) {
-      showNotice(operationNoticeError("save"), "error", 0);
-      await showNativeAlert(operationErrorPrefix("save") + String(e));
+      showNotice(operationNoticeError(t, "save"), "error", 0);
+      await showNativeAlert(operationErrorPrefix(t, "save") + String(e));
     } finally {
       endOperation("save");
     }
@@ -649,12 +620,12 @@ export default function App() {
   async function exportPdf() {
     if (!active || !isTauri() || !beginOperation("export")) return;
     try {
-      const base = active.name.replace(/\.(md|markdown|txt)$/i, "") || "documento";
+      const base = active.name.replace(/\.(md|markdown|txt)$/i, "") || t("doc.defaultExport");
       await invoke("export_pdf", { defaultName: `${base}.pdf` });
-      showNotice(operationNoticeDone("export"), "success");
+      showNotice(operationNoticeDone(t, "export"), "success");
     } catch (e) {
-      showNotice(operationNoticeError("export"), "error", 0);
-      await showNativeAlert(operationErrorPrefix("export") + String(e));
+      showNotice(operationNoticeError(t, "export"), "error", 0);
+      await showNativeAlert(operationErrorPrefix(t, "export") + String(e));
     } finally {
       endOperation("export");
     }
@@ -665,9 +636,7 @@ export default function App() {
     const initial = docsRef.current.find((d) => d.id === id);
     if (!initial) return;
     if (initial.dirty) {
-      const ok = await invoke<boolean>("confirm", {
-        message: `"${initial.name}" tiene cambios sin guardar. ¿Cerrar de todos modos?`,
-      });
+      const ok = await confirmDialog(t("confirm.unsavedTab", initial.name));
       if (!ok) return;
     }
     const current = docsRef.current;
@@ -688,14 +657,13 @@ export default function App() {
     }
   }
 
-  function renameTab(id: string) {
+  async function renameTab(id: string) {
     const current = docs.find((d) => d.id === id);
-    if (!current) return;
-    const name = window.prompt("Nombre del documento", current.name);
-    if (name && name.trim()) {
-      const clean = name.trim();
+    if (!current || renameRequest) return;
+    const name = await renameDialog(id, current.name);
+    if (name) {
       setDocs((prev) =>
-        prev.map((d) => (d.id === id ? { ...d, name: clean } : d)),
+        prev.map((d) => (d.id === id ? { ...d, name } : d)),
       );
     }
   }
@@ -714,71 +682,37 @@ export default function App() {
     editorRef.current?.scrollToLine(line);
   }
 
-  function onDividerDown(e: ReactPointerEvent<HTMLDivElement>) {
-    e.preventDefault();
-    setDragging(true);
-    e.currentTarget.setPointerCapture(e.pointerId);
-  }
-
-  function onDividerMove(e: ReactPointerEvent<HTMLDivElement>) {
-    if (!dragging) return;
-    const rect = splitRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const vertical = window.matchMedia("(max-width: 760px)").matches;
-    const size = vertical ? rect.height : rect.width;
-    if (size === 0) return;
-    const offset = vertical ? e.clientY - rect.top : e.clientX - rect.left;
-    const pct = Math.max(20, Math.min(80, (offset / size) * 100));
-    splitRatioRef.current = pct;
-    setSplit(pct);
-  }
-
-  function onDividerUp(e: ReactPointerEvent<HTMLDivElement>) {
-    setDragging(false);
-    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-      e.currentTarget.releasePointerCapture(e.pointerId);
-    }
-    splitRatioRef.current = Math.max(20, Math.min(80, splitRatioRef.current));
-  }
-
-  operationRefs.current = {
+  // Keyboard shortcuts — extracted to its own hook
+  useKeyboardShortcuts(ready, {
     save,
     saveAs,
     openFiles,
+    newTab,
     exportPdf,
-    closeTab,
-  };
-
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        setMenuOpen(false);
-        menuToggleRef.current?.focus();
+    closeTab: () => closeTab(activeId),
+    toggleZen,
+    rename: () => renameTab(activeId),
+    // Open-only on purpose: closing always routes through the overlay's
+    // animated path (Esc/backdrop/✕). Toggling off here would unmount the
+    // overlay directly and skip the exit transition. Guarded with `ready` so
+    // F1 during the splash screen cannot queue an overlay to pop on mount.
+    openShortcuts: () => {
+      if (!ready || shortcutsOpen) return;
+      setShortcutsOpen(true);
+    },
+    focusSearch: () => {
+      // Ctrl+K is the only shortcut that moves focus, so it must not steal
+      // it from other inputs (LanguagePicker search, rename dialog) or open
+      // the search panel behind a modal dialog.
+      if (!ready) return;
+      const active = document.activeElement;
+      if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) {
         return;
       }
-      if (!ready || !(e.ctrlKey || e.metaKey)) return;
-      const k = e.key.toLowerCase();
-      if (k === "s") {
-        e.preventDefault();
-        if (e.shiftKey) operationRefs.current.saveAs();
-        else operationRefs.current.save();
-      } else if (k === "o") {
-        e.preventDefault();
-        operationRefs.current.openFiles();
-      } else if (k === "n") {
-        e.preventDefault();
-        newTab();
-      } else if (k === "e") {
-        e.preventDefault();
-        operationRefs.current.exportPdf();
-      } else if (k === "w") {
-        e.preventDefault();
-        operationRefs.current.closeTab(activeId);
-      }
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [ready, activeId]);
+      if (confirmRequest || renameRequest || shortcutsOpen) return;
+      editorRef.current?.focusSearch();
+    },
+  });
 
   if (!ready) {
     return (
@@ -788,181 +722,49 @@ export default function App() {
           <div className="splash-bar">
             <div className="splash-bar-fill" />
           </div>
-          <div className="splash-hint">Cargando...</div>
+          <div className="splash-hint">{t("app.loading")}</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="app">
-      <header className="topbar">
-        <span className="brand">meditor</span>
-        {notice && (
-          <div
-            className={`app-notice ${notice.kind}`}
-            role={notice.kind === "error" ? "alert" : "status"}
-            aria-live={notice.kind === "error" ? "assertive" : "polite"}
-            aria-atomic="true"
-          >
-            <span className="app-notice-dot" aria-hidden="true" />
-            {notice.message}
-          </div>
-        )}
-        <div className="actions">
-          <button
-            type="button"
-            aria-label="Nueva pestaña (Ctrl+N)"
-            onClick={newTab}
-            title="Nuevo (Ctrl+N)"
-            disabled={busyOperation !== null}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-            <span className="btn-label">Nuevo</span>
-          </button>
-          <button type="button" aria-label="Abrir archivos (Ctrl+O)" onClick={openFiles} title="Abrir (Ctrl+O)" disabled={busyOperation !== null}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
-            <span className="btn-label">Abrir</span>
-          </button>
-          <button type="button" aria-label="Guardar (Ctrl+S)" onClick={save} title="Guardar (Ctrl+S)" disabled={busyOperation !== null}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
-            <span className="btn-label">Guardar</span>
-          </button>
-          <div className="menu-dropdown" ref={menuRef}>
-            <button
-              type="button"
-              className="menu-toggle"
-              disabled={busyOperation !== null}
-              title="Más opciones"
-              aria-label="Más opciones"
-              aria-expanded={menuOpen}
-              aria-haspopup="menu"
-              aria-controls="app-menu"
-              ref={menuToggleRef}
-              onClick={() => setMenuOpen((v) => !v)}
-            >
-              <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
-            </button>
-            {menuOpen && (
-              <div id="app-menu" className="menu-panel" role="menu" aria-label="Más opciones" onKeyDown={handleMenuKeyDown}>
-                <button type="button" role="menuitem" disabled={busyOperation !== null} onClick={() => { saveAs(); setMenuOpen(false); menuToggleRef.current?.focus(); }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
-                  Guardar como<span className="shortcut">Ctrl+Shift+S</span>
-                </button>
-                <button type="button" role="menuitem" disabled={busyOperation !== null} onClick={() => { exportPdf(); setMenuOpen(false); menuToggleRef.current?.focus(); }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15l3 3 3-3"/></svg>
-                  Exportar PDF<span className="shortcut">Ctrl+E</span>
-                </button>
-                <div className="menu-sep" />
-                <div className="menu-section-label" aria-hidden="true">Tema</div>
-                {([
-                  ["system", "Sistema", "Seguir el tema del sistema"],
-                  ["light", "Claro", "Interfaz clara"],
-                  ["dark", "Oscuro", "Interfaz oscura"],
-                ] as const).map(([value, label, description]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    role="menuitemradio"
-                    aria-checked={theme === value}
-                    disabled={busyOperation !== null}
-                    title={description}
-                    onClick={() => {
-                      setTheme(value);
-                      setMenuOpen(false);
-                      menuToggleRef.current?.focus();
-                    }}
-                  >
-                    <span className="theme-swatch" data-theme-swatch={value} aria-hidden="true" />
-                    {label}
-                    {theme === value && <span className="theme-check" aria-label="seleccionado">✓</span>}
-                  </button>
-                ))}
-                <div className="menu-sep" />
-                <button type="button" role="menuitem" disabled={busyOperation !== null} onClick={() => { newTab(); setMenuOpen(false); menuToggleRef.current?.focus(); }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-                  Nueva pestaña<span className="shortcut">Ctrl+N</span>
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
-      <div className="tabbar" role="tablist" aria-label="Documentos abiertos">
-        {docs.map((d) => (
-          <div
-            key={d.id}
-            className={"tab" + (d.id === activeId ? " active" : "")}
-            role="presentation"
-          >
-            <button
-              type="button"
-              className="tab-main"
-              id={`tab-${d.id}`}
-              disabled={busyOperation !== null}
-              role="tab"
-              tabIndex={d.id === activeId ? 0 : -1}
-              aria-selected={d.id === activeId}
-              aria-controls="workspace-panels"
-              onKeyDown={(e) => {
-                const index = docs.findIndex((item) => item.id === d.id);
-                if (e.key === "ArrowRight" || e.key === "ArrowDown") {
-                  e.preventDefault();
-                  const next = docs[(index + 1) % docs.length];
-                  setActiveId(next.id);
-                  (e.currentTarget.parentElement?.parentElement?.querySelectorAll<HTMLElement>("[role=tab]")[
-                    (index + 1) % docs.length
-                  ])?.focus();
-                } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
-                  e.preventDefault();
-                  const previous = docs[(index - 1 + docs.length) % docs.length];
-                  setActiveId(previous.id);
-                  (e.currentTarget.parentElement?.parentElement?.querySelectorAll<HTMLElement>("[role=tab]")[
-                    (index - 1 + docs.length) % docs.length
-                  ])?.focus();
-                } else if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  setActiveId(d.id);
-                }
-              }}
-              onClick={() => setActiveId(d.id)}
-              onDoubleClick={() => renameTab(d.id)}
-              aria-label={`${d.name}${d.dirty ? ", cambios sin guardar" : ""}`}
-              title={d.path ?? d.name}
-            >
-              {d.dirty && <span className="tab-dirty" aria-label="Cambios sin guardar">•</span>}
-              <span className="tab-name">{d.name}</span>
-            </button>
-            {docs.length > 1 && (
-              <button
-                type="button"
-                className="tab-close"
-                aria-label={`Cerrar ${d.name}`}
-                onClick={() => closeTab(d.id)}
-                disabled={busyOperation !== null}
-              >
-                ×
-              </button>
-            )}
-          </div>
-        ))}
-        <button
-          type="button"
-          className="tab-add"
-          aria-label="Nueva pestaña"
-          onClick={newTab}
-          disabled={busyOperation !== null}
-        >
-          +
-        </button>
-      </div>
+    <div className={`app${zenMode ? " zen" : ""}`}>
+      <Topbar
+        t={t}
+        lang={lang}
+        setLanguage={setLanguage}
+        notice={notice}
+        busyOperation={busyOperation}
+        menuOpen={menuOpen}
+        setMenuOpen={setMenuOpen}
+        theme={theme}
+        setTheme={setTheme}
+        zenMode={zenMode}
+        onToggleZen={toggleZen}
+        onNew={newTab}
+        onOpen={openFiles}
+        onSave={save}
+        onSaveAs={saveAs}
+        onExportPdf={exportPdf}
+      />
+      <TabBar
+        t={t}
+        docs={docs}
+        activeId={activeId}
+        busyOperation={busyOperation}
+        onSelectTab={setActiveId}
+        onCloseTab={closeTab}
+        onRenameTab={renameTab}
+        onNewTab={newTab}
+      />
       <div
         id="workspace-panels"
         className={"split" + (dragging ? " dragging" : "")}
         ref={splitRef}
         role="tabpanel"
         aria-labelledby={active ? `tab-${active.id}` : undefined}
-        aria-label={active?.name ?? "Documento activo"}
+        aria-label={active?.name ?? ""}
         tabIndex={-1}
       >
         <div
@@ -970,15 +772,15 @@ export default function App() {
           style={{ flex: `0 0 ${split}%` }}
         >
           <div className="pane-header">
-            <span className="pane-title">Editor</span>
+            <span className="pane-title">{t("pane.editor")}</span>
             <button
               type="button"
               className="sync-btn"
               onClick={handleForwardSync}
-              aria-label="Ir a la posición del cursor en el preview"
-              title="Ir a la posición del cursor en el preview"
+              aria-label={t("pane.scrollToPreview")}
+              title={t("pane.scrollToPreview")}
             >
-              <svg
+              <svg aria-hidden="true"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -989,24 +791,49 @@ export default function App() {
                 <path d="M5 12h14" />
                 <path d="m13 6 6 6-6 6" />
               </svg>
-              Ir al preview
+              {t("pane.goToPreview")}
             </button>
             <button
               type="button"
               className={wrap ? "sync-btn on" : "sync-btn"}
               aria-pressed={wrap}
-              aria-label={wrap ? "Desactivar ajuste de línea" : "Activar ajuste de línea"}
+              aria-label={wrap ? t("pane.wrapOn") : t("pane.wrapOff")}
               onClick={() => setWrap((w) => !w)}
-              title="Ajuste de línea"
+              title={t("pane.wrapTitle")}
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 12H3" />
                 <path d="M21 6H3" />
                 <path d="M21 18H3" />
               </svg>
             </button>
+            <button
+              type="button"
+              className={outlineOpen ? "sync-btn on" : "sync-btn"}
+              aria-pressed={outlineOpen}
+              aria-label={t("outline.toggle")}
+              title={t("outline.toggle")}
+              onClick={() => setOutlineOpen((v) => !v)}
+            >
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 6h13" />
+                <path d="M8 12h13" />
+                <path d="M8 18h13" />
+                <path d="M3 6h.01" />
+                <path d="M3 12h.01" />
+                <path d="M3 18h.01" />
+              </svg>
+            </button>
           </div>
-          <Suspense fallback={<div className="editor-loading" role="status">Cargando editor…</div>}>
+          {outlineOpen && (
+            <Outline
+              t={t}
+              headings={headings}
+              cursorLine={cursorLine}
+              onGoToLine={(line) => editorRef.current?.scrollToLine(line)}
+            />
+          )}
+          <Suspense fallback={<div className="editor-loading" role="status">{t("editor.loading")}</div>}>
             <Editor
               ref={editorRef}
               activeId={activeId}
@@ -1014,6 +841,7 @@ export default function App() {
               content={active?.content ?? ""}
               onChange={updateContent}
               wrap={wrap}
+              onCursorLineChange={setCursorLine}
             />
           </Suspense>
         </div>
@@ -1021,7 +849,7 @@ export default function App() {
           className="split-divider"
           role="separator"
           aria-orientation={compactLayout ? "horizontal" : "vertical"}
-          aria-label="Redimensionar paneles"
+          aria-label={t("pane.resize")}
           aria-valuemin={20}
           aria-valuemax={80}
           aria-valuenow={Math.round(split)}
@@ -1042,71 +870,82 @@ export default function App() {
           onPointerDown={onDividerDown}
           onPointerMove={onDividerMove}
           onPointerUp={onDividerUp}
-          onPointerCancel={onDividerUp}
-          title="Arrastra para redimensionar"
+          onLostPointerCapture={onDividerUp}
         />
-        <div
-          className="pane"
-          style={{ flex: compactLayout ? `0 0 ${100 - split}%` : "1 1 0" }}
-        >
+        <div className="pane" style={{ flex: `0 0 ${100 - split}%` }}>
           <div className="pane-header">
-            <span className="pane-title">Preview</span>
-            <div className="view-toggle" role="group" aria-label="Vista previa">
-              <button
-                type="button"
-                className={docView ? "" : "on"}
-                aria-pressed={!docView}
-                onClick={() => setDocView(false)}
-              >
-                Web
-              </button>
-              <button
-                type="button"
-                className={docView ? "on" : ""}
-                aria-pressed={docView}
-                onClick={() => setDocView(true)}
-              >
-                Documento
-              </button>
-            </div>
+            <span className="pane-title">{t("pane.preview")}</span>
             <button
               type="button"
               className="sync-btn"
               onClick={handleReverseSyncButton}
-              aria-label="Ir al código en la posición marcada"
-              title="Ir al código en la posición marcada (haz clic en el preview para marcar)"
+              aria-label={previewRef.current?.getTargetLine ? t("pane.scrollToCode") : t("pane.scrollToCodeHint")}
+              title={previewRef.current?.getTargetLine ? t("pane.scrollToCode") : t("pane.scrollToCodeHint")}
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M19 12H5" />
                 <path d="m11 18-6-6 6-6" />
               </svg>
-              Ir al código
+              {t("pane.goToCode")}
+            </button>
+            <button
+              type="button"
+              className={docView ? "sync-btn on" : "sync-btn"}
+              onClick={() => setDocView((v) => !v)}
+              aria-label={t("pane.viewMode")}
+              title={t("pane.viewMode")}
+            >
+              <span className="pane-view-label">{docView ? t("pane.document") : t("pane.web")}</span>
             </button>
           </div>
-          <div
-            className={"preview-scroll" + (docView ? " doc-bg" : "")}
-            onClick={(e) => {
-              if (!(e.target as HTMLElement).closest("[data-line]")) {
-                previewRef.current?.clearMark();
-              }
-            }}
-          >
-            <Preview
-              ref={previewRef}
-              value={active?.content ?? ""}
-              docView={docView}
-              onReverseSync={handleReverseSync}
-            />
-          </div>
+          <Preview
+            ref={previewRef}
+            value={active?.content ?? ""}
+            docView={docView}
+            onReverseSync={handleReverseSync}
+          />
         </div>
       </div>
+      <StatusBar
+        t={t}
+        content={active?.content ?? ""}
+        docName={active?.name}
+        dirty={active?.dirty}
+      />
+      {confirmRequest && (
+        <ConfirmDialog
+          title={t("confirm.title")}
+          message={confirmRequest.message}
+          confirmLabel={t("confirm.yes")}
+          cancelLabel={t("confirm.no")}
+          onConfirm={() => {
+            confirmRequest.resolve(true);
+            setConfirmRequest(null);
+          }}
+          onCancel={() => {
+            confirmRequest.resolve(false);
+            setConfirmRequest(null);
+          }}
+        />
+      )}
+      {renameRequest && (
+        <RenameDialog
+          title={t("tab.renameTitle")}
+          label={t("tab.renamePrompt")}
+          initialValue={renameRequest.name}
+          confirmLabel={t("tab.rename")}
+          cancelLabel={t("tab.renameCancel")}
+          onConfirm={(name) => {
+            renameRequest.resolve(name);
+            setRenameRequest(null);
+          }}
+          onCancel={() => {
+            renameRequest.resolve(null);
+            setRenameRequest(null);
+          }}
+        />
+      )}
+      {shortcutsOpen && <ShortcutsOverlay t={t} onClose={() => setShortcutsOpen(false)} />}
     </div>
   );
 }

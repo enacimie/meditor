@@ -1,3 +1,14 @@
+/**
+ * Core document model used throughout the app.
+ *
+ * - `id`: Unique client-side identifier (UUID or fallback).
+ * - `name`: Display name shown in the tab bar.
+ * - `path`: OS filesystem path (null for unsaved documents).
+ * - `content`: Full markdown text of the document.
+ * - `dirty`: Whether the document has unsaved changes.
+ * - `handle`: Opaque registry handle assigned by the Rust backend for
+ *   fast path resolution during save operations.
+ */
 export type Doc = {
   id: string;
   name: string;

@@ -1,0 +1,142 @@
+/*
+ * LaTeX-inspired highlight.js theme for the Document view.
+ * Uses typographic distinction (bold, italic) instead of colors,
+ * matching the aesthetics of the LaTeX listings package and
+ * academic/print typography.
+ *
+ * Applied only inside .markdown-body.doc within paged.js pages.
+ */
+
+.markdown-body.doc .hljs {
+  color: #000000;
+  background: #fbfbfb;
+}
+
+/* Keywords: bold */
+.markdown-body.doc .hljs-keyword,
+.markdown-body.doc .hljs-selector-tag,
+.markdown-body.doc .hljs-literal,
+.markdown-body.doc .hljs-type {
+  font-weight: bold;
+  color: #000000;
+}
+
+/* Strings: no color, just monospace */
+.markdown-body.doc .hljs-string,
+.markdown-body.doc .hljs-regexp,
+.markdown-body.doc .hljs-meta .hljs-string {
+  color: #000000;
+}
+
+/* Numbers */
+.markdown-body.doc .hljs-number,
+.markdown-body.doc .hljs-attr,
+.markdown-body.doc .hljs-variable,
+.markdown-body.doc .hljs-template-variable {
+  color: #000000;
+}
+
+/* Comments: italic, slightly smaller feel */
+.markdown-body.doc .hljs-comment,
+.markdown-body.doc .hljs-quote {
+  color: #000000;
+  font-style: italic;
+}
+
+/* Function/method names: bold */
+.markdown-body.doc .hljs-title,
+.markdown-body.doc .hljs-title.class_,
+.markdown-body.doc .hljs-title.function_,
+.markdown-body.doc .hljs-name {
+  font-weight: bold;
+  color: #000000;
+}
+
+/* Built-in / literals: bold */
+.markdown-body.doc .hljs-built_in,
+.markdown-body.doc .hljs-symbol,
+.markdown-body.doc .hljs-params {
+  font-weight: bold;
+  color: #000000;
+}
+
+/* Tags (HTML/XML): bold */
+.markdown-body.doc .hljs-tag,
+.markdown-body.doc .hljs-selector-id,
+.markdown-body.doc .hljs-selector-class {
+  font-weight: bold;
+  color: #000000;
+}
+
+/* Attributes / properties */
+.markdown-body.doc .hljs-attribute,
+.markdown-body.doc .hljs-property {
+  color: #000000;
+}
+
+/* Meta / doctype / section: bold */
+.markdown-body.doc .hljs-meta,
+.markdown-body.doc .hljs-section,
+.markdown-body.doc .hljs-doctag {
+  font-weight: bold;
+  color: #000000;
+}
+
+/* Emphasis */
+.markdown-body.doc .hljs-emphasis {
+  font-style: italic;
+}
+
+.markdown-body.doc .hljs-strong {
+  font-weight: bold;
+}
+
+/* Addition / deletion (diff): typographic distinction */
+.markdown-body.doc .hljs-addition {
+  color: #000000;
+}
+
+.markdown-body.doc .hljs-deletion {
+  color: #000000;
+  text-decoration: line-through;
+}
+
+/* Bullet / code / formula */
+.markdown-body.doc .hljs-bullet,
+.markdown-body.doc .hljs-code,
+.markdown-body.doc .hljs-formula {
+  color: #000000;
+}
+
+/* Link */
+.markdown-body.doc .hljs-link {
+  color: #000000;
+  text-decoration: underline;
+}
+
+/* ── Line numbers (LaTeX listings style) ───────────────────────────── */
+
+.markdown-body.doc pre code {
+  counter-reset: doc-line 0;
+}
+
+.markdown-body.doc .doc-line {
+  counter-increment: doc-line;
+  display: block;
+  white-space: pre;
+}
+
+.markdown-body.doc .doc-line .doc-ln::before {
+  content: counter(doc-line);
+  display: inline-block;
+  min-width: 2em;
+  padding-right: 1.2em;
+  margin-right: 0.6em;
+  text-align: right;
+  color: #999999;
+  font-size: 7.5pt;
+  user-select: none;
+  -webkit-user-select: none;
+  /* Right-align with a light separator feel */
+  border-right: none;
+}

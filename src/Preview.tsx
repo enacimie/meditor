@@ -1,5 +1,6 @@
 import {
   forwardRef,
+  useDeferredValue,
   useEffect,
   useImperativeHandle,
   useRef,
@@ -9,79 +10,17 @@ import {
 import type { Previewer } from "pagedjs";
 import { isTauri } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { useTranslation } from "./i18n/I18nProvider";
 import pagedCss from "./paged.css?inline";
-
-let mermaidPromise: Promise<typeof import("mermaid")> | undefined;
-let markdownPromise: Promise<typeof import("./markdown")> | undefined;
-let markdownStylesPromise: Promise<unknown[]> | undefined;
-
-async function getMarkdownRenderer() {
-  markdownPromise ??= import("./markdown");
-  markdownStylesPromise ??= Promise.all([
-    import("katex/dist/katex.min.css"),
-    import("highlight.js/styles/github.css"),
-  ]);
-  const [{ renderMarkdown }] = await Promise.all([
-    markdownPromise,
-    markdownStylesPromise,
-  ]);
-  return renderMarkdown;
-}
-
-async function getMermaid() {
-  mermaidPromise ??= import("mermaid").then((module) => {
-    module.default.initialize({
-      startOnLoad: false,
-      securityLevel: "strict",
-      suppressErrorRendering: true,
-    });
-    return module;
-  });
-  return (await mermaidPromise).default;
-}
+import latexHighlightCss from "./latex-highlight.css?inline";
+import { clearMermaidCache, destroyMermaidPool } from "./mermaidPool";
+import { renderContent, splitLongFencedBlocks } from "./previewRenderer";
+import "./Preview.css";
 
 const PAGED_STYLES: Array<Record<string, string>> = [
   { "meditor-paged.css": pagedCss },
+  { "meditor-latex-highlight.css": latexHighlightCss },
 ];
-
-const CODE_BLOCK_MAX_LINES = 45;
-
-async function renderContent(
-  el: HTMLElement,
-  value: string,
-  seqRef: React.MutableRefObject<number>,
-  isStale: () => boolean,
-): Promise<void> {
-  const renderMarkdown = await getMarkdownRenderer();
-  if (isStale()) return;
-  el.innerHTML = renderMarkdown(value);
-  const nodes = Array.from(el.querySelectorAll("code.language-mermaid"));
-  for (const code of nodes) {
-    if (isStale()) return;
-    const pre = code.parentElement;
-    if (!pre) continue;
-    const src = code.textContent ?? "";
-    const id = `mmd-${seqRef.current++}`;
-    const line = pre.getAttribute("data-line");
-    let div: HTMLDivElement;
-    try {
-      const mermaid = await getMermaid();
-      const { svg } = await mermaid.render(id, src);
-      if (isStale()) return;
-      div = document.createElement("div");
-      div.className = "mermaid";
-      div.innerHTML = svg;
-    } catch (err) {
-      if (isStale()) return;
-      div = document.createElement("div");
-      div.className = "mermaid-error";
-      div.textContent = "Mermaid: " + (err instanceof Error ? err.message : String(err));
-    }
-    if (isStale()) return;
-    if (line) div.setAttribute("data-line", line);
-    pre.replaceWith(div);
-  }
-}
 
 function collectStyles(): Array<Record<string, string>> {
   return PAGED_STYLES;
@@ -98,14 +37,14 @@ function isSafeExternalUrl(value: string): boolean {
 
 async function openExternal(url: string) {
   if (!isSafeExternalUrl(url)) {
-    console.warn("Enlace externo bloqueado:", url);
+    console.warn("Blocked external link:", url);
     return;
   }
   if (isTauri()) {
     try {
       await openUrl(url);
     } catch (e) {
-      console.error("No se pudo abrir el enlace:", e);
+      console.error("Could not open link:", e);
     }
   } else {
     window.open(url, "_blank", "noopener");
@@ -124,10 +63,29 @@ type Props = {
   onReverseSync: (line: number) => void;
 };
 
+/**
+ * Safely destroy a paged.js Previewer instance.
+ * Uses duck-typing instead of casting to internal types, so it doesn't
+ * break when paged.js updates its internals.
+ */
+function destroyPreviewer(previewer: Previewer | undefined): void {
+  if (!previewer) return;
+  try {
+    const p = previewer as unknown as Record<string, unknown>;
+    const polisher = p["polisher"] as { destroy?: () => void } | undefined;
+    const chunker = p["chunker"] as { destroy?: () => void } | undefined;
+    polisher?.destroy?.();
+    chunker?.destroy?.();
+  } catch {
+    // Best-effort cleanup
+  }
+}
+
 const Preview = forwardRef<PreviewHandle, Props>(function Preview(
   { value, docView, onReverseSync },
   ref,
 ) {
+  const { t } = useTranslation();
   const sourceRef = useRef<HTMLDivElement>(null);
   const webRef = useRef<HTMLDivElement>(null);
   const pagedRef = useRef<HTMLDivElement>(null);
@@ -145,15 +103,8 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
   const [renderError, setRenderError] = useState<string | null>(null);
   const [retryToken, setRetryToken] = useState(0);
 
-  function destroyPreviewer(previewer: Previewer | undefined): void {
-    if (!previewer) return;
-    const { polisher, chunker } = previewer as unknown as {
-      polisher?: { destroy(): void };
-      chunker?: { destroy(): void };
-    };
-    polisher?.destroy();
-    chunker?.destroy();
-  }
+  // Defer preview updates during fast typing to keep the UI responsive
+  const deferredValue = useDeferredValue(value);
 
   async function getPreviewer(): Promise<Previewer> {
     destroyPreviewer(activePreviewerRef.current);
@@ -163,30 +114,27 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
     return previewer;
   }
 
-  function splitLongCodeBlocks(el: HTMLElement): void {
+  /**
+   * Wrap each line inside <pre><code> blocks in <span class="doc-line">
+   * so CSS counters can generate line numbers for the Document view.
+   */
+  function wrapCodeLines(el: HTMLElement): void {
     const pres = Array.from(el.querySelectorAll("pre"));
     for (const pre of pres) {
       const code = pre.querySelector("code");
       if (!code) continue;
-      const lines = code.innerHTML.split("\n");
+      const text = code.innerHTML;
+      if (!text.includes("\n")) continue;
+      const lines = text.split("\n");
+      // Remove trailing empty line from final \n
       if (lines.length && lines[lines.length - 1] === "") lines.pop();
-      if (lines.length <= CODE_BLOCK_MAX_LINES) continue;
-      const baseLine = parseInt(pre.getAttribute("data-line") || "0", 10);
-      const codeClass = code.getAttribute("class") || "";
-      const chunks: string[] = [];
-      for (let i = 0; i < lines.length; i += CODE_BLOCK_MAX_LINES) {
-        const chunkDataLine = baseLine + i;
-        chunks.push(
-          `<pre data-line="${chunkDataLine}"><code class="${codeClass}">${lines
-            .slice(i, i + CODE_BLOCK_MAX_LINES)
-            .join("\n")}</code></pre>`,
-        );
-      }
-      const wrap = document.createElement("span");
-      wrap.innerHTML = chunks.join("");
-      pre.replaceWith(...Array.from(wrap.childNodes));
+      const wrapped = lines
+        .map((ln) => `<span class="doc-line"><span class="doc-ln"></span>${ln || " "}</span>`)
+        .join("\n");
+      code.innerHTML = wrapped;
     }
   }
+
 
   function activeContainer(): HTMLElement | null {
     return docViewRef.current ? pagedRef.current : webRef.current;
@@ -211,7 +159,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
       target.classList.remove("sync-flash");
       void target.offsetWidth;
       target.classList.add("sync-flash");
-      flashTimerRef.current && clearTimeout(flashTimerRef.current);
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
       flashTimerRef.current = window.setTimeout(() => {
         flashTimerRef.current = undefined;
         target?.classList.remove("sync-flash");
@@ -263,7 +211,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
             target.scrollIntoView({ behavior: "smooth", block: "center" });
           }
         } catch {
-          /* selector inválido */
+          /* invalid selector */
         }
         return;
       }
@@ -289,7 +237,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
     }
   }
 
-useEffect(() => {
+  useEffect(() => {
     let cancelled = false;
     let debounceTimer: number | undefined;
 
@@ -304,9 +252,10 @@ useEffect(() => {
         const source = sourceRef.current;
         const paged = pagedRef.current;
         if (!source || !paged) return;
-        await renderContent(source, value, seqRef, isStale);
+        const docValue = splitLongFencedBlocks(deferredValue);
+        await renderContent(source, docValue, seqRef, isStale, t);
         if (cancelled || myToken !== tokenRef.current) return;
-        splitLongCodeBlocks(source);
+        wrapCodeLines(source);
         paged.innerHTML = "";
         let previewer: Previewer;
         try {
@@ -323,14 +272,14 @@ useEffect(() => {
         } catch (e) {
           if (!isStale()) {
             const message = e instanceof Error ? e.message : String(e);
-            setRenderError(`No se pudo generar la vista Documento: ${message}`);
+            setRenderError(`${t("preview.pagedError")} ${message}`);
           }
           console.error("paged.js:", e);
         }
       } else {
         const web = webRef.current;
         if (!web) return;
-        await renderContent(web, value, seqRef, isStale);
+        await renderContent(web, deferredValue, seqRef, isStale, t);
       }
     };
 
@@ -340,7 +289,7 @@ useEffect(() => {
         void run().catch((e) => {
           if (!cancelled) {
             const message = e instanceof Error ? e.message : String(e);
-            setRenderError(`No se pudo generar la vista previa: ${message}`);
+            setRenderError(`${t("preview.renderError")} ${message}`);
           }
           console.error("preview:", e);
         });
@@ -352,7 +301,7 @@ useEffect(() => {
       cancelled = true;
       if (debounceTimer) clearTimeout(debounceTimer);
     };
-  }, [value, docView, retryToken]);
+  }, [deferredValue, docView, retryToken, t]);
 
   useEffect(() => {
     return () => {
@@ -361,6 +310,8 @@ useEffect(() => {
       }
       destroyPreviewer(activePreviewerRef.current);
       activePreviewerRef.current = undefined;
+      clearMermaidCache();
+      destroyMermaidPool();
     };
   }, []);
 
@@ -383,10 +334,10 @@ useEffect(() => {
       />
       {renderError && (
         <div className="preview-error" role="alert" aria-live="assertive">
-          <strong>Vista previa no disponible</strong>
+          <strong>{t("preview.unavailable")}</strong>
           <span>{renderError}</span>
           <button type="button" onClick={() => setRetryToken((token) => token + 1)}>
-            Reintentar
+            {t("preview.retry")}
           </button>
         </div>
       )}

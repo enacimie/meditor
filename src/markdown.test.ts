@@ -27,4 +27,23 @@ describe("renderMarkdown", () => {
     expect(html).toContain("language-typescript");
     expect(html).toContain("hljs-keyword");
   });
+
+  it("resalta los nuevos lenguajes añadidos (C, C++, Java, Go, Ruby, YAML, Dockerfile)", () => {
+    const html = renderMarkdown(
+      "```c\n#include <stdio.h>\nint main() { return 0; }\n```\n\n" +
+      "```go\npackage main\nimport \"fmt\"\nfunc main() { fmt.Println(\"hi\") }\n```\n\n" +
+      "```yaml\nname: test\nversion: 1\n```\n\n" +
+      "```dockerfile\nFROM alpine:latest\nRUN echo hello\n```"
+    );
+    expect(html).toContain("language-c");
+    expect(html).toContain("language-go");
+    expect(html).toContain("language-yaml");
+    expect(html).toContain("language-dockerfile");
+    // C++ alias (class reflects user tag, not canonical name)
+    const cppHtml = renderMarkdown("```c++\nclass Foo {};\n```");
+    expect(cppHtml).toContain("language-c++");
+    // Also test canonical cpp tag
+    const cppCanonical = renderMarkdown("```cpp\nclass Bar {};\n```");
+    expect(cppCanonical).toContain("language-cpp");
+  });
 });

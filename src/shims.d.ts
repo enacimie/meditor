@@ -1,3 +1,11 @@
+/**
+ * Type shims for third-party modules that lack their own type definitions.
+ *
+ * These declarations enable TypeScript to consume the following packages
+ * without errors, providing minimal but sufficient type information for
+ * the subset of each API that meditor actually uses.
+ */
+
 declare module "markdown-it-highlightjs/core" {
   const plugin: (
     md: import("markdown-it").default,

@@ -22,7 +22,21 @@ import markdownLanguage from "highlight.js/lib/languages/markdown";
 import python from "highlight.js/lib/languages/python";
 import rust from "highlight.js/lib/languages/rust";
 import sql from "highlight.js/lib/languages/sql";
+import c from "highlight.js/lib/languages/c";
+import cpp from "highlight.js/lib/languages/cpp";
+import java from "highlight.js/lib/languages/java";
+import go from "highlight.js/lib/languages/go";
+import ruby from "highlight.js/lib/languages/ruby";
+import yaml from "highlight.js/lib/languages/yaml";
+import dockerfile from "highlight.js/lib/languages/dockerfile";
 import katex from "katex";
+
+// Mermaid blocks are rendered separately by the mermaid worker/pool.
+// Register a no-op language so highlight.js doesn't warn about unknown "mermaid".
+const mermaidNoop = () => ({
+  name: "Mermaid",
+  contains: [],
+});
 
 function addLineNumbers(md: MarkdownIt) {
   md.core.ruler.push("add_line_numbers", (state) => {
@@ -54,6 +68,14 @@ export const md = new MarkdownIt({
       python,
       rust,
       sql,
+      c,
+      cpp,
+      java,
+      go,
+      ruby,
+      yaml,
+      dockerfile,
+      mermaid: mermaidNoop,
     },
     registerAliases: {
       javascript: ["js", "jsx"],
@@ -61,6 +83,9 @@ export const md = new MarkdownIt({
       bash: ["sh", "shell", "zsh"],
       xml: ["html", "xhtml", "svg"],
       markdown: ["md"],
+      cpp: ["c++", "cc", "cxx", "h", "hpp"],
+      yaml: ["yml"],
+      dockerfile: ["docker"],
     },
   })
   .use(taskLists, { enabled: true })

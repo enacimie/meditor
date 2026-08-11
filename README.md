@@ -1,140 +1,183 @@
 # meditor
 
-Editor de textos de escritorio **Markdown extendido**, sencillo pero potente, construido con [Tauri](https://tauri.app) (Rust) y React. Renderizado en vivo, exportación a PDF vectorial y sincronización bidireccional editor ↔ preview al estilo de Overleaf.
+**Desktop Markdown editor** with live preview, PDF export, and bidirectional editor↔preview sync. Built with [Tauri](https://tauri.app) (Rust) and React.
 
-![Captura de meditor](screenshots/screenshot1.png)
+![meditor screenshot](screenshots/screenshot1.png)
 
-## Características
+## Features
 
-### Markdown extendido
+### Extended Markdown
 
-- **GFM**: tablas, listas de tareas, tachado y autolinks.
-- **Extensiones**: resaltado `==marcado==`, `++insertado++`, subíndice `H~2~O`, superíndice `E=mc^2^`, notas al pie, listas de definiciones, abreviaturas, emoji 😊 y contenedores personalizados (`::: warning`, `::: note`).
-- **Matemáticas** con [KaTeX](https://katex.org): en línea `$e^{i\pi}+1=0$` y en bloque `$$ ... $$`.
-- **Diagramas** [Mermaid](https://mermaid.js.org) (flowchart, sequence, gantt, etc.), renderizados como **SVG vectorial**.
-- **Resaltado de código** con [highlight.js](https://highlightjs.org).
+- **GFM**: tables, task lists, strikethrough, and autolinks.
+- **Extensions**: `==highlight==`, `++inserted++`, subscript `H~2~O`, superscript `E=mc^2^`, footnotes, definition lists, abbreviations, emoji 😊, and custom containers (`::: warning`, `::: note`).
+- **Math** with [KaTeX](https://katex.org): inline `$e^{i\pi}+1=0$` and block `$$ ... $$`.
+- **Diagrams** [Mermaid](https://mermaid.js.org) (flowchart, sequence, gantt, etc.), rendered as **vector SVG**.
+- **Code highlighting** with [highlight.js](https://highlightjs.org).
 
-### Edición
+### Editing
 
-- Editor [CodeMirror 6](https://codemirror.net) con resaltado de sintaxis Markdown y de bloques de código.
-- **Pestañas multi-documento**: crear, cerrar, renombrar (doble clic) e indicador de cambios sin guardar.
-- **Estado independiente por pestaña** (historial de deshacer y scroll propios).
-- **Persistencia**: abrir/guardar archivos reales y **restauración de la sesión** (pestañas y contenido) entre ejecuciones.
+- [CodeMirror 6](https://codemirror.net) editor with Markdown and code block syntax highlighting.
+- **Multi-document tabs**: create, close, rename (double-click or **F2**), and unsaved changes indicator. Navigate with **Ctrl+Tab** / **Ctrl+Shift+Tab**.
+- **Per-tab independent state** (separate undo history and scroll position).
+- **Typing aids**: automatic bracket/quote pair completion, smart backspace, auto-continue for lists and blockquotes.
+- **Drag & drop or paste images** into the editor — they are inlined as markdown and previewed live.
+- **Persistence**: open/save real files and **session restoration** (tabs and content) between launches.
 
-### Preview y sincronización
+### Interface
 
-- Dos modos de vista previa:
-  - **Web**: vista cómoda de pantalla.
-  - **Documento**: páginas **A4 paginadas** con [paged.js](https://pagedjs.org) y estética LaTeX (fuente **Latin Modern**, texto justificado, tablas tipo *booktabs*).
-- **Sincronización bidireccional** editor ↔ preview:
-  - **Doble clic** en el preview → salta a la línea de código correspondiente.
-  - Botones **"Ir al preview"** e **"Ir al código"** en cada panel.
-  - Un clic en el preview **marca** la posición (contorno azul) como referencia para el salto.
-- **Paneles redimensionables** arrastrando el divisor.
+- **20 languages** (English, Chinese, Hindi, Spanish, Arabic, French, Bengali, Portuguese, Russian, Urdu, Indonesian, German, Japanese, Swahili, Marathi, Telugu, Turkish, Tamil, Korean, Italian) with a searchable selector in the menu.
+- **4 themes**: System, Light, Dark, and a **High Contrast** colorblind-friendly theme (WCAG AA everywhere).
+- **Zen mode** (F11): fullscreen distraction-free writing.
+- **Keyboard shortcuts overlay** (F1) and in-window dialogs for confirm/rename (fully themed and localized).
+- **Status bar** with word/line/character counts and unsaved indicator.
+- **Outline** (table of contents) from headings for quick navigation.
 
-### Exportación y distribución
+### Preview & Sync
 
-- **Exportar a PDF** vectorial (texto seleccionable, KaTeX y Mermaid vectoriales) mediante la impresión de WebKitGTK, sin diálogo del sistema. Formato A4 con márgenes de 2,5 cm.
-- Empaquetado como **AppImage**, **deb** y **rpm** con `tauri build`.
+- Two preview modes:
+  - **Web**: comfortable on-screen view.
+  - **Document**: **paginated A4 pages** with [paged.js](https://pagedjs.org) and LaTeX aesthetics (**Latin Modern** font, justified text, *booktabs*-style tables).
+- **Bidirectional sync** editor ↔ preview:
+  - **Double-click** in preview → jumps to the corresponding line of code.
+  - **"Go to preview"** and **"Go to code"** buttons in each panel.
+  - Clicking in preview **marks** the position (blue outline) as a jump reference.
+- **Resizable panels** by dragging the divider.
 
-## Stack tecnológico
+### Export & Distribution
 
-| Capa             | Tecnología                                                                                              |
+- **Export to PDF** vector (selectable text, vector KaTeX and Mermaid) via WebKitGTK printing, without system dialog. A4 format with 2.5 cm margins.
+- Packaged as **AppImage**, **deb**, and **rpm** via `tauri build`.
+
+## Tech Stack
+
+| Layer            | Technology                                                                                              |
 | ---------------- | ------------------------------------------------------------------------------------------------------- |
-| Shell de escritorio | [Tauri v2](https://tauri.app) (Rust + WebKitGTK)                                                     |
+| Desktop shell    | [Tauri v2](https://tauri.app) (Rust + WebKitGTK)                                                        |
 | Frontend         | React 19 + TypeScript + Vite                                                                            |
 | Editor           | CodeMirror 6                                                                                            |
 | Markdown         | markdown-it + plugins (GFM, footnote, mark, sub/sup, ins, deflist, abbr, emoji, container, texmath, highlightjs) |
-| Matemáticas      | KaTeX                                                                                                   |
-| Diagramas        | Mermaid                                                                                                 |
-| Código           | highlight.js                                                                                            |
-| Paginación       | paged.js                                                                                                |
-| Tipografía       | Latin Modern (GUST)                                                                                     |
+| Math             | KaTeX                                                                                                   |
+| Diagrams         | Mermaid                                                                                                 |
+| Code             | highlight.js                                                                                            |
+| Pagination       | paged.js                                                                                                |
+| Typography       | Latin Modern (GUST)                                                                                     |
 
-## Requisitos previos
+## Prerequisites
 
 - [Rust](https://rustup.rs) (cargo).
-- [Node.js](https://nodejs.org) 20+ y [pnpm](https://pnpm.io).
-- **Linux** (Ubuntu/Debian): dependencias del sistema para Tauri/WebKitGTK:
+- [Node.js](https://nodejs.org) 20+ and [pnpm](https://pnpm.io).
+- **Linux** (Ubuntu/Debian): system dependencies for Tauri/WebKitGTK:
 
   ```bash
   sudo apt update && sudo apt install -y \
     libwebkit2gtk-4.1-dev build-essential curl wget file \
+    libsoup-3.0-dev libjavascriptcoregtk-4.1-dev \
     libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
   ```
 
-  (También puedes ejecutar `./setup.sh`, que instala lo necesario.)
+  (You can also run `./setup.sh`, which installs everything needed.)
 
-## Desarrollo
+## Development
 
 ```bash
 pnpm install
 pnpm tauri dev
 ```
 
-`pnpm tauri dev` arranca Vite y la ventana nativa con recarga en caliente.
+`pnpm tauri dev` starts Vite and the native window with hot reload.
 
-> Para probar solo el frontend en el navegador: `pnpm dev` (las funciones de escritorio —abrir/guardar, PDF y sesión— requieren la app nativa).
+> To test only the frontend in the browser: `pnpm dev` (desktop features — open/save, PDF, and session — require the native app).
 
-## Construcción
+### Running Tests
+
+```bash
+pnpm test:run          # Frontend unit tests (Vitest)
+pnpm test:e2e          # E2E specs in real headless Chrome (see tests/e2e)
+pnpm test:all          # Unit + E2E, one shot
+pnpm verify            # Full pipeline: eslint + tsc + unit + E2E + cargo check/test
+cargo test -p meditor  # Backend tests (Rust) alone
+```
+
+The **pre-commit hook** (husky) runs `pnpm verify` on every commit — nothing broken lands. Skip it in an emergency with `HUSKY=0 git commit ...`.
+
+E2E specs live in `tests/e2e/` and use a zero-dependency CDP driver (`cdp.mjs`) against a real headless Chrome: dialogs and the window close guard (with a faithful Tauri IPC shim), the high-contrast theme's WCAG ratios, and the keyboard shortcuts.
+
+## Build
 
 ```bash
 pnpm tauri build
 ```
 
-Genera (en `src-tauri/target/release/bundle/`):
+Produces (in `src-tauri/target/release/bundle/`):
 
-- `appimage/meditor_<versión>_amd64.AppImage`
-- `deb/meditor_<versión>_amd64.deb`
-- `rpm/meditor-<versión>-1.x86_64.rpm`
+- `appimage/meditor_<version>_amd64.AppImage`
+- `deb/meditor_<version>_amd64.deb`
+- `rpm/meditor-<version>-1.x86_64.rpm`
 
-Para ejecutar el AppImage en distribuciones sin FUSE: `./meditor_*.AppImage --appimage-extract-and-run` (o instala `libfuse2`).
+To run the AppImage on distros without FUSE: `./meditor_*.AppImage --appimage-extract-and-run` (or install `libfuse2`).
 
-## Atajos de teclado
+## Keyboard Shortcuts
 
-| Atajo          | Acción            |
-| -------------- | ----------------- |
-| `Ctrl+N`       | Nuevo documento   |
-| `Ctrl+O`       | Abrir archivo(s)  |
-| `Ctrl+S`       | Guardar           |
-| `Ctrl+Shift+S` | Guardar como      |
-| `Ctrl+E`       | Exportar a PDF    |
-| `Ctrl+W`       | Cerrar pestaña    |
+| Shortcut        | Action          |
+| --------------- | --------------- |
+| `Ctrl+N`        | New document    |
+| `Ctrl+O`        | Open file(s)    |
+| `Ctrl+S`        | Save            |
+| `Ctrl+Shift+S`  | Save as         |
+| `Ctrl+E`        | Export to PDF   |
+| `Ctrl+W`        | Close tab       |
+| `Ctrl+Tab` / `Ctrl+Shift+Tab` | Next / previous tab |
+| `Ctrl+F`        | Find            |
+| `Ctrl+K`        | Focus the find field |
+| `Ctrl+H`        | Find & replace  |
+| `Ctrl+G`        | Go to line      |
+| `F1`            | Shortcuts overlay |
+| `F2`            | Rename tab      |
+| `F11`           | Zen mode        |
 
-Además: **doble clic** en el preview para ir al código y arrastre del divisor para redimensionar los paneles.
+Press **F1** anytime for the full list. Also: **double-click** in preview to jump to code, and **drag the divider** to resize panels.
 
-## Estructura del proyecto
+## Project Structure
 
 ```
 meditor/
 ├── index.html
 ├── src/
-│   ├── main.tsx          # punto de entrada de React
-│   ├── App.tsx           # estado global, pestañas, sync y paneles
-│   ├── App.css           # estilos (pantalla e impresión)
-│   ├── Editor.tsx        # CodeMirror 6 (estado por pestaña)
-│   ├── Preview.tsx       # render + mermaid + paginación (paged.js)
-│   ├── markdown.ts       # configuración de markdown-it + data-line
-│   ├── paged.css         # estilos de la vista Documento (A4)
-│   ├── sample.ts         # documento de ejemplo
-│   ├── shims.d.ts        # declaraciones de tipos
-│   └── assets/fonts/     # fuentes Latin Modern (GUST)
+│   ├── main.tsx              # React entry point
+│   ├── App.tsx               # Global state, tabs, sync, and panels
+│   ├── App.css               # Styles (screen and print)
+│   ├── Editor.tsx            # CodeMirror 6 (per-tab state)
+│   ├── Preview.tsx           # Render + mermaid + pagination (paged.js)
+│   ├── markdown.ts           # markdown-it config + data-line
+│   ├── paged.css             # Document view styles (A4)
+│   ├── sample.ts             # Sample document
+│   ├── session.ts            # Session serialization types/helpers
+│   ├── types.ts              # Shared types
+│   ├── ErrorBoundary.tsx     # React error boundary
+│   ├── i18n/                 # Internationalization
+│   │   ├── I18nProvider.tsx  # Language context, storage, browser detection
+│   │   └── translations/     # en.ts + 19 more language files (parity-tested)
+│   ├── hooks/                # useThemeEffect, useSplitDivider, useKeyboardShortcuts…
+│   ├── components/           # Topbar, TabBar, dialogs, LanguagePicker, ShortcutsOverlay…
+│   └── assets/fonts/         # Latin Modern fonts (GUST)
 ├── src-tauri/
-│   ├── src/lib.rs        # comandos: leer/guardar, sesión y exportar PDF
+│   ├── src/lib.rs            # Commands: read/save, session, and PDF export
+│   ├── src/locale.rs         # Localized backend error messages
 │   ├── tauri.conf.json
-│   ├── capabilities/     # permisos (dialog, opener)
+│   ├── capabilities/         # Permissions (dialog, opener)
 │   └── Cargo.toml
-└── setup.sh              # instala las dependencias del sistema (Linux)
+├── tests/e2e/                # CDP-driven E2E harness (cdp.mjs, run.mjs, specs)
+└── setup.sh                  # Install system dependencies (Linux)
 ```
 
-## Fuentes
+## Fonts
 
-Las fuentes **Latin Modern** incluidas en `src/assets/fonts/` se distribuyen bajo la [GUST Font License](src/assets/fonts/GUST-FONT-LICENSE.TXT) (libre). Consulta el archivo de licencia adjunto.
+The **Latin Modern** fonts included in `src/assets/fonts/` are distributed under the [GUST Font License](src/assets/fonts/GUST-FONT-LICENSE.TXT) (free). See the accompanying license file.
 
-## Licencia
+## License
 
-Las fuentes Latin Modern están bajo la GUST Font License (ver `src/assets/fonts/GUST-FONT-LICENSE.TXT`). La licencia del código de la aplicación está por definir.
+The Latin Modern fonts are under the GUST Font License (see `src/assets/fonts/GUST-FONT-LICENSE.TXT`). The application code license is to be determined.
 
-## IDE recomendado
+## Recommended IDE
 
 - [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)

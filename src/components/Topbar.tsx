@@ -1,0 +1,246 @@
+import { memo, useRef, useEffect, useState, lazy, Suspense, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import type { Language, TranslationFn } from "../i18n/translations";
+import { LANGUAGES } from "../i18n/translations";
+import type { Theme, Notice } from "./types";
+import "./Topbar.css";
+
+/** Lazy-loaded — only fetched when the user opens the language picker. */
+const LanguagePicker = lazy(() => import("./LanguagePicker"));
+
+type Props = {
+  t: TranslationFn;
+  lang: Language;
+  setLanguage: (lang: Language) => void;
+  notice: Notice | null;
+  busyOperation: string | null;
+  menuOpen: boolean;
+  setMenuOpen: (v: boolean) => void;
+  theme: Theme;
+  setTheme: (t: Theme) => void;
+  zenMode: boolean;
+  onToggleZen: () => void;
+  onNew: () => void;
+  onOpen: () => void;
+  onSave: () => void;
+  onSaveAs: () => void;
+  onExportPdf: () => void;
+};
+
+const Topbar = memo(function Topbar({
+  t,
+  lang,
+  setLanguage,
+  notice,
+  busyOperation,
+  menuOpen,
+  setMenuOpen,
+  theme,
+  setTheme,
+  zenMode,
+  onToggleZen,
+  onNew,
+  onOpen,
+  onSave,
+  onSaveAs,
+  onExportPdf,
+}: Props) {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuToggleRef = useRef<HTMLButtonElement>(null);
+  const [langPickerOpen, setLangPickerOpen] = useState(false);
+  const [themePickerOpen, setThemePickerOpen] = useState(false);
+
+  const currentLang = LANGUAGES.find((l) => l.code === lang) ?? LANGUAGES[0];
+
+  useEffect(() => {
+    if (!menuOpen) {
+      setLangPickerOpen(false);
+      setThemePickerOpen(false);
+      return;
+    }
+    const firstItem = menuRef.current?.querySelector<HTMLElement>("[role=menuitem]");
+    firstItem?.focus();
+
+    function onClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+        menuToggleRef.current?.focus();
+      }
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [menuOpen, setMenuOpen]);
+
+  function handleMenuKeyDown(e: ReactKeyboardEvent<HTMLDivElement>) {
+    const items = Array.from(
+      e.currentTarget.querySelectorAll<HTMLElement>(
+        '[role="menuitem"], [role="menuitemradio"]',
+      ),
+    );
+    if (!items.length) return;
+    const current = items.indexOf(document.activeElement as HTMLElement);
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      const delta = e.key === "ArrowDown" ? 1 : -1;
+      items[(current + delta + items.length) % items.length].focus();
+    } else if (e.key === "Home" || e.key === "End") {
+      e.preventDefault();
+      items[e.key === "Home" ? 0 : items.length - 1].focus();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setMenuOpen(false);
+      menuToggleRef.current?.focus();
+    }
+  }
+
+  const busy = busyOperation !== null;
+
+  const themeOptions: [Theme, string, string][] = [
+    ["system", t("menu.system"), t("menu.systemDesc")],
+    ["light", t("menu.light"), t("menu.lightDesc")],
+    ["dark", t("menu.dark"), t("menu.darkDesc")],
+    ["contrast", t("menu.contrast"), t("menu.contrastDesc")],
+  ];
+
+  const currentThemeOption = themeOptions.find(([v]) => v === theme) ?? themeOptions[0];
+
+  const selectTheme = (value: Theme) => {
+    setTheme(value);
+    setThemePickerOpen(false);
+    setMenuOpen(false);
+    menuToggleRef.current?.focus();
+  };
+
+  return (
+    <header className="topbar">
+      <span className="brand">{t("app.brand")}</span>
+      {notice && (
+        <div
+          className={`app-notice ${notice.kind}`}
+          role={notice.kind === "error" ? "alert" : "status"}
+          aria-live={notice.kind === "error" ? "assertive" : "polite"}
+          aria-atomic="true"
+        >
+          <span className="app-notice-dot" aria-hidden="true" />
+          {notice.message}
+        </div>
+      )}
+      <div className="actions">
+        <button type="button" aria-label={t("topbar.newAria")} onClick={onNew} title={t("topbar.newTitle")} disabled={busy}>
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          <span className="btn-label">{t("topbar.new")}</span>
+        </button>
+        <button type="button" aria-label={t("topbar.openAria")} onClick={onOpen} title={t("topbar.openTitle")} disabled={busy}>
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+          <span className="btn-label">{t("topbar.open")}</span>
+        </button>
+        <button type="button" aria-label={t("topbar.saveAria")} onClick={onSave} title={t("topbar.saveTitle")} disabled={busy}>
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
+          <span className="btn-label">{t("topbar.save")}</span>
+        </button>
+        <div className="menu-dropdown" ref={menuRef}>
+          <button
+            type="button"
+            className="menu-toggle"
+            disabled={busy}
+            title={t("topbar.moreOptions")}
+            aria-label={t("topbar.moreOptionsAria")}
+            aria-expanded={menuOpen}
+            aria-haspopup="menu"
+            aria-controls="app-menu"
+            ref={menuToggleRef}
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+          </button>
+          {menuOpen && (
+            <div id="app-menu" className="menu-panel" role="menu" aria-label={t("topbar.moreOptions")} onKeyDown={handleMenuKeyDown}>
+              <button type="button" role="menuitem" disabled={busy} onClick={() => { onSaveAs(); setMenuOpen(false); menuToggleRef.current?.focus(); }}>
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
+                {t("menu.saveAs")}<span className="shortcut">{t("menu.shortcut.saveAs")}</span>
+              </button>
+              <button type="button" role="menuitem" disabled={busy} onClick={() => { onExportPdf(); setMenuOpen(false); menuToggleRef.current?.focus(); }}>
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15l3 3 3-3"/></svg>
+                {t("menu.exportPdf")}<span className="shortcut">{t("menu.shortcut.export")}</span>
+              </button>
+              <div className="menu-sep" />
+              <div className="menu-replacedby-section">
+                <div className="menu-section-label" aria-hidden="true">{t("menu.theme")}</div>
+                {themePickerOpen ? (
+                  <>
+                    {themeOptions.map(([value, label, description]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        role="menuitemradio"
+                        aria-checked={theme === value}
+                        disabled={busy}
+                        title={description}
+                        onClick={() => selectTheme(value)}
+                      >
+                        <span className="theme-swatch" data-theme-swatch={value} aria-hidden="true" />
+                        {label}
+                        {theme === value && <span className="theme-check" aria-label={t("menu.selected")}>✓</span>}
+                      </button>
+                    ))}
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    disabled={busy}
+                    onClick={() => setThemePickerOpen(true)}
+                  >
+                    <span className="theme-swatch" data-theme-swatch={currentThemeOption[0]} aria-hidden="true" />
+                    {currentThemeOption[1]}
+                  </button>
+                )}
+              </div>
+              <div className="menu-sep" />
+              <div className="menu-section-label" aria-hidden="true">{t("menu.language")}</div>
+              {langPickerOpen ? (
+                <Suspense fallback={<div className="lang-loading">…</div>}>
+                  <LanguagePicker
+                    lang={lang}
+                    t={t}
+                    onSelect={(code) => {
+                      setLanguage(code);
+                      setLangPickerOpen(false);
+                      setMenuOpen(false);
+                      menuToggleRef.current?.focus();
+                    }}
+                  />
+                </Suspense>
+              ) : (
+                <button
+                  type="button"
+                  role="menuitem"
+                  disabled={busy}
+                  onClick={() => setLangPickerOpen(true)}
+                >
+                  {currentLang.nativeLabel}
+                </button>
+              )}
+              <div className="menu-sep" />
+              <button type="button" role="menuitem" disabled={busy} onClick={() => { onNew(); setMenuOpen(false); menuToggleRef.current?.focus(); }}>
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                {t("menu.newTab")}<span className="shortcut">{t("menu.shortcut.newTab")}</span>
+              </button>
+              <button type="button" role="menuitem" disabled={busy} onClick={() => { onToggleZen(); setMenuOpen(false); menuToggleRef.current?.focus(); }}>
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  {zenMode
+                    ? <><path d="M4 4h7v7H4z"/><path d="M13 4h7v7h-7z"/><path d="M4 13h7v7H4z"/><path d="M13 13h7v7h-7z"/></>
+                    : <><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></>
+                  }
+                </svg>
+                {zenMode ? t("menu.zenExit") : t("menu.zenEnter")}
+                <span className="shortcut">{t("menu.shortcut.zen")}</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+});
+
+export default Topbar;

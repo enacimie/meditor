@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef } from "react";
+import { placeholder, keymap } from "@codemirror/view";
 import { EditorView, basicSetup } from "codemirror";
 import {
   Compartment,
@@ -7,10 +8,20 @@ import {
 } from "@codemirror/state";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { languages } from "@codemirror/language-data";
+import { search, searchKeymap, openSearchPanel } from "@codemirror/search";
+import {
+  buildMarkdownPairKeymap,
+  buildAutoContinueKeymap,
+  buildSmartBackspaceKeymap,
+} from "./editorKeymaps";
+import { useImagePaste } from "./hooks/useImagePaste";
+import "./Editor.css";
 
 export type EditorHandle = {
   scrollToLine: (line: number) => void;
   getCursorLine: () => number;
+  /** Open (or focus) the find panel — wired to the Ctrl+K shortcut. */
+  focusSearch: () => void;
 };
 
 type Props = {
@@ -19,10 +30,14 @@ type Props = {
   content: string;
   onChange: (content: string) => void;
   wrap: boolean;
+  zenMode?: boolean;
+  zenPlaceholder?: string;
+  /** Fired when the cursor moves (or the active doc changes). 0-based line. */
+  onCursorLineChange?: (line: number) => void;
 };
 
 const Editor = forwardRef<EditorHandle, Props>(function Editor(
-  { activeId, ids, content, onChange, wrap },
+  { activeId, ids, content, onChange, wrap, zenMode, zenPlaceholder, onCursorLineChange },
   ref,
 ) {
   const host = useRef<HTMLDivElement>(null);
@@ -30,14 +45,27 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   const states = useRef(new Map<string, EditorState>());
   const extRef = useRef<Extension[]>([]);
   const wrapCompartment = useRef(new Compartment());
+  const placeholderCompartment = useRef(new Compartment());
   const activeIdRef = useRef(activeId);
   const suppress = useRef(false);
   const onChangeRef = useRef(onChange);
+  const onCursorLineChangeRef = useRef(onCursorLineChange);
   const lastIdsRef = useRef<string[]>([]);
+  // Capture initial prop values for the mount-once effect
+  const initialActiveId = useRef(activeId);
+  const initialContent = useRef(content);
+  const initialWrap = useRef(wrap);
+  const initialZenMode = useRef(zenMode);
+  const initialZenPlaceholder = useRef(zenPlaceholder);
+
+  // Image drag-and-drop + clipboard paste
+  const { dragOver, busy, handleDragOver, handleDragEnter, handleDragLeave, handleDrop, handlePaste } =
+    useImagePaste({ viewRef });
 
   useLayoutEffect(() => {
     onChangeRef.current = onChange;
-  }, [onChange]);
+    onCursorLineChangeRef.current = onCursorLineChange;
+  }, [onChange, onCursorLineChange]);
 
   useImperativeHandle(ref, () => ({
     scrollToLine(line: number) {
@@ -57,6 +85,16 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
       if (!view) return 0;
       return view.state.doc.lineAt(view.state.selection.main.head).number - 1;
     },
+    focusSearch() {
+      const view = viewRef.current;
+      if (!view) return;
+      openSearchPanel(view);
+      // The search extension renders the panel synchronously but focuses the
+      // field on a rAF, which is unreliable under test. Focus it directly so
+      // Ctrl+K deterministically lands the cursor in the find input.
+      const field = view.dom.querySelector<HTMLInputElement>(".cm-textfield");
+      field?.focus();
+    },
   }));
 
   useEffect(() => {
@@ -64,10 +102,24 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
     const extensions: Extension[] = [
       basicSetup,
       markdown({ base: markdownLanguage, codeLanguages: languages }),
-      wrapCompartment.current.of(wrap ? EditorView.lineWrapping : []),
+      search({ top: true }),
+      keymap.of(searchKeymap),
+      buildMarkdownPairKeymap(),
+      buildSmartBackspaceKeymap(),
+      buildAutoContinueKeymap(),
+      wrapCompartment.current.of(initialWrap.current ? EditorView.lineWrapping : []),
+      placeholderCompartment.current.of(
+        initialZenMode.current && initialZenPlaceholder.current ? placeholder(initialZenPlaceholder.current) : [],
+      ),
       EditorView.updateListener.of((u) => {
         if (u.docChanged && !suppress.current) {
           onChangeRef.current(u.state.doc.toString());
+        }
+        // Report cursor movement so the outline can highlight the active heading.
+        if (u.selectionSet || u.docChanged) {
+          const line =
+            u.state.doc.lineAt(u.state.selection.main.head).number - 1;
+          onCursorLineChangeRef.current?.(line);
         }
       }),
       EditorView.theme({
@@ -89,18 +141,45 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
         },
         ".cm-content": { padding: "12px 0", caretColor: "var(--fg)" },
         ".cm-activeLineGutter": { backgroundColor: "transparent" },
+        ".cm-foldGutter .cm-gutterElement": {
+          padding: "0 4px",
+          cursor: "pointer",
+          color: "var(--fg)",
+          opacity: 0.5,
+        },
+        ".cm-foldPlaceholder": {
+          backgroundColor: "var(--bg-alt)",
+          color: "var(--fg)",
+          opacity: 0.6,
+          border: "none",
+          padding: "0 8px",
+          margin: "2px 0",
+        },
+        ".cm-searchMatch": {
+          backgroundColor: "color-mix(in srgb, var(--accent) 35%, transparent)",
+          color: "inherit",
+        },
+        ".cm-searchMatch-selected": {
+          backgroundColor: "color-mix(in srgb, var(--accent) 55%, transparent)",
+          color: "inherit",
+        },
       }),
     ];
     extRef.current = extensions;
-    const state = EditorState.create({ doc: content, extensions });
-    states.current.set(activeId, state);
-    activeIdRef.current = activeId;
+    const state = EditorState.create({ doc: initialContent.current, extensions });
+    states.current.set(initialActiveId.current, state);
+    activeIdRef.current = initialActiveId.current;
     const view = new EditorView({ state, parent: host.current });
     viewRef.current = view;
+    // Report the initial cursor line so the outline highlights on first render.
+    onCursorLineChangeRef.current?.(
+      view.state.doc.lineAt(view.state.selection.main.head).number - 1,
+    );
+    const currentStates = states.current;
     return () => {
       view.destroy();
       viewRef.current = null;
-      states.current.clear();
+      currentStates.clear();
     };
   }, []);
 
@@ -113,6 +192,16 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
         ),
       });
   }, [wrap]);
+
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch({
+      effects: placeholderCompartment.current.reconfigure(
+        zenMode && zenPlaceholder ? placeholder(zenPlaceholder) : [],
+      ),
+    });
+  }, [zenMode, zenPlaceholder]);
 
   useEffect(() => {
     const view = viewRef.current;
@@ -140,7 +229,11 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
     });
     states.current.set(activeId, view.state);
     suppress.current = false;
-  }, [activeId, content]);
+    // Report the cursor position of the newly active document.
+    onCursorLineChangeRef.current?.(
+      view.state.doc.lineAt(view.state.selection.main.head).number - 1,
+    );
+  }, [activeId, content, wrap]);
 
   useEffect(() => {
     const prev = lastIdsRef.current;
@@ -154,7 +247,17 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
     }
   }, [ids]);
 
-  return <div ref={host} className="editor-host" />;
+  return (
+    <div
+      ref={host}
+      className={`editor-host${dragOver ? " editor-drag-over" : ""}${busy ? " editor-busy" : ""}`}
+      onDragOver={handleDragOver}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      onPaste={handlePaste}
+    />
+  );
 });
 
 export default Editor;

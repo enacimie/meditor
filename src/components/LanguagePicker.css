@@ -1,0 +1,146 @@
+/* ── Language picker (searchable dropdown) ── */
+
+.lang-picker {
+  /* Sits inside the menu panel — full width, constrained height */
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* ── Search input ── */
+
+.lang-search-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px 6px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 1;
+  border-radius: 6px 6px 0 0;
+}
+
+.lang-search-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  opacity: 0.45;
+}
+
+.lang-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--fg);
+  font-size: 13px;
+  line-height: 1.4;
+  outline: none;
+  padding: 2px 0;
+  min-width: 0;
+  font-family: inherit;
+}
+
+.lang-search-input::placeholder {
+  opacity: 0.45;
+}
+
+.lang-search-clear {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: var(--fg);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.55;
+  padding: 0;
+}
+
+.lang-search-clear:hover {
+  opacity: 1;
+  background: var(--bg-alt);
+}
+
+/* ── Scrollable list ── */
+
+.lang-list {
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 2px 4px 4px;
+  overscroll-behavior: contain;
+}
+
+/* Scrollbar styling */
+.lang-list::-webkit-scrollbar {
+  width: 5px;
+}
+.lang-list::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+/* ── Language option button ── */
+
+.lang-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--fg);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  line-height: 1.3;
+  font-family: inherit;
+}
+
+.lang-option:hover {
+  background: var(--bg-alt);
+}
+
+.lang-option:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.lang-option--selected {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  font-weight: 600;
+}
+
+.lang-native {
+  flex-shrink: 0;
+}
+
+.lang-label {
+  margin-left: auto;
+  font-size: 11px;
+  opacity: 0.5;
+  white-space: nowrap;
+}
+
+.lang-check {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.lang-no-results {
+  padding: 16px 8px;
+  text-align: center;
+  font-size: 12px;
+  opacity: 0.5;
+}

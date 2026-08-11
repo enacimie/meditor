@@ -7,10 +7,17 @@ const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
+  // Relative base enables file:// and offline usage (e.g. E2E tests).
+  // Tauri's webview serves from a local server so relative paths work too.
+  base: "./",
   plugins: [react()],
+
+  worker: {
+    format: "es",
+  },
   test: {
     environment: "node",
-    include: ["src/**/*.test.ts"],
+    include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
   },
 
   build: {

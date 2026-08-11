@@ -1,3 +1,15 @@
+/**
+ * Session serialization and validation.
+ *
+ * The actual session persistence is handled by the Rust backend
+ * (load_session / save_session commands). These functions serve as:
+ *
+ * - `serializeSession`: Client-side validation gate before sending
+ *   session data to the Rust backend via writeSessionOrdered() in App.tsx.
+ * - `parseSession`: Used in tests and available for future client-side
+ *   session restore (e.g. browser-only mode).
+ */
+
 import type { Doc } from "./types";
 
 export const SESSION_VERSION = 2;

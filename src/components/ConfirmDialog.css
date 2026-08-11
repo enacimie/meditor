@@ -1,0 +1,109 @@
+/* ── In-window confirm dialog ── */
+
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: grid;
+  place-items: center;
+  z-index: 2100;
+  /* Entry: fade the backdrop in. */
+  animation: confirm-overlay-in 0.18s ease;
+  /* Exit: fade the backdrop out (class toggled by the component). */
+  transition: opacity 0.14s ease;
+}
+
+@keyframes confirm-overlay-in {
+  from { opacity: 0; }
+}
+
+/* Exit state: the component stays mounted for EXIT_MS while this plays. */
+.confirm-overlay.closing {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.confirm-dialog {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 24px;
+  width: min(420px, calc(100vw - 48px));
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  /* Entry: subtle rise + settle. */
+  animation: confirm-dialog-in 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+  /* Exit: fade + shrink slightly. */
+  transition:
+    opacity 0.14s ease,
+    transform 0.14s ease;
+}
+
+@keyframes confirm-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+}
+
+.confirm-overlay.closing .confirm-dialog {
+  opacity: 0;
+  transform: translateY(4px) scale(0.98);
+}
+
+.confirm-title {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--fg);
+}
+
+.confirm-message {
+  margin: 0 0 20px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--fg);
+  opacity: 0.85;
+  overflow-wrap: break-word;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.confirm-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-alt);
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.confirm-btn:hover {
+  border-color: var(--accent);
+}
+
+.confirm-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Primary (destructive) action: accent background with a theme-matched text
+   color (black on the yellow high-contrast accent). */
+.confirm-btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 600;
+}
+
+.confirm-btn--primary:hover {
+  filter: brightness(1.08);
+}

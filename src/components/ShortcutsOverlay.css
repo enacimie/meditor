@@ -1,0 +1,114 @@
+.shortcuts-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: grid;
+  place-items: center;
+  z-index: 2000;
+  /* Entry: fade the backdrop in. */
+  animation: shortcuts-overlay-in 0.18s ease;
+  /* Exit: fade the backdrop out (class toggled by the component). */
+  transition: opacity 0.14s ease;
+}
+
+@keyframes shortcuts-overlay-in {
+  from { opacity: 0; }
+}
+
+/* Exit state: the component stays mounted for EXIT_MS while this plays. */
+.shortcuts-overlay.closing {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.shortcuts-panel {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 24px;
+  min-width: 380px;
+  max-width: 440px;
+  max-height: 80vh;
+  overflow: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  /* Entry: subtle rise + settle. */
+  animation: shortcuts-panel-in 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+  /* Exit: fade + shrink slightly. */
+  transition:
+    opacity 0.14s ease,
+    transform 0.14s ease;
+}
+
+@keyframes shortcuts-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+}
+
+.shortcuts-overlay.closing .shortcuts-panel {
+  opacity: 0;
+  transform: translateY(4px) scale(0.98);
+}
+
+.shortcuts-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.shortcuts-header h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--fg);
+}
+
+.shortcuts-close {
+  border: none;
+  background: transparent;
+  color: var(--fg);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  opacity: 0.6;
+}
+
+.shortcuts-close:hover {
+  opacity: 1;
+  background: var(--bg-alt);
+}
+
+.shortcuts-grid {
+  display: grid;
+  gap: 6px;
+}
+
+.shortcuts-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.shortcuts-key {
+  display: inline-flex;
+  align-items: center;
+  min-width: 130px;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-alt);
+  color: var(--fg);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.shortcuts-desc {
+  color: var(--fg);
+  font-size: 13px;
+}

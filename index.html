@@ -1,10 +1,45 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="theme-color" content="#0969da" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>meditor</title>
+    <!-- Anti-FOUC: apply saved theme + language before first paint to
+         prevent a flash of the wrong theme, lang attribute, or text direction. -->
+    <script>
+      (function () {
+        try {
+          var prefs = null;
+          var rawPrefs = localStorage.getItem("meditor.preferences.v1");
+          if (rawPrefs) prefs = JSON.parse(rawPrefs);
+          if (prefs && prefs.theme) {
+            var theme = prefs.theme;
+            document.documentElement.dataset.theme = theme;
+            if (theme === "contrast") {
+              document.documentElement.style.colorScheme = "light";
+            } else if (theme === "system") {
+              document.documentElement.style.colorScheme = "light dark";
+            } else {
+              document.documentElement.style.colorScheme = theme;
+            }
+          }
+          // Mirror the I18nProvider language resolution (all 20 codes + RTL).
+          var lang = null;
+          var rawLang = localStorage.getItem("meditor.language.v1");
+          if (rawLang && /^[a-z]{2}$/.test(rawLang)) lang = rawLang;
+          if (!lang && navigator && navigator.language) {
+            lang = navigator.language.slice(0, 2);
+          }
+          if (lang && /^(en|zh|hi|es|ar|fr|bn|pt|ru|ur|id|de|ja|sw|mr|te|tr|ta|ko|it)$/.test(lang)) {
+            document.documentElement.lang = lang;
+            if (lang === "ar" || lang === "ur") {
+              document.documentElement.dir = "rtl";
+            }
+          }
+        } catch (_) { /* localStorage may be unavailable */ }
+      })();
+    </script>
   </head>
 
   <body>

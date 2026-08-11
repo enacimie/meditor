@@ -1,0 +1,130 @@
+/* ── In-window rename dialog ── */
+
+.rename-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: grid;
+  place-items: center;
+  z-index: 2100;
+  /* Entry: fade the backdrop in. */
+  animation: rename-overlay-in 0.18s ease;
+  /* Exit: fade the backdrop out (class toggled by the component). */
+  transition: opacity 0.14s ease;
+}
+
+@keyframes rename-overlay-in {
+  from { opacity: 0; }
+}
+
+/* Exit state: the component stays mounted for EXIT_MS while this plays. */
+.rename-overlay.closing {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.rename-dialog {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 24px;
+  width: min(400px, calc(100vw - 48px));
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  /* Entry: subtle rise + settle. */
+  animation: rename-dialog-in 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+  /* Exit: fade + shrink slightly. */
+  transition:
+    opacity 0.14s ease,
+    transform 0.14s ease;
+}
+
+@keyframes rename-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+}
+
+.rename-overlay.closing .rename-dialog {
+  opacity: 0;
+  transform: translateY(4px) scale(0.98);
+}
+
+.rename-title {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--fg);
+}
+
+.rename-label {
+  display: block;
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: var(--fg);
+  opacity: 0.85;
+}
+
+.rename-input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-alt);
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+}
+
+.rename-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.rename-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.rename-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-alt);
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.rename-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.rename-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Primary (confirm) action: accent background with a theme-matched text
+   color (black on the yellow high-contrast accent). */
+.rename-btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 600;
+}
+
+.rename-btn--primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.rename-btn--primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
