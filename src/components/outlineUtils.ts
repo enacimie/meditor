@@ -4,9 +4,13 @@ export type Heading = {
   line: number; // 0-based line number
 };
 
-/** Extract headings (## Title) from markdown content. */
+/**
+ * Extract headings from markdown or Typst content.
+ * Markdown: `# Title` through `###### Title`
+ * Typst:    `= Title` through `==== Title` (at start of line)
+ */
 export function parseHeadings(content: string): Heading[] {
-  const re = /^(#{1,6})\s+(.+)$/gm;
+  const re = /^(#{1,6}|={1,4})\s+(.+)$/gm;
   const headings: Heading[] = [];
   let match: RegExpExecArray | null;
   while ((match = re.exec(content)) !== null) {

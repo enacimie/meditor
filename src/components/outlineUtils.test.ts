@@ -39,6 +39,42 @@ describe("parseHeadings", () => {
       { level: 1, text: "Spaced out", line: 0 },
     ]);
   });
+
+  // ---- Typst headings ----
+
+  it("parses Typst headings (= through ====)", () => {
+    const content = "= Introduction\n\n== Background\n\n=== Details\n\n==== Sub-details\n";
+    expect(parseHeadings(content)).toEqual([
+      { level: 1, text: "Introduction", line: 0 },
+      { level: 2, text: "Background", line: 2 },
+      { level: 3, text: "Details", line: 4 },
+      { level: 4, text: "Sub-details", line: 6 },
+    ]);
+  });
+
+  it("parses mixed Markdown and Typst headings", () => {
+    const content = "# MD Heading\n\n= Typst Heading\n\n### Sub MD\n\n== Sub Typst\n";
+    expect(parseHeadings(content)).toEqual([
+      { level: 1, text: "MD Heading", line: 0 },
+      { level: 1, text: "Typst Heading", line: 2 },
+      { level: 3, text: "Sub MD", line: 4 },
+      { level: 2, text: "Sub Typst", line: 6 },
+    ]);
+  });
+
+  it("ignores = signs that are not at line start (Typst)", () => {
+    const content = "Not a heading = test\n= Real heading\n  = indented (not a heading)\n";
+    expect(parseHeadings(content)).toEqual([
+      { level: 1, text: "Real heading", line: 1 },
+    ]);
+  });
+
+  it("ignores ==== with more than 4 equals (Typst max level 4)", () => {
+    const content = "===== Too many equals\n==== Just right\n";
+    expect(parseHeadings(content)).toEqual([
+      { level: 4, text: "Just right", line: 1 },
+    ]);
+  });
 });
 
 describe("findActiveHeading", () => {
