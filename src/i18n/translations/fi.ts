@@ -104,6 +104,8 @@ export const fi = {
   "menu.saveAs": "Tallenna nimellä",
   "menu.exportPdf": "Vie PDF",
   "menu.newTab": "Uusi välilehti",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

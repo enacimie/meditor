@@ -104,6 +104,8 @@ export const es = {
   "menu.saveAs": "Guardar como",
   "menu.exportPdf": "Exportar PDF",
   "menu.newTab": "Nueva pestaña",
+  "menu.closeAll": "Cerrar todas las pestañas",
+  "menu.closeOthers": "Cerrar otras pestañas",
   "menu.shortcut.saveAs": "Ctrl+Mayús+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

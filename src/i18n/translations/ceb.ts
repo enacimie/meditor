@@ -120,6 +120,8 @@ export const ceb = {
   "menu.saveAs": "I-save isip",
   "menu.exportPdf": "I-export ang PDF",
   "menu.newTab": "Bag-ong tab",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

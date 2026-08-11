@@ -104,6 +104,8 @@ export const ny = {
   "menu.saveAs": "Sungani monga",
   "menu.exportPdf": "Tumizani PDF",
   "menu.newTab": "Yatsopano tabu",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

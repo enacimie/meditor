@@ -103,6 +103,8 @@ export const am = {
   "menu.saveAs": "እንደ... አስቀምጥ",
   "menu.exportPdf": "PDF ላክ",
   "menu.newTab": "አዲስ ትር",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

@@ -104,6 +104,8 @@ export const et = {
   "menu.saveAs": "Salvesta kui",
   "menu.exportPdf": "Ekspordi PDF",
   "menu.newTab": "Uus kaart",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

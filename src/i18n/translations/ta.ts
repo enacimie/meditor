@@ -121,6 +121,8 @@ export const ta = {
   "menu.saveAs": "எனச் சேமி",
   "menu.exportPdf": "PDF ஏற்றுமதி செய்",
   "menu.newTab": "புதிய தாவல்",
+  "menu.closeAll": "எல்லா தாவல்களையும் மூடு",
+  "menu.closeOthers": "மற்ற தாவல்களை மூடு",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

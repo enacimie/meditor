@@ -104,6 +104,8 @@ export const eu = {
   "menu.saveAs": "Gorde honela",
   "menu.exportPdf": "Esportatu PDF",
   "menu.newTab": "Berria fixa",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

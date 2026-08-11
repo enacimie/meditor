@@ -121,6 +121,8 @@ export const hi = {
   "menu.saveAs": "इस रूप में सहेजें",
   "menu.exportPdf": "PDF निर्यात करें",
   "menu.newTab": "नया टैब",
+  "menu.closeAll": "सभी टैब बंद करें",
+  "menu.closeOthers": "अन्य टैब बंद करें",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

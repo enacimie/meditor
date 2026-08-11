@@ -104,6 +104,8 @@ export const ky = {
   "menu.saveAs": "Башкача сактоо",
   "menu.exportPdf": "Экспорттоо PDF",
   "menu.newTab": "Жаңы кошумча бет",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

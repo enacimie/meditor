@@ -103,6 +103,8 @@ export const he = {
   "menu.saveAs": "שמור בשם",
   "menu.exportPdf": "ייצא PDF",
   "menu.newTab": "לשונית חדשה",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

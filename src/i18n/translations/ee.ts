@@ -104,6 +104,8 @@ export const ee = {
   "menu.saveAs": "Dzrae",
   "menu.exportPdf": "Ɖe go PDF",
   "menu.newTab": "Yeye tabɛ",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

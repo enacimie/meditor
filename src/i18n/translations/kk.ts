@@ -120,6 +120,8 @@ export const kk = {
   "menu.saveAs": "Басқаша сақтау",
   "menu.exportPdf": "PDF экспорттау",
   "menu.newTab": "Жаңа бет",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

@@ -104,6 +104,8 @@ export const so = {
   "menu.saveAs": "Keydi sida",
   "menu.exportPdf": "Dhoofi PDF",
   "menu.newTab": "Cusub taab",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

@@ -103,6 +103,8 @@ export const ms = {
   "menu.saveAs": "Simpan sebagai",
   "menu.exportPdf": "Eksport PDF",
   "menu.newTab": "Tab baru",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

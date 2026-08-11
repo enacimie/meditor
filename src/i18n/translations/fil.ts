@@ -103,6 +103,8 @@ export const fil = {
   "menu.saveAs": "I-save bilang",
   "menu.exportPdf": "I-export ang PDF",
   "menu.newTab": "Bagong tab",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

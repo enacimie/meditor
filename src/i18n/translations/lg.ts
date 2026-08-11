@@ -104,6 +104,8 @@ export const lg = {
   "menu.saveAs": "Tereka nga",
   "menu.exportPdf": "Weeruza PDF",
   "menu.newTab": "Empya ttabu",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

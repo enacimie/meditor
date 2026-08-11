@@ -104,6 +104,8 @@ export const mt = {
   "menu.saveAs": "Issejvja bħala",
   "menu.exportPdf": "Esporta PDF",
   "menu.newTab": "Ġdid tab",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

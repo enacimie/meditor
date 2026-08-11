@@ -57,6 +57,8 @@ function renderTopbar(overrides: {
         onSave={vi.fn()}
         onSaveAs={vi.fn()}
         onExportPdf={vi.fn()}
+        onCloseAll={vi.fn()}
+        onCloseOthers={vi.fn()}
       />
     );
   }

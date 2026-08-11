@@ -103,6 +103,8 @@ export const uk = {
   "menu.saveAs": "Зберегти як",
   "menu.exportPdf": "Експорт PDF",
   "menu.newTab": "Нова вкладка",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

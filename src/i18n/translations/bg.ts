@@ -104,6 +104,8 @@ export const bg = {
   "menu.saveAs": "Запази като",
   "menu.exportPdf": "Експортирай PDF",
   "menu.newTab": "Нов раздел",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

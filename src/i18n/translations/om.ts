@@ -104,6 +104,8 @@ export const om = {
   "menu.saveAs": "Olkaayi akka",
   "menu.exportPdf": "Ergi PDF",
   "menu.newTab": "Haaraa qabiyyee",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

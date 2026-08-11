@@ -120,6 +120,8 @@ export const ne = {
   "menu.saveAs": "यसरी सुरक्षित गर्नुहोस्",
   "menu.exportPdf": "PDF निर्यात गर्नुहोस्",
   "menu.newTab": "नयाँ ट्याब",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

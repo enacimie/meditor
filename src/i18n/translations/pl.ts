@@ -103,6 +103,8 @@ export const pl = {
   "menu.saveAs": "Zapisz jako",
   "menu.exportPdf": "Eksportuj PDF",
   "menu.newTab": "Nowa karta",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

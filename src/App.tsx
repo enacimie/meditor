@@ -657,6 +657,30 @@ export default function App() {
     }
   }
 
+  function closeAllTabs() {
+    if (isOperationBusy(busyOperationRef)) return;
+    const fresh = makeDoc("");
+    docsRef.current = [fresh];
+    setDocs([fresh]);
+    setActiveId(fresh.id);
+  }
+
+  function closeOtherTabs() {
+    if (isOperationBusy(busyOperationRef)) return;
+    const current = docsRef.current;
+    if (current.length <= 1) return;
+    const kept = current.filter((d) => d.id === activeIdRef.current);
+    if (kept.length === 0) {
+      const fresh = makeDoc("");
+      docsRef.current = [fresh];
+      setDocs([fresh]);
+      setActiveId(fresh.id);
+      return;
+    }
+    docsRef.current = kept;
+    setDocs(kept);
+  }
+
   async function renameTab(id: string) {
     const current = docs.find((d) => d.id === id);
     if (!current || renameRequest) return;
@@ -747,6 +771,8 @@ export default function App() {
         onSave={save}
         onSaveAs={saveAs}
         onExportPdf={exportPdf}
+        onCloseAll={closeAllTabs}
+        onCloseOthers={closeOtherTabs}
       />
       <TabBar
         t={t}

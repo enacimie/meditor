@@ -121,6 +121,8 @@ export const it = {
   "menu.saveAs": "Salva con nome",
   "menu.exportPdf": "Esporta PDF",
   "menu.newTab": "Nuova scheda",
+  "menu.closeAll": "Chiudi tutte le schede",
+  "menu.closeOthers": "Chiudi altre schede",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

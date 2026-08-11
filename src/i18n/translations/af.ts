@@ -104,6 +104,8 @@ export const af = {
   "menu.saveAs": "Stoor as",
   "menu.exportPdf": "Uitvoer PDF",
   "menu.newTab": "Nuut oortjie",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

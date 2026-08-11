@@ -121,6 +121,8 @@ export const ja = {
   "menu.saveAs": "名前を付けて保存",
   "menu.exportPdf": "PDFをエクスポート",
   "menu.newTab": "新規タブ",
+  "menu.closeAll": "すべてのタブを閉じる",
+  "menu.closeOthers": "他のタブを閉じる",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

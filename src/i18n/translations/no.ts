@@ -104,6 +104,8 @@ export const no = {
   "menu.saveAs": "Lagre som",
   "menu.exportPdf": "Eksporter PDF",
   "menu.newTab": "Ny fane",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

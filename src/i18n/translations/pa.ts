@@ -103,6 +103,8 @@ export const pa = {
   "menu.saveAs": "ਇਸ ਤਰ੍ਹਾਂ ਸੰਭਾਲੋ",
   "menu.exportPdf": "PDF ਨਿਰਯਾਤ ਕਰੋ",
   "menu.newTab": "ਨਵੀਂ ਟੈਬ",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

@@ -104,6 +104,8 @@ export const ga = {
   "menu.saveAs": "Sábháil mar",
   "menu.exportPdf": "Easpórtáil PDF",
   "menu.newTab": "Nua cluaisín",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

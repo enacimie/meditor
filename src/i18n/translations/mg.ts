@@ -104,6 +104,8 @@ export const mg = {
   "menu.saveAs": "Tehirizo ho",
   "menu.exportPdf": "Hanafatra PDF",
   "menu.newTab": "Vaovao tabilao",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

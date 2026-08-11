@@ -103,6 +103,8 @@ export const vi = {
   "menu.saveAs": "Lưu thành",
   "menu.exportPdf": "Xuất PDF",
   "menu.newTab": "Tab mới",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

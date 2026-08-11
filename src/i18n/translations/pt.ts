@@ -121,6 +121,8 @@ export const pt = {
   "menu.saveAs": "Salvar como",
   "menu.exportPdf": "Exportar PDF",
   "menu.newTab": "Nova aba",
+  "menu.closeAll": "Fechar todas as abas",
+  "menu.closeOthers": "Fechar outras abas",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

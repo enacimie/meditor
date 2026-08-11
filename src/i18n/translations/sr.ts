@@ -104,6 +104,8 @@ export const sr = {
   "menu.saveAs": "Сачувај као",
   "menu.exportPdf": "Извези PDF",
   "menu.newTab": "Ново картица",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

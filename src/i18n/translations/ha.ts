@@ -103,6 +103,8 @@ export const ha = {
   "menu.saveAs": "Ajiye azaman",
   "menu.exportPdf": "Fitar da PDF",
   "menu.newTab": "Sabon shafi",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

@@ -104,6 +104,8 @@ export const ca = {
   "menu.saveAs": "Desa com a",
   "menu.exportPdf": "Exporta PDF",
   "menu.newTab": "Nova pestanya",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

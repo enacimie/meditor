@@ -104,6 +104,8 @@ export const hu = {
   "menu.saveAs": "Mentés másként",
   "menu.exportPdf": "PDF exportálása",
   "menu.newTab": "Új lap",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

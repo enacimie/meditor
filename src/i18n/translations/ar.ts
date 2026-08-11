@@ -121,6 +121,8 @@ export const ar = {
   "menu.saveAs": "حفظ باسم",
   "menu.exportPdf": "تصدير PDF",
   "menu.newTab": "علامة تبويب جديدة",
+  "menu.closeAll": "إغلاق كل علامات التبويب",
+  "menu.closeOthers": "إغلاق علامات التبويب الأخرى",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

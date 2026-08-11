@@ -121,6 +121,8 @@ export const bn = {
   "menu.saveAs": "নতুন করে সংরক্ষণ",
   "menu.exportPdf": "PDF রপ্তানি",
   "menu.newTab": "নতুন ট্যাব",
+  "menu.closeAll": "সব ট্যাব বন্ধ করুন",
+  "menu.closeOthers": "অন্যান্য ট্যাব বন্ধ করুন",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

@@ -104,6 +104,8 @@ export const lb = {
   "menu.saveAs": "Späicheren als",
   "menu.exportPdf": "Exportéieren PDF",
   "menu.newTab": "Nei tab",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

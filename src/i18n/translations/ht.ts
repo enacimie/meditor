@@ -120,6 +120,8 @@ export const ht = {
   "menu.saveAs": "Anrejistre kòm",
   "menu.exportPdf": "Ekspòte PDF",
   "menu.newTab": "Nouvo onglè",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

@@ -104,6 +104,8 @@ export const lv = {
   "menu.saveAs": "Saglabāt kā",
   "menu.exportPdf": "Eksportēt PDF",
   "menu.newTab": "Jauns cilne",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

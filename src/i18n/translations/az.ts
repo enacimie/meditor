@@ -120,6 +120,8 @@ export const az = {
   "menu.saveAs": "Fərqli saxla",
   "menu.exportPdf": "PDF ixrac et",
   "menu.newTab": "Yeni vərəq",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

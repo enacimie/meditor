@@ -121,6 +121,8 @@ export const te = {
   "menu.saveAs": "ఇలా సేవ్ చేయి",
   "menu.exportPdf": "PDF ఎగుమతి చేయి",
   "menu.newTab": "కొత్త ట్యాబ్",
+  "menu.closeAll": "అన్ని ట్యాబ్‌లను మూసివేయి",
+  "menu.closeOthers": "ఇతర ట్యాబ్‌లను మూసివేయి",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

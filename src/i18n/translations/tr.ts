@@ -121,6 +121,8 @@ export const tr = {
   "menu.saveAs": "Farklı kaydet",
   "menu.exportPdf": "PDF dışa aktar",
   "menu.newTab": "Yeni sekme",
+  "menu.closeAll": "Tüm sekmeleri kapat",
+  "menu.closeOthers": "Diğer sekmeleri kapat",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

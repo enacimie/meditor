@@ -120,6 +120,8 @@ export const ku = {
   "menu.saveAs": "Wekî tomar bike",
   "menu.exportPdf": "PDF derxe",
   "menu.newTab": "Tab nû",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

@@ -121,6 +121,8 @@ export const fr = {
   "menu.saveAs": "Enregistrer sous",
   "menu.exportPdf": "Exporter en PDF",
   "menu.newTab": "Nouvel onglet",
+  "menu.closeAll": "Fermer tous les onglets",
+  "menu.closeOthers": "Fermer les autres onglets",
   "menu.shortcut.saveAs": "Ctrl+Maj+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

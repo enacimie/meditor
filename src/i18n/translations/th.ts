@@ -103,6 +103,8 @@ export const th = {
   "menu.saveAs": "บันทึกเป็น",
   "menu.exportPdf": "ส่งออก PDF",
   "menu.newTab": "แท็บใหม่",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

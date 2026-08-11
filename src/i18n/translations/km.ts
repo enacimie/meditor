@@ -120,6 +120,8 @@ export const km = {
   "menu.saveAs": "រក្សាទុកជា",
   "menu.exportPdf": "នាំចេញ PDF",
   "menu.newTab": "ផ្ទាំងថ្មី",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

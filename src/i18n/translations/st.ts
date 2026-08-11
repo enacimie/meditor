@@ -104,6 +104,8 @@ export const st = {
   "menu.saveAs": "Boloka jwalo ka",
   "menu.exportPdf": "Romela PDF",
   "menu.newTab": "E ncha taba",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

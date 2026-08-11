@@ -121,6 +121,8 @@ export const ur = {
   "menu.saveAs": "اس طرح محفوظ کریں",
   "menu.exportPdf": "PDF برآمد کریں",
   "menu.newTab": "نیا ٹیب",
+  "menu.closeAll": "تمام ٹیبز بند کریں",
+  "menu.closeOthers": "دیگر ٹیبز بند کریں",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

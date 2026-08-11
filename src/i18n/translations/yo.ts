@@ -103,6 +103,8 @@ export const yo = {
   "menu.saveAs": "Fipamọ́ bí",
   "menu.exportPdf": "Ṣàgbéjáde PDF",
   "menu.newTab": "Tábù tuntun",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

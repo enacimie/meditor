@@ -103,6 +103,8 @@ export const ml = {
   "menu.saveAs": "ഇപ്രകാരം സൂക്ഷിക്കുക",
   "menu.exportPdf": "PDF കയറ്റുമതി",
   "menu.newTab": "പുതിയ ടാബ്",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

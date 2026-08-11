@@ -121,6 +121,8 @@ export const ko = {
   "menu.saveAs": "다른 이름으로 저장",
   "menu.exportPdf": "PDF 내보내기",
   "menu.newTab": "새 탭",
+  "menu.closeAll": "모든 탭 닫기",
+  "menu.closeOthers": "다른 탭 닫기",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

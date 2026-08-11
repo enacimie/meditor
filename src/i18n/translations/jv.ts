@@ -103,6 +103,8 @@ export const jv = {
   "menu.saveAs": "Simpen minangka",
   "menu.exportPdf": "Ekspor PDF",
   "menu.newTab": "Tab anyar",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

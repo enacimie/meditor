@@ -121,6 +121,8 @@ export const de = {
   "menu.saveAs": "Speichern unter",
   "menu.exportPdf": "PDF exportieren",
   "menu.newTab": "Neuer Tab",
+  "menu.closeAll": "Alle Tabs schließen",
+  "menu.closeOthers": "Andere Tabs schließen",
   "menu.shortcut.saveAs": "Strg+Umschalt+S",
   "menu.shortcut.export": "Strg+E",
   "menu.shortcut.newTab": "Strg+N",

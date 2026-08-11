@@ -121,6 +121,8 @@ export const id = {
   "menu.saveAs": "Simpan sebagai",
   "menu.exportPdf": "Ekspor PDF",
   "menu.newTab": "Tab baru",
+  "menu.closeAll": "Tutup semua tab",
+  "menu.closeOthers": "Tutup tab lainnya",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

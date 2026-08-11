@@ -121,6 +121,8 @@ export const sw = {
   "menu.saveAs": "Hifadhi kama",
   "menu.exportPdf": "Hamisha PDF",
   "menu.newTab": "Kichupo kipya",
+  "menu.closeAll": "Funga vichupo vyote",
+  "menu.closeOthers": "Funga vichupo vingine",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

@@ -104,6 +104,8 @@ export const is = {
   "menu.saveAs": "Vista sem",
   "menu.exportPdf": "Flytja út PDF",
   "menu.newTab": "Nýtt flipí",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

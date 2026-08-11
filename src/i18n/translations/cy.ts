@@ -104,6 +104,8 @@ export const cy = {
   "menu.saveAs": "Cadw fel",
   "menu.exportPdf": "Allforio PDF",
   "menu.newTab": "Newydd tab",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

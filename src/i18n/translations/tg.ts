@@ -104,6 +104,8 @@ export const tg = {
   "menu.saveAs": "Ҳамчун захира кардан",
   "menu.exportPdf": "Экспорт кардан PDF",
   "menu.newTab": "Нав варақа",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

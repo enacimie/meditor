@@ -121,6 +121,8 @@ export const zh = {
   "menu.saveAs": "另存为",
   "menu.exportPdf": "导出 PDF",
   "menu.newTab": "新建标签页",
+  "menu.closeAll": "关闭所有标签页",
+  "menu.closeOthers": "关闭其他标签页",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

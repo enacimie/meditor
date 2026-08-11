@@ -103,6 +103,8 @@ export const or = {
   "menu.saveAs": "ଏହିପରି ସଂରକ୍ଷଣ",
   "menu.exportPdf": "PDF ରପ୍ତାନୀ",
   "menu.newTab": "ନୂତନ ଟ୍ୟାବ୍",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

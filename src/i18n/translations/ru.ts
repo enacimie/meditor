@@ -121,6 +121,8 @@ export const ru = {
   "menu.saveAs": "Сохранить как",
   "menu.exportPdf": "Экспорт PDF",
   "menu.newTab": "Новая вкладка",
+  "menu.closeAll": "Закрыть все вкладки",
+  "menu.closeOthers": "Закрыть другие вкладки",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

@@ -104,6 +104,8 @@ export const gd = {
   "menu.saveAs": "Sàbhail mar",
   "menu.exportPdf": "Às-mhalairt PDF",
   "menu.newTab": "Ùr taba",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

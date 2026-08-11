@@ -120,6 +120,8 @@ export const si = {
   "menu.saveAs": "ලෙස සුරකින්න",
   "menu.exportPdf": "PDF අපනයනය",
   "menu.newTab": "නව ටැබය",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

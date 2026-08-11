@@ -104,6 +104,8 @@ export const be = {
   "menu.saveAs": "Захаваць як",
   "menu.exportPdf": "Экспартаваць PDF",
   "menu.newTab": "Новы укладка",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

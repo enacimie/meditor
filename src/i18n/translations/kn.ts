@@ -103,6 +103,8 @@ export const kn = {
   "menu.saveAs": "ಇನ್ನೊಂದು ಹೆಸರಲ್ಲಿ ಉಳಿಸಿ",
   "menu.exportPdf": "PDF ರಫ್ತು ಮಾಡಿ",
   "menu.newTab": "ಹೊಸ ಟ್ಯಾಬ್",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

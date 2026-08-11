@@ -103,6 +103,8 @@ export const my = {
   "menu.saveAs": "အဖြစ်သိမ်းမည်",
   "menu.exportPdf": "PDF ထုတ်ယူမည်",
   "menu.newTab": "တပ်ဗ်အသစ်",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",

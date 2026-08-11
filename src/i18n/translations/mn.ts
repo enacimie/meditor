@@ -104,6 +104,8 @@ export const mn = {
   "menu.saveAs": "Өөрөөр хадгалах",
   "menu.exportPdf": "Экспортлох PDF",
   "menu.newTab": "Шинэ таб",
+  "menu.closeAll": "Close all tabs",
+  "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",
