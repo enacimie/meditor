@@ -21,21 +21,21 @@ import "./Editor.css";
 // Lazy-load the Typst language mode so the WASM/Lezer binary doesn't block
 // the initial render or break E2E tests (which only use markdown docs).
 let typstLangPromise: Promise<Extension> | null = null;
-function loadTypstLang(): Extension {
+function getTypstLang(): Promise<Extension> {
   if (!typstLangPromise) {
     typstLangPromise = import("codemirror-lang-typst").then((m) => m.typst_lezer());
   }
-  // Return a synchronous placeholder the first time; the Compartment will
-  // be reconfigured asynchronously once the dynamic import resolves.
-  // CodeMirror handles reconfigure gracefully on the next dispatch.
+  return typstLangPromise;
+}
+
+/** Synchronous placeholder — the Compartment will be reconfigured async. */
+function loadTypstLang(): Extension {
+  getTypstLang(); // kick off the dynamic import
   return [];
 }
 
 function applyTypstLang(view: EditorView, compartment: Compartment) {
-  if (!typstLangPromise) {
-    typstLangPromise = import("codemirror-lang-typst").then((m) => m.typst_lezer());
-  }
-  typstLangPromise.then((ext) => {
+  getTypstLang().then((ext) => {
     if (view.viewport) {
       view.dispatch({ effects: compartment.reconfigure(ext) });
     }

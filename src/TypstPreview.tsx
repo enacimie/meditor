@@ -10,16 +10,12 @@ import type { TranslationFn } from "./i18n/translations";
 import "./Preview.css";
 
 // Lazy-load the Typst compiler — ~3 MB WASM binary that we only fetch when
-// the user opens a .typ document.
-let typstReady: Promise<boolean> | null = null;
-function ensureTypst(): Promise<boolean> {
-  if (!typstReady) {
-    typstReady = import("@myriaddreamin/typst.ts").then(
-      () => true,
-      () => false,
-    );
-  }
-  return typstReady;
+// the user opens a .typ document. Cached so every Typst tab reuses the same
+// module instance.
+let typstModule: Promise<typeof import("@myriaddreamin/typst.ts")> | null = null;
+function getTypst() {
+  typstModule ??= import("@myriaddreamin/typst.ts");
+  return typstModule;
 }
 
 /**
@@ -122,18 +118,22 @@ const TypstPreview = forwardRef<TypstPreviewHandle, Props>(
     useEffect(() => {
       let cancelled = false;
       const run = async () => {
-        const ok = await ensureTypst();
-        if (cancelled || !ok) {
-          if (!cancelled) setError("Could not load Typst compiler");
+        let $typst: typeof import("@myriaddreamin/typst.ts")["$typst"];
+        try {
+          const mod = await getTypst();
+          $typst = mod.$typst;
+        } catch {
+          if (!cancelled) {
+            setError("Could not load Typst compiler");
+          }
           return;
         }
+        if (cancelled) return;
         setLoading(true);
         setError(null);
         seqRef.current++;
         const mySeq = seqRef.current;
         try {
-          const { $typst } = await import("@myriaddreamin/typst.ts");
-          if (cancelled || mySeq !== seqRef.current) return;
           const result = await $typst.svg({ mainContent: value });
           if (cancelled || mySeq !== seqRef.current) return;
           setSvg(result);
