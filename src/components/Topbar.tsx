@@ -221,10 +221,6 @@ const Topbar = memo(function Topbar({
                 </button>
               )}
               <div className="menu-sep" />
-              <button type="button" role="menuitem" disabled={busy} onClick={() => { onNew(); setMenuOpen(false); menuToggleRef.current?.focus(); }}>
-                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-                {t("menu.newTab")}<span className="shortcut">{t("menu.shortcut.newTab")}</span>
-              </button>
               <button type="button" role="menuitem" disabled={busy} onClick={() => { onToggleZen(); setMenuOpen(false); menuToggleRef.current?.focus(); }}>
                 <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   {zenMode
