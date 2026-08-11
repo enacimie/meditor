@@ -9,6 +9,8 @@ export type ShortcutHandlers = {
   openFiles: () => void;
   /** Ctrl+N / Cmd+N */
   newTab: () => void;
+  /** Ctrl+Shift+N / Cmd+Shift+N */
+  newTypst: () => void;
   /** Ctrl+E / Cmd+E */
   exportPdf: () => void;
   /** Ctrl+W / Cmd+W */
@@ -73,7 +75,8 @@ export function useKeyboardShortcuts(
         h.openFiles();
       } else if (k === "n") {
         e.preventDefault();
-        h.newTab();
+        if (e.shiftKey) h.newTypst();
+        else h.newTab();
       } else if (k === "e") {
         e.preventDefault();
         h.exportPdf();

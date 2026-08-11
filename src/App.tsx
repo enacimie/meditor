@@ -15,7 +15,7 @@ import type { EditorHandle } from "./Editor";
 
 const Editor = lazy(() => import("./Editor"));
 import Preview, { type PreviewHandle } from "./Preview";
-import { SAMPLE } from "./sample";
+import { SAMPLE, TYPST_SAMPLE } from "./sample";
 import Topbar from "./components/Topbar";
 import TabBar from "./components/TabBar";
 import StatusBar from "./components/StatusBar";
@@ -489,6 +489,13 @@ export default function App() {
     setActiveId(doc.id);
   }, []);
 
+  const newTypstTab = useCallback(() => {
+    if (isOperationBusy(busyOperationRef)) return;
+    const doc = makeDoc(TYPST_SAMPLE, null, undefined, "typst");
+    setDocs((prev) => [...prev, doc]);
+    setActiveId(doc.id);
+  }, []);
+
   const toggleZen = useCallback(() => {
     setZenMode((z) => !z);
   }, []);
@@ -632,7 +639,17 @@ export default function App() {
     if (!active || !isTauri() || !beginOperation("export")) return;
     try {
       const base = active.name.replace(/\.(md|markdown|txt|typ|typst)$/i, "") || t("doc.defaultExport");
-      await invoke("export_pdf", { defaultName: `${base}.pdf` });
+      if (active.kind === "typst") {
+        // Typst: compile to PDF via WASM, then save via Tauri dialog
+        const { $typst } = await import("@myriaddreamin/typst.ts");
+        const pdfBytes = await $typst.pdf({ mainContent: active.content });
+        if (!pdfBytes) throw new Error("Typst compilation produced no output");
+        const defaultName = `${base}.pdf`;
+        // Use Tauri save dialog to pick destination, then write bytes
+        await invoke("write_pdf_bytes", { pdfBytes: Array.from(pdfBytes), defaultName });
+      } else {
+        await invoke("export_pdf", { defaultName: `${base}.pdf` });
+      }
       showNotice(operationNoticeDone(t, "export"), "success");
     } catch (e) {
       showNotice(operationNoticeError(t, "export"), "error", 0);
@@ -734,6 +751,7 @@ export default function App() {
     saveAs,
     openFiles,
     newTab,
+    newTypst: newTypstTab,
     exportPdf,
     closeTab: () => closeTab(activeId),
     toggleZen,
@@ -789,6 +807,7 @@ export default function App() {
         zenMode={zenMode}
         onToggleZen={toggleZen}
         onNew={newTab}
+        onNewTypst={newTypstTab}
         onOpen={openFiles}
         onSave={save}
         onSaveAs={saveAs}

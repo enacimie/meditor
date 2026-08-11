@@ -20,6 +20,7 @@ type Props = {
   zenMode: boolean;
   onToggleZen: () => void;
   onNew: () => void;
+  onNewTypst: () => void;
   onOpen: () => void;
   onSave: () => void;
   onSaveAs: () => void;
@@ -41,6 +42,7 @@ const Topbar = memo(function Topbar({
   zenMode,
   onToggleZen,
   onNew,
+  onNewTypst,
   onOpen,
   onSave,
   onSaveAs,
@@ -132,6 +134,10 @@ const Topbar = memo(function Topbar({
         <button type="button" aria-label={t("topbar.newAria")} onClick={onNew} title={t("topbar.newTitle")} disabled={busy}>
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
           <span className="btn-label">{t("topbar.new")}</span>
+        </button>
+        <button type="button" aria-label={t("topbar.newTypstAria")} onClick={onNewTypst} title={t("topbar.newTypstTitle")} disabled={busy}>
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          <span className="btn-label">{t("topbar.newTypst")}</span>
         </button>
         <button type="button" aria-label={t("topbar.openAria")} onClick={onOpen} title={t("topbar.openTitle")} disabled={busy}>
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>

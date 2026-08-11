@@ -468,6 +468,39 @@ fn cli_files(
     documents_from_paths(loc, files_from_args(&args), &registry)
 }
 
+/// Save raw PDF bytes from the Typst WASM compiler.
+#[tauri::command]
+fn write_pdf_bytes(
+    app: tauri::AppHandle,
+    pdf_bytes: Vec<u8>,
+    default_name: String,
+    locale: Option<String>,
+) -> Result<(), String> {
+    let loc = parse_locale(locale);
+    let selected = app
+        .dialog()
+        .file()
+        .set_file_name(default_name)
+        .add_filter("PDF", &["pdf"])
+        .blocking_save_file();
+    let path = match selected {
+        Some(path) => path.into_path().map_err(|e| e.to_string())?,
+        None => return Ok(()),
+    };
+    let path = normalize_path(loc, &path)?;
+    if let Some(parent) = path.parent() {
+        if !parent.exists() {
+            return Err(t(loc, "pdf.directoryMissing"));
+        }
+    }
+    std::fs::write(&path, &pdf_bytes).map_err(|e| e.to_string())?;
+    // Verify it looks like a PDF
+    if pdf_bytes.len() < 5 || &pdf_bytes[..5] != b"%PDF-" {
+        return Err(t(loc, "pdf.invalidPdf"));
+    }
+    Ok(())
+}
+
 /// Force-exit the application. The JS `window.close()`/`window.destroy()`
 /// calls are unreliable on Linux/WebKitGTK once an `onCloseRequested` JS
 /// listener is registered (Tauri auto-prevent_close's the request and the
@@ -724,6 +757,7 @@ pub fn run() {
             save_session,
             cli_files,
             export_pdf,
+            write_pdf_bytes,
             alert,
             exit_app
         ])

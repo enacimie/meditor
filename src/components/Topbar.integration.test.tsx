@@ -53,6 +53,7 @@ function renderTopbar(overrides: {
         zenMode={false}
         onToggleZen={vi.fn()}
         onNew={vi.fn()}
+        onNewTypst={vi.fn()}
         onOpen={vi.fn()}
         onSave={vi.fn()}
         onSaveAs={vi.fn()}
