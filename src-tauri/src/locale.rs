@@ -8,6 +8,8 @@ pub enum Locale {
     En,
     Es,
     Fr,
+    Ps,
+    Sd,
 }
 
 impl Locale {
@@ -16,6 +18,8 @@ impl Locale {
         match s {
             "es" => Locale::Es,
             "fr" => Locale::Fr,
+            "ps" => Locale::Ps,
+            "sd" => Locale::Sd,
             _ => Locale::En,
         }
     }
@@ -27,6 +31,8 @@ pub fn t(locale: Locale, key: &str) -> String {
         Locale::En => t_en(key),
         Locale::Es => t_es(key),
         Locale::Fr => t_fr(key),
+        Locale::Ps => t_ps(key),
+        Locale::Sd => t_sd(key),
     }
 }
 
@@ -131,6 +137,70 @@ fn t_fr(key: &str) -> String {
     .to_string()
 }
 
+fn t_ps(key: &str) -> String {
+    match key {
+        "file.emptyPath" => "د فایل خالي یا ناسمه لار",
+        "file.isDirectory" => "لار یوې پوښې ته اشاره کوي",
+        "file.noParent" => "لار اصلي پوښه نلري",
+        "file.noFileName" => "لار د فایل نوم نلري",
+        "file.notFound" => "لار یوه فایل ته اشاره نه کوي",
+        "file.tooLarge" => "فایل د {0} MiB له حد څخه تېر شو",
+        "file.contentTooLarge" => "محتوا د {0} MiB له حد څخه تېره شوه",
+        "file.documentUnavailable" => "سند نور د خوندي کولو لپاره شتون نلري",
+        "file.directoryMissing" => "د منزل پوښه شتون نلري",
+        "file.registryLock" => "د سند راجسټرۍ ته لاسرسی ممکن نه و",
+        "file.sessionUnavailable" => "یو سند نور شتون نلري",
+        "file.sessionTooLarge" => "غونډه د اجازې له حد څخه تېره شوه",
+        "file.docTooLarge" => "یو سند د اجازې له حد څخه تېر شو",
+        "file.openFailed" => "سند پرانیستل کېدی نشو: {0}",
+        "file.saveFailed" => "خوندي کول کېدی نشو: {0}",
+        "pdf.notSupported" => "PDF صادرول اوس یوازې په Linux ملاتړ کېږي",
+        "pdf.invalidPath" => "د صادراتو ناسمه لار",
+        "pdf.directoryMissing" => "د منزل پوښه شتون نلري",
+        "pdf.waitFailed" => "د PDF صادرولو انتظار ناکام شو: {0}",
+        "pdf.timeout" => "د PDF صادرولو وخت پای ته ورسېد",
+        "pdf.emptyFile" => "د PDF صادراتو یو خالي فایل جوړ کړ",
+        "pdf.invalidPdf" => "صادراتو یو معتبر PDF فایل نه دی جوړ کړی",
+        "confirm.title" => "تایید",
+        "alert.title" => "تېروتنه",
+        "doc.untitled" => "سند",
+        _ => key,
+    }
+    .to_string()
+}
+
+fn t_sd(key: &str) -> String {
+    match key {
+        "file.emptyPath" => "خالي يا غلط فائل رستو",
+        "file.isDirectory" => "رستو هڪ ڊائريڪٽري ڏانهن اشارو ڪري ٿو",
+        "file.noParent" => "رستو ۾ اصلي فولڊر ناهي",
+        "file.noFileName" => "رستو ۾ فائل جو نالو ناهي",
+        "file.notFound" => "رستو ڪنهن فائل ڏانهن اشارو نٿو ڪري",
+        "file.tooLarge" => "فائل {0} MiB جي حد کان وڌي وئي",
+        "file.contentTooLarge" => "مواد {0} MiB جي حد کان وڌي ويو",
+        "file.documentUnavailable" => "دستاويز هاڻي محفوظ ڪرڻ لاءِ دستياب ناهي",
+        "file.directoryMissing" => "منزل وارو فولڊر موجود ناهي",
+        "file.registryLock" => "دستاويز جي رجسٽري تائين رسائي ممڪن نه هئي",
+        "file.sessionUnavailable" => "هڪ دستاويز هاڻي دستياب ناهي",
+        "file.sessionTooLarge" => "سيشن اجازت واري حد کان وڌي ويو",
+        "file.docTooLarge" => "هڪ دستاويز اجازت واري حد کان وڌي ويو",
+        "file.openFailed" => "دستاويز کولي نه سگهيو: {0}",
+        "file.saveFailed" => "محفوظ ڪري نه سگهيو: {0}",
+        "pdf.notSupported" => "PDF برآمد هاڻي صرف Linux تي سپورٽ ٿيل آهي",
+        "pdf.invalidPath" => "برآمد جو غلط رستو",
+        "pdf.directoryMissing" => "منزل وارو فولڊر موجود ناهي",
+        "pdf.waitFailed" => "PDF برآمد جو انتظار ناڪام ٿيو: {0}",
+        "pdf.timeout" => "PDF برآمد جو وقت ختم ٿي ويو",
+        "pdf.emptyFile" => "PDF برآمد هڪ خالي فائل ٺاهي",
+        "pdf.invalidPdf" => "برآمد هڪ صحيح PDF فائل ناهي ٺاهي",
+        "confirm.title" => "تصديق",
+        "alert.title" => "غلطي",
+        "doc.untitled" => "دستاويز",
+        _ => key,
+    }
+    .to_string()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -160,6 +230,8 @@ mod tests {
         assert_eq!(Locale::from_str("en"), Locale::En);
         assert_eq!(Locale::from_str("es"), Locale::Es);
         assert_eq!(Locale::from_str("fr"), Locale::Fr);
+        assert_eq!(Locale::from_str("ps"), Locale::Ps);
+        assert_eq!(Locale::from_str("sd"), Locale::Sd);
     }
 
     #[test]
@@ -174,12 +246,14 @@ mod tests {
         assert_eq!(t(Locale::En, "nonexistent.key"), "nonexistent.key");
         assert_eq!(t(Locale::Es, "nonexistent.key"), "nonexistent.key");
         assert_eq!(t(Locale::Fr, "nonexistent.key"), "nonexistent.key");
+        assert_eq!(t(Locale::Ps, "nonexistent.key"), "nonexistent.key");
+        assert_eq!(t(Locale::Sd, "nonexistent.key"), "nonexistent.key");
     }
 
     #[test]
     fn all_pdf_keys_translate() {
         for key in ["pdf.notSupported","pdf.invalidPath","pdf.directoryMissing","pdf.timeout","pdf.emptyFile","pdf.invalidPdf"] {
-            for locale in [Locale::En, Locale::Es, Locale::Fr] {
+            for locale in [Locale::En, Locale::Es, Locale::Fr, Locale::Ps, Locale::Sd] {
                 let result = t(locale, key);
                 assert!(!result.is_empty());
                 assert_ne!(result, key);
@@ -190,7 +264,7 @@ mod tests {
     #[test]
     fn all_file_keys_translate() {
         for key in ["file.emptyPath","file.isDirectory","file.noParent","file.noFileName","file.notFound","file.documentUnavailable","file.directoryMissing","file.registryLock","file.sessionUnavailable","file.sessionTooLarge","file.docTooLarge"] {
-            for locale in [Locale::En, Locale::Es, Locale::Fr] {
+            for locale in [Locale::En, Locale::Es, Locale::Fr, Locale::Ps, Locale::Sd] {
                 let result = t(locale, key);
                 assert!(!result.is_empty());
                 assert_ne!(result, key);
