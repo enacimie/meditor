@@ -177,4 +177,12 @@ export const ru = {
   "lang.noResults": "Языки не найдены",
   // Misc
   "misc.title": "meditor",
+  "topbar.newTypst": "Новый .typ",
+  "topbar.newTypstTitle": "Новый документ Typst",
+  "topbar.newTypstAria": "Новая вкладка Typst",
+  "doc.typstSample": "typst-sample",
+  "preview.typstCompiling": "Компиляция Typst…",
+  "preview.typstError": "Typst:",
+  "menu.shortcut.newTypst": "Ctrl+Shift+N",
+
 };

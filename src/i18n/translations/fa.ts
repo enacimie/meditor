@@ -152,4 +152,12 @@ export const fa = {
   "lang.clearSearch": "پاک کردن جستجو",
   "lang.noResults": "زبانی یافت نشد",
   "misc.title": "meditor",
+  "topbar.newTypst": ".typ جدید",
+  "topbar.newTypstTitle": "سند جدید Typst",
+  "topbar.newTypstAria": "زبانه جدید Typst",
+  "doc.typstSample": "typst-sample",
+  "preview.typstCompiling": "…در حال کامپایل Typst",
+  "preview.typstError": ":Typst",
+  "menu.shortcut.newTypst": "Ctrl+Shift+N",
+
 };

@@ -177,4 +177,12 @@ export const ja = {
   "lang.noResults": "言語が見つかりません",
   // Misc
   "misc.title": "meditor",
+  "topbar.newTypst": "新規 .typ",
+  "topbar.newTypstTitle": "新しいTypst文書",
+  "topbar.newTypstAria": "新しいTypstタブ",
+  "doc.typstSample": "typst-sample",
+  "preview.typstCompiling": "Typstをコンパイル中…",
+  "preview.typstError": "Typst：",
+  "menu.shortcut.newTypst": "Ctrl+Shift+N",
+
 };

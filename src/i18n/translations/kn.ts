@@ -152,4 +152,12 @@ export const kn = {
   "lang.clearSearch": "ಹುಡುಕಾಟ ತೆರವುಗೊಳಿಸಿ",
   "lang.noResults": "ಯಾವುದೇ ಭಾಷೆ ಕಂಡುಬಂದಿಲ್ಲ",
   "misc.title": "meditor",
+  "topbar.newTypst": "New .typ",
+  "topbar.newTypstTitle": "New Typst document",
+  "topbar.newTypstAria": "New Typst tab",
+  "doc.typstSample": "typst-sample",
+  "preview.typstCompiling": "Compiling Typst...",
+  "preview.typstError": "Typst:",
+  "menu.shortcut.newTypst": "Ctrl+Shift+N",
+
 };

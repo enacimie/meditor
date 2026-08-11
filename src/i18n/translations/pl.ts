@@ -152,4 +152,12 @@ export const pl = {
   "lang.clearSearch": "Wyczyść wyszukiwanie",
   "lang.noResults": "Nie znaleziono języków",
   "misc.title": "meditor",
+  "topbar.newTypst": "Nowy .typ",
+  "topbar.newTypstTitle": "Nowy dokument Typst",
+  "topbar.newTypstAria": "Nowa karta Typst",
+  "doc.typstSample": "typst-sample",
+  "preview.typstCompiling": "Kompilowanie Typst…",
+  "preview.typstError": "Typst:",
+  "menu.shortcut.newTypst": "Ctrl+Shift+N",
+
 };

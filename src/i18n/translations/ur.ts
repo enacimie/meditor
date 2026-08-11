@@ -177,4 +177,12 @@ export const ur = {
   "lang.noResults": "کوئی زبان نہیں ملی",
   // Misc
   "misc.title": "meditor",
+  "topbar.newTypst": ".typ نیا",
+  "topbar.newTypstTitle": "نیا Typst دستاویز",
+  "topbar.newTypstAria": "نیا Typst ٹیب",
+  "doc.typstSample": "typst-sample",
+  "preview.typstCompiling": "…Typst مرتب ہو رہا ہے",
+  "preview.typstError": ":Typst",
+  "menu.shortcut.newTypst": "Ctrl+Shift+N",
+
 };

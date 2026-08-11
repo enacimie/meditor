@@ -177,4 +177,12 @@ export const bn = {
   "lang.noResults": "কোনো ভাষা পাওয়া যায়নি",
   // Misc
   "misc.title": "meditor",
+  "topbar.newTypst": "নতুন .typ",
+  "topbar.newTypstTitle": "নতুন Typst ডকুমেন্ট",
+  "topbar.newTypstAria": "নতুন Typst ট্যাব",
+  "doc.typstSample": "typst-sample",
+  "preview.typstCompiling": "Typst কম্পাইল হচ্ছে…",
+  "preview.typstError": "Typst:",
+  "menu.shortcut.newTypst": "Ctrl+Shift+N",
+
 };

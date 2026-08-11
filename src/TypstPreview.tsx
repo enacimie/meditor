@@ -22,6 +22,20 @@ function ensureTypst(): Promise<boolean> {
   return typstReady;
 }
 
+/**
+ * Parse a data-source-loc attribute from typst.ts SVGs.
+ * Format is typically "line:column" or "startLine:startCol,endLine:endCol".
+ * Returns the start line (1-based from Typst, 0-based for the editor).
+ */
+function parseSourceLine(loc: string): number {
+  const comma = loc.indexOf(",");
+  const segment = comma > 0 ? loc.slice(0, comma) : loc;
+  const colon = segment.indexOf(":");
+  const lineStr = colon > 0 ? segment.slice(0, colon) : segment;
+  const line = parseInt(lineStr, 10);
+  return isNaN(line) ? -1 : line;
+}
+
 export type TypstPreviewHandle = {
   scrollToLine: (line: number) => void;
   getTargetLine: () => number;
@@ -37,21 +51,71 @@ type Props = {
 const TypstPreview = forwardRef<TypstPreviewHandle, Props>(
   function TypstPreview({ value, t, onReverseSync }, ref) {
     const containerRef = useRef<HTMLDivElement>(null);
+    const outputRef = useRef<HTMLDivElement>(null);
     const [svg, setSvg] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const seqRef = useRef(0);
+    const markedElRef = useRef<Element | null>(null);
+    const markedLineRef = useRef<number | null>(null);
+    const flashTimerRef = useRef<number | undefined>(undefined);
 
     useImperativeHandle(ref, () => ({
-      scrollToLine(_line: number) {
-        // TODO: implement with sourceSpan mapping in Phase 4
+      scrollToLine(line: number) {
+        const container = containerRef.current;
+        if (!container) return;
+        // Typst lines are 1-based, editor lines are 0-based
+        const typstLine = line + 1;
+        // Find the first element whose source-loc starts at this line
+        const candidates = Array.from(
+          container.querySelectorAll<HTMLElement>("[data-source-loc]"),
+        );
+        let target: HTMLElement | null = null;
+        for (const el of candidates) {
+          const loc = el.getAttribute("data-source-loc");
+          if (!loc) continue;
+          const parsed = parseSourceLine(loc);
+          if (parsed < 0) continue;
+          if (parsed <= typstLine) target = el;
+          else break;
+        }
+        if (!target && candidates.length) target = candidates[0];
+        if (!target) return;
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+        target.classList.remove("sync-flash");
+        void (target as HTMLElement).offsetWidth;
+        target.classList.add("sync-flash");
+        if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+        flashTimerRef.current = window.setTimeout(() => {
+          flashTimerRef.current = undefined;
+          target?.classList.remove("sync-flash");
+        }, 1300);
       },
       getTargetLine(): number {
-        // TODO: implement in Phase 4
+        if (markedLineRef.current !== null) return markedLineRef.current;
+        const container = containerRef.current;
+        if (!container) return 0;
+        const scroller = container.closest(".preview-scroll") as HTMLElement | null;
+        const top = scroller ? scroller.getBoundingClientRect().top : 0;
+        const nodes = Array.from(
+          container.querySelectorAll<HTMLElement>("[data-source-loc]"),
+        );
+        for (const n of nodes) {
+          if (n.getBoundingClientRect().bottom >= top) {
+            const loc = n.getAttribute("data-source-loc") ?? "";
+            const parsed = parseSourceLine(loc);
+            // Convert 1-based Typst line to 0-based editor line
+            return parsed > 0 ? parsed - 1 : 0;
+          }
+        }
         return 0;
       },
       clearMark() {
-        // TODO: implement in Phase 4
+        if (markedElRef.current) {
+          markedElRef.current.classList.remove("sync-marked");
+        }
+        markedElRef.current = null;
+        markedLineRef.current = null;
       },
     }));
 
@@ -93,17 +157,27 @@ const TypstPreview = forwardRef<TypstPreviewHandle, Props>(
     }, [value, t]);
 
     function handleClick(e: MouseEvent) {
-      // Typst SVGs have data-source-loc attributes for source mapping.
       const el = (e.target as HTMLElement).closest<HTMLElement>(
         "[data-source-loc]",
       );
       if (el) {
-        const loc = el.getAttribute("data-source-loc");
-        if (loc) {
-          // data-source-loc format: "line:column" or similar
-          const line = parseInt(loc.split(":")[0], 10);
-          if (!isNaN(line)) onReverseSync(line);
+        if (markedElRef.current && markedElRef.current !== el) {
+          markedElRef.current.classList.remove("sync-marked");
         }
+        el.classList.add("sync-marked");
+        markedElRef.current = el;
+        const loc = el.getAttribute("data-source-loc") ?? "";
+        const parsed = parseSourceLine(loc);
+        if (parsed > 0) {
+          markedLineRef.current = parsed - 1; // 0-based
+          onReverseSync(markedLineRef.current);
+        }
+      } else {
+        if (markedElRef.current) {
+          markedElRef.current.classList.remove("sync-marked");
+        }
+        markedElRef.current = null;
+        markedLineRef.current = null;
       }
     }
 
@@ -112,7 +186,6 @@ const TypstPreview = forwardRef<TypstPreviewHandle, Props>(
         ref={containerRef}
         className="typst-preview"
         onClick={handleClick}
-        style={{ overflow: "auto", height: "100%", padding: "1rem" }}
       >
         {loading && !svg && (
           <div className="typst-loading" role="status">
@@ -128,6 +201,7 @@ const TypstPreview = forwardRef<TypstPreviewHandle, Props>(
         )}
         {svg && (
           <div
+            ref={outputRef}
             className="typst-output"
             aria-label="Typst preview"
             dangerouslySetInnerHTML={{ __html: svg }}

@@ -177,4 +177,12 @@ export const ar = {
   "lang.noResults": "لم يتم العثور على لغات",
   // Misc
   "misc.title": "meditor",
+  "topbar.newTypst": ".typ جديد",
+  "topbar.newTypstTitle": "مستند Typst جديد",
+  "topbar.newTypstAria": "علامة تبويب Typst جديدة",
+  "doc.typstSample": "typst-sample",
+  "preview.typstCompiling": "…جاري تجميع Typst",
+  "preview.typstError": ":Typst",
+  "menu.shortcut.newTypst": "Ctrl+Shift+N",
+
 };

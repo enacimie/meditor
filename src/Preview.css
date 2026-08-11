@@ -432,3 +432,79 @@
 :root[data-theme="contrast"] .sync-btn:hover {
   color: #ffff00;
 }
+
+/* ---- Typst preview ---- */
+.typst-preview {
+  flex: 1;
+  overflow: auto;
+  background: var(--bg);
+}
+
+.typst-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 16px;
+  color: var(--fg);
+  font-size: 14px;
+  opacity: 0.72;
+  user-select: none;
+}
+
+.typst-spinner {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  border: 2.5px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: typst-spin 0.7s linear infinite;
+}
+
+@keyframes typst-spin {
+  to { transform: rotate(360deg); }
+}
+
+.typst-output {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+/* Typst SVGs are full-page — center them on a subtle background */
+.typst-output > svg {
+  max-width: 100%;
+  height: auto;
+  background: #ffffff;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.12),
+    0 8px 24px rgba(0, 0, 0, 0.08);
+  border-radius: 2px;
+}
+
+:root[data-theme="dark"] .typst-output > svg {
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.4),
+    0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"] .typst-output > svg {
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.4),
+      0 8px 24px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Typst source-loc marked element */
+.typst-output .sync-marked {
+  outline: 2px solid rgba(9, 105, 218, 0.55);
+  outline-offset: 1px;
+}
+
+.typst-output .sync-flash {
+  animation: syncFlash 1.3s ease;
+}

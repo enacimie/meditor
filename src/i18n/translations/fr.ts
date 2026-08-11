@@ -177,4 +177,12 @@ export const fr = {
   "lang.noResults": "Aucune langue trouvée",
   // Misc
   "misc.title": "meditor",
+  "topbar.newTypst": "Nouveau .typ",
+  "topbar.newTypstTitle": "Nouveau document Typst",
+  "topbar.newTypstAria": "Nouvel onglet Typst",
+  "doc.typstSample": "typst-sample",
+  "preview.typstCompiling": "Compilation de Typst…",
+  "preview.typstError": "Typst :",
+  "menu.shortcut.newTypst": "Ctrl+Shift+N",
+
 };

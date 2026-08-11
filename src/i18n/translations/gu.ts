@@ -152,4 +152,12 @@ export const gu = {
   "lang.clearSearch": "શોધ સાફ કરો",
   "lang.noResults": "કોઈ ભાષા મળી નહીં",
   "misc.title": "meditor",
+  "topbar.newTypst": "New .typ",
+  "topbar.newTypstTitle": "New Typst document",
+  "topbar.newTypstAria": "New Typst tab",
+  "doc.typstSample": "typst-sample",
+  "preview.typstCompiling": "Compiling Typst...",
+  "preview.typstError": "Typst:",
+  "menu.shortcut.newTypst": "Ctrl+Shift+N",
+
 };

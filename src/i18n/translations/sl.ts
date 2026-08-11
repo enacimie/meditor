@@ -153,4 +153,12 @@ export const sl = {
   "lang.clearSearch": "Clear iskanje",
   "lang.noResults": "No jeziks najdeno",
   "misc.title": "meditor",
+  "topbar.newTypst": "New .typ",
+  "topbar.newTypstTitle": "New Typst document",
+  "topbar.newTypstAria": "New Typst tab",
+  "doc.typstSample": "typst-sample",
+  "preview.typstCompiling": "Compiling Typst...",
+  "preview.typstError": "Typst:",
+  "menu.shortcut.newTypst": "Ctrl+Shift+N",
+
 };

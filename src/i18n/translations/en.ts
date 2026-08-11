@@ -132,6 +132,7 @@ export const en = {
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",
+  "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.nextTab": "Ctrl+Tab",
   "menu.shortcut.prevTab": "Ctrl+Shift+Tab",
   // Zen mode

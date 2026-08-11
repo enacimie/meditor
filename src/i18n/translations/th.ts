@@ -152,4 +152,12 @@ export const th = {
   "lang.clearSearch": "ล้างการค้นหา",
   "lang.noResults": "ไม่พบภาษา",
   "misc.title": "meditor",
+  "topbar.newTypst": "ใหม่ .typ",
+  "topbar.newTypstTitle": "เอกสาร Typst ใหม่",
+  "topbar.newTypstAria": "แท็บ Typst ใหม่",
+  "doc.typstSample": "typst-sample",
+  "preview.typstCompiling": "กำลังคอมไพล์ Typst…",
+  "preview.typstError": "Typst:",
+  "menu.shortcut.newTypst": "Ctrl+Shift+N",
+
 };

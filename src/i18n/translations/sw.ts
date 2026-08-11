@@ -177,4 +177,12 @@ export const sw = {
   "lang.noResults": "Hakuna lugha zilizopatikana",
   // Misc
   "misc.title": "meditor",
+  "topbar.newTypst": "Mpya .typ",
+  "topbar.newTypstTitle": "Hati mpya ya Typst",
+  "topbar.newTypstAria": "Kichupo kipya cha Typst",
+  "doc.typstSample": "typst-sample",
+  "preview.typstCompiling": "Inakusanya Typst…",
+  "preview.typstError": "Typst:",
+  "menu.shortcut.newTypst": "Ctrl+Shift+N",
+
 };

@@ -172,6 +172,10 @@ const Topbar = memo(function Topbar({
                 <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15l3 3 3-3"/></svg>
                 {t("menu.exportPdf")}<span className="shortcut">{t("menu.shortcut.export")}</span>
               </button>
+              <button type="button" role="menuitem" disabled={busy} onClick={() => { onNewTypst(); setMenuOpen(false); menuToggleRef.current?.focus(); }}>
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                {t("topbar.newTypst")}<span className="shortcut">{t("menu.shortcut.newTypst")}</span>
+              </button>
               <div className="menu-sep" />
               <div className="menu-replacedby-section">
                 <div className="menu-section-label" aria-hidden="true">{t("menu.theme")}</div>

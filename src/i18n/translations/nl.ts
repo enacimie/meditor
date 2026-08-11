@@ -152,4 +152,12 @@ export const nl = {
   "lang.clearSearch": "Zoekopdracht wissen",
   "lang.noResults": "Geen talen gevonden",
   "misc.title": "meditor",
+  "topbar.newTypst": "Nieuw .typ",
+  "topbar.newTypstTitle": "Nieuw Typst-document",
+  "topbar.newTypstAria": "Nieuw Typst-tabblad",
+  "doc.typstSample": "typst-sample",
+  "preview.typstCompiling": "Typst compileren…",
+  "preview.typstError": "Typst:",
+  "menu.shortcut.newTypst": "Ctrl+Shift+N",
+
 };

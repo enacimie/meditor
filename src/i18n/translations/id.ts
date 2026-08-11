@@ -177,4 +177,12 @@ export const id = {
   "lang.noResults": "Tidak ada bahasa ditemukan",
   // Misc
   "misc.title": "meditor",
+  "topbar.newTypst": "Baru .typ",
+  "topbar.newTypstTitle": "Dokumen Typst baru",
+  "topbar.newTypstAria": "Tab Typst baru",
+  "doc.typstSample": "typst-sample",
+  "preview.typstCompiling": "Mengompilasi Typst…",
+  "preview.typstError": "Typst:",
+  "menu.shortcut.newTypst": "Ctrl+Shift+N",
+
 };

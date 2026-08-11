@@ -153,4 +153,12 @@ export const ca = {
   "lang.clearSearch": "Netejar cerca",
   "lang.noResults": "No s'han trobat idiomes",
   "misc.title": "meditor",
+  "topbar.newTypst": "New .typ",
+  "topbar.newTypstTitle": "New Typst document",
+  "topbar.newTypstAria": "New Typst tab",
+  "doc.typstSample": "typst-sample",
+  "preview.typstCompiling": "Compiling Typst...",
+  "preview.typstError": "Typst:",
+  "menu.shortcut.newTypst": "Ctrl+Shift+N",
+
 };

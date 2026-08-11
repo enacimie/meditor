@@ -177,4 +177,12 @@ export const zh = {
   "lang.noResults": "未找到语言",
   // Misc
   "misc.title": "meditor",
+  "topbar.newTypst": "新建 .typ",
+  "topbar.newTypstTitle": "新建 Typst 文档",
+  "topbar.newTypstAria": "新建 Typst 标签",
+  "doc.typstSample": "typst-sample",
+  "preview.typstCompiling": "正在编译 Typst…",
+  "preview.typstError": "Typst：",
+  "menu.shortcut.newTypst": "Ctrl+Shift+N",
+
 };

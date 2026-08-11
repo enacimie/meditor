@@ -154,4 +154,12 @@ export const es = {
   "lang.clearSearch": "Limpiar búsqueda",
   "lang.noResults": "No se encontraron idiomas",
   "misc.title": "meditor",
+  "topbar.newTypst": "Nuevo .typ",
+  "topbar.newTypstTitle": "Nuevo documento Typst",
+  "topbar.newTypstAria": "Nueva pestaña Typst",
+  "doc.typstSample": "typst-sample",
+  "preview.typstCompiling": "Compilando Typst…",
+  "preview.typstError": "Typst:",
+  "menu.shortcut.newTypst": "Ctrl+Shift+N",
+
 };

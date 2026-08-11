@@ -152,4 +152,12 @@ export const vi = {
   "lang.clearSearch": "Xóa tìm kiếm",
   "lang.noResults": "Không tìm thấy ngôn ngữ",
   "misc.title": "meditor",
+  "topbar.newTypst": "Mới .typ",
+  "topbar.newTypstTitle": "Tài liệu Typst mới",
+  "topbar.newTypstAria": "Tab Typst mới",
+  "doc.typstSample": "typst-sample",
+  "preview.typstCompiling": "Đang biên dịch Typst…",
+  "preview.typstError": "Typst:",
+  "menu.shortcut.newTypst": "Ctrl+Shift+N",
+
 };

@@ -177,4 +177,12 @@ export const ko = {
   "lang.noResults": "언어를 찾을 수 없습니다",
   // Misc
   "misc.title": "meditor",
+  "topbar.newTypst": "새 .typ",
+  "topbar.newTypstTitle": "새 Typst 문서",
+  "topbar.newTypstAria": "새 Typst 탭",
+  "doc.typstSample": "typst-sample",
+  "preview.typstCompiling": "Typst 컴파일 중…",
+  "preview.typstError": "Typst:",
+  "menu.shortcut.newTypst": "Ctrl+Shift+N",
+
 };

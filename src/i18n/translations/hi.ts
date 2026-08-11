@@ -177,4 +177,12 @@ export const hi = {
   "lang.noResults": "कोई भाषा नहीं मिली",
   // Misc
   "misc.title": "meditor",
+  "topbar.newTypst": "नया .typ",
+  "topbar.newTypstTitle": "नया Typst दस्तावेज़",
+  "topbar.newTypstAria": "नया Typst टैब",
+  "doc.typstSample": "typst-sample",
+  "preview.typstCompiling": "Typst संकलित हो रहा है…",
+  "preview.typstError": "Typst:",
+  "menu.shortcut.newTypst": "Ctrl+Shift+N",
+
 };

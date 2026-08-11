@@ -152,4 +152,12 @@ export const yo = {
   "lang.clearSearch": "Pa ìwádi rẹ́",
   "lang.noResults": "Kò sí èdè tí a rí",
   "misc.title": "meditor",
+  "topbar.newTypst": "New .typ",
+  "topbar.newTypstTitle": "New Typst document",
+  "topbar.newTypstAria": "New Typst tab",
+  "doc.typstSample": "typst-sample",
+  "preview.typstCompiling": "Compiling Typst...",
+  "preview.typstError": "Typst:",
+  "menu.shortcut.newTypst": "Ctrl+Shift+N",
+
 };
