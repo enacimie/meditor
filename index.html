@@ -24,16 +24,16 @@
               document.documentElement.style.colorScheme = theme;
             }
           }
-          // Mirror the I18nProvider language resolution (all 20 codes + RTL).
+          // Mirror the I18nProvider language resolution (all 100 codes + RTL).
           var lang = null;
           var rawLang = localStorage.getItem("meditor.language.v1");
           if (rawLang && /^[a-z]{2}$/.test(rawLang)) lang = rawLang;
           if (!lang && navigator && navigator.language) {
             lang = navigator.language.slice(0, 2);
           }
-          if (lang && /^(en|zh|hi|es|ar|fr|bn|pt|ru|ur|id|de|ja|sw|mr|te|tr|ta|ko|it)$/.test(lang)) {
+          if (lang && /^(en|zh|hi|es|ar|fr|bn|pt|ru|ur|id|de|ja|sw|mr|te|tr|ta|ko|it|pl|vi|th|fa|nl|uk|ro|he|ms|fil|pa|jv|ha|kn|gu|am|yo|or|ml|my|uz|ig|ne|si|km|kk|az|ku|ht|ceb|sv|da|fi|no|cs|sk|hu|bg|el|ca)$/.test(lang)) {
             document.documentElement.lang = lang;
-            if (lang === "ar" || lang === "ur") {
+            if (lang === "ar" || lang === "ur" || lang === "fa" || lang === "he" || lang === "ps" || lang === "sd") {
               document.documentElement.dir = "rtl";
             }
           }

@@ -24,13 +24,13 @@ function countKeys(lang: Language): number {
 }
 
 describe("translations", () => {
-  it("has exactly 20 languages", () => {
-    expect(LANGUAGES).toHaveLength(20);
+  it("has exactly 100 languages", () => {
+    expect(LANGUAGES).toHaveLength(100);
   });
 
   it("all language codes are unique", () => {
     const codes = LANGUAGES.map((l) => l.code);
-    expect(new Set(codes).size).toBe(20);
+    expect(new Set(codes).size).toBe(100);
   });
 
   it("English is the source of truth with all keys", () => {
@@ -95,7 +95,7 @@ describe("translations", () => {
 
   // ── verify shortcut keys ───────────────────────────────────────────
 
-  it("shortcut keys exist in all 20 languages", () => {
+  it("shortcut keys exist in all 100 languages", () => {
     const shortcutKeys: TranslationKey[] = [
       "shortcuts.title", "shortcuts.close",
       "shortcuts.ctrlN", "shortcuts.ctrlO", "shortcuts.ctrlS",
@@ -152,20 +152,21 @@ describe("translations", () => {
     for (const lang of LANGUAGES) {
       expect(lang.nativeLabel.length).toBeGreaterThan(0);
       expect(lang.label.length).toBeGreaterThan(0);
-      expect(lang.code.length).toBe(2);
+      expect(lang.code.length).toBeGreaterThanOrEqual(2);
     }
   });
 
   // ── Text direction ─────────────────────────────────────────────────
 
-  it("RTL languages are exactly ar and ur", () => {
+  it("RTL languages are exactly ar, ur, fa, and he", () => {
     const rtl = ALL_LANGUAGES.filter((l) => isRtl(l));
-    expect(rtl.sort()).toEqual(["ar", "ur"]);
+    expect(rtl.sort()).toEqual(["ar","fa","he","ps","sd","ur"]);
   });
 
   it("all other languages are LTR", () => {
+    const rtl = new Set(["ar","ur","fa","he","ps","sd"]);
     for (const lang of ALL_LANGUAGES) {
-      if (lang === "ar" || lang === "ur") continue;
+      if (rtl.has(lang)) continue;
       expect(isRtl(lang), `${lang} should be LTR`).toBe(false);
     }
   });

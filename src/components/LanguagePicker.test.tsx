@@ -40,10 +40,10 @@ describe("LanguagePicker", () => {
       expect(input).toBe(document.activeElement);
     });
 
-    it("renders all 20 languages in the listbox", () => {
+    it("renders all 100 languages in the listbox", () => {
       renderPicker();
       const options = screen.getAllByRole("option");
-      expect(options).toHaveLength(20);
+      expect(options).toHaveLength(100);
     });
 
     it("marks the current language as selected (aria + class)", () => {
@@ -102,11 +102,11 @@ describe("LanguagePicker", () => {
       renderPicker();
       const input = screen.getByLabelText("Search language");
       fireEvent.change(input, { target: { value: "hin" } });
-      expect(screen.getAllByRole("option").length).toBeLessThan(20);
+      expect(screen.getAllByRole("option").length).toBeLessThan(100);
       // Clear via the clear button
       const clearBtn = screen.getByLabelText("Clear search");
       fireEvent.click(clearBtn);
-      expect(screen.getAllByRole("option")).toHaveLength(20);
+      expect(screen.getAllByRole("option")).toHaveLength(100);
     });
 
     it("clears search when clear button is clicked", () => {
@@ -156,11 +156,12 @@ describe("LanguagePicker", () => {
       renderPicker();
       const input = screen.getByLabelText("Search language");
       const options = screen.getAllByRole("option");
+      const lastIdx = options.length - 1;
       // Navigate to first, then go up to wrap to last, then down to wrap to first
       fireEvent.keyDown(input, { key: "ArrowDown" });
       expect(options[0]).toBe(document.activeElement);
       fireEvent.keyDown(input, { key: "ArrowUp" });
-      expect(options[19]).toBe(document.activeElement);
+      expect(options[lastIdx]).toBe(document.activeElement);
       fireEvent.keyDown(input, { key: "ArrowDown" });
       expect(options[0]).toBe(document.activeElement);
     });
