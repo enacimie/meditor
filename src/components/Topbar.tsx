@@ -225,7 +225,6 @@ const Topbar = memo(function Topbar({
                 </button>
               )}
               <div className="menu-sep" />
-              <div className="menu-sep" />
               <button type="button" role="menuitem" disabled={busy} onClick={() => { onCloseOthers(); setMenuOpen(false); menuToggleRef.current?.focus(); }}>
                 <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 12h8"/><path d="M3 12h4"/><path d="M3 6h8"/><path d="M13 6h8"/><path d="M3 18h8"/><path d="M13 18h8"/><path d="M16 8l4 4-4 4"/></svg>
                 {t("menu.closeOthers")}
