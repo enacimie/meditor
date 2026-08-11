@@ -1,8 +1,9 @@
 [package]
 name = "meditor"
 version = "0.1.0"
-description = "Editor de Markdown de escritorio con vista previa y exportación PDF"
+description = "Desktop Markdown/Typst/LaTeX editor with live preview and PDF export"
 authors = ["meditor contributors"]
+license = "AGPL-3.0-or-later"
 edition = "2021"
 default-run = "meditor"
 

@@ -100,6 +100,7 @@ const LatexPreview = forwardRef<LatexPreviewHandle, Props>(
   function LatexPreview({ value, t, onReverseSync: _onReverseSync }, ref) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+    const pdfUrlRef = useRef<string | null>(null);
     const [log, setLog] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
@@ -166,9 +167,11 @@ const LatexPreview = forwardRef<LatexPreviewHandle, Props>(
 
           if (result.status === 0 && result.pdf) {
             // Revoke previous blob to avoid memory leaks
-            if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+            if (pdfUrlRef.current) URL.revokeObjectURL(pdfUrlRef.current);
             const blob = new Blob([result.pdf], { type: "application/pdf" });
-            setPdfUrl(URL.createObjectURL(blob));
+            const url = URL.createObjectURL(blob);
+            pdfUrlRef.current = url;
+            setPdfUrl(url);
           } else {
             setPdfUrl(null);
             const msg = result.log || `Exit status ${result.status}`;
@@ -195,7 +198,7 @@ const LatexPreview = forwardRef<LatexPreviewHandle, Props>(
     // Cleanup blob URL and engine worker on unmount
     useEffect(() => {
       return () => {
-        if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+        if (pdfUrlRef.current) URL.revokeObjectURL(pdfUrlRef.current);
         engineRef.current?.closeWorker();
         engineRef.current = null;
       };

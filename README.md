@@ -1,6 +1,6 @@
 # meditor
 
-**Desktop Markdown editor** with live preview, PDF export, and bidirectional editor↔preview sync. Built with [Tauri](https://tauri.app) (Rust) and React.
+**Desktop Markdown/Typst/LaTeX editor** with live WASM preview, PDF export, and bidirectional editor↔preview sync. Built with [Tauri](https://tauri.app) (Rust) and React. Supports **104 languages** and 3 document formats.
 
 ![meditor screenshot](screenshots/screenshot1.png)
 
@@ -25,7 +25,7 @@
 
 ### Interface
 
-- **20 languages** (English, Chinese, Hindi, Spanish, Arabic, French, Bengali, Portuguese, Russian, Urdu, Indonesian, German, Japanese, Swahili, Marathi, Telugu, Turkish, Tamil, Korean, Italian) with a searchable selector in the menu.
+- **104 languages** with a searchable selector in the menu. Full RTL support (Arabic, Urdu, Persian, Pashto, Sindhi, Hebrew, etc.).
 - **4 themes**: System, Light, Dark, and a **High Contrast** colorblind-friendly theme (WCAG AA everywhere).
 - **Zen mode** (F11): fullscreen distraction-free writing.
 - **Keyboard shortcuts overlay** (F1) and in-window dialogs for confirm/rename (fully themed and localized).
@@ -61,6 +61,8 @@
 | Code             | highlight.js                                                                                            |
 | Pagination       | paged.js                                                                                                |
 | Typography       | Latin Modern (GUST)                                                                                     |
+| Typst            | @myriaddreamin/typst.ts (WASM compiler + SVG renderer)                                                   |
+| LaTeX            | SwiftLaTeX PdfTeXEngine (WASM, EPL-2.0 / GPL-2.0)                                                       |
 
 ## Prerequisites
 
@@ -154,9 +156,11 @@ meditor/
 │   ├── session.ts            # Session serialization types/helpers
 │   ├── types.ts              # Shared types
 │   ├── ErrorBoundary.tsx     # React error boundary
+│   ├── TypstPreview.tsx      # Typst WASM compiler + SVG preview
+│   ├── LatexPreview.tsx      # SwiftLaTeX WASM compiler + PDF preview
 │   ├── i18n/                 # Internationalization
 │   │   ├── I18nProvider.tsx  # Language context, storage, browser detection
-│   │   └── translations/     # en.ts + 19 more language files (parity-tested)
+│   │   └── translations/     # en.ts + 102 more language files (parity-tested)
 │   ├── hooks/                # useThemeEffect, useSplitDivider, useKeyboardShortcuts…
 │   ├── components/           # Topbar, TabBar, dialogs, LanguagePicker, ShortcutsOverlay…
 │   └── assets/fonts/         # Latin Modern fonts (GUST)
@@ -176,7 +180,11 @@ The **Latin Modern** fonts included in `src/assets/fonts/` are distributed under
 
 ## License
 
-The Latin Modern fonts are under the GUST Font License (see `src/assets/fonts/GUST-FONT-LICENSE.TXT`). The application code license is to be determined.
+meditor is licensed under the **GNU Affero General Public License v3.0** (AGPL-3.0-or-later). See [LICENSE](LICENSE) for the full text.
+
+The **Latin Modern** fonts are under the [GUST Font License](src/assets/fonts/GUST-FONT-LICENSE.TXT) (free).
+
+**SwiftLaTeX** (PdfTeXEngine) is under EPL-2.0 / GPL-2.0 with Classpath exception.
 
 ## Recommended IDE
 
