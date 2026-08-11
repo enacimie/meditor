@@ -10,6 +10,10 @@ pub enum Locale {
     Fr,
     Ps,
     Sd,
+    Zgh,
+    Kab,
+    Shi,
+    Rif,
 }
 
 impl Locale {
@@ -20,6 +24,10 @@ impl Locale {
             "fr" => Locale::Fr,
             "ps" => Locale::Ps,
             "sd" => Locale::Sd,
+            "zgh" => Locale::Zgh,
+            "kab" => Locale::Kab,
+            "shi" => Locale::Shi,
+            "rif" => Locale::Rif,
             _ => Locale::En,
         }
     }
@@ -33,6 +41,10 @@ pub fn t(locale: Locale, key: &str) -> String {
         Locale::Fr => t_fr(key),
         Locale::Ps => t_ps(key),
         Locale::Sd => t_sd(key),
+        Locale::Zgh => t_zgh(key),
+        Locale::Kab => t_kab(key),
+        Locale::Shi => t_shi(key),
+        Locale::Rif => t_rif(key),
     }
 }
 
@@ -201,6 +213,42 @@ fn t_sd(key: &str) -> String {
     .to_string()
 }
 
+fn t_zgh(key: &str) -> String {
+    match key {
+        "confirm.title" => "ⵙⵙⵏⴽⴷ".to_string(),
+        "alert.title" => "ⴰⵣⴳⴰⵍ".to_string(),
+        "doc.untitled" => "ⴰⵔⵔⴰⵜ".to_string(),
+        _ => t_en(key),
+    }
+}
+
+fn t_kab(key: &str) -> String {
+    match key {
+        "confirm.title" => "Ssenked".to_string(),
+        "alert.title" => "Azzal".to_string(),
+        "doc.untitled" => "Arrat".to_string(),
+        _ => t_en(key),
+    }
+}
+
+fn t_shi(key: &str) -> String {
+    match key {
+        "confirm.title" => "ⵙⵙⵏⴽⴷ".to_string(),
+        "alert.title" => "ⴰⵣⴳⴰⵍ".to_string(),
+        "doc.untitled" => "ⴰⵔⵔⴰⵜ".to_string(),
+        _ => t_en(key),
+    }
+}
+
+fn t_rif(key: &str) -> String {
+    match key {
+        "confirm.title" => "Ssenked".to_string(),
+        "alert.title" => "Azzar".to_string(),
+        "doc.untitled" => "Arrat".to_string(),
+        _ => t_en(key),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -232,6 +280,10 @@ mod tests {
         assert_eq!(Locale::from_str("fr"), Locale::Fr);
         assert_eq!(Locale::from_str("ps"), Locale::Ps);
         assert_eq!(Locale::from_str("sd"), Locale::Sd);
+        assert_eq!(Locale::from_str("zgh"), Locale::Zgh);
+        assert_eq!(Locale::from_str("kab"), Locale::Kab);
+        assert_eq!(Locale::from_str("shi"), Locale::Shi);
+        assert_eq!(Locale::from_str("rif"), Locale::Rif);
     }
 
     #[test]
@@ -248,12 +300,16 @@ mod tests {
         assert_eq!(t(Locale::Fr, "nonexistent.key"), "nonexistent.key");
         assert_eq!(t(Locale::Ps, "nonexistent.key"), "nonexistent.key");
         assert_eq!(t(Locale::Sd, "nonexistent.key"), "nonexistent.key");
+        assert_eq!(t(Locale::Zgh, "nonexistent.key"), "nonexistent.key");
+        assert_eq!(t(Locale::Kab, "nonexistent.key"), "nonexistent.key");
+        assert_eq!(t(Locale::Shi, "nonexistent.key"), "nonexistent.key");
+        assert_eq!(t(Locale::Rif, "nonexistent.key"), "nonexistent.key");
     }
 
     #[test]
     fn all_pdf_keys_translate() {
         for key in ["pdf.notSupported","pdf.invalidPath","pdf.directoryMissing","pdf.timeout","pdf.emptyFile","pdf.invalidPdf"] {
-            for locale in [Locale::En, Locale::Es, Locale::Fr, Locale::Ps, Locale::Sd] {
+            for locale in [Locale::En, Locale::Es, Locale::Fr, Locale::Ps, Locale::Sd, Locale::Zgh, Locale::Kab, Locale::Shi, Locale::Rif] {
                 let result = t(locale, key);
                 assert!(!result.is_empty());
                 assert_ne!(result, key);
@@ -264,7 +320,7 @@ mod tests {
     #[test]
     fn all_file_keys_translate() {
         for key in ["file.emptyPath","file.isDirectory","file.noParent","file.noFileName","file.notFound","file.documentUnavailable","file.directoryMissing","file.registryLock","file.sessionUnavailable","file.sessionTooLarge","file.docTooLarge"] {
-            for locale in [Locale::En, Locale::Es, Locale::Fr, Locale::Ps, Locale::Sd] {
+            for locale in [Locale::En, Locale::Es, Locale::Fr, Locale::Ps, Locale::Sd, Locale::Zgh, Locale::Kab, Locale::Shi, Locale::Rif] {
                 let result = t(locale, key);
                 assert!(!result.is_empty());
                 assert_ne!(result, key);
