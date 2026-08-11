@@ -956,15 +956,17 @@ export default function App() {
               </svg>
               {t("pane.goToCode")}
             </button>
-            <button
-              type="button"
-              className={docView ? "sync-btn on" : "sync-btn"}
-              onClick={() => setDocView((v) => !v)}
-              aria-label={t("pane.viewMode")}
-              title={t("pane.viewMode")}
-            >
-              <span className="pane-view-label">{docView ? t("pane.document") : t("pane.web")}</span>
-            </button>
+            {(active?.kind ?? "markdown") !== "typst" && (
+              <button
+                type="button"
+                className={docView ? "sync-btn on" : "sync-btn"}
+                onClick={() => setDocView((v) => !v)}
+                aria-label={t("pane.viewMode")}
+                title={t("pane.viewMode")}
+              >
+                <span className="pane-view-label">{docView ? t("pane.document") : t("pane.web")}</span>
+              </button>
+            )}
           </div>
           <Preview
             ref={previewRef}

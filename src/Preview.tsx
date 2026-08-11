@@ -244,6 +244,10 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
   }
 
   useEffect(() => {
+    // The Typst preview is handled by <TypstPreview /> — don't fire the
+    // markdown/paged.js rendering pipeline for .typ documents.
+    if (kind === "typst") return;
+
     let cancelled = false;
     let debounceTimer: number | undefined;
 
@@ -307,7 +311,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
       cancelled = true;
       if (debounceTimer) clearTimeout(debounceTimer);
     };
-  }, [deferredValue, docView, retryToken, t]);
+  }, [deferredValue, docView, retryToken, t, kind]);
 
   useEffect(() => {
     return () => {

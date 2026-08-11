@@ -51,6 +51,7 @@ const TypstPreview = forwardRef<TypstPreviewHandle, Props>(
     const [svg, setSvg] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [retryToken, setRetryToken] = useState(0);
     const seqRef = useRef(0);
     const markedElRef = useRef<Element | null>(null);
     const markedLineRef = useRef<number | null>(null);
@@ -154,7 +155,7 @@ const TypstPreview = forwardRef<TypstPreviewHandle, Props>(
         cancelled = true;
         window.clearTimeout(timer);
       };
-    }, [value, t]);
+    }, [value, t, retryToken]);
 
     function handleClick(e: MouseEvent) {
       const el = (e.target as HTMLElement).closest<HTMLElement>(
@@ -197,6 +198,9 @@ const TypstPreview = forwardRef<TypstPreviewHandle, Props>(
           <div className="preview-error" role="alert" aria-live="assertive">
             <strong>{t("preview.unavailable")}</strong>
             <span>{error}</span>
+            <button type="button" onClick={() => setRetryToken((t) => t + 1)}>
+              {t("preview.retry")}
+            </button>
           </div>
         )}
         {svg && (
