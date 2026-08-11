@@ -212,7 +212,8 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
       }
       clearMark();
     },
-  }), [kind]);
+  }),
+  []);
 
   function clearMark() {
     if (markedElRef.current) markedElRef.current.classList.remove("sync-marked");

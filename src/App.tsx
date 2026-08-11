@@ -32,8 +32,8 @@ import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 
 import type { Doc, DocKind } from "./types";
 import type { Theme } from "./components/types";
-import { getTypst } from "./TypstPreview";
-import { compileLatexToPdf } from "./LatexPreview";
+import { getTypst } from "./typstEngine";
+import { compileLatexToPdf } from "./latexEngine";
 import "./App.css";
 
 type FileOperation = "open" | "save" | "saveAs" | "export";
