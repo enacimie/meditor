@@ -9,6 +9,9 @@ export const en = {
   "topbar.newTypst": "New .typ",
   "topbar.newTypstTitle": "New Typst document",
   "topbar.newTypstAria": "New Typst tab",
+  "topbar.newLatex": "New .tex",
+  "topbar.newLatexTitle": "New LaTeX document",
+  "topbar.newLatexAria": "New LaTeX tab",
   "topbar.open": "Open",
   "topbar.openTitle": "Open (Ctrl+O)",
   "topbar.openAria": "Open files (Ctrl+O)",
@@ -71,6 +74,7 @@ export const en = {
   "doc.untitled": (n: number) => `Document ${n}`,
   "doc.defaultExport": "document",
   "doc.typstSample": "typst-sample",
+  "doc.latexSample": "latex-sample",
   // Panes
   "pane.editor": "Editor",
   "pane.preview": "Preview",
@@ -98,6 +102,8 @@ export const en = {
   "preview.typstCompiling": "Compiling Typst...",
   "preview.typstError": "Typst:",
   "preview.pages": "pages",
+  "preview.latexNotice": "LaTeX compilation coming soon — showing raw source.",
+  "preview.latexEmpty": "Empty LaTeX document.",
   // Session
   "session.restoreError": "Could not restore session",
   "session.saveError": "Could not save session",
@@ -134,6 +140,7 @@ export const en = {
   "menu.shortcut.export": "Ctrl+E",
   "menu.shortcut.newTab": "Ctrl+N",
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
+  "menu.shortcut.newLatex": "Ctrl+Shift+L",
   "menu.shortcut.nextTab": "Ctrl+Tab",
   "menu.shortcut.prevTab": "Ctrl+Shift+Tab",
   // Zen mode

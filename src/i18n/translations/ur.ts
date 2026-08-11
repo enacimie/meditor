@@ -180,10 +180,17 @@ export const ur = {
   "topbar.newTypst": ".typ نیا",
   "topbar.newTypstTitle": "نیا Typst دستاویز",
   "topbar.newTypstAria": "نیا Typst ٹیب",
+  "topbar.newLatex": "New .tex",
+  "topbar.newLatexTitle": "New LaTeX document",
+  "topbar.newLatexAria": "New LaTeX tab",
   "doc.typstSample": "typst-sample",
+  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "…Typst مرتب ہو رہا ہے",
   "preview.typstError": ":Typst",
   "preview.pages": "pages",
+  "preview.latexNotice": "LaTeX compilation coming soon — showing raw source.",
+  "preview.latexEmpty": "Empty LaTeX document.",
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
+  "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
 };

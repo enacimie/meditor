@@ -19,6 +19,7 @@ const ShortcutsOverlay = memo(function ShortcutsOverlay({ t, onClose }: Props) {
   const shortcuts: [string, string][] = [
     [t("shortcuts.ctrlN"), t("menu.newTab")],
     ["Ctrl+Shift+N", t("topbar.newTypst")],
+    ["Ctrl+Shift+L", t("topbar.newLatex")],
     [t("shortcuts.ctrlO"), t("topbar.open")],
     [t("shortcuts.ctrlS"), t("topbar.save")],
     [t("shortcuts.ctrlShiftS"), t("menu.saveAs")],

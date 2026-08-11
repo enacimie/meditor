@@ -11,6 +11,8 @@ export type ShortcutHandlers = {
   newTab: () => void;
   /** Ctrl+Shift+N / Cmd+Shift+N */
   newTypst: () => void;
+  /** Ctrl+Shift+L / Cmd+Shift+L */
+  newLatex: () => void;
   /** Ctrl+E / Cmd+E */
   exportPdf: () => void;
   /** Ctrl+W / Cmd+W */
@@ -77,6 +79,9 @@ export function useKeyboardShortcuts(
         e.preventDefault();
         if (e.shiftKey) h.newTypst();
         else h.newTab();
+      } else if (k === "l") {
+        e.preventDefault();
+        if (e.shiftKey) h.newLatex();
       } else if (k === "e") {
         e.preventDefault();
         h.exportPdf();

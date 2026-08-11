@@ -155,10 +155,17 @@ export const th = {
   "topbar.newTypst": "ใหม่ .typ",
   "topbar.newTypstTitle": "เอกสาร Typst ใหม่",
   "topbar.newTypstAria": "แท็บ Typst ใหม่",
+  "topbar.newLatex": "New .tex",
+  "topbar.newLatexTitle": "New LaTeX document",
+  "topbar.newLatexAria": "New LaTeX tab",
   "doc.typstSample": "typst-sample",
+  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "กำลังคอมไพล์ Typst…",
   "preview.typstError": "Typst:",
   "preview.pages": "pages",
+  "preview.latexNotice": "LaTeX compilation coming soon — showing raw source.",
+  "preview.latexEmpty": "Empty LaTeX document.",
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
+  "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
 };

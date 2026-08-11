@@ -1,5 +1,5 @@
 /** Supported document languages. */
-export type DocKind = "markdown" | "typst";
+export type DocKind = "markdown" | "typst" | "latex";
 
 /**
  * Core document model used throughout the app.

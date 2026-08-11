@@ -157,10 +157,17 @@ export const es = {
   "topbar.newTypst": "Nuevo .typ",
   "topbar.newTypstTitle": "Nuevo documento Typst",
   "topbar.newTypstAria": "Nueva pestaña Typst",
+  "topbar.newLatex": "New .tex",
+  "topbar.newLatexTitle": "New LaTeX document",
+  "topbar.newLatexAria": "New LaTeX tab",
   "doc.typstSample": "typst-sample",
+  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "Compilando Typst…",
   "preview.typstError": "Typst:",
   "preview.pages": "pages",
+  "preview.latexNotice": "LaTeX compilation coming soon — showing raw source.",
+  "preview.latexEmpty": "Empty LaTeX document.",
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
+  "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
 };

@@ -336,3 +336,123 @@ Above the rule…
 
 _Start typing Typst in meditor — live preview updates as you write._
 `;
+
+export const LATEX_SAMPLE = `\\documentclass[a4paper,11pt]{article}
+
+\\usepackage[utf8]{inputenc}
+\\usepackage[T1]{fontenc}
+\\usepackage{lmodern}
+\\usepackage{amsmath, amssymb}
+\\usepackage{graphicx}
+\\usepackage{hyperref}
+\\usepackage{booktabs}
+\\usepackage[margin=2.5cm]{geometry}
+
+\\title{meditor + \\LaTeX}
+\\author{meditor}
+\\date{\\today}
+
+\\begin{document}
+
+\\maketitle
+
+\\section{Introduction}
+
+This is a \\LaTeX\\ document edited in meditor with syntax highlighting.
+Live preview and PDF compilation are coming soon.
+
+\\section{Typography}
+
+\\textbf{Bold}, \\textit{italic}, \\underline{underline}, and
+\\texttt{monospace} text. \\textsc{Small caps} and \\textsf{sans-serif}.
+
+Footnotes are easy\\footnote{This is a footnote.}. You can also add
+marginal notes with the \\marginpar command.
+
+\\section{Mathematics}
+
+Euler's identity: $e^{i\\pi} + 1 = 0$.
+
+The Gaussian integral:
+\\begin{equation}
+  \\int_{-\\infty}^{\\infty} e^{-x^2}\\,dx = \\sqrt{\\pi}
+\\end{equation}
+
+A matrix:
+\\begin{equation}
+  \\begin{pmatrix}
+    a & b \\\\
+    c & d
+  \\end{pmatrix}
+\\end{equation}
+
+Aligned equations:
+\\begin{align}
+  f(x) &= x^2 + 2x + 1 \\\\
+       &= (x + 1)^2
+\\end{align}
+
+\\section{Tables}
+
+\\begin{table}[h]
+  \\centering
+  \\begin{tabular}{lcc}
+    \\toprule
+    \\textbf{Feature} & \\textbf{Status} & \\textbf{Priority} \\\\
+    \\midrule
+    Markdown & Done & High \\\\
+    KaTeX & Done & Medium \\\\
+    Typst & WIP & High \\\\
+    LaTeX & Planned & Medium \\\\
+    \\bottomrule
+  \\end{tabular}
+  \\caption{Feature status overview}
+\\end{table}
+
+\\section{Lists}
+
+\\begin{itemize}
+  \\item First unordered item
+  \\item Second unordered item
+  \\begin{itemize}
+    \\item Nested item
+    \\item Another nested item
+  \\end{itemize}
+  \\item Third item
+\\end{itemize}
+
+\\begin{enumerate}
+  \\item First ordered item
+  \\item Second ordered item
+  \\item Third item
+\\end{enumerate}
+
+\\section{Code}
+
+\\begin{verbatim}
+def fibonacci(n: int) -> list[int]:
+    """Return the first n Fibonacci numbers."""
+    a, b = 0, 1
+    result = []
+    for _ in range(n):
+        result.append(a)
+        a, b = b, a + b
+    return result
+\\end{verbatim}
+
+\\section{Theorems}
+
+\\begin{quote}
+  This is a blockquote. It can span multiple lines and the \\LaTeX\\
+  compiler handles the line breaking automatically.
+\\end{quote}
+
+\\section{References}
+
+- \\href{https://www.latex-project.org}{LaTeX Project}
+- \\href{https://ctan.org}{CTAN — Comprehensive TeX Archive Network}
+
+_Start typing LaTeX in meditor — syntax highlighting is ready, compilation coming soon._
+
+\\end{document}
+`;

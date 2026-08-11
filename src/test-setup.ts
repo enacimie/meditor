@@ -14,3 +14,15 @@ vi.mock("@myriaddreamin/typst.ts", () => ({
     pdf: async () => new Uint8Array(),
   },
 }));
+
+// Stub LaTeX language mode — tests only create markdown documents.
+vi.mock("@codemirror/legacy-modes/mode/stex", () => ({
+  stex: () => ({}),
+}));
+vi.mock("@codemirror/language", async () => {
+  const actual = await vi.importActual<typeof import("@codemirror/language")>("@codemirror/language");
+  return {
+    ...actual,
+    StreamLanguage: { define: () => [] },
+  };
+});

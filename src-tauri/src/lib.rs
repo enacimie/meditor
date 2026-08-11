@@ -311,7 +311,7 @@ fn open_files(
     let selected = app
         .dialog()
         .file()
-        .add_filter("Markdown", &["md", "markdown", "txt", "typ", "typst"])
+        .add_filter("Markdown", &["md", "markdown", "txt", "typ", "typst", "tex", "latex", "ltx"])
         .blocking_pick_files();
     let paths = match selected {
         Some(paths) => paths
@@ -336,7 +336,7 @@ fn save_as(
         .dialog()
         .file()
         .set_file_name(default_name)
-        .add_filter("Markdown", &["md", "markdown", "txt", "typ", "typst"])
+        .add_filter("Markdown", &["md", "markdown", "txt", "typ", "typst", "tex", "latex", "ltx"])
         .blocking_save_file();
     let path = match selected {
         Some(path) => path.into_path().map_err(|e| e.to_string())?,

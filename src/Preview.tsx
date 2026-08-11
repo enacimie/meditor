@@ -21,6 +21,7 @@ import type { DocKind } from "./types";
 import "./Preview.css";
 
 const TypstPreview = lazy(() => import("./TypstPreview"));
+const LatexPreview = lazy(() => import("./LatexPreview"));
 
 const PAGED_STYLES: Array<Record<string, string>> = [
   { "meditor-paged.css": pagedCss },
@@ -244,9 +245,9 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
   }
 
   useEffect(() => {
-    // The Typst preview is handled by <TypstPreview /> — don't fire the
-    // markdown/paged.js rendering pipeline for .typ documents.
-    if (kind === "typst") return;
+    // Typst and LaTeX previews are handled by their own components —
+    // don't fire the markdown/paged.js rendering pipeline for them.
+    if (kind === "typst" || kind === "latex") return;
 
     let cancelled = false;
     let debounceTimer: number | undefined;
@@ -329,6 +330,14 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
     return (
       <Suspense fallback={<div className="typst-loading" role="status"><span className="typst-spinner" aria-hidden="true" />{t("preview.typstCompiling")}</div>}>
         <TypstPreview value={value} t={t} onReverseSync={onReverseSync} />
+      </Suspense>
+    );
+  }
+
+  if (kind === "latex") {
+    return (
+      <Suspense fallback={<div className="typst-loading" role="status"><span className="typst-spinner" aria-hidden="true" />{t("app.loading")}</div>}>
+        <LatexPreview value={value} t={t} onReverseSync={onReverseSync} />
       </Suspense>
     );
   }

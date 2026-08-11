@@ -21,6 +21,7 @@ type Props = {
   onToggleZen: () => void;
   onNew: () => void;
   onNewTypst: () => void;
+  onNewLatex: () => void;
   onOpen: () => void;
   onSave: () => void;
   onSaveAs: () => void;
@@ -43,6 +44,7 @@ const Topbar = memo(function Topbar({
   onToggleZen,
   onNew,
   onNewTypst,
+  onNewLatex,
   onOpen,
   onSave,
   onSaveAs,
@@ -139,6 +141,10 @@ const Topbar = memo(function Topbar({
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
           <span className="btn-label">{t("topbar.newTypst")}</span>
         </button>
+        <button type="button" aria-label={t("topbar.newLatexAria")} onClick={onNewLatex} title={t("topbar.newLatexTitle")} disabled={busy}>
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          <span className="btn-label">{t("topbar.newLatex")}</span>
+        </button>
         <button type="button" aria-label={t("topbar.openAria")} onClick={onOpen} title={t("topbar.openTitle")} disabled={busy}>
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
           <span className="btn-label">{t("topbar.open")}</span>
@@ -175,6 +181,10 @@ const Topbar = memo(function Topbar({
               <button type="button" role="menuitem" disabled={busy} onClick={() => { onNewTypst(); setMenuOpen(false); menuToggleRef.current?.focus(); }}>
                 <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
                 {t("topbar.newTypst")}<span className="shortcut">{t("menu.shortcut.newTypst")}</span>
+              </button>
+              <button type="button" role="menuitem" disabled={busy} onClick={() => { onNewLatex(); setMenuOpen(false); menuToggleRef.current?.focus(); }}>
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                {t("topbar.newLatex")}<span className="shortcut">{t("menu.shortcut.newLatex")}</span>
               </button>
               <div className="menu-sep" />
               <div className="menu-replacedby-section">

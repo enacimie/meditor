@@ -702,6 +702,83 @@
   }
 }
 
+/* ---- LaTeX preview (raw source without compilation) ---- */
+.latex-preview {
+  flex: 1;
+  overflow: auto;
+  background: var(--bg);
+  scroll-behavior: smooth;
+}
+
+.latex-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  margin: 12px 16px 0;
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border));
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--fg);
+  opacity: 0.9;
+}
+
+.latex-notice-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.latex-source {
+  margin: 16px;
+  padding: 16px 20px;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 22px;
+  color: var(--fg);
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+  tab-size: 2;
+  cursor: text;
+  user-select: text;
+}
+
+:root[data-theme="contrast"] .latex-source {
+  border-color: #ffffff;
+}
+
+@media (max-width: 760px) {
+  .latex-notice {
+    margin: 8px 8px 0;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .latex-source {
+    margin: 8px;
+    padding: 12px 14px;
+    font-size: 12px;
+  }
+}
+
+@keyframes typst-sync-flash {
+  0%,
+  20% {
+    box-shadow:
+      inset 0 0 0 3px rgba(9, 105, 218, 0.5),
+      0 0 0 4px rgba(9, 105, 218, 0.25);
+  }
+  100% {
+    box-shadow:
+      inset 0 0 0 3px rgba(9, 105, 218, 0),
+      0 0 0 4px rgba(9, 105, 218, 0);
+  }
+}
+
 /* ---- Print: Typst ---- */
 @media print {
   .typst-preview {

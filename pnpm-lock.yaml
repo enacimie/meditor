@@ -11,9 +11,15 @@ importers:
       '@codemirror/lang-markdown':
         specifier: ^6.5.1
         version: 6.5.1
+      '@codemirror/language':
+        specifier: ^6.12.4
+        version: 6.12.4
       '@codemirror/language-data':
         specifier: ^6.5.2
         version: 6.5.2
+      '@codemirror/legacy-modes':
+        specifier: ^6.5.3
+        version: 6.5.3
       '@codemirror/search':
         specifier: ^6.7.1
         version: 6.7.1

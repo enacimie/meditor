@@ -18,6 +18,23 @@ import { useImagePaste } from "./hooks/useImagePaste";
 import type { DocKind } from "./types";
 import "./Editor.css";
 
+// Lazy-load the LaTeX language mode (legacy StreamLanguage, MIT licensed).
+let latexLangPromise: Promise<Extension> | null = null;
+function getLatexLang(): Promise<Extension> {
+  if (!latexLangPromise) {
+    latexLangPromise = Promise.all([
+      import("@codemirror/legacy-modes/mode/stex"),
+      import("@codemirror/language"),
+    ])
+      .then(([stexMod, langMod]) => langMod.StreamLanguage.define(stexMod.stex))
+      .catch((e) => {
+        latexLangPromise = null; // allow retry
+        throw e;
+      });
+  }
+  return latexLangPromise;
+}
+
 // Lazy-load the Typst language mode so the WASM/Lezer binary doesn't block
 // the initial render or break E2E tests (which only use markdown docs).
 // Resets on failure so the user can retry after a transient error.
@@ -42,6 +59,20 @@ function loadTypstLang(): Extension {
 
 function applyTypstLang(view: EditorView, compartment: Compartment) {
   getTypstLang().then((ext) => {
+    if (view.viewport) {
+      view.dispatch({ effects: compartment.reconfigure(ext) });
+    }
+  });
+}
+
+/** Synchronous placeholder for LaTeX — the Compartment will be reconfigured async. */
+function loadLatexLang(): Extension {
+  getLatexLang(); // kick off the dynamic import
+  return [];
+}
+
+function applyLatexLang(view: EditorView, compartment: Compartment) {
+  getLatexLang().then((ext) => {
     if (view.viewport) {
       view.dispatch({ effects: compartment.reconfigure(ext) });
     }
@@ -135,12 +166,15 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   useEffect(() => {
     if (!host.current) return;
     const isTypst = initialKind.current === "typst";
+    const isLatex = initialKind.current === "latex";
     const extensions: Extension[] = [
       basicSetup,
       languageCompartment.current.of(
         isTypst
           ? loadTypstLang()
-          : markdown({ base: markdownLanguage, codeLanguages: languages }),
+          : isLatex
+            ? loadLatexLang()
+            : markdown({ base: markdownLanguage, codeLanguages: languages }),
       ),
       search({ top: true }),
       keymap.of(searchKeymap),
@@ -237,8 +271,11 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
     const view = viewRef.current;
     if (!view) return;
     const isTypst = kind === "typst";
+    const isLatex = kind === "latex";
     if (isTypst) {
       applyTypstLang(view, languageCompartment.current);
+    } else if (isLatex) {
+      applyLatexLang(view, languageCompartment.current);
     } else {
       view.dispatch({
         effects: languageCompartment.current.reconfigure(

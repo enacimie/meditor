@@ -15,7 +15,7 @@ import type { EditorHandle } from "./Editor";
 
 const Editor = lazy(() => import("./Editor"));
 import Preview, { type PreviewHandle } from "./Preview";
-import { SAMPLE, TYPST_SAMPLE } from "./sample";
+import { SAMPLE, TYPST_SAMPLE, LATEX_SAMPLE } from "./sample";
 import Topbar from "./components/Topbar";
 import TabBar from "./components/TabBar";
 import StatusBar from "./components/StatusBar";
@@ -143,6 +143,7 @@ function newId(): string {
 
 function kindFromPath(path: string): DocKind {
   if (/\.(typ|typst)$/i.test(path)) return "typst";
+  if (/\.(tex|latex|ltx)$/i.test(path)) return "latex";
   return "markdown";
 }
 
@@ -497,6 +498,13 @@ export default function App() {
     setActiveId(doc.id);
   }, []);
 
+  const newLatexTab = useCallback(() => {
+    if (isOperationBusy(busyOperationRef)) return;
+    const doc = makeDoc(LATEX_SAMPLE, null, undefined, "latex");
+    setDocs((prev) => [...prev, doc]);
+    setActiveId(doc.id);
+  }, []);
+
   const toggleZen = useCallback(() => {
     setZenMode((z) => !z);
   }, []);
@@ -577,7 +585,7 @@ export default function App() {
     if (!active || !isTauri() || !beginOperation("saveAs")) return;
     const documentId = active.id;
     const savedContent = active.content;
-    const ext = active.kind === "typst" ? ".typ" : ".md";
+    const ext = active.kind === "typst" ? ".typ" : active.kind === "latex" ? ".tex" : ".md";
     const base = active.name.replace(/\.(md|markdown|txt|typ|typst)$/i, "");
     const defaultName = `${base}${ext}`;
     try {
@@ -639,7 +647,7 @@ export default function App() {
   async function exportPdf() {
     if (!active || !isTauri() || !beginOperation("export")) return;
     try {
-      const base = active.name.replace(/\.(md|markdown|txt|typ|typst)$/i, "") || t("doc.defaultExport");
+      const base = active.name.replace(/\.(md|markdown|txt|typ|typst|tex|latex|ltx)$/i, "") || t("doc.defaultExport");
       if (active.kind === "typst") {
         // Typst: compile to PDF via WASM (reuses the same cached module as
         // the preview), then save via Tauri dialog.
@@ -647,8 +655,10 @@ export default function App() {
         const pdfBytes = await $typst.pdf({ mainContent: active.content });
         if (!pdfBytes) throw new Error("Typst compilation produced no output");
         const defaultName = `${base}.pdf`;
-        // Use Tauri save dialog to pick destination, then write bytes
         await invoke("write_pdf_bytes", { pdfBytes: Array.from(pdfBytes), defaultName });
+      } else if (active.kind === "latex") {
+        // LaTeX: compilation not yet integrated — export as raw .tex source.
+        await invoke("export_pdf", { defaultName: `${base}.pdf` });
       } else {
         await invoke("export_pdf", { defaultName: `${base}.pdf` });
       }
@@ -754,6 +764,7 @@ export default function App() {
     openFiles,
     newTab,
     newTypst: newTypstTab,
+    newLatex: newLatexTab,
     exportPdf,
     closeTab: () => closeTab(activeId),
     toggleZen,
@@ -810,6 +821,7 @@ export default function App() {
         onToggleZen={toggleZen}
         onNew={newTab}
         onNewTypst={newTypstTab}
+        onNewLatex={newLatexTab}
         onOpen={openFiles}
         onSave={save}
         onSaveAs={saveAs}
@@ -958,7 +970,7 @@ export default function App() {
               </svg>
               {t("pane.goToCode")}
             </button>
-            {(active?.kind ?? "markdown") !== "typst" && (
+            {(active?.kind ?? "markdown") !== "typst" && (active?.kind ?? "markdown") !== "latex" && (
               <button
                 type="button"
                 className={docView ? "sync-btn on" : "sync-btn"}

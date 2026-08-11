@@ -180,10 +180,17 @@ export const bn = {
   "topbar.newTypst": "নতুন .typ",
   "topbar.newTypstTitle": "নতুন Typst ডকুমেন্ট",
   "topbar.newTypstAria": "নতুন Typst ট্যাব",
+  "topbar.newLatex": "New .tex",
+  "topbar.newLatexTitle": "New LaTeX document",
+  "topbar.newLatexAria": "New LaTeX tab",
   "doc.typstSample": "typst-sample",
+  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "Typst কম্পাইল হচ্ছে…",
   "preview.typstError": "Typst:",
   "preview.pages": "pages",
+  "preview.latexNotice": "LaTeX compilation coming soon — showing raw source.",
+  "preview.latexEmpty": "Empty LaTeX document.",
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
+  "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
 };

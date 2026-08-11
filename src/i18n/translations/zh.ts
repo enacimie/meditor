@@ -180,10 +180,17 @@ export const zh = {
   "topbar.newTypst": "新建 .typ",
   "topbar.newTypstTitle": "新建 Typst 文档",
   "topbar.newTypstAria": "新建 Typst 标签",
+  "topbar.newLatex": "New .tex",
+  "topbar.newLatexTitle": "New LaTeX document",
+  "topbar.newLatexAria": "New LaTeX tab",
   "doc.typstSample": "typst-sample",
+  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "正在编译 Typst…",
   "preview.typstError": "Typst：",
   "preview.pages": "pages",
+  "preview.latexNotice": "LaTeX compilation coming soon — showing raw source.",
+  "preview.latexEmpty": "Empty LaTeX document.",
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
+  "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
 };

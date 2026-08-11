@@ -180,10 +180,17 @@ export const ja = {
   "topbar.newTypst": "新規 .typ",
   "topbar.newTypstTitle": "新しいTypst文書",
   "topbar.newTypstAria": "新しいTypstタブ",
+  "topbar.newLatex": "New .tex",
+  "topbar.newLatexTitle": "New LaTeX document",
+  "topbar.newLatexAria": "New LaTeX tab",
   "doc.typstSample": "typst-sample",
+  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "Typstをコンパイル中…",
   "preview.typstError": "Typst：",
   "preview.pages": "pages",
+  "preview.latexNotice": "LaTeX compilation coming soon — showing raw source.",
+  "preview.latexEmpty": "Empty LaTeX document.",
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
+  "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
 };
