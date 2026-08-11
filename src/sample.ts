@@ -214,3 +214,125 @@ The following HTML tags are escaped: \\\\<script\\\\>alert('xss')\\\\<\\\\/scrip
 
 _Drag-and-drop or paste images from your clipboard into the editor to embed them inline._
 `;
+
+export const TYPST_SAMPLE = `= meditor + Typst
+#set page(margin: 2.5cm)
+#set text(font: "Latin Modern Roman", size: 11pt, lang: "en")
+
+This is a *Typst* document edited in meditor with live preview,
+syntax highlighting, and bidirectional sync.
+
+== Typography
+
+- *Bold*, _italic_, #underline[underline], #strikethrough[strikethrough]
+- Superscript: E = mc#super[2]
+- Subscript: H#sub[2]O
+- #smallcaps[Small caps] and #text(fill: blue)[colored text]
+
+== Links & References
+
+- Link to #link("https://typst.app")[Typst homepage]
+- Reference a section: @tables
+- Cite with @math
+
+== Tables <tables>
+
+#table(
+  columns: 3,
+  stroke: 0.5pt,
+  align: (left, center, center),
+  table.header(
+    [*Feature*], [*Status*], [*Priority*],
+  ),
+  [Markdown], [Done], [High],
+  [KaTeX], [Done], [Medium],
+  [Typst], [WIP], [High],
+  [LaTeX], [Planned], [Medium],
+)
+
+== Lists
+
++ First ordered item
++ Second ordered item
+  - Nested unordered
+  - Another nested item
++ Third item with a term
+
+/ Definition:
+  A precise statement of the meaning of a word or concept.
+
+== Mathematics <math>
+
+Inline math: $e^(i pi) + 1 = 0$ (Euler's identity).
+
+Display math:
+
+$ integral_(-oo)^oo e^(-x^2) dif x = sqrt(pi) $
+
+A matrix:
+
+$ mat(a, b; c, d) $
+
+Aligned equations:
+
+$ f(x) &= x^2 + 2x + 1 \\
+      &= (x + 1)^2 $
+
+== Code Blocks
+
+#figure(
+  caption: [Fibonacci in Python],
+  raw("def fibonacci(n: int) -> list[int]:\n    """Return the first n Fibonacci numbers."""\n    a, b = 0, 1\n    result = []\n    for _ in range(n):\n        result.append(a)\n        a, b = b, a + b\n    return result\n\nprint(fibonacci(10))", lang: "python"),
+)
+
+And inline \`raw("print(42)", lang: "python")\` code.
+
+== Theorems & Callouts
+
+#block(
+  fill: rgb("#fff3cd"),
+  inset: 8pt,
+  radius: 4pt,
+  stroke: 0.5pt + rgb("#ffc107"),
+  [
+    *⚠ Warning:* Be careful when editing large documents — auto-save
+    is enabled by default.
+  ],
+)
+
+#block(
+  fill: rgb("#d1ecf1"),
+  inset: 8pt,
+  radius: 4pt,
+  stroke: 0.5pt + rgb("#17a2b8"),
+  [
+    *💡 Pro tip:* Use @Ctrl+Shift+S to save a copy, and @Ctrl+E to
+    export as PDF.
+  ],
+)
+
+== Horizontal Rules
+
+Above the rule…
+
+#line(length: 100%)
+
+…and below it.
+
+== Blockquotes
+
+#quote(block: true)[
+  This is a blockquote.
+
+  It can span multiple paragraphs.
+]
+
+== Document setup
+
+- Page: A4 with 2.5 cm margins
+- Font: Latin Modern Roman, 11 pt
+- Justified text with hyphenation
+- Line numbering for review
+
+_Start typing Typst in meditor — live preview updates as you write._
+`;

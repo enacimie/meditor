@@ -15,7 +15,32 @@ import {
   buildSmartBackspaceKeymap,
 } from "./editorKeymaps";
 import { useImagePaste } from "./hooks/useImagePaste";
+import type { DocKind } from "./types";
 import "./Editor.css";
+
+// Lazy-load the Typst language mode so the WASM/Lezer binary doesn't block
+// the initial render or break E2E tests (which only use markdown docs).
+let typstLangPromise: Promise<Extension> | null = null;
+function loadTypstLang(): Extension {
+  if (!typstLangPromise) {
+    typstLangPromise = import("codemirror-lang-typst").then((m) => m.typst_lezer());
+  }
+  // Return a synchronous placeholder the first time; the Compartment will
+  // be reconfigured asynchronously once the dynamic import resolves.
+  // CodeMirror handles reconfigure gracefully on the next dispatch.
+  return [];
+}
+
+function applyTypstLang(view: EditorView, compartment: Compartment) {
+  if (!typstLangPromise) {
+    typstLangPromise = import("codemirror-lang-typst").then((m) => m.typst_lezer());
+  }
+  typstLangPromise.then((ext) => {
+    if (view.viewport) {
+      view.dispatch({ effects: compartment.reconfigure(ext) });
+    }
+  });
+}
 
 export type EditorHandle = {
   scrollToLine: (line: number) => void;
@@ -34,10 +59,12 @@ type Props = {
   zenPlaceholder?: string;
   /** Fired when the cursor moves (or the active doc changes). 0-based line. */
   onCursorLineChange?: (line: number) => void;
+  /** Document language ("markdown" or "typst"). */
+  kind: DocKind;
 };
 
 const Editor = forwardRef<EditorHandle, Props>(function Editor(
-  { activeId, ids, content, onChange, wrap, zenMode, zenPlaceholder, onCursorLineChange },
+  { activeId, ids, content, onChange, wrap, zenMode, zenPlaceholder, onCursorLineChange, kind },
   ref,
 ) {
   const host = useRef<HTMLDivElement>(null);
@@ -46,6 +73,7 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   const extRef = useRef<Extension[]>([]);
   const wrapCompartment = useRef(new Compartment());
   const placeholderCompartment = useRef(new Compartment());
+  const languageCompartment = useRef(new Compartment());
   const activeIdRef = useRef(activeId);
   const suppress = useRef(false);
   const onChangeRef = useRef(onChange);
@@ -57,6 +85,7 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   const initialWrap = useRef(wrap);
   const initialZenMode = useRef(zenMode);
   const initialZenPlaceholder = useRef(zenPlaceholder);
+  const initialKind = useRef(kind);
 
   // Image drag-and-drop + clipboard paste
   const { dragOver, busy, handleDragOver, handleDragEnter, handleDragLeave, handleDrop, handlePaste } =
@@ -99,9 +128,14 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
 
   useEffect(() => {
     if (!host.current) return;
+    const isTypst = initialKind.current === "typst";
     const extensions: Extension[] = [
       basicSetup,
-      markdown({ base: markdownLanguage, codeLanguages: languages }),
+      languageCompartment.current.of(
+        isTypst
+          ? loadTypstLang()
+          : markdown({ base: markdownLanguage, codeLanguages: languages }),
+      ),
       search({ top: true }),
       keymap.of(searchKeymap),
       buildMarkdownPairKeymap(),
@@ -192,6 +226,21 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
         ),
       });
   }, [wrap]);
+
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    const isTypst = kind === "typst";
+    if (isTypst) {
+      applyTypstLang(view, languageCompartment.current);
+    } else {
+      view.dispatch({
+        effects: languageCompartment.current.reconfigure(
+          markdown({ base: markdownLanguage, codeLanguages: languages }),
+        ),
+      });
+    }
+  }, [kind]);
 
   useEffect(() => {
     const view = viewRef.current;

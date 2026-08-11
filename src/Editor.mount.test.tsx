@@ -42,7 +42,7 @@ describe("Editor mount dirty regression", () => {
     for (const content of cases) {
       const onChange = vi.fn();
       render(
-        <Editor activeId="a" ids={["a"]} content={content} onChange={onChange} wrap />,
+        <Editor activeId="a" ids={["a"]} content={content} onChange={onChange} wrap kind="markdown" />,
       );
       expect(onChange).not.toHaveBeenCalled();
       cleanup();
@@ -53,7 +53,7 @@ describe("Editor mount dirty regression", () => {
     const onChange = vi.fn();
     render(
       <StrictMode>
-        <Editor activeId="a" ids={["a"]} content="# heading" onChange={onChange} wrap />
+        <Editor activeId="a" ids={["a"]} content="# heading" onChange={onChange} wrap kind="markdown" />
       </StrictMode>,
     );
     expect(onChange).not.toHaveBeenCalled();
@@ -62,7 +62,7 @@ describe("Editor mount dirty regression", () => {
   it("does not call onChange when re-rendered with identical content", () => {
     const onChange = vi.fn();
     const ui = (
-      <Editor activeId="a" ids={["a"]} content="same content" onChange={onChange} wrap />
+      <Editor activeId="a" ids={["a"]} content="same content" onChange={onChange} wrap kind="markdown" />
     );
     const { rerender } = render(ui);
     rerender(ui);
@@ -73,13 +73,13 @@ describe("Editor mount dirty regression", () => {
   it("does not call onChange when wrap is toggled (reconfigure only)", () => {
     const onChange = vi.fn();
     const { rerender } = render(
-      <Editor activeId="a" ids={["a"]} content="wrap me" onChange={onChange} wrap />,
+      <Editor activeId="a" ids={["a"]} content="wrap me" onChange={onChange} wrap kind="markdown" />,
     );
     rerender(
-      <Editor activeId="a" ids={["a"]} content="wrap me" onChange={onChange} wrap={false} />,
+      <Editor activeId="a" ids={["a"]} content="wrap me" onChange={onChange} wrap={false} kind="markdown" />,
     );
     rerender(
-      <Editor activeId="a" ids={["a"]} content="wrap me" onChange={onChange} wrap />,
+      <Editor activeId="a" ids={["a"]} content="wrap me" onChange={onChange} wrap kind="markdown" />,
     );
     expect(onChange).not.toHaveBeenCalled();
   });

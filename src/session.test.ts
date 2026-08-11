@@ -3,8 +3,8 @@ import { parseSession, serializeSession } from "./session";
 import type { Doc } from "./types";
 
 const docs: Doc[] = [
-  { id: "one", name: "uno.md", path: "/tmp/uno.md", content: "# Uno", dirty: true },
-  { id: "two", name: "Dos", path: null, content: "Texto", dirty: false },
+  { id: "one", name: "uno.md", path: "/tmp/uno.md", content: "# Uno", dirty: true, kind: "markdown" },
+  { id: "two", name: "Dos", path: null, content: "Texto", dirty: false, kind: "markdown" },
 ];
 
 describe("session", () => {

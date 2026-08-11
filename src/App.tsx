@@ -30,7 +30,7 @@ import { useSplitDivider } from "./hooks/useSplitDivider";
 import { useNotice } from "./hooks/useNotice";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 
-import type { Doc } from "./types";
+import type { Doc, DocKind } from "./types";
 import type { Theme } from "./components/types";
 import "./App.css";
 
@@ -140,7 +140,17 @@ function newId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
 }
 
-function makeDoc(content: string, path: string | null = null, name?: string): Doc {
+function kindFromPath(path: string): DocKind {
+  if (/\.(typ|typst)$/i.test(path)) return "typst";
+  return "markdown";
+}
+
+function makeDoc(
+  content: string,
+  path: string | null = null,
+  name?: string,
+  kind?: DocKind,
+): Doc {
   untitledCounter += 1;
   return {
     id: newId(),
@@ -148,6 +158,7 @@ function makeDoc(content: string, path: string | null = null, name?: string): Do
     content,
     dirty: false,
     name: name ?? (path ? baseName(path) : `Doc ${untitledCounter}`),
+    kind: kind ?? (path ? kindFromPath(path) : "markdown"),
   };
 }
 
@@ -558,9 +569,9 @@ export default function App() {
     if (!active || !isTauri() || !beginOperation("saveAs")) return;
     const documentId = active.id;
     const savedContent = active.content;
-    const defaultName = active.name.endsWith(".md")
-      ? active.name
-      : `${active.name}.md`;
+    const ext = active.kind === "typst" ? ".typ" : ".md";
+    const base = active.name.replace(/\.(md|markdown|txt|typ|typst)$/i, "");
+    const defaultName = `${base}${ext}`;
     try {
       const saved = await invoke<Doc | null>("save_as", {
         content: savedContent,
@@ -620,7 +631,7 @@ export default function App() {
   async function exportPdf() {
     if (!active || !isTauri() || !beginOperation("export")) return;
     try {
-      const base = active.name.replace(/\.(md|markdown|txt)$/i, "") || t("doc.defaultExport");
+      const base = active.name.replace(/\.(md|markdown|txt|typ|typst)$/i, "") || t("doc.defaultExport");
       await invoke("export_pdf", { defaultName: `${base}.pdf` });
       showNotice(operationNoticeDone(t, "export"), "success");
     } catch (e) {
@@ -878,6 +889,7 @@ export default function App() {
               content={active?.content ?? ""}
               onChange={updateContent}
               wrap={wrap}
+              kind={active?.kind ?? "markdown"}
               onCursorLineChange={setCursorLine}
             />
           </Suspense>

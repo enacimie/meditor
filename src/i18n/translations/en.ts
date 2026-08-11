@@ -6,6 +6,9 @@ export const en = {
   "topbar.new": "New",
   "topbar.newTitle": "New (Ctrl+N)",
   "topbar.newAria": "New tab (Ctrl+N)",
+  "topbar.newTypst": "New .typ",
+  "topbar.newTypstTitle": "New Typst document",
+  "topbar.newTypstAria": "New Typst tab",
   "topbar.open": "Open",
   "topbar.openTitle": "Open (Ctrl+O)",
   "topbar.openAria": "Open files (Ctrl+O)",
@@ -67,6 +70,7 @@ export const en = {
   // Document names
   "doc.untitled": (n: number) => `Document ${n}`,
   "doc.defaultExport": "document",
+  "doc.typstSample": "typst-sample",
   // Panes
   "pane.editor": "Editor",
   "pane.preview": "Preview",
@@ -91,6 +95,8 @@ export const en = {
   "preview.renderError": "Could not generate preview:",
   "preview.pagedError": "Could not generate Document view:",
   "preview.mermaidError": "Mermaid:",
+  "preview.typstCompiling": "Compiling Typst...",
+  "preview.typstError": "Typst:",
   // Session
   "session.restoreError": "Could not restore session",
   "session.saveError": "Could not save session",

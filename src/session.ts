@@ -53,7 +53,7 @@ export function parseSession(raw: string): SessionData | null {
         ids.add(doc.id);
         return true;
       })
-      .map((doc) => ({ ...doc }));
+      .map((doc) => ({ ...doc, kind: (doc as Record<string, unknown>).kind === "typst" ? "typst" : "markdown" } as Doc));
     if (!docs.length) return null;
     const activeId =
       typeof data.activeId === "string" && docs.some((doc) => doc.id === data.activeId)
