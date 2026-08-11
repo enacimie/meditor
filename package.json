@@ -24,6 +24,8 @@
     "@codemirror/search": "^6.7.1",
     "@codemirror/state": "^6.7.1",
     "@codemirror/view": "^6.43.8",
+    "@myriaddreamin/typst-ts-renderer": "^0.7.0",
+    "@myriaddreamin/typst-ts-web-compiler": "^0.7.0",
     "@myriaddreamin/typst.ts": "^0.7.0",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-dialog": "^2.7.2",

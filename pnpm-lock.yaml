@@ -23,9 +23,15 @@ importers:
       '@codemirror/view':
         specifier: ^6.43.8
         version: 6.43.8
-      '@myriaddreamin/typst.ts':
+      '@myriaddreamin/typst-ts-renderer':
         specifier: ^0.7.0
         version: 0.7.0
+      '@myriaddreamin/typst-ts-web-compiler':
+        specifier: ^0.7.0
+        version: 0.7.0
+      '@myriaddreamin/typst.ts':
+        specifier: ^0.7.0
+        version: 0.7.0(@myriaddreamin/typst-ts-renderer@0.7.0)(@myriaddreamin/typst-ts-web-compiler@0.7.0)
       '@tauri-apps/api':
         specifier: ^2
         version: 2.11.1
@@ -704,6 +710,12 @@ packages:
 
   '@mermaid-js/parser@1.2.0':
     resolution: {integrity: sha512-oYPyv8A4As1yH5Bx+04iQEQxXuIQDe0GKCNSRgao6z8AM9jixXIfP0vsppRLvGf+nKIOb9/LdpWA4YuJiVvESA==}
+
+  '@myriaddreamin/typst-ts-renderer@0.7.0':
+    resolution: {integrity: sha512-3sXIGxZn9MufPrPn6251DeuLf2FIEILYNzY5lX0XOJmaIYqgvQ3qpfqkCjgQD+splBvt5R1N3BuuNFrZKsHhMw==}
+
+  '@myriaddreamin/typst-ts-web-compiler@0.7.0':
+    resolution: {integrity: sha512-nMwMcfOBy5pABPDuVM7/u8425SxhPUM+OJe6daqqgVOT3+neCTz4JKwx2L8XasfEHTNvd0cUI07LR9q5ADo7Gw==}
 
   '@myriaddreamin/typst.ts@0.7.0':
     resolution: {integrity: sha512-JtO5Td/1QesH1IBKAZtbayFNK8u2sl3iz18Y67uYqBEdcXiu3z+wpZcDDKlmVJvAcCgSjHTnuk6ZLfkYclrGGQ==}
@@ -3051,9 +3063,16 @@ snapshots:
     dependencies:
       '@chevrotain/types': 11.1.2
 
-  '@myriaddreamin/typst.ts@0.7.0':
+  '@myriaddreamin/typst-ts-renderer@0.7.0': {}
+
+  '@myriaddreamin/typst-ts-web-compiler@0.7.0': {}
+
+  '@myriaddreamin/typst.ts@0.7.0(@myriaddreamin/typst-ts-renderer@0.7.0)(@myriaddreamin/typst-ts-web-compiler@0.7.0)':
     dependencies:
       idb: 7.1.1
+    optionalDependencies:
+      '@myriaddreamin/typst-ts-renderer': 0.7.0
+      '@myriaddreamin/typst-ts-web-compiler': 0.7.0
 
   '@rolldown/pluginutils@1.0.0-beta.27': {}
 
