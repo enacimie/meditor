@@ -657,18 +657,29 @@ export default function App() {
     }
   }
 
-  function closeAllTabs() {
+  async function closeAllTabs() {
     if (isOperationBusy(busyOperationRef)) return;
+    const hasDirty = docsRef.current.some((d) => d.dirty);
+    if (hasDirty) {
+      const ok = await confirmDialog(t("confirm.unsavedClose"));
+      if (!ok) return;
+    }
     const fresh = makeDoc("");
     docsRef.current = [fresh];
     setDocs([fresh]);
     setActiveId(fresh.id);
   }
 
-  function closeOtherTabs() {
+  async function closeOtherTabs() {
     if (isOperationBusy(busyOperationRef)) return;
     const current = docsRef.current;
     if (current.length <= 1) return;
+    const others = current.filter((d) => d.id !== activeIdRef.current);
+    const hasDirty = others.some((d) => d.dirty);
+    if (hasDirty) {
+      const ok = await confirmDialog(t("confirm.unsavedClose"));
+      if (!ok) return;
+    }
     const kept = current.filter((d) => d.id === activeIdRef.current);
     if (kept.length === 0) {
       const fresh = makeDoc("");
