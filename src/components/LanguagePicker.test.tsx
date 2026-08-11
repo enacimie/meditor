@@ -40,10 +40,10 @@ describe("LanguagePicker", () => {
       expect(input).toBe(document.activeElement);
     });
 
-    it("renders all 100 languages in the listbox", () => {
+    it("renders all 104 languages in the listbox", () => {
       renderPicker();
       const options = screen.getAllByRole("option");
-      expect(options).toHaveLength(100);
+      expect(options).toHaveLength(104);
     });
 
     it("marks the current language as selected (aria + class)", () => {
@@ -102,11 +102,11 @@ describe("LanguagePicker", () => {
       renderPicker();
       const input = screen.getByLabelText("Search language");
       fireEvent.change(input, { target: { value: "hin" } });
-      expect(screen.getAllByRole("option").length).toBeLessThan(100);
+      expect(screen.getAllByRole("option").length).toBeLessThan(104);
       // Clear via the clear button
       const clearBtn = screen.getByLabelText("Clear search");
       fireEvent.click(clearBtn);
-      expect(screen.getAllByRole("option")).toHaveLength(100);
+      expect(screen.getAllByRole("option")).toHaveLength(104);
     });
 
     it("clears search when clear button is clicked", () => {

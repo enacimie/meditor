@@ -24,13 +24,13 @@ function countKeys(lang: Language): number {
 }
 
 describe("translations", () => {
-  it("has exactly 100 languages", () => {
-    expect(LANGUAGES).toHaveLength(100);
+  it("has exactly 104 languages", () => {
+    expect(LANGUAGES).toHaveLength(104);
   });
 
   it("all language codes are unique", () => {
     const codes = LANGUAGES.map((l) => l.code);
-    expect(new Set(codes).size).toBe(100);
+    expect(new Set(codes).size).toBe(104);
   });
 
   it("English is the source of truth with all keys", () => {
@@ -95,7 +95,7 @@ describe("translations", () => {
 
   // ── verify shortcut keys ───────────────────────────────────────────
 
-  it("shortcut keys exist in all 100 languages", () => {
+  it("shortcut keys exist in all 104 languages", () => {
     const shortcutKeys: TranslationKey[] = [
       "shortcuts.title", "shortcuts.close",
       "shortcuts.ctrlN", "shortcuts.ctrlO", "shortcuts.ctrlS",

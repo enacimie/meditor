@@ -58,6 +58,10 @@ import { hu } from "./hu";
 import { bg } from "./bg";
 import { el } from "./el";
 import { ca } from "./ca";
+import { zgh } from "./zgh";
+import { kab } from "./kab";
+import { shi } from "./shi";
+import { rif } from "./rif";
 import { sr } from "./sr";
 import { hr } from "./hr";
 import { lt } from "./lt";
@@ -120,7 +124,8 @@ export type Language =
   | "af" | "zu" | "xh" | "st" | "ny"
   | "mg" | "so" | "ps" | "tk" | "ky"
   | "tg" | "tt" | "be" | "bs" | "fo"
-  | "ee" | "lg" | "om" | "sd" | "su";
+  | "ee" | "lg" | "om" | "sd" | "su"
+  | "zgh" | "kab" | "shi" | "rif";
 
 /** Language metadata shown in the language selector (no country flags). */
 export const LANGUAGES: { code: Language; label: string; nativeLabel: string }[] = [
@@ -223,7 +228,11 @@ export const LANGUAGES: { code: Language; label: string; nativeLabel: string }[]
   { code: "lg", label: "Luganda",         nativeLabel: "Luganda" },
   { code: "om", label: "Oromo",           nativeLabel: "Afaan Oromoo" },
   { code: "sd", label: "Sindhi",          nativeLabel: "سنڌي" },
-  { code: "su", label: "Sundanese",       nativeLabel: "Basa Sunda" },
+  { code: "su",  label: "Sundanese",       nativeLabel: "Basa Sunda" },
+  { code: "zgh", label: "Tamazight",       nativeLabel: "ⵜⴰⵎⴰⵣⵉⵖⵜ" },
+  { code: "kab", label: "Kabyle",          nativeLabel: "Taqbaylit" },
+  { code: "shi", label: "Tachelhit",       nativeLabel: "ⵜⴰⵛⵍⵃⵉⵜ" },
+  { code: "rif", label: "Tarifit",         nativeLabel: "Tarifit" },
 ];
 
 export type TranslationKey = keyof typeof en;
@@ -249,4 +258,5 @@ export const translations = {
   mn, lo, gl, eu, is, mt, cy, gd, ga, lb,
   af, zu, xh, st, ny, mg, so, ps, tk, ky,
   tg, tt, be, bs, fo, ee, lg, om, sd, su,
+  zgh, kab, shi, rif,
 } as const;
