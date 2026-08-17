@@ -7,9 +7,18 @@ use std::{
     path::{Path, PathBuf},
     sync::{
         atomic::{AtomicU64, Ordering},
-        mpsc, Mutex,
+        Mutex,
     },
 };
+
+#[cfg(any(
+    target_os = "linux",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd"
+))]
+use std::sync::mpsc;
 use tauri::{Emitter, Manager};
 use tauri_plugin_dialog::DialogExt;
 
@@ -32,9 +41,7 @@ use std::time::Duration;
 use gtk::prelude::{DialogExt as GtkDialogExt, GtkWindowExt};
 
 #[cfg(target_os = "windows")]
-use winapi::um::winuser::{
-    MessageBoxW, IDYES, MB_ICONERROR, MB_ICONWARNING, MB_OK, MB_SYSTEMMODAL, MB_YESNO,
-};
+use winapi::um::winuser::{MessageBoxW, MB_ICONERROR, MB_OK, MB_SYSTEMMODAL};
 
 #[cfg(target_os = "windows")]
 use std::ffi::OsStr;
@@ -706,7 +713,7 @@ async fn export_pdf(
     )))]
     {
         let _ = (app, window, default_name, loc);
-        return Err(t(loc, "pdf.notSupported"));
+        Err(t(loc, "pdf.notSupported"))
     }
 
     #[cfg(any(
