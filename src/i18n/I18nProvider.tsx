@@ -4,12 +4,12 @@ import {
   useState,
   useCallback,
   useEffect,
+  useMemo,
   type ReactNode,
 } from "react";
 import {
   type Language,
   type TranslationFn,
-  type TranslationKey,
   translations,
   isRtl,
 } from "./translations";
@@ -58,18 +58,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   // Stable identity: only recreated when the language changes. Consumers can
   // safely put `t` in useEffect deps without re-running effects on every render.
-  const t = useCallback(
-    (key: TranslationKey, ...args: unknown[]) => {
-      const langDict = translations[lang] as Record<string, unknown>;
-      const enDict = translations.en as Record<string, unknown>;
-      const value = langDict[key] ?? enDict[key];
-      if (typeof value === "function") {
-        return (value as (...a: unknown[]) => string)(...args);
-      }
-      return (value as string) ?? key;
-    },
-    [lang],
-  );
+  const t = useMemo(() => makeTranslationFn(lang), [lang]);
 
   return (
     <I18nContext.Provider value={{ lang, setLanguage, t }}>

@@ -983,6 +983,8 @@ export default function App() {
               content={active?.content ?? ""}
               onChange={updateContent}
               wrap={wrap}
+              zenMode={zenMode}
+              zenPlaceholder={t("zen.placeholder")}
               kind={active?.kind ?? "markdown"}
               onCursorLineChange={setCursorLine}
             />
