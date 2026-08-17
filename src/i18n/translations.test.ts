@@ -45,6 +45,9 @@ describe("translations", () => {
   // ── Completeness: every EN key is defined (or has fallback via getValue) ──
 
   it("every English key resolves in all languages", () => {
+    // getValue() falls back to English, so this asserts the runtime contract:
+    // no key can ever resolve to undefined. It cannot detect a missing
+    // translation — that is what the strict test below is for.
     for (const key of allKeys()) {
       for (const lang of ALL_LANGUAGES) {
         const v = getValue(lang, key);
@@ -53,6 +56,51 @@ describe("translations", () => {
           `Key "${lang}.${key}" is missing with no fallback`,
         ).toBeDefined();
       }
+    }
+  });
+
+  // ── Strict parity: every EN key is actually defined per language ──────
+
+  /**
+   * Keys that are knowingly not translated in every language yet. The runtime
+   * falls back to English for these, so nothing breaks — but listing them
+   * keeps the debt visible instead of letting a fallback hide it.
+   *
+   * Adding a key to English without translating it must fail the build; the
+   * only way to silence that is to add it here on purpose.
+   */
+  const KNOWN_PARTIAL_KEYS = new Set<string>([
+    // Translated in en, es and the twelve most widely spoken UI languages.
+    "preview.latexNotice",
+  ]);
+
+  it("every English key is defined in every language", () => {
+    const missing: string[] = [];
+    for (const key of allKeys()) {
+      if (KNOWN_PARTIAL_KEYS.has(key)) continue;
+      for (const lang of ALL_LANGUAGES) {
+        const dict = translations[lang] as Record<string, unknown>;
+        if (!(key in dict)) missing.push(`${lang}.${key}`);
+      }
+    }
+    expect(
+      missing,
+      `translations missing (add the key, or list it in KNOWN_PARTIAL_KEYS):\n  ${missing.slice(0, 20).join("\n  ")}`,
+    ).toEqual([]);
+  });
+
+  it("keys listed as partial really are still partial", () => {
+    // Stops the exception list from going stale: once a key is translated
+    // everywhere, it must be removed from KNOWN_PARTIAL_KEYS so it is guarded
+    // by the strict test again.
+    for (const key of KNOWN_PARTIAL_KEYS) {
+      const absent = ALL_LANGUAGES.filter(
+        (lang) => !(key in (translations[lang] as Record<string, unknown>)),
+      );
+      expect(
+        absent.length,
+        `"${key}" is now defined in all languages — remove it from KNOWN_PARTIAL_KEYS`,
+      ).toBeGreaterThan(0);
     }
   });
 
