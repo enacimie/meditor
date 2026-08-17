@@ -29,6 +29,7 @@
 - **4 themes**: System, Light, Dark, and a **High Contrast** colorblind-friendly theme (WCAG AA everywhere).
 - **Zen mode** (F11): fullscreen distraction-free writing.
 - **Keyboard shortcuts overlay** (F1) and in-window dialogs for confirm/rename (fully themed and localized).
+- **Preferences** (Ctrl+,): editor font size and family, with a live sample.
 - **Status bar** with word/line/character counts and unsaved indicator.
 - **Outline** (table of contents) from headings for quick navigation.
 
@@ -148,6 +149,7 @@ To run the AppImage on distros without FUSE: `./meditor_*.AppImage --appimage-ex
 | `Ctrl+K`        | Focus the find field |
 | `Ctrl+H`        | Find & replace  |
 | `Ctrl+G`        | Go to line      |
+| `Ctrl+,`        | Preferences     |
 | `F1`            | Shortcuts overlay |
 | `F2`            | Rename tab      |
 | `F11`           | Zen mode        |

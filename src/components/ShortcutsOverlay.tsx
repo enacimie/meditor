@@ -32,6 +32,7 @@ const ShortcutsOverlay = memo(function ShortcutsOverlay({ t, onClose }: Props) {
     [t("shortcuts.ctrlH"), t("shortcuts.replace")],
     [t("shortcuts.ctrlG"), t("shortcuts.goToLine")],
     [t("shortcuts.ctrlE"), t("menu.exportPdf")],
+    [t("menu.shortcut.preferences"), t("prefs.title")],
     ["F11", t("menu.zenEnter")],
     ["F1", t("shortcuts.title")],
     ["Esc", t("shortcuts.esc")],

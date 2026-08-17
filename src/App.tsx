@@ -24,6 +24,7 @@ import ConfirmDialog from "./components/ConfirmDialog";
 import RenameDialog from "./components/RenameDialog";
 import ShortcutsOverlay from "./components/ShortcutsOverlay";
 import AboutDialog from "./components/AboutDialog";
+const PreferencesDialog = lazy(() => import("./components/PreferencesDialog"));
 import Outline from "./components/Outline";
 import { parseHeadings, type Heading } from "./components/outlineUtils";
 import { useTranslation } from "./i18n/I18nProvider";
@@ -35,6 +36,13 @@ import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import type { Doc, DocKind } from "./types";
 import type { Theme } from "./components/types";
 import { kindFromPath, normalizeDoc } from "./documentUtils";
+import {
+  clampFontSize,
+  normalizeFontFamily,
+  DEFAULT_EDITOR_FONT_FAMILY,
+  DEFAULT_EDITOR_FONT_SIZE,
+  type EditorPreferences,
+} from "./editorPreferences";
 import { getTypst } from "./typstEngine";
 import { compileLatexToPdf } from "./latexEngine";
 import "./App.css";
@@ -48,13 +56,15 @@ type Preferences = {
   docView: boolean;
   wrap: boolean;
   theme: Theme;
-};
+} & EditorPreferences;
 
 const PREFERENCES_KEY = "meditor.preferences.v1";
 const DEFAULT_PREFERENCES: Preferences = {
   docView: true,
   wrap: true,
   theme: "system",
+  editorFontSize: DEFAULT_EDITOR_FONT_SIZE,
+  editorFontFamily: DEFAULT_EDITOR_FONT_FAMILY,
 };
 const MAX_PENDING_OPEN_DOCS = 256;
 /** Stable empty list, so a closed outline does not re-render its consumers. */
@@ -80,6 +90,10 @@ function loadPreferences(): Preferences {
         typeof stored.docView === "boolean" ? stored.docView : DEFAULT_PREFERENCES.docView,
       wrap: typeof stored.wrap === "boolean" ? stored.wrap : DEFAULT_PREFERENCES.wrap,
       theme,
+      // Clamped/whitelisted: a stale or hand-edited value must not break the
+      // editor, only fall back to the default.
+      editorFontSize: clampFontSize(stored.editorFontSize),
+      editorFontFamily: normalizeFontFamily(stored.editorFontFamily),
     };
   } catch {
     return DEFAULT_PREFERENCES;
@@ -204,6 +218,11 @@ export default function App() {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [outlineOpen, setOutlineOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [preferencesOpen, setPreferencesOpen] = useState(false);
+  const [editorPrefs, setEditorPrefs] = useState<EditorPreferences>({
+    editorFontSize: INITIAL_PREFERENCES.editorFontSize,
+    editorFontFamily: INITIAL_PREFERENCES.editorFontFamily,
+  });
   const [cursorLine, setCursorLine] = useState(0);
 
   // Extracted hooks
@@ -474,8 +493,8 @@ export default function App() {
 
   useEffect(() => {
     if (!ready) return;
-    savePreferences({ docView, wrap, theme });
-  }, [docView, wrap, theme, ready]);
+    savePreferences({ docView, wrap, theme, ...editorPrefs });
+  }, [docView, wrap, theme, editorPrefs, ready]);
 
   function beginOperation(operation: FileOperation): boolean {
     if (isOperationBusy(busyOperationRef)) return false;
@@ -840,7 +859,14 @@ export default function App() {
         return;
       }
       if (confirmRequest || renameRequest || shortcutsOpen) return;
+      if (preferencesOpen || aboutOpen) return;
       editorRef.current?.focusSearch();
+    },
+    openPreferences: () => {
+      if (!ready || confirmRequest || renameRequest) return;
+      // Two aria-modal dialogs at once would trap focus in the wrong one.
+      if (shortcutsOpen || aboutOpen) return;
+      setPreferencesOpen(true);
     },
     nextTab: () => cycleTab(1),
     prevTab: () => cycleTab(-1),
@@ -887,6 +913,7 @@ export default function App() {
         onCloseAll={closeAllTabs}
         onCloseOthers={closeOtherTabs}
         onAbout={() => setAboutOpen(true)}
+        onPreferences={() => setPreferencesOpen(true)}
       />
       {zenMode && (
         <button
@@ -998,6 +1025,8 @@ export default function App() {
               content={active?.content ?? ""}
               onChange={updateContent}
               wrap={wrap}
+              fontSize={editorPrefs.editorFontSize}
+              fontFamily={editorPrefs.editorFontFamily}
               zenMode={zenMode}
               zenPlaceholder={t("zen.placeholder")}
               kind={active?.kind ?? "markdown"}
@@ -1119,6 +1148,16 @@ export default function App() {
       )}
       {shortcutsOpen && <ShortcutsOverlay t={t} onClose={() => setShortcutsOpen(false)} />}
       {aboutOpen && <AboutDialog t={t} onClose={() => setAboutOpen(false)} />}
+      {preferencesOpen && (
+        <Suspense fallback={null}>
+          <PreferencesDialog
+            t={t}
+            value={editorPrefs}
+            onChange={setEditorPrefs}
+            onClose={() => setPreferencesOpen(false)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

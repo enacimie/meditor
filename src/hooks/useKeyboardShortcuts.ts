@@ -25,6 +25,8 @@ export type ShortcutHandlers = {
   openShortcuts: () => void;
   /** Ctrl+K / Cmd+K */
   focusSearch: () => void;
+  /** Ctrl+, / Cmd+, */
+  openPreferences: () => void;
   /** Ctrl+Tab */
   nextTab: () => void;
   /** Ctrl+Shift+Tab */
@@ -117,6 +119,9 @@ export function useKeyboardShortcuts(
       } else if (k === "w") {
         e.preventDefault();
         h.closeTab();
+      } else if (k === ",") {
+        e.preventDefault();
+        h.openPreferences();
       } else if (k === "k") {
         e.preventDefault();
         h.focusSearch();
