@@ -16,6 +16,9 @@ coverage
 # E2E artifacts (screenshots, etc.)
 tests/e2e/artifacts/
 
+# Scratch directory for local experiments
+tmp/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
