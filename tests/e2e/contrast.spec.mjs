@@ -121,35 +121,41 @@ try {
 
   // Error notices must remain visible in the explicit dark and contrast
   // themes, not only when the OS preference is dark.
-  const noticeColors = await page.evaluate(`(() => {
+  //
+  // Split into separate page.evaluate calls: Chrome on Windows/macOS does not
+  // reliably invalidate `:root[data-theme]` descendant styles within a single
+  // synchronous evaluate, so each theme switch is read in its own turn.
+  const noticeContrast = await page.evaluate(`(() => {
     const root = document.documentElement;
     const notice = document.createElement('div');
     notice.className = 'app-notice error';
     notice.textContent = 'error';
     document.body.appendChild(notice);
-    const read = () => {
-      // Force a style/layout flush so the theme switch is reflected before
-      // reading the computed color (otherwise Chrome on Windows/macOS may
-      // return the stale value).
-      void notice.offsetHeight;
-      const s = getComputedStyle(notice);
-      return { color: s.color, border: s.borderTopColor };
-    };
-    const contrast = read();
-    root.dataset.theme = 'dark';
-    void root.offsetHeight;
-    const dark = read();
-    notice.remove();
-    root.dataset.theme = 'contrast';
-    return { contrast, dark };
+    const s = getComputedStyle(notice);
+    return { color: s.color, border: s.borderTopColor };
   })()`);
+
+  await page.evaluate(`document.documentElement.dataset.theme = 'dark'; true`);
+
+  const noticeDark = await page.evaluate(`(() => {
+    const notice = document.querySelector('.app-notice.error');
+    const s = getComputedStyle(notice);
+    return { color: s.color, border: s.borderTopColor };
+  })()`);
+
+  await page.evaluate(`(() => {
+    document.querySelector('.app-notice.error')?.remove();
+    document.documentElement.dataset.theme = 'contrast';
+    return true;
+  })()`);
+
   assert(
-    noticeColors.contrast.color === "rgb(255, 255, 255)",
-    `contrast error notice text should be white, got ${noticeColors.contrast.color}`,
+    noticeContrast.color === "rgb(255, 255, 255)",
+    `contrast error notice text should be white, got ${noticeContrast.color}`,
   );
   assert(
-    noticeColors.dark.color === "rgb(255, 123, 114)",
-    `dark error notice text should use the light error token, got ${noticeColors.dark.color}`,
+    noticeDark.color === "rgb(255, 123, 114)",
+    `dark error notice text should use the light error token, got ${noticeDark.color}`,
   );
 
   // WCAG AA: black/white is the maximum possible ratio.
