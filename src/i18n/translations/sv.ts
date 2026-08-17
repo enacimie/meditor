@@ -170,4 +170,11 @@ export const sv = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Om meditor",
+  "about.title": "Om meditor",
+  "about.tagline": "En lokalförst Markdown-, Typst- och LaTeX-redigerare för skrivbordet.",
+  "about.version": (v: string) => `Version ${v}`,
+  "about.license": "Licens",
+  "about.source": "Källkod",
+  "about.close": "Stäng",
 };

@@ -170,4 +170,11 @@ export const hr = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "O meditor",
+  "about.title": "O meditor",
+  "about.tagline": "Lokalni uređivač Markdown, Typst i LaTeX za radnu površinu.",
+  "about.version": (v: string) => `Verzija ${v}`,
+  "about.license": "Licenca",
+  "about.source": "Izvorni kod",
+  "about.close": "Zatvori",
 };

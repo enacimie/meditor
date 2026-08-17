@@ -170,4 +170,11 @@ export const ee = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Le meditor ŋu",
+  "about.title": "Le meditor ŋu",
+  "about.tagline": "Markdown, Typst kple LaTeX ƒe tataŋlɔla si nye lokal-gbãtɔ na desktop.",
+  "about.version": (v: string) => `Tata ${v}`,
+  "about.license": "Mɔɖegbalẽ",
+  "about.source": "Source code",
+  "about.close": "Tu",
 };

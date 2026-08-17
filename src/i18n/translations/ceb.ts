@@ -193,4 +193,11 @@ export const ceb = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Bahin sa meditor",
+  "about.title": "Bahin sa meditor",
+  "about.tagline": "Usa ka lokal-una nga editor sa Markdown, Typst ug LaTeX alang sa desktop.",
+  "about.version": (v: string) => `Bersyon ${v}`,
+  "about.license": "Lisensya",
+  "about.source": "Source code",
+  "about.close": "Isira",
 };

@@ -169,4 +169,11 @@ export const jv = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Bab meditor",
+  "about.title": "Bab meditor",
+  "about.tagline": "Editor lokal Markdown, Typst lan LaTeX kanggo desktop.",
+  "about.version": (v: string) => `Versi ${v}`,
+  "about.license": "Lisènsi",
+  "about.source": "Kode sumber",
+  "about.close": "Tutup",
 };

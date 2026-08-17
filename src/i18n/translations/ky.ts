@@ -170,4 +170,11 @@ export const ky = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "meditor жөнүндө",
+  "about.title": "meditor жөнүндө",
+  "about.tagline": "Иш тактасы үчүн жергиликтүү Markdown, Typst жана LaTeX редактору.",
+  "about.version": (v: string) => `Версия ${v}`,
+  "about.license": "Лицензия",
+  "about.source": "Баштапкы код",
+  "about.close": "Жабуу",
 };

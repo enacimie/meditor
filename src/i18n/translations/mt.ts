@@ -170,4 +170,11 @@ export const mt = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Dwar meditor",
+  "about.title": "Dwar meditor",
+  "about.tagline": "Editur lokali Markdown, Typst u LaTeX għad-desktop.",
+  "about.version": (v: string) => `Verżjoni ${v}`,
+  "about.license": "Liċenzja",
+  "about.source": "Kodiċi sors",
+  "about.close": "Agħlaq",
 };

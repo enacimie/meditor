@@ -170,4 +170,11 @@ export const ny = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Za meditor",
+  "about.title": "Za meditor",
+  "about.tagline": "Mkonzi wa Markdown, Typst ndi LaTeX wakomweko pa desktop.",
+  "about.version": (v: string) => `Baibulo ${v}`,
+  "about.license": "Layisensi",
+  "about.source": "Source code",
+  "about.close": "Tsekani",
 };

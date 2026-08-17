@@ -193,4 +193,11 @@ export const ht = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Sou meditor",
+  "about.title": "Sou meditor",
+  "about.tagline": "Yon editè lokal Markdown, Typst ak LaTeX pou biwo a.",
+  "about.version": (v: string) => `Vèsyon ${v}`,
+  "about.license": "Lisans",
+  "about.source": "Kòd sous",
+  "about.close": "Fèmen",
 };

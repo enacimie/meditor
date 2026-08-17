@@ -4,12 +4,13 @@ import { EditorView, basicSetup } from "codemirror";
 import {
   Compartment,
   EditorState,
+  Prec,
   type Extension,
 } from "@codemirror/state";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { StreamLanguage } from "@codemirror/language";
 import { languages } from "@codemirror/language-data";
-import { search, searchKeymap, openSearchPanel } from "@codemirror/search";
+import { search, searchKeymap, openSearchPanel, gotoLine } from "@codemirror/search";
 import {
   buildMarkdownPairKeymap,
   buildAutoContinueKeymap,
@@ -176,6 +177,17 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
             : markdown({ base: markdownLanguage, codeLanguages: languages }),
       ),
       search({ top: true }),
+      // Highest precedence on purpose: basicSetup already pulls in
+      // searchKeymap, which binds Mod-g to "find next", and array order alone
+      // does not beat it. The shortcuts overlay and the README both document
+      // Ctrl+G as "go to line" (CodeMirror's own binding is Ctrl+Alt+G) and
+      // Ctrl+H as find & replace, which is the same panel plus its replace row.
+      Prec.highest(
+        keymap.of([
+          { key: "Mod-h", run: openSearchPanel, preventDefault: true },
+          { key: "Mod-g", run: gotoLine, preventDefault: true },
+        ]),
+      ),
       keymap.of(searchKeymap),
       buildMarkdownPairKeymap(),
       buildSmartBackspaceKeymap(),

@@ -170,4 +170,11 @@ export const is = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Um meditor",
+  "about.title": "Um meditor",
+  "about.tagline": "Staðbundinn Markdown-, Typst- og LaTeX-ritill fyrir skjáborðið.",
+  "about.version": (v: string) => `Útgáfa ${v}`,
+  "about.license": "Leyfi",
+  "about.source": "Frumkóði",
+  "about.close": "Loka",
 };

@@ -169,4 +169,11 @@ export const ro = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Despre meditor",
+  "about.title": "Despre meditor",
+  "about.tagline": "Un editor local Markdown, Typst și LaTeX pentru desktop.",
+  "about.version": (v: string) => `Versiune ${v}`,
+  "about.license": "Licență",
+  "about.source": "Cod sursă",
+  "about.close": "Închide",
 };

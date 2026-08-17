@@ -170,4 +170,11 @@ export const mn = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "meditor-ийн тухай",
+  "about.title": "meditor-ийн тухай",
+  "about.tagline": "Ширээний компьютерт зориулсан локал Markdown, Typst болон LaTeX засварлагч.",
+  "about.version": (v: string) => `Хувилбар ${v}`,
+  "about.license": "Лиценз",
+  "about.source": "Эх код",
+  "about.close": "Хаах",
 };

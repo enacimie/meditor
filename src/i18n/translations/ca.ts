@@ -170,4 +170,11 @@ export const ca = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Quant a meditor",
+  "about.title": "Quant a meditor",
+  "about.tagline": "Un editor local de Markdown, Typst i LaTeX per a l'escriptori.",
+  "about.version": (v: string) => `Versió ${v}`,
+  "about.license": "Llicència",
+  "about.source": "Codi font",
+  "about.close": "Tancar",
 };

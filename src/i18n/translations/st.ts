@@ -170,4 +170,11 @@ export const st = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Mabapi le meditor",
+  "about.title": "Mabapi le meditor",
+  "about.tagline": "Mohlahisi oa Markdown, Typst le LaTeX oa lehae bakeng sa desktop.",
+  "about.version": (v: string) => `Phetolelo ${v}`,
+  "about.license": "Laesense",
+  "about.source": "Khoutu ea mohloli",
+  "about.close": "Koala",
 };

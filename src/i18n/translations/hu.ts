@@ -170,4 +170,11 @@ export const hu = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "A meditor névjegye",
+  "about.title": "A meditor névjegye",
+  "about.tagline": "Helyben működő Markdown-, Typst- és LaTeX-szerkesztő az asztali gépre.",
+  "about.version": (v: string) => `Verzió ${v}`,
+  "about.license": "Licenc",
+  "about.source": "Forráskód",
+  "about.close": "Bezárás",
 };

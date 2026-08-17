@@ -170,4 +170,11 @@ export const gd = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Mu meditor",
+  "about.title": "Mu meditor",
+  "about.tagline": "Deasaiche ionadail Markdown, Typst is LaTeX airson an deasg.",
+  "about.version": (v: string) => `Tionndadh ${v}`,
+  "about.license": "Ceadachas",
+  "about.source": "Còd tùsail",
+  "about.close": "Dùin",
 };

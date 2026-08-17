@@ -65,6 +65,7 @@ function renderTopbar(overrides: {
         onExportPdf={vi.fn()}
         onCloseAll={vi.fn()}
         onCloseOthers={vi.fn()}
+        onAbout={vi.fn()}
       />
     );
   }

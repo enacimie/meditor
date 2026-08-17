@@ -170,4 +170,11 @@ export const sq = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Rreth meditor",
+  "about.title": "Rreth meditor",
+  "about.tagline": "Një redaktues lokal Markdown, Typst dhe LaTeX për desktop.",
+  "about.version": (v: string) => `Versioni ${v}`,
+  "about.license": "Licenca",
+  "about.source": "Kodi burimor",
+  "about.close": "Mbyll",
 };
