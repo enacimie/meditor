@@ -140,7 +140,11 @@ try {
   const noticeDark = await page.evaluate(`(() => {
     const notice = document.querySelector('.app-notice.error');
     const s = getComputedStyle(notice);
-    return { color: s.color, border: s.borderTopColor };
+    return {
+      color: s.color,
+      border: s.borderTopColor,
+      theme: document.documentElement.dataset.theme,
+    };
   })()`);
 
   await page.evaluate(`(() => {
@@ -155,7 +159,7 @@ try {
   );
   assert(
     noticeDark.color === "rgb(255, 123, 114)",
-    `dark error notice text should use the light error token, got ${noticeDark.color}`,
+    `dark error notice text should use the light error token, got ${noticeDark.color} (data-theme=${noticeDark.theme})`,
   );
 
   // WCAG AA: black/white is the maximum possible ratio.
