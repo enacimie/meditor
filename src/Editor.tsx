@@ -314,7 +314,17 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
     const view = viewRef.current;
     if (!view) return;
     const idChanged = activeId !== activeIdRef.current;
-    if (!idChanged && content === view.state.doc.toString()) return;
+    // This effect runs on every keystroke, and doc.toString() rebuilds the
+    // whole document from CodeMirror's rope. Comparing lengths first (O(1))
+    // skips that allocation for the common case: the editor already holds the
+    // text React is handing back.
+    if (
+      !idChanged &&
+      content.length === view.state.doc.length &&
+      content === view.state.doc.toString()
+    ) {
+      return;
+    }
     if (idChanged) {
       states.current.set(activeIdRef.current, view.state);
       let next = states.current.get(activeId);
