@@ -1,5 +1,5 @@
 import type { TranslationFn } from "./i18n/translations";
-import { getMermaidCache, getMermaidPool, renderMermaidMainThread } from "./mermaidPool";
+import { sanitizeSvg } from "./sanitizeSvg";
 
 /**
  * Fenced-code-block pattern: ```lang\n...\n```
@@ -33,6 +33,28 @@ export function splitLongFencedBlocks(md: string, maxLines = CODE_BLOCK_MAX_LINE
 
 let markdownPromise: Promise<typeof import("./markdown")> | undefined;
 let markdownStylesPromise: Promise<unknown[]> | undefined;
+let mermaidPromise: Promise<typeof import("./mermaidPool")> | undefined;
+let mermaidModule: typeof import("./mermaidPool") | undefined;
+
+function getMermaidTools(): Promise<typeof import("./mermaidPool")> {
+  mermaidPromise ??= import("./mermaidPool")
+    .then((module) => {
+      mermaidModule = module;
+      return module;
+    })
+    .catch((error) => {
+      mermaidPromise = undefined;
+      throw error;
+    });
+  return mermaidPromise;
+}
+
+/** Release optional Mermaid resources without starting a pending import. */
+export function clearMermaidResources(): void {
+  if (!mermaidModule) return;
+  mermaidModule.clearMermaidCache();
+  mermaidModule.destroyMermaidPool();
+}
 
 async function getMarkdownRenderer() {
   markdownPromise ??= import("./markdown");
@@ -72,6 +94,13 @@ export async function renderContent(
 
   const nodes = Array.from(el.querySelectorAll("code.language-mermaid"));
   if (!nodes.length) return;
+
+  const {
+    getMermaidCache,
+    getMermaidPool,
+    renderMermaidMainThread,
+  } = await getMermaidTools();
+  if (isStale()) return;
 
   // Try to get worker pool; if unavailable, fall back to main thread
   let pool = null;
@@ -127,6 +156,9 @@ export async function renderContent(
       }
     }
 
+    if (svg) {
+      svg = sanitizeSvg(svg) || null;
+    }
     if (svg && !cached) {
       cache.set(src, svg);
     }

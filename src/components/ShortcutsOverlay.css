@@ -26,8 +26,8 @@
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 20px 24px;
-  min-width: 380px;
-  max-width: 440px;
+  width: min(440px, calc(100vw - 32px));
+  min-width: 0;
   max-height: 80vh;
   overflow: auto;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
@@ -111,4 +111,24 @@
 .shortcuts-desc {
   color: var(--fg);
   font-size: 13px;
+}
+
+@media (max-width: 360px) {
+  .shortcuts-panel {
+    padding: 16px;
+  }
+
+  .shortcuts-row {
+    gap: 8px;
+  }
+
+  .shortcuts-key {
+    min-width: 96px;
+    padding-inline: 6px;
+    font-size: 11px;
+  }
+
+  .shortcuts-desc {
+    font-size: 12px;
+  }
 }

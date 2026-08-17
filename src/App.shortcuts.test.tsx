@@ -161,6 +161,25 @@ describe("shortcuts overlay (F1)", () => {
     foreign.remove();
   });
 
+  it("Escape exits Zen mode and exposes a visible exit control", async () => {
+    render(
+      <I18nProvider>
+        <App />
+      </I18nProvider>,
+    );
+    await waitFor(
+      () => expect(document.querySelector(".cm-editor")).toBeTruthy(),
+      { timeout: 8000 },
+    );
+
+    fireEvent.keyDown(window, { key: "F11" });
+    await waitFor(() => expect(document.querySelector(".app.zen")).toBeTruthy());
+    expect(document.querySelector(".zen-exit")).toBeTruthy();
+
+    fireEvent.keyDown(window, { key: "Escape" });
+    await waitFor(() => expect(document.querySelector(".app.zen")).toBeNull());
+  });
+
   it("F1 is open-only: it re-opens after an animated close but never closes", async () => {
     render(
       <I18nProvider>

@@ -32,7 +32,7 @@ A **Markdown** editor with _live_ preview, ==highlighted== text, and ++inserted+
 - [x] Add live preview
 - [x] Mermaid diagrams
 - [x] KaTeX math
-- [ ] Typst support (phase 2)
+- [x] Typst support
 - [ ] Collaborative editing
 
 ## Definition Lists
@@ -217,14 +217,15 @@ _Drag-and-drop or paste images from your clipboard into the editor to embed them
 
 export const TYPST_SAMPLE = `= meditor + Typst
 #set page(margin: 2.5cm)
-#set text(font: "Latin Modern Roman", size: 11pt, lang: "en")
+#set text(size: 11pt, lang: "en")
+#set heading(numbering: "1.")
 
 This is a *Typst* document edited in meditor with live preview,
 syntax highlighting, and bidirectional sync.
 
 == Typography
 
-- *Bold*, _italic_, #underline[underline], #strikethrough[strikethrough]
+- *Bold*, _italic_, #underline[underline], #strike[strikethrough]
 - Superscript: E = mc#super[2]
 - Subscript: H#sub[2]O
 - #smallcaps[Small caps] and #text(fill: blue)[colored text]
@@ -246,8 +247,8 @@ syntax highlighting, and bidirectional sync.
   ),
   [Markdown], [Done], [High],
   [KaTeX], [Done], [Medium],
-  [Typst], [WIP], [High],
-  [LaTeX], [Planned], [Medium],
+  [Typst], [Done], [High],
+  [LaTeX], [Done], [Medium],
 )
 
 == Lists
@@ -282,7 +283,7 @@ $ f(x) &= x^2 + 2x + 1 \\
 
 #figure(
   caption: [Fibonacci in Python],
-  raw("def fibonacci(n: int) -> list[int]:\n    """Return the first n Fibonacci numbers."""\n    a, b = 0, 1\n    result = []\n    for _ in range(n):\n        result.append(a)\n        a, b = b, a + b\n    return result\n\nprint(fibonacci(10))", lang: "python"),
+  raw("def fibonacci(n: int) -> list[int]:\n    Return the first n Fibonacci numbers.\n    a, b = 0, 1\n    result = []\n    for _ in range(n):\n        result.append(a)\n        a, b = b, a + b\n    return result\n\nprint(fibonacci(10))", lang: "python"),
 )
 
 And inline \`raw("print(42)", lang: "python")\` code.
@@ -306,7 +307,7 @@ And inline \`raw("print(42)", lang: "python")\` code.
   radius: 4pt,
   stroke: 0.5pt + rgb("#17a2b8"),
   [
-    *💡 Pro tip:* Use @Ctrl+Shift+S to save a copy, and @Ctrl+E to
+    *💡 Pro tip:* Use *Ctrl+Shift+S* to save a copy, and *Ctrl+E* to
     export as PDF.
   ],
 )
@@ -359,7 +360,7 @@ export const LATEX_SAMPLE = `\\documentclass[a4paper,11pt]{article}
 \\section{Introduction}
 
 This is a \\LaTeX\\ document edited in meditor with syntax highlighting.
-Live preview and PDF compilation are coming soon.
+Live preview and PDF compilation are available with the configured TeX Live endpoint.
 
 \\section{Typography}
 
@@ -402,8 +403,8 @@ Aligned equations:
     \\midrule
     Markdown & Done & High \\\\
     KaTeX & Done & Medium \\\\
-    Typst & WIP & High \\\\
-    LaTeX & Planned & Medium \\\\
+    Typst & Done & High \\\\
+    LaTeX & Done & Medium \\\\
     \\bottomrule
   \\end{tabular}
   \\caption{Feature status overview}
@@ -452,7 +453,7 @@ def fibonacci(n: int) -> list[int]:
 - \\href{https://www.latex-project.org}{LaTeX Project}
 - \\href{https://ctan.org}{CTAN — Comprehensive TeX Archive Network}
 
-_Start typing LaTeX in meditor — syntax highlighting is ready, compilation coming soon._
+\\emph{Start typing LaTeX in meditor --- syntax highlighting is ready, compilation is available with the configured TeX Live endpoint.}
 
 \\end{document}
 `;

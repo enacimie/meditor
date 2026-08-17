@@ -1,17 +1,57 @@
 /// <reference types="vitest/config" />
-import { defineConfig } from "vite";
+import { defineConfig, type OutputChunk, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import wasm from "vite-plugin-wasm";
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
+const MAX_INITIAL_CHUNK_BYTES = 1_750_000;
+
+function bundleBudgetPlugin(): Plugin {
+  return {
+    name: "meditor-bundle-budget",
+    generateBundle(_options, bundle) {
+      const chunks = Object.values(bundle).filter(
+        (output): output is OutputChunk => output.type === "chunk",
+      );
+      const byFileName = new Map(chunks.map((chunk) => [chunk.fileName, chunk]));
+
+      function initialBytes(entry: (typeof chunks)[number]): number {
+        const visited = new Set<string>();
+        const visit = (fileName: string): number => {
+          if (visited.has(fileName)) return 0;
+          visited.add(fileName);
+          const chunk = byFileName.get(fileName);
+          if (!chunk) return 0;
+          return chunk.code.length + chunk.imports.reduce(
+            (total, imported) => total + visit(imported),
+            0,
+          );
+        };
+        return visit(entry.fileName);
+      }
+
+      const oversizedEntries = chunks.filter(
+        (output) => output.isEntry && initialBytes(output) > MAX_INITIAL_CHUNK_BYTES,
+      );
+      if (oversizedEntries.length) {
+        const details = oversizedEntries
+          .map((output) => `${output.fileName} (${initialBytes(output)} bytes including static imports)`)
+          .join(", ");
+        this.error(
+          `Initial bundle exceeds ${MAX_INITIAL_CHUNK_BYTES} bytes: ${details}`,
+        );
+      }
+    },
+  };
+}
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
   // Relative base enables file:// and offline usage (e.g. E2E tests).
   // Tauri's webview serves from a local server so relative paths work too.
   base: "./",
-  plugins: [wasm(), react()],
+  plugins: [wasm(), react(), bundleBudgetPlugin()],
 
   optimizeDeps: {
     // Prevent Vite from pre-bundling @myriaddreamin packages in dev mode.
@@ -32,14 +72,49 @@ export default defineConfig(async () => ({
     environment: "node",
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
     setupFiles: ["./src/test-setup.ts"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "html", "json-summary"],
+      reportsDirectory: "coverage",
+      include: ["src/**/*.{ts,tsx}"],
+      // Translation tables and sample documents are static data; their
+      // structure is validated by dedicated parity tests rather than line
+      // coverage. Excluding them makes the metric reflect executable logic.
+      exclude: [
+        "src/**/*.test.*",
+        "src/test-setup.ts",
+        "src/shims.d.ts",
+        "src/i18n/translations/**/*.ts",
+        "src/sample.ts",
+      ],
+      thresholds: {
+        lines: 50,
+        functions: 50,
+        statements: 50,
+        branches: 40,
+      },
+    },
   },
 
   build: {
+    // Mermaid/paged.js remain lazy and can legitimately exceed Vite's
+    // generic 500 kB warning. The custom plugin above protects the initial
+    // application chunk instead of hiding all size regressions.
+    chunkSizeWarningLimit: 4000,
     rollupOptions: {
       output: {
-        manualChunks: {
-          mermaid: ["mermaid"],
-          pagedjs: ["pagedjs"],
+        // Keep heavyweight, lazy features out of the initial editor chunk.
+        // WASM URLs and `?worker` assets are intentionally left to Vite's
+        // native asset handling; only JavaScript modules are grouped here.
+        manualChunks(id) {
+          // Match the package directory itself, not similarly named
+          // transitive dependencies (e.g. Mermaid's diagram definitions).
+          // This keeps lazy feature chunks bounded while leaving workers,
+          // WASM URLs and Rollup's shared-dependency analysis untouched.
+          if (id.includes("/node_modules/@myriaddreamin/")) return "typst";
+          if (id.includes("/node_modules/mermaid/")) return "mermaid";
+          if (id.includes("/node_modules/pagedjs/")) return "pagedjs";
+          return undefined;
         },
       },
     },

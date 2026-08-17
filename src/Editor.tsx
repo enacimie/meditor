@@ -7,6 +7,7 @@ import {
   type Extension,
 } from "@codemirror/state";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
+import { StreamLanguage } from "@codemirror/language";
 import { languages } from "@codemirror/language-data";
 import { search, searchKeymap, openSearchPanel } from "@codemirror/search";
 import {
@@ -22,11 +23,8 @@ import "./Editor.css";
 let latexLangPromise: Promise<Extension> | null = null;
 function getLatexLang(): Promise<Extension> {
   if (!latexLangPromise) {
-    latexLangPromise = Promise.all([
-      import("@codemirror/legacy-modes/mode/stex"),
-      import("@codemirror/language"),
-    ])
-      .then(([stexMod, langMod]) => langMod.StreamLanguage.define(stexMod.stex))
+    latexLangPromise = import("@codemirror/legacy-modes/mode/stex")
+      .then((stexMod) => StreamLanguage.define(stexMod.stex))
       .catch((e) => {
         latexLangPromise = null; // allow retry
         throw e;

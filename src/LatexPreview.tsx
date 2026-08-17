@@ -23,6 +23,25 @@ type Props = {
   onReverseSync: (line: number) => void;
 };
 
+function isMissingFormatError(status: number, log: string): boolean {
+  return (
+    status !== 0 &&
+    /format file.*(?:can't find|not found)|can't find the format file/i.test(log)
+  );
+}
+
+function revokePdfUrl(
+  pdfUrlRef: { current: string | null },
+  setPdfUrl: (url: string | null) => void,
+): void {
+  const currentUrl = pdfUrlRef.current;
+  if (currentUrl) {
+    URL.revokeObjectURL(currentUrl);
+    pdfUrlRef.current = null;
+  }
+  setPdfUrl(null);
+}
+
 const LatexPreview = forwardRef<LatexPreviewHandle, Props>(
   function LatexPreview({ value, t, onReverseSync: _onReverseSync }, ref) {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -34,6 +53,7 @@ const LatexPreview = forwardRef<LatexPreviewHandle, Props>(
     const [retryToken, setRetryToken] = useState(0);
     const engineRef = useRef<PdfTeXEngineInstance | null>(null);
     const seqRef = useRef(0);
+    const compileQueueRef = useRef<Promise<void>>(Promise.resolve());
 
     useImperativeHandle(ref, () => ({
       scrollToLine(_line: number) {
@@ -48,10 +68,11 @@ const LatexPreview = forwardRef<LatexPreviewHandle, Props>(
       },
     }));
 
-    // Compile LaTeX → PDF via SwiftLaTeX WASM
+    // Compile LaTeX → PDF via SwiftLaTeX WASM. Every compilation is queued
+    // because the underlying worker and virtual filesystem are stateful.
     useEffect(() => {
       if (!value.trim()) {
-        setPdfUrl(null);
+        revokePdfUrl(pdfUrlRef, setPdfUrl);
         setLog(null);
         setError(null);
         return;
@@ -59,58 +80,91 @@ const LatexPreview = forwardRef<LatexPreviewHandle, Props>(
 
       let cancelled = false;
       const run = async () => {
-        // Obtain engine class (lazy, cached across compilations)
-        let cls: { new(): PdfTeXEngineInstance };
-        try {
-          cls = await getLatexEngineClass();
-        } catch {
-          if (!cancelled) setError("Could not load LaTeX engine");
-          return;
-        }
-        if (cancelled) return;
-
-        setLoading(true);
-        setError(null);
-        seqRef.current++;
-        const mySeq = seqRef.current;
-
-        try {
-          // Reuse the same engine instance across recompilations, just
-          // flushing the virtual filesystem between runs.
-          if (!engineRef.current) {
-            const eng: PdfTeXEngineInstance = new cls();
-            await eng.loadEngine();
-            engineRef.current = eng;
-          }
-          const eng = engineRef.current;
-          eng.flushCache();
-          eng.writeMemFSFile("main.tex", value);
-          eng.setEngineMainFile("main.tex");
-
-          const result = await eng.compileLaTeX();
+        const mySeq = ++seqRef.current;
+        const compile = compileQueueRef.current.then(async () => {
           if (cancelled || mySeq !== seqRef.current) return;
 
-          setLog(result.log);
-
-          if (result.status === 0 && result.pdf) {
-            // Revoke previous blob to avoid memory leaks
-            if (pdfUrlRef.current) URL.revokeObjectURL(pdfUrlRef.current);
-            const blob = new Blob([result.pdf], { type: "application/pdf" });
-            const url = URL.createObjectURL(blob);
-            pdfUrlRef.current = url;
-            setPdfUrl(url);
-          } else {
-            setPdfUrl(null);
-            const msg = result.log || `Exit status ${result.status}`;
-            setError(`${t("preview.latexError")} ${msg}`);
+          let cls: { new(): PdfTeXEngineInstance };
+          try {
+            cls = await getLatexEngineClass();
+          } catch {
+            if (!cancelled && mySeq === seqRef.current) {
+              revokePdfUrl(pdfUrlRef, setPdfUrl);
+              setError("Could not load LaTeX engine");
+              setLoading(false);
+            }
+            return;
           }
-          setLoading(false);
-        } catch (e) {
           if (cancelled || mySeq !== seqRef.current) return;
-          const message = e instanceof Error ? e.message : String(e);
-          setError(`${t("preview.latexError")} ${message}`);
-          setLoading(false);
-        }
+
+          setLoading(true);
+          setError(null);
+          try {
+            // Reuse the engine, but only after all previous compilations have
+            // completed, so flushCache cannot race with compileLaTeX.
+            if (!engineRef.current) {
+              const loadedEngine: PdfTeXEngineInstance = new cls();
+              // Keep the instance reachable before loadEngine() so the outer
+              // catch can close a worker even when WASM initialization fails.
+              engineRef.current = loadedEngine;
+              await loadedEngine.loadEngine();
+              if (cancelled || mySeq !== seqRef.current) {
+                engineRef.current = null;
+                loadedEngine.closeWorker();
+                return;
+              }
+            }
+            const eng = engineRef.current;
+            eng.flushCache();
+            eng.writeMemFSFile("main.tex", value);
+            eng.setEngineMainFile("main.tex");
+
+            let result = await eng.compileLaTeX();
+            if (
+              isMissingFormatError(result.status, result.log) &&
+              !cancelled &&
+              mySeq === seqRef.current
+            ) {
+              // Prefer the bundled/prebuilt format. Generate one only when
+              // pdfTeX explicitly reports that it is missing.
+              await eng.compileFormat();
+              if (cancelled || mySeq !== seqRef.current) return;
+              eng.flushCache();
+              eng.writeMemFSFile("main.tex", value);
+              eng.setEngineMainFile("main.tex");
+              result = await eng.compileLaTeX();
+            }
+            if (cancelled || mySeq !== seqRef.current) return;
+
+            setLog(result.log);
+            if (result.status === 0 && result.pdf) {
+              revokePdfUrl(pdfUrlRef, setPdfUrl);
+              const blob = new Blob([result.pdf], { type: "application/pdf" });
+              const url = URL.createObjectURL(blob);
+              pdfUrlRef.current = url;
+              setPdfUrl(url);
+            } else {
+              revokePdfUrl(pdfUrlRef, setPdfUrl);
+              const msg = result.log || `Exit status ${result.status}`;
+              setError(`${t("preview.latexError")} ${msg}`);
+            }
+            setLoading(false);
+          } catch (e) {
+            // A failed worker is not reusable: discard it so the next queued
+            // compilation can create a clean engine instead of remaining in
+            // the legacy engine's Error/Busy state.
+            const failedEngine = engineRef.current;
+            engineRef.current = null;
+            failedEngine?.closeWorker();
+            if (cancelled || mySeq !== seqRef.current) return;
+            const message = e instanceof Error ? e.message : String(e);
+            revokePdfUrl(pdfUrlRef, setPdfUrl);
+            setError(`${t("preview.latexError")} ${message}`);
+            setLoading(false);
+          }
+        });
+        compileQueueRef.current = compile.catch(() => undefined);
+        await compile;
       };
 
       const timer = window.setTimeout(() => {
@@ -122,12 +176,18 @@ const LatexPreview = forwardRef<LatexPreviewHandle, Props>(
       };
     }, [value, t, retryToken]);
 
-    // Cleanup blob URL and engine worker on unmount
+    // Cleanup blob URL and engine worker on unmount. Wait for the serialized
+    // queue before closing the worker; otherwise an in-flight compile can be
+    // left with a Promise that never settles and block later retries.
     useEffect(() => {
       return () => {
-        if (pdfUrlRef.current) URL.revokeObjectURL(pdfUrlRef.current);
-        engineRef.current?.closeWorker();
+        revokePdfUrl(pdfUrlRef, setPdfUrl);
+        const engine = engineRef.current;
         engineRef.current = null;
+        void compileQueueRef.current.then(
+          () => engine?.closeWorker(),
+          () => engine?.closeWorker(),
+        );
       };
     }, []);
 

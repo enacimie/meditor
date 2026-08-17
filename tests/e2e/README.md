@@ -9,7 +9,14 @@ Chrome directly over the Chrome DevTools Protocol with **zero dependencies**
 
 ```bash
 pnpm test:e2e
+
+# Requires Docker + the local TeX Live service.
+# This suite requires port 1420 to be free so its endpoint env is isolated.
+pnpm test:e2e:latex
 ```
+
+Set `E2E_SPECS` to a comma-separated list of spec filenames to run only a
+subset, as the opt-in LaTeX workflow does with `latex-full.spec.mjs`.
 
 The runner (`run.mjs`):
 

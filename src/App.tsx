@@ -32,6 +32,7 @@ import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 
 import type { Doc, DocKind } from "./types";
 import type { Theme } from "./components/types";
+import { kindFromPath, normalizeDoc } from "./documentUtils";
 import { getTypst } from "./typstEngine";
 import { compileLatexToPdf } from "./latexEngine";
 import "./App.css";
@@ -90,9 +91,9 @@ function savePreferences(preferences: Preferences): void {
   }
 }
 
-async function showNativeAlert(message: string): Promise<void> {
+async function showNativeAlert(message: string, locale: string): Promise<void> {
   try {
-    await invoke("alert", { message });
+    await invoke("alert", { message, locale });
   } catch (error) {
     console.error("Could not show native alert", error);
   }
@@ -142,12 +143,6 @@ function newId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
 }
 
-function kindFromPath(path: string): DocKind {
-  if (/\.(typ|typst)$/i.test(path)) return "typst";
-  if (/\.(tex|latex|ltx)$/i.test(path)) return "latex";
-  return "markdown";
-}
-
 function makeDoc(
   content: string,
   path: string | null = null,
@@ -165,17 +160,19 @@ function makeDoc(
   };
 }
 
-function waitForCloseTasks(tasks: Promise<unknown>[], timeoutMs = 5000): Promise<void> {
+function waitForCloseTasks(tasks: Promise<unknown>[], timeoutMs = 5000): Promise<boolean> {
   return new Promise((resolve) => {
     let finished = false;
-    const finish = () => {
+    const finish = (completed: boolean) => {
       if (finished) return;
       finished = true;
       window.clearTimeout(timeout);
-      resolve();
+      resolve(completed);
     };
-    const timeout = window.setTimeout(finish, timeoutMs);
-    void Promise.allSettled(tasks).then(finish);
+    const timeout = window.setTimeout(() => finish(false), timeoutMs);
+    void Promise.allSettled(tasks).then((results) =>
+      finish(results.every((result) => result.status === "fulfilled")),
+    );
   });
 }
 
@@ -225,6 +222,8 @@ export default function App() {
   // Latest translation function, read by the (once-registered) close guard.
   const closeTRef = useRef(t);
   closeTRef.current = t;
+  const closeLangRef = useRef(lang);
+  closeLangRef.current = lang;
   // Ensures the close guard is registered exactly once (StrictMode's dev
   // double-mount must not leave duplicate listeners that re-swallow closes).
   // The resolved value is never used; the promise only acts as a guard.
@@ -232,6 +231,10 @@ export default function App() {
   const active = docs.find((d) => d.id === activeId) ?? docs[0];
   activeIdRef.current = activeId;
   const headings = active ? parseHeadings(active.content) : [];
+  // Typst and LaTeX currently do not expose stable source locations in their
+  // rendered output, so their preview↔editor sync controls must not pretend
+  // to work. Markdown provides data-line metadata for both directions.
+  const markdownSyncAvailable = (active?.kind ?? "markdown") === "markdown";
 
   const mergeDocuments = useCallback((incoming: Doc[]): void => {
     if (!incoming.length) return;
@@ -243,7 +246,7 @@ export default function App() {
         if (!activateId) activateId = ex.id;
         continue;
       }
-      const doc = { ...incomingDoc, id: newId() };
+      const doc = { ...normalizeDoc(incomingDoc), id: newId() };
       next.push(doc);
       if (!activateId) activateId = doc.id;
     }
@@ -269,7 +272,7 @@ export default function App() {
       let cliDocs: Doc[] = [];
       if (isTauri()) {
         try {
-          cliDocs = await invoke<Doc[]>("cli_files");
+          cliDocs = (await invoke<Doc[]>("cli_files", { locale: lang })).map(normalizeDoc);
         } catch {
           cliDocs = [];
         }
@@ -278,9 +281,9 @@ export default function App() {
             docs: Doc[];
             activeId: string;
             split: number;
-          } | null>("load_session");
+          } | null>("load_session", { locale: lang });
           if (restored) {
-            base = restored.docs;
+            base = restored.docs.map(normalizeDoc);
             startActive = restored.activeId;
             splitRatioRef.current = restored.split;
           }
@@ -301,7 +304,7 @@ export default function App() {
           if (!cliActive) cliActive = ex.id;
           continue;
         }
-        base.push({ ...incoming, id: newId() });
+        base.push({ ...normalizeDoc(incoming), id: newId() });
         if (!cliActive) cliActive = base[base.length - 1].id;
       }
       if (cancelled) return;
@@ -318,6 +321,8 @@ export default function App() {
     return () => {
       cancelled = true;
     };
+  // Startup should run once; language is read from the render that starts it.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setSplit, splitRatioRef]);
 
   useLayoutEffect(() => {
@@ -387,11 +392,18 @@ export default function App() {
               activeIdRef.current,
               splitRatioRef.current,
             );
-            await waitForCloseTasks([
+            const closeTasksCompleted = await waitForCloseTasks([
               saveQueueRef.current,
               finalSession,
               sessionSaveQueueRef.current,
             ]);
+            if (!closeTasksCompleted) {
+              await showNativeAlert(
+                closeTRef.current("session.saveError"),
+                closeLangRef.current,
+              );
+              return;
+            }
             await invoke("exit_app");
           } catch (error) {
             console.error("Could not close application", error);
@@ -438,6 +450,9 @@ export default function App() {
         sessionTimerRef.current = undefined;
       }
     };
+  // The writer is intentionally recreated with the current locale; this
+  // effect is scheduled only by document/session state changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [docs, activeId, ready, splitRatioRef]);
 
   useEffect(() => {
@@ -531,7 +546,7 @@ export default function App() {
   async function openFiles() {
     if (!isTauri() || !beginOperation("open")) return;
     try {
-      const opened = await invoke<Doc[]>("open_files");
+      const opened = (await invoke<Doc[]>("open_files", { locale: lang })).map(normalizeDoc);
       if (opened.length) {
         await openPaths(opened);
         showNotice(
@@ -543,7 +558,7 @@ export default function App() {
       }
     } catch (error) {
       showNotice(operationNoticeError(t, "open"), "error", 0);
-      await showNativeAlert(operationErrorPrefix(t, "open") + String(error));
+      await showNativeAlert(operationErrorPrefix(t, "open") + String(error), lang);
     } finally {
       endOperation("open");
     }
@@ -551,7 +566,7 @@ export default function App() {
 
   function writeFileOrdered(handle: string, content: string): Promise<void> {
     const next = saveQueueRef.current.then(() =>
-      invoke<void>("save_document", { handle, content }),
+      invoke<void>("save_document", { handle, content, locale: lang }),
     );
     saveQueueRef.current = next.catch(() => undefined);
     return next;
@@ -565,17 +580,19 @@ export default function App() {
     const next = sessionSaveQueueRef.current.then(() =>
       invoke<void>("save_session", {
         input: {
-          docs: documents.map(({ id, name, path, content, dirty, handle }) => ({
+          docs: documents.map(({ id, name, path, content, dirty, handle, kind }) => ({
             id,
             name,
             path,
             content,
             dirty,
             handle,
+            kind,
           })),
           activeId: currentActiveId,
           split: ratio,
         },
+        locale: lang,
       }),
     );
     sessionSaveQueueRef.current = next.catch(() => undefined);
@@ -587,17 +604,19 @@ export default function App() {
     const documentId = active.id;
     const savedContent = active.content;
     const ext = active.kind === "typst" ? ".typ" : active.kind === "latex" ? ".tex" : ".md";
-    const base = active.name.replace(/\.(md|markdown|txt|typ|typst)$/i, "");
+    const base = active.name.replace(/\.(md|markdown|txt|typ|typst|tex|latex|ltx)$/i, "");
     const defaultName = `${base}${ext}`;
     try {
-      const saved = await invoke<Doc | null>("save_as", {
+      const savedPayload = await invoke<Doc | null>("save_as", {
         content: savedContent,
         defaultName,
+        locale: lang,
       });
-      if (!saved) {
+      if (!savedPayload) {
         showNotice(t("op.cancelled"), "info");
         return;
       }
+      const saved = normalizeDoc(savedPayload);
       setDocs((prev) =>
         prev.map((d) =>
           d.id === documentId
@@ -606,6 +625,7 @@ export default function App() {
                 path: saved.path,
                 name: saved.name,
                 handle: saved.handle,
+                kind: saved.kind,
                 dirty: d.content === savedContent ? false : d.dirty,
               }
             : d,
@@ -614,7 +634,7 @@ export default function App() {
       showNotice(operationNoticeDone(t, "saveAs"), "success");
     } catch (e) {
       showNotice(operationNoticeError(t, "saveAs"), "error", 0);
-      await showNativeAlert(operationErrorPrefix(t, "saveAs") + String(e));
+      await showNativeAlert(operationErrorPrefix(t, "saveAs") + String(e), lang);
     } finally {
       endOperation("saveAs");
     }
@@ -639,7 +659,7 @@ export default function App() {
       showNotice(operationNoticeDone(t, "save"), "success");
     } catch (e) {
       showNotice(operationNoticeError(t, "save"), "error", 0);
-      await showNativeAlert(operationErrorPrefix(t, "save") + String(e));
+      await showNativeAlert(operationErrorPrefix(t, "save") + String(e), lang);
     } finally {
       endOperation("save");
     }
@@ -656,20 +676,28 @@ export default function App() {
         const pdfBytes = await $typst.pdf({ mainContent: active.content });
         if (!pdfBytes) throw new Error("Typst compilation produced no output");
         const defaultName = `${base}.pdf`;
-        await invoke("write_pdf_bytes", { pdfBytes: Array.from(pdfBytes), defaultName });
+        await invoke("write_pdf_bytes", {
+          pdfBytes: Array.from(pdfBytes),
+          defaultName,
+          locale: lang,
+        });
       } else if (active.kind === "latex") {
         // LaTeX: compile to PDF via SwiftLaTeX WASM, then save via Tauri dialog.
         const pdfBytes = await compileLatexToPdf(active.content);
         if (!pdfBytes) throw new Error("LaTeX compilation produced no output");
         const defaultName = `${base}.pdf`;
-        await invoke("write_pdf_bytes", { pdfBytes: Array.from(pdfBytes), defaultName });
+        await invoke("write_pdf_bytes", {
+          pdfBytes: Array.from(pdfBytes),
+          defaultName,
+          locale: lang,
+        });
       } else {
-        await invoke("export_pdf", { defaultName: `${base}.pdf` });
+        await invoke("export_pdf", { defaultName: `${base}.pdf`, locale: lang });
       }
       showNotice(operationNoticeDone(t, "export"), "success");
     } catch (e) {
       showNotice(operationNoticeError(t, "export"), "error", 0);
-      await showNativeAlert(operationErrorPrefix(t, "export") + String(e));
+      await showNativeAlert(operationErrorPrefix(t, "export") + String(e), lang);
     } finally {
       endOperation("export");
     }
@@ -793,6 +821,9 @@ export default function App() {
       if (confirmRequest || renameRequest || shortcutsOpen) return;
       editorRef.current?.focusSearch();
     },
+    exitZen: () => {
+      if (zenMode) setZenMode(false);
+    },
   });
 
   if (!ready) {
@@ -833,6 +864,18 @@ export default function App() {
         onCloseAll={closeAllTabs}
         onCloseOthers={closeOtherTabs}
       />
+      {zenMode && (
+        <button
+          type="button"
+          className="zen-exit"
+          onClick={() => setZenMode(false)}
+          aria-label={t("menu.zenExit")}
+          title={`${t("menu.zenExit")} (F11 / Esc)`}
+        >
+          <span aria-hidden="true">×</span>
+          <span>{t("menu.zenExit")}</span>
+        </button>
+      )}
       <TabBar
         t={t}
         docs={docs}
@@ -858,26 +901,28 @@ export default function App() {
         >
           <div className="pane-header">
             <span className="pane-title">{t("pane.editor")}</span>
-            <button
-              type="button"
-              className="sync-btn"
-              onClick={handleForwardSync}
-              aria-label={t("pane.scrollToPreview")}
-              title={t("pane.scrollToPreview")}
-            >
-              <svg aria-hidden="true"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+            {markdownSyncAvailable && (
+              <button
+                type="button"
+                className="sync-btn"
+                onClick={handleForwardSync}
+                aria-label={t("pane.scrollToPreview")}
+                title={t("pane.scrollToPreview")}
               >
-                <path d="M5 12h14" />
-                <path d="m13 6 6 6-6 6" />
-              </svg>
-              {t("pane.goToPreview")}
-            </button>
+                <svg aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M5 12h14" />
+                  <path d="m13 6 6 6-6 6" />
+                </svg>
+                {t("pane.goToPreview")}
+              </button>
+            )}
             <button
               type="button"
               className={wrap ? "sync-btn on" : "sync-btn"}
@@ -895,7 +940,8 @@ export default function App() {
             <button
               type="button"
               className={outlineOpen ? "sync-btn on" : "sync-btn"}
-              aria-pressed={outlineOpen}
+              aria-expanded={outlineOpen}
+              aria-controls="document-outline"
               aria-label={t("outline.toggle")}
               title={t("outline.toggle")}
               onClick={() => setOutlineOpen((v) => !v)}
@@ -910,14 +956,16 @@ export default function App() {
               </svg>
             </button>
           </div>
-          {outlineOpen && (
-            <Outline
-              t={t}
-              headings={headings}
-              cursorLine={cursorLine}
-              onGoToLine={(line) => editorRef.current?.scrollToLine(line)}
-            />
-          )}
+          <div id="document-outline" hidden={!outlineOpen}>
+            {outlineOpen && (
+              <Outline
+                t={t}
+                headings={headings}
+                cursorLine={cursorLine}
+                onGoToLine={(line) => editorRef.current?.scrollToLine(line)}
+              />
+            )}
+          </div>
           <Suspense fallback={<div className="editor-loading" role="status">{t("editor.loading")}</div>}>
             <Editor
               ref={editorRef}
@@ -961,19 +1009,21 @@ export default function App() {
         <div className="pane" style={{ flex: `0 0 ${100 - split}%` }}>
           <div className="pane-header">
             <span className="pane-title">{t("pane.preview")}</span>
-            <button
-              type="button"
-              className="sync-btn"
-              onClick={handleReverseSyncButton}
-              aria-label={previewRef.current?.getTargetLine ? t("pane.scrollToCode") : t("pane.scrollToCodeHint")}
-              title={previewRef.current?.getTargetLine ? t("pane.scrollToCode") : t("pane.scrollToCodeHint")}
-            >
-              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 12H5" />
-                <path d="m11 18-6-6 6-6" />
-              </svg>
-              {t("pane.goToCode")}
-            </button>
+            {markdownSyncAvailable && (
+              <button
+                type="button"
+                className="sync-btn"
+                onClick={handleReverseSyncButton}
+                aria-label={t("pane.scrollToCode")}
+                title={t("pane.scrollToCode")}
+              >
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 12H5" />
+                  <path d="m11 18-6-6 6-6" />
+                </svg>
+                {t("pane.goToCode")}
+              </button>
+            )}
             {(active?.kind ?? "markdown") !== "typst" && (active?.kind ?? "markdown") !== "latex" && (
               <button
                 type="button"
@@ -986,13 +1036,20 @@ export default function App() {
               </button>
             )}
           </div>
-          <Preview
-            ref={previewRef}
-            value={active?.content ?? ""}
-            docView={docView}
-            kind={active?.kind ?? "markdown"}
-            onReverseSync={handleReverseSync}
-          />
+          <div
+            className={
+              "preview-scroll" +
+              (docView && (active?.kind ?? "markdown") === "markdown" ? " doc-bg" : "")
+            }
+          >
+            <Preview
+              ref={previewRef}
+              value={active?.content ?? ""}
+              docView={docView}
+              kind={active?.kind ?? "markdown"}
+              onReverseSync={handleReverseSync}
+            />
+          </div>
         </div>
       </div>
       <StatusBar

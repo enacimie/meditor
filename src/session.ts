@@ -4,15 +4,17 @@
  * The actual session persistence is handled by the Rust backend
  * (load_session / save_session commands). These functions serve as:
  *
- * - `serializeSession`: Client-side validation gate before sending
- *   session data to the Rust backend via writeSessionOrdered() in App.tsx.
- * - `parseSession`: Used in tests and available for future client-side
- *   session restore (e.g. browser-only mode).
+ * - `serializeSession`: Canonical client-side representation before sending
+ *   session data to the Rust backend.
+ * - `parseSession`: Compatibility parser for browser-only mode and legacy
+ *   sessions written before document kinds were persisted.
  */
 
-import type { Doc } from "./types";
+import { kindFromPath } from "./documentUtils";
+import type { Doc, DocKind } from "./types";
 
-export const SESSION_VERSION = 2;
+export const SESSION_VERSION = 3;
+const LEGACY_SESSION_VERSION = 2;
 const MAX_SESSION_BYTES = 25 * 1024 * 1024;
 const MAX_DOCUMENT_BYTES = 16 * 1024 * 1024;
 
@@ -41,7 +43,11 @@ export function parseSession(raw: string): SessionData | null {
     const value: unknown = JSON.parse(raw);
     if (!value || typeof value !== "object") return null;
     const data = value as Partial<SessionData> & { version?: unknown };
-    if (data.version !== undefined && data.version !== SESSION_VERSION) {
+    if (
+      data.version !== undefined &&
+      data.version !== SESSION_VERSION &&
+      data.version !== LEGACY_SESSION_VERSION
+    ) {
       return null;
     }
     if (!Array.isArray(data.docs)) return null;
@@ -55,7 +61,12 @@ export function parseSession(raw: string): SessionData | null {
       })
       .map((doc) => {
         const rawKind = (doc as Record<string, unknown>).kind;
-        const kind = rawKind === "typst" ? "typst" : rawKind === "latex" ? "latex" : "markdown";
+        const kind: DocKind =
+          rawKind === "typst" || rawKind === "latex" || rawKind === "markdown"
+            ? rawKind
+            : doc.path
+              ? kindFromPath(doc.path)
+              : "markdown";
         return { ...doc, kind } as Doc;
       });
     if (!docs.length) return null;

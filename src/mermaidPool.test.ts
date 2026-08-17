@@ -1,6 +1,16 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
+const mermaidMock = vi.hoisted(() => ({
+  initialize: vi.fn(),
+  render: vi.fn(),
+}));
+
+// Mermaid's real SVG renderer needs browser layout APIs that jsdom does not
+// provide. Mock the package boundary so the main-thread adapter itself can be
+// tested without skipping the fallback path entirely.
+vi.mock("mermaid", () => ({ default: mermaidMock }));
+
 // Workers can't run in jsdom — mock the worker module
 vi.mock("./mermaid.worker?worker", () => ({
   default: class MockWorker {
@@ -157,13 +167,16 @@ describe("MermaidPool", () => {
   });
 });
 
-/* ---- renderMermaidMainThread ----
-   NOTE: These tests require real browser SVG APIs (getBBox, etc.)
-   that are not available in jsdom. They are skipped here but work
-   correctly when the app runs in a real browser environment.
-*/
-describe.skip("renderMermaidMainThread", () => {
+/* ---- renderMermaidMainThread ---- */
+describe("renderMermaidMainThread", () => {
+  beforeEach(() => {
+    mermaidMock.initialize.mockReset();
+    mermaidMock.render.mockReset();
+  });
   it("renders a simple diagram and returns SVG string", async () => {
+    mermaidMock.render.mockResolvedValue({
+      svg: '<svg id="test-mmd"><g>diagram</g></svg>',
+    });
     const svg = await renderMermaidMainThread(
       "test-mmd",
       "graph TD\n  A --> B",
@@ -174,8 +187,9 @@ describe.skip("renderMermaidMainThread", () => {
   }, 15_000);
 
   it("throws on invalid mermaid syntax", async () => {
+    mermaidMock.render.mockRejectedValue(new Error("invalid diagram"));
     await expect(
       renderMermaidMainThread("bad-id", "not a valid diagram @@@"),
-    ).rejects.toThrow();
+    ).rejects.toThrow("invalid diagram");
   }, 15_000);
 });

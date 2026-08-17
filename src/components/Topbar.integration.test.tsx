@@ -26,9 +26,13 @@ function renderTopbar(overrides: {
   lang?: Language;
   onSetLanguageSpy?: ReturnType<typeof vi.fn>;
   onSetThemeSpy?: ReturnType<typeof vi.fn>;
+  onNewTypstSpy?: ReturnType<typeof vi.fn>;
+  onNewLatexSpy?: ReturnType<typeof vi.fn>;
 } = {}) {
   const langSpy = (overrides.onSetLanguageSpy ?? vi.fn()) as (code: Language) => void;
   const themeSpy = (overrides.onSetThemeSpy ?? vi.fn()) as (t: string) => void;
+  const newTypstSpy = overrides.onNewTypstSpy ?? vi.fn();
+  const newLatexSpy = overrides.onNewLatexSpy ?? vi.fn();
 
   function Inner() {
     const { t, lang, setLanguage } = useTranslation();
@@ -53,8 +57,8 @@ function renderTopbar(overrides: {
         zenMode={false}
         onToggleZen={vi.fn()}
         onNew={vi.fn()}
-        onNewTypst={vi.fn()}
-        onNewLatex={vi.fn()}
+        onNewTypst={newTypstSpy as () => void}
+        onNewLatex={newLatexSpy as () => void}
         onOpen={vi.fn()}
         onSave={vi.fn()}
         onSaveAs={vi.fn()}
@@ -72,7 +76,7 @@ function renderTopbar(overrides: {
     </I18nProvider>,
   );
 
-  return { ...utils, langSpy, themeSpy };
+  return { ...utils, langSpy, themeSpy, newTypstSpy, newLatexSpy };
 }
 
 import React from "react";
@@ -86,6 +90,28 @@ describe("Topbar integration", () => {
     expect(screen.getByLabelText("New tab (Ctrl+N)")).toBeDefined();
     expect(screen.getByLabelText("Open files (Ctrl+O)")).toBeDefined();
     expect(screen.getByLabelText("Save (Ctrl+S)")).toBeDefined();
+  });
+
+  it("keeps specialized document creation inside the more-options menu", () => {
+    const { newTypstSpy, newLatexSpy } = renderTopbar();
+
+    expect(screen.queryByLabelText("New Typst tab")).toBeNull();
+    expect(screen.queryByLabelText("New LaTeX tab")).toBeNull();
+
+    fireEvent.click(getMenuToggle());
+    const menu = screen.getByRole("menu");
+    const typstItem = screen.getByRole("menuitem", { name: /New \.typ/ });
+    const latexItem = screen.getByRole("menuitem", { name: /New \.tex/ });
+    expect(menu.contains(typstItem)).toBe(true);
+    expect(menu.contains(latexItem)).toBe(true);
+
+    fireEvent.click(typstItem);
+    expect(newTypstSpy).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("menu")).toBeNull();
+
+    fireEvent.click(getMenuToggle());
+    fireEvent.click(screen.getByRole("menuitem", { name: /New \.tex/ }));
+    expect(newLatexSpy).toHaveBeenCalledTimes(1);
   });
 
   it("opens the menu when hamburger is clicked", () => {
@@ -108,11 +134,14 @@ describe("Topbar integration", () => {
     const langBtn = Array.from(menu.querySelectorAll("button")).find(
       (b) => b.textContent?.includes("English"),
     )!;
+    expect(langBtn.getAttribute("aria-expanded")).toBe("false");
+    expect(langBtn.getAttribute("aria-controls")).toBe("language-picker");
     fireEvent.click(langBtn);
 
     // 3. Wait for lazy LanguagePicker to mount (Suspense resolves)
-    const searchInput = await screen.findByLabelText("Search language");
+    const searchInput = await screen.findByRole("combobox");
     expect(searchInput).toBeDefined();
+    expect(document.getElementById("language-picker")).toBeDefined();
 
     // 4. Type "hin" to filter
     fireEvent.change(searchInput, { target: { value: "hin" } });
@@ -181,14 +210,18 @@ describe("Topbar integration", () => {
     expect(themeBtn.querySelector(".theme-swatch")).toBeDefined();
   });
 
-  it("theme picker expands to show all 4 options when clicked", () => {
+  it("theme picker expands, exposes stable ARIA controls, and focuses the selected option", () => {
     renderTopbar();
     fireEvent.click(getMenuToggle());
 
-    fireEvent.click(screen.getByText("System").closest("button")!);
+    const themeBtn = screen.getByText("System").closest("button")!;
+    expect(themeBtn.getAttribute("aria-expanded")).toBe("false");
+    expect(themeBtn.getAttribute("aria-controls")).toBe("theme-options");
+    fireEvent.click(themeBtn);
 
     const radios = screen.getAllByRole("menuitemradio");
     expect(radios).toHaveLength(4);
+    expect(document.activeElement).toBe(radios[0]);
     expect(radios[0].textContent).toContain("System");
     expect(radios[1].textContent).toContain("Light");
     expect(radios[2].textContent).toContain("Dark");

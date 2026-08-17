@@ -25,6 +25,8 @@ export type ShortcutHandlers = {
   openShortcuts: () => void;
   /** Ctrl+K / Cmd+K */
   focusSearch: () => void;
+  /** Escape while no modal is open */
+  exitZen?: () => void;
 };
 
 /**
@@ -49,6 +51,17 @@ export function useKeyboardShortcuts(
       if (e.key === "F11") {
         e.preventDefault();
         h.toggleZen();
+        return;
+      }
+
+      if (e.key === "Escape") {
+        const target = e.target instanceof HTMLElement ? e.target : null;
+        const secondaryUiOpen = target?.closest(
+          '[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], .cm-panels, .cm-tooltip',
+        );
+        if (h.exitZen && !secondaryUiOpen) {
+          h.exitZen();
+        }
         return;
       }
 

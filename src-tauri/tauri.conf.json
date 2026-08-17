@@ -18,7 +18,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self' customprotocol: asset:; connect-src 'self' ipc: http://ipc.localhost; img-src 'self' asset: data: blob: https:; style-src 'self' 'unsafe-inline'; font-src 'self' asset: data:; script-src 'self'"
+      "csp": "default-src 'self' customprotocol: asset:; connect-src 'self' ipc: http://ipc.localhost http://127.0.0.1:5000 http://localhost:5000 https://texlive2.swiftlatex.com; img-src 'self' asset: data: blob: https:; style-src 'self' 'unsafe-inline'; font-src 'self' asset: data:; script-src 'self'; worker-src 'self' blob:; frame-src 'self' blob:"
     }
   },
   "bundle": {

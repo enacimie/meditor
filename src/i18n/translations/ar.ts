@@ -188,7 +188,6 @@ export const ar = {
   "preview.typstCompiling": "…جاري تجميع Typst",
   "preview.typstError": ":Typst",
   "preview.pages": "pages",
-  "preview.latexNotice": "LaTeX compilation coming soon — showing raw source.",
   "preview.latexCompiling": "Compiling LaTeX...",
   "preview.latexError": "LaTeX:",
   "preview.latexEmpty": "Empty LaTeX document.",

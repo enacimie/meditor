@@ -64,6 +64,24 @@
   }
 }
 
+:root[data-theme="dark"] .app-notice.error {
+  border-color: #f85149;
+  color: #ff7b72;
+}
+
+:root[data-theme="dark"] .app-notice.error .app-notice-dot {
+  background: #f85149;
+}
+
+:root[data-theme="contrast"] .app-notice.error {
+  border-color: #ffff00;
+  color: #ffffff;
+}
+
+:root[data-theme="contrast"] .app-notice.error .app-notice-dot {
+  background: #ffff00;
+}
+
 .brand {
   color: var(--fg);
   font-weight: 750;

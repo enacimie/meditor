@@ -42,6 +42,24 @@ try {
   await page.freshPage(BASE_URL);
   await page.waitFor("!!document.querySelector('.cm-content')");
 
+  // ── Outline semantics and Zen exit affordance ─────────────────────
+  const outlineToggle = '[aria-controls="document-outline"]';
+  assert(await page.exists(outlineToggle), "outline toggle should expose aria-controls");
+  assert(
+    (await page.evaluate(`document.querySelector(${JSON.stringify(outlineToggle)}).getAttribute('aria-expanded')`)) === "false",
+    "outline should start collapsed",
+  );
+  await page.click(outlineToggle);
+  await page.waitFor(`document.querySelector(${JSON.stringify(outlineToggle)}).getAttribute('aria-expanded') === 'true'`);
+  assert(await page.exists("#document-outline"), "outline panel should have a stable id");
+  await page.click(outlineToggle);
+
+  await press(page, "F11");
+  await page.waitFor("!!document.querySelector('.app.zen')");
+  assert(await page.exists(".zen-exit"), "Zen mode should expose a visible exit control");
+  await press(page, "Escape");
+  await page.waitFor("!document.querySelector('.app.zen')");
+
   // ── F1 opens the shortcuts overlay ────────────────────────────────
   assert(
     !(await page.exists(".shortcuts-overlay")),
@@ -150,6 +168,39 @@ try {
     return true;
   })()`);
   await page.waitFor("document.querySelector('.cm-search') === null");
+
+  // ── Narrow viewport overlay ───────────────────────────────────────
+  await page.send("Emulation.setDeviceMetricsOverride", {
+    width: 320,
+    height: 568,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  try {
+    await press(page, "F1");
+    await page.waitFor("!!document.querySelector('.shortcuts-overlay')");
+    const narrowOverlay = await page.evaluate(`(() => {
+      const panel = document.querySelector('.shortcuts-panel');
+      const rect = panel.getBoundingClientRect();
+      const typst = document.querySelector('.format-badge');
+      const latex = [...document.querySelectorAll('.format-badge')].find((el) => el.textContent === 'λ');
+      return {
+        right: rect.right,
+        viewport: window.innerWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+        typstDisplay: typst ? getComputedStyle(typst).display : 'missing',
+        latexDisplay: latex ? getComputedStyle(latex).display : 'missing',
+      };
+    })()`);
+    assert(narrowOverlay.right <= narrowOverlay.viewport, "shortcuts panel should fit a 320px viewport");
+    assert(narrowOverlay.scrollWidth <= narrowOverlay.viewport, "narrow overlay should not create horizontal overflow");
+    assert(narrowOverlay.typstDisplay !== 'none', "Typst badge should be visible in compact toolbar");
+    assert(narrowOverlay.latexDisplay !== 'none', "LaTeX badge should be visible in compact toolbar");
+    await page.evaluate("document.querySelector('.shortcuts-overlay').click()");
+    await page.waitFor("document.querySelector('.shortcuts-overlay') === null");
+  } finally {
+    await page.send("Emulation.clearDeviceMetricsOverride");
+  }
 
   // ── Console health ────────────────────────────────────────────────
   assert(

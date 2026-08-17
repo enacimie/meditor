@@ -11,8 +11,8 @@ export type DocKind = "markdown" | "typst" | "latex";
  * - `dirty`: Whether the document has unsaved changes.
  * - `handle`: Opaque registry handle assigned by the Rust backend for
  *   fast path resolution during save operations.
- * - `kind`: Document language ("markdown" or "typst"). Defaults to
- *   "markdown" when deserialising pre-v3 sessions.
+ * - `kind`: Document language ("markdown", "typst" or "latex"). Defaults
+ *   to a path-derived value for legacy sessions and Markdown otherwise.
  */
 export type Doc = {
   id: string;

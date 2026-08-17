@@ -67,7 +67,7 @@ export class MermaidPool {
     const promises: Promise<void>[] = [];
     for (let i = 0; i < count; i++) {
       const worker = new MermaidWorker();
-      const promise = new Promise<void>((resolve) => {
+      const promise = new Promise<void>((resolve, reject) => {
         worker.onmessage = (e: MessageEvent<MermaidWorkerMessage>) => {
           const msg = e.data;
           if (msg.type === "ready") {
@@ -85,6 +85,7 @@ export class MermaidPool {
           }
         };
         worker.onerror = () => {
+          reject(new Error("Mermaid worker failed to initialize"));
           for (const [id, p] of this.pending) {
             clearTimeout(p.timer);
             p.reject(new Error("Mermaid worker crashed"));
@@ -147,11 +148,15 @@ export function clearMermaidCache(): void {
 }
 
 export async function getMermaidPool(): Promise<MermaidPool> {
-  if (!mermaidPool) {
-    mermaidPool = new MermaidPool(2);
+  if (!mermaidPool) mermaidPool = new MermaidPool(2);
+  try {
     await mermaidPool.waitReady();
+    return mermaidPool;
+  } catch (error) {
+    mermaidPool.destroy();
+    mermaidPool = undefined;
+    throw error;
   }
-  return mermaidPool;
 }
 
 export function destroyMermaidPool(): void {

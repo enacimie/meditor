@@ -54,6 +54,7 @@ const Topbar = memo(function Topbar({
 }: Props) {
   const menuRef = useRef<HTMLDivElement>(null);
   const menuToggleRef = useRef<HTMLButtonElement>(null);
+  const themeOptionsRef = useRef<HTMLDivElement>(null);
   const [langPickerOpen, setLangPickerOpen] = useState(false);
   const [themePickerOpen, setThemePickerOpen] = useState(false);
 
@@ -77,6 +78,13 @@ const Topbar = memo(function Topbar({
     document.addEventListener("mousedown", onClick);
     return () => document.removeEventListener("mousedown", onClick);
   }, [menuOpen, setMenuOpen]);
+
+  useEffect(() => {
+    if (!themePickerOpen) return;
+    themeOptionsRef.current
+      ?.querySelector<HTMLElement>('[role="menuitemradio"][aria-checked="true"]')
+      ?.focus();
+  }, [themePickerOpen]);
 
   function handleMenuKeyDown(e: ReactKeyboardEvent<HTMLDivElement>) {
     const items = Array.from(
@@ -137,14 +145,6 @@ const Topbar = memo(function Topbar({
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
           <span className="btn-label">{t("topbar.new")}</span>
         </button>
-        <button type="button" aria-label={t("topbar.newTypstAria")} onClick={onNewTypst} title={t("topbar.newTypstTitle")} disabled={busy}>
-          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-          <span className="btn-label">{t("topbar.newTypst")}</span>
-        </button>
-        <button type="button" aria-label={t("topbar.newLatexAria")} onClick={onNewLatex} title={t("topbar.newLatexTitle")} disabled={busy}>
-          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-          <span className="btn-label">{t("topbar.newLatex")}</span>
-        </button>
         <button type="button" aria-label={t("topbar.openAria")} onClick={onOpen} title={t("topbar.openTitle")} disabled={busy}>
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
           <span className="btn-label">{t("topbar.open")}</span>
@@ -179,39 +179,40 @@ const Topbar = memo(function Topbar({
                 {t("menu.exportPdf")}<span className="shortcut">{t("menu.shortcut.export")}</span>
               </button>
               <button type="button" role="menuitem" disabled={busy} onClick={() => { onNewTypst(); setMenuOpen(false); menuToggleRef.current?.focus(); }}>
-                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                <svg className="format-icon format-icon-typst" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 5h14"/><path d="M12 5v14"/><path d="M8 19h8"/></svg>
                 {t("topbar.newTypst")}<span className="shortcut">{t("menu.shortcut.newTypst")}</span>
               </button>
               <button type="button" role="menuitem" disabled={busy} onClick={() => { onNewLatex(); setMenuOpen(false); menuToggleRef.current?.focus(); }}>
-                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                <svg className="format-icon format-icon-latex" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 5h12"/><path d="M9 5l3 14"/><path d="M15 5l-3 14"/><path d="M5 19h14"/></svg>
                 {t("topbar.newLatex")}<span className="shortcut">{t("menu.shortcut.newLatex")}</span>
               </button>
               <div className="menu-sep" />
               <div className="menu-replacedby-section">
                 <div className="menu-section-label" aria-hidden="true">{t("menu.theme")}</div>
-                {themePickerOpen ? (
-                  <>
-                    {themeOptions.map(([value, label, description]) => (
-                      <button
-                        key={value}
-                        type="button"
-                        role="menuitemradio"
-                        aria-checked={theme === value}
-                        disabled={busy}
-                        title={description}
-                        onClick={() => selectTheme(value)}
-                      >
-                        <span className="theme-swatch" data-theme-swatch={value} aria-hidden="true" />
-                        {label}
-                        {theme === value && <span className="theme-check" aria-label={t("menu.selected")}>✓</span>}
-                      </button>
-                    ))}
-                  </>
-                ) : (
+                <div id="theme-options" ref={themeOptionsRef} hidden={!themePickerOpen}>
+                  {themePickerOpen && themeOptions.map(([value, label, description]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      role="menuitemradio"
+                      aria-checked={theme === value}
+                      disabled={busy}
+                      title={description}
+                      onClick={() => selectTheme(value)}
+                    >
+                      <span className="theme-swatch" data-theme-swatch={value} aria-hidden="true" />
+                      {label}
+                      {theme === value && <span className="theme-check" aria-label={t("menu.selected")}>✓</span>}
+                    </button>
+                  ))}
+                </div>
+                {!themePickerOpen && (
                   <button
                     type="button"
                     role="menuitem"
                     disabled={busy}
+                    aria-expanded={themePickerOpen}
+                    aria-controls="theme-options"
                     onClick={() => setThemePickerOpen(true)}
                   >
                     <span className="theme-swatch" data-theme-swatch={currentThemeOption[0]} aria-hidden="true" />
@@ -221,24 +222,29 @@ const Topbar = memo(function Topbar({
               </div>
               <div className="menu-sep" />
               <div className="menu-section-label" aria-hidden="true">{t("menu.language")}</div>
-              {langPickerOpen ? (
-                <Suspense fallback={<div className="lang-loading">…</div>}>
-                  <LanguagePicker
-                    lang={lang}
-                    t={t}
-                    onSelect={(code) => {
-                      setLanguage(code);
-                      setLangPickerOpen(false);
-                      setMenuOpen(false);
-                      menuToggleRef.current?.focus();
-                    }}
-                  />
-                </Suspense>
-              ) : (
+              <div id="language-picker" hidden={!langPickerOpen}>
+                {langPickerOpen && (
+                  <Suspense fallback={<div className="lang-loading">…</div>}>
+                    <LanguagePicker
+                      lang={lang}
+                      t={t}
+                      onSelect={(code) => {
+                        setLanguage(code);
+                        setLangPickerOpen(false);
+                        setMenuOpen(false);
+                        menuToggleRef.current?.focus();
+                      }}
+                    />
+                  </Suspense>
+                )}
+              </div>
+              {!langPickerOpen && (
                 <button
                   type="button"
                   role="menuitem"
                   disabled={busy}
+                  aria-expanded={langPickerOpen}
+                  aria-controls="language-picker"
                   onClick={() => setLangPickerOpen(true)}
                 >
                   {currentLang.nativeLabel}

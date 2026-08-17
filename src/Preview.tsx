@@ -16,8 +16,8 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "./i18n/I18nProvider";
 import pagedCss from "./paged.css?inline";
 import latexHighlightCss from "./latex-highlight.css?inline";
-import { clearMermaidCache, destroyMermaidPool } from "./mermaidPool";
-import { renderContent, splitLongFencedBlocks } from "./previewRenderer";
+import { clearMermaidResources, renderContent, splitLongFencedBlocks } from "./previewRenderer";
+
 import type { DocKind } from "./types";
 import "./Preview.css";
 
@@ -351,8 +351,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
       }
       destroyPreviewer(activePreviewerRef.current);
       activePreviewerRef.current = undefined;
-      clearMermaidCache();
-      destroyMermaidPool();
+      void clearMermaidResources();
     };
   }, []);
 

@@ -119,6 +119,34 @@ try {
     `contrast accent-fg should be #000000, got ${rootColors.accentFg}`,
   );
 
+  // Error notices must remain visible in the explicit dark and contrast
+  // themes, not only when the OS preference is dark.
+  const noticeColors = await page.evaluate(`(() => {
+    const root = document.documentElement;
+    const notice = document.createElement('div');
+    notice.className = 'app-notice error';
+    notice.textContent = 'error';
+    document.body.appendChild(notice);
+    const read = () => {
+      const s = getComputedStyle(notice);
+      return { color: s.color, border: s.borderTopColor };
+    };
+    const contrast = read();
+    root.dataset.theme = 'dark';
+    const dark = read();
+    notice.remove();
+    root.dataset.theme = 'contrast';
+    return { contrast, dark };
+  })()`);
+  assert(
+    noticeColors.contrast.color === "rgb(255, 255, 255)",
+    `contrast error notice text should be white, got ${noticeColors.contrast.color}`,
+  );
+  assert(
+    noticeColors.dark.color === "rgb(255, 123, 114)",
+    `dark error notice text should use the light error token, got ${noticeColors.dark.color}`,
+  );
+
   // WCAG AA: black/white is the maximum possible ratio.
   const bodyRatio = contrast(rootColors.fg, rootColors.bg);
   assert(

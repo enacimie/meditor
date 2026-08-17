@@ -1,0 +1,60 @@
+name: LaTeX integration
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  latex-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: docker/setup-buildx-action@v3
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build local TeX Live Ondemand service
+        run: docker compose -f docker-compose.texlive.yml build --progress=plain
+
+      - name: Start TeX Live service
+        run: docker compose -f docker-compose.texlive.yml up -d
+
+      - name: Wait for TeX Live kpathsea endpoint
+        run: |
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent --show-error \
+              --max-time 10 \
+              -o /dev/null \
+              http://127.0.0.1:5000/pdftex/25/article.cls; then
+              exit 0
+            fi
+            sleep 5
+          done
+          docker compose -f docker-compose.texlive.yml logs --tail=200
+          exit 1
+
+      - name: Compile a real LaTeX document in Chrome
+        env:
+          VITE_TEXLIVE_ENDPOINT: http://127.0.0.1:5000/
+        run: pnpm test:e2e:latex
+
+      - name: Collect TeX Live logs
+        if: always()
+        run: docker compose -f docker-compose.texlive.yml logs --tail=200
+
+      - name: Stop TeX Live service
+        if: always()
+        run: docker compose -f docker-compose.texlive.yml down

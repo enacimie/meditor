@@ -1,4 +1,5 @@
 "use strict";
+(function () {
 /********************************************************************************
  * Copyright (C) 2019 Elliott Wen.
  *
@@ -60,7 +61,7 @@ var EngineStatus;
     EngineStatus[EngineStatus["Busy"] = 3] = "Busy";
     EngineStatus[EngineStatus["Error"] = 4] = "Error";
 })(EngineStatus = exports.EngineStatus || (exports.EngineStatus = {}));
-var ENGINE_PATH = 'swiftlatexpdftex.js';
+var ENGINE_PATH = (typeof window !== 'undefined' && window.__meditorPdfTeXWorkerUrl) || './swiftlatex/swiftlatexpdftex.js';
 var CompileResult = /** @class */ (function () {
     function CompileResult() {
         this.pdf = undefined;
@@ -77,7 +78,7 @@ var PdfTeXEngine = /** @class */ (function () {
     }
     PdfTeXEngine.prototype.loadEngine = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var _this = this;
+            var _this = this, loadTimeoutId;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -87,18 +88,36 @@ var PdfTeXEngine = /** @class */ (function () {
                         this.latexWorkerStatus = EngineStatus.Init;
                         return [4 /*yield*/, new Promise(function (resolve, reject) {
                                 _this.latexWorker = new Worker(ENGINE_PATH);
+                                if (typeof window !== 'undefined' && window.__meditorTexliveEndpoint) {
+                                    _this.latexWorker.postMessage({ 'cmd': 'settexliveurl', 'url': window.__meditorTexliveEndpoint });
+                                }
                                 _this.latexWorker.onmessage = function (ev) {
                                     var data = ev['data'];
                                     var cmd = data['result'];
                                     if (cmd === 'ok') {
+                                        clearTimeout(loadTimeoutId);
                                         _this.latexWorkerStatus = EngineStatus.Ready;
                                         resolve();
                                     }
                                     else {
+                                        clearTimeout(loadTimeoutId);
                                         _this.latexWorkerStatus = EngineStatus.Error;
-                                        reject();
+                                        reject(new Error('LaTeX worker failed to initialize'));
                                     }
                                 };
+                                _this.latexWorker.onerror = function (event) {
+                                    clearTimeout(loadTimeoutId);
+                                    _this.latexWorkerStatus = EngineStatus.Error;
+                                    reject(new Error(event && event.message || 'LaTeX worker failed to load'));
+                                };
+                                loadTimeoutId = setTimeout(function () {
+                                    _this.latexWorkerStatus = EngineStatus.Error;
+                                    if (_this.latexWorker !== undefined) {
+                                        _this.latexWorker.terminate();
+                                        _this.latexWorker = undefined;
+                                    }
+                                    reject(new Error('LaTeX worker initialization timed out'));
+                                }, 30000);
                             })];
                     case 1:
                         _a.sent();
@@ -121,7 +140,7 @@ var PdfTeXEngine = /** @class */ (function () {
     };
     PdfTeXEngine.prototype.compileLaTeX = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var start_compile_time, res;
+            var start_compile_time, res, compileTimeoutId;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -129,7 +148,7 @@ var PdfTeXEngine = /** @class */ (function () {
                         this.checkEngineStatus();
                         this.latexWorkerStatus = EngineStatus.Busy;
                         start_compile_time = performance.now();
-                        return [4 /*yield*/, new Promise(function (resolve, _) {
+                        return [4 /*yield*/, new Promise(function (resolve, reject) {
                                 _this.latexWorker.onmessage = function (ev) {
                                     var data = ev['data'];
                                     var cmd = data['cmd'];
@@ -138,6 +157,7 @@ var PdfTeXEngine = /** @class */ (function () {
                                     var result = data['result'];
                                     var log = data['log'];
                                     var status = data['status'];
+                                    clearTimeout(compileTimeoutId);
                                     _this.latexWorkerStatus = EngineStatus.Ready;
                                     console.log('Engine compilation finish ' + (performance.now() - start_compile_time));
                                     var nice_report = new CompileResult();
@@ -149,6 +169,19 @@ var PdfTeXEngine = /** @class */ (function () {
                                     }
                                     resolve(nice_report);
                                 };
+                                _this.latexWorker.onerror = function (event) {
+                                    clearTimeout(compileTimeoutId);
+                                    _this.latexWorkerStatus = EngineStatus.Error;
+                                    reject(new Error(event && event.message || 'LaTeX worker failed during compilation'));
+                                };
+                                compileTimeoutId = setTimeout(function () {
+                                    _this.latexWorkerStatus = EngineStatus.Error;
+                                    if (_this.latexWorker !== undefined) {
+                                        _this.latexWorker.terminate();
+                                        _this.latexWorker = undefined;
+                                    }
+                                    reject(new Error('LaTeX compilation timed out'));
+                                }, 120000);
                                 _this.latexWorker.postMessage({ 'cmd': 'compilelatex' });
                                 console.log('Engine compilation start');
                             })];
@@ -164,7 +197,7 @@ var PdfTeXEngine = /** @class */ (function () {
     /* Internal Use */
     PdfTeXEngine.prototype.compileFormat = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var _this = this;
+            var _this = this, formatTimeoutId;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -176,27 +209,41 @@ var PdfTeXEngine = /** @class */ (function () {
                                     var cmd = data['cmd'];
                                     if (cmd !== "compile")
                                         return;
+                                    clearTimeout(formatTimeoutId);
                                     var result = data['result'];
                                     var log = data['log'];
-                                    // const status: number = data['status'] as number;
                                     _this.latexWorkerStatus = EngineStatus.Ready;
                                     if (result === 'ok') {
-                                        var formatArray = data['pdf']; /* PDF for result */
-                                        var formatBlob = new Blob([formatArray], { type: 'application/octet-stream' });
-                                        var formatURL_1 = URL.createObjectURL(formatBlob);
-                                        setTimeout(function () { URL.revokeObjectURL(formatURL_1); }, 30000);
-                                        console.log('Download format file via ' + formatURL_1);
                                         resolve();
                                     }
                                     else {
-                                        reject(log);
+                                        reject(new Error(log || 'LaTeX format compilation failed'));
                                     }
                                 };
+                                _this.latexWorker.onerror = function (event) {
+                                    clearTimeout(formatTimeoutId);
+                                    _this.latexWorkerStatus = EngineStatus.Error;
+                                    if (_this.latexWorker !== undefined) {
+                                        _this.latexWorker.terminate();
+                                        _this.latexWorker = undefined;
+                                    }
+                                    reject(new Error(event && event.message || 'LaTeX format compilation failed'));
+                                };
+                                formatTimeoutId = setTimeout(function () {
+                                    _this.latexWorkerStatus = EngineStatus.Error;
+                                    if (_this.latexWorker !== undefined) {
+                                        _this.latexWorker.terminate();
+                                        _this.latexWorker = undefined;
+                                    }
+                                    reject(new Error('LaTeX format compilation timed out'));
+                                }, 120000);
                                 _this.latexWorker.postMessage({ 'cmd': 'compileformat' });
                             })];
                     case 1:
                         _a.sent();
                         this.latexWorker.onmessage = function (_) {
+                        };
+                        this.latexWorker.onerror = function (_) {
                         };
                         return [2 /*return*/];
                 }
@@ -233,8 +280,10 @@ var PdfTeXEngine = /** @class */ (function () {
     };
     PdfTeXEngine.prototype.setTexliveEndpoint = function (url) {
         if (this.latexWorker !== undefined) {
+            // The worker applies the endpoint update in place. Keep the
+            // reference so subsequent commands continue using this worker;
+            // dropping it here leaked the worker and made cleanup impossible.
             this.latexWorker.postMessage({ 'cmd': 'settexliveurl', 'url': url });
-            this.latexWorker = undefined;
         }
     };
     PdfTeXEngine.prototype.closeWorker = function () {
@@ -246,3 +295,8 @@ var PdfTeXEngine = /** @class */ (function () {
     return PdfTeXEngine;
 }());
 exports.PdfTeXEngine = PdfTeXEngine;
+// Explicit app-owned export: avoid the mutable global `window.exports` name.
+if (typeof window !== 'undefined') {
+    window.__meditorPdfTeXEngine = PdfTeXEngine;
+}
+})();

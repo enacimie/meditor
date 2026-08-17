@@ -93,6 +93,18 @@ describe("translations", () => {
     }
   });
 
+  it("does not expose the retired LaTeX placeholder notice", () => {
+    for (const lang of ALL_LANGUAGES) {
+      const dict = translations[lang] as Record<string, unknown>;
+      const notice = dict["preview.latexNotice"];
+      if (typeof notice === "string") {
+        expect(notice, `${lang}.preview.latexNotice is obsolete`).not.toMatch(
+          /coming soon|showing raw source/i,
+        );
+      }
+    }
+  });
+
   // ── verify shortcut keys ───────────────────────────────────────────
 
   it("shortcut keys exist in all 104 languages", () => {

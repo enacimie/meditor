@@ -178,7 +178,7 @@ async function ensureMermaid(): Promise<void> {
 
     mermaidModule.default.initialize({
       startOnLoad: false,
-      securityLevel: "loose",
+      securityLevel: "strict",
       suppressErrorRendering: true,
       theme: "default",
     });

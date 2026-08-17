@@ -6,6 +6,13 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test-frontend:
     runs-on: ubuntu-latest
@@ -19,14 +26,26 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm test:run
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm audit --audit-level=high
+      - run: pnpm test:coverage
+      - run: pnpm test:e2e
       - run: pnpm build
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-coverage
+          path: coverage/
+          if-no-files-found: ignore
 
   test-backend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -38,5 +57,11 @@ jobs:
             librsvg2-dev \
             libgtk-3-dev \
             libglib2.0-dev
-      - run: cargo test -p meditor
-      - run: cargo check -p meditor
+      - working-directory: src-tauri
+        run: cargo fmt --check
+      - working-directory: src-tauri
+        run: cargo clippy --all-targets -- -D warnings
+      - working-directory: src-tauri
+        run: cargo test --lib
+      - working-directory: src-tauri
+        run: cargo check

@@ -176,7 +176,6 @@ export const sk = {
   "preview.typstCompiling": "Compiling Typst...",
   "preview.typstError": "Typst:",
   "preview.pages": "pages",
-  "preview.latexNotice": "LaTeX compilation coming soon — showing raw source.",
   "preview.latexCompiling": "Compiling LaTeX...",
   "preview.latexError": "LaTeX:",
   "preview.latexEmpty": "Empty LaTeX document.",

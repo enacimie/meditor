@@ -45,7 +45,9 @@ use std::ptr;
 
 const MAX_FILE_BYTES: u64 = 64 * 1024 * 1024;
 const MAX_SESSION_BYTES: u64 = 25 * 1024 * 1024;
-const SESSION_VERSION: u32 = 2;
+const MAX_PDF_BYTES: u64 = 128 * 1024 * 1024;
+const SESSION_VERSION: u32 = 3;
+const LEGACY_SESSION_VERSION: u32 = 2;
 static NEXT_HANDLE: AtomicU64 = AtomicU64::new(1);
 
 fn max_file_mib() -> u64 {
@@ -53,6 +55,32 @@ fn max_file_mib() -> u64 {
 }
 
 struct DocumentRegistry(Mutex<HashMap<String, PathBuf>>);
+
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "lowercase")]
+enum DocumentKind {
+    #[default]
+    Markdown,
+    Typst,
+    Latex,
+}
+
+fn kind_from_path(path: &Path) -> DocumentKind {
+    match path.extension().and_then(|extension| extension.to_str()) {
+        Some(extension) if matches!(extension.to_ascii_lowercase().as_str(), "typ" | "typst") => {
+            DocumentKind::Typst
+        }
+        Some(extension)
+            if matches!(
+                extension.to_ascii_lowercase().as_str(),
+                "tex" | "latex" | "ltx"
+            ) =>
+        {
+            DocumentKind::Latex
+        }
+        _ => DocumentKind::Markdown,
+    }
+}
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -63,6 +91,7 @@ struct NativeDocument {
     content: String,
     dirty: bool,
     handle: Option<String>,
+    kind: DocumentKind,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -73,6 +102,8 @@ struct StoredDocument {
     path: Option<String>,
     content: String,
     dirty: bool,
+    #[serde(default)]
+    kind: Option<DocumentKind>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -94,6 +125,8 @@ struct SessionDocumentInput {
     content: String,
     dirty: bool,
     handle: Option<String>,
+    #[serde(default)]
+    kind: Option<DocumentKind>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -140,9 +173,7 @@ fn normalize_path(locale: Locale, path: &Path) -> Result<PathBuf, String> {
         }
         return std::fs::canonicalize(path).map_err(|e| e.to_string());
     }
-    let parent = path
-        .parent()
-        .ok_or_else(|| t(locale, "file.noParent"))?;
+    let parent = path.parent().ok_or_else(|| t(locale, "file.noParent"))?;
     let file_name = path
         .file_name()
         .ok_or_else(|| t(locale, "file.noFileName"))?;
@@ -190,6 +221,7 @@ fn document_from_path(
         content,
         dirty: false,
         handle: Some(handle),
+        kind: kind_from_path(&normalized),
     })
 }
 
@@ -233,9 +265,11 @@ fn write_atomic(locale: Locale, path: &Path, content: &str) -> Result<(), String
             &max_file_mib().to_string(),
         ));
     }
-    let parent = path
-        .parent()
-        .ok_or_else(|| t(locale, "file.noParent"))?;
+    write_atomic_bytes(locale, path, content.as_bytes())
+}
+
+fn write_atomic_bytes(locale: Locale, path: &Path, content: &[u8]) -> Result<(), String> {
+    let parent = path.parent().ok_or_else(|| t(locale, "file.noParent"))?;
     if !parent.is_dir() {
         return Err(t(locale, "file.directoryMissing"));
     }
@@ -294,11 +328,41 @@ fn saved_document(
         content,
         dirty: false,
         handle: Some(handle),
+        kind: kind_from_path(&normalized),
     })
 }
 
 fn parse_locale(raw: Option<String>) -> Locale {
     raw.as_deref().map(Locale::from_str).unwrap_or(Locale::En)
+}
+
+/// Reattach a session document to its native save handle only when the path
+/// still resolves to a regular file whose bytes match the session snapshot.
+/// If the file changed or disappeared, keep the path for display but leave the
+/// handle empty so the frontend routes the next save through Save As instead
+/// of silently overwriting an external edit.
+fn restore_session_path(
+    locale: Locale,
+    registry: &DocumentRegistry,
+    raw_path: Option<&str>,
+    expected_content: &str,
+) -> (Option<String>, Option<String>) {
+    let Some(raw_path) = raw_path else {
+        return (None, None);
+    };
+    let path = match normalize_path(locale, Path::new(raw_path)) {
+        Ok(path) => path,
+        Err(_) => return (Some(raw_path.to_owned()), None),
+    };
+    let path_string = path.to_string_lossy().into_owned();
+    let matches_snapshot = read_path(locale, &path)
+        .map(|content| content == expected_content)
+        .unwrap_or(false);
+    if !matches_snapshot {
+        return (Some(path_string), None);
+    }
+    let handle = register_normalized(locale, registry, path).ok();
+    (Some(path_string), handle)
 }
 
 #[tauri::command]
@@ -311,7 +375,12 @@ fn open_files(
     let selected = app
         .dialog()
         .file()
-        .add_filter("Markdown", &["md", "markdown", "txt", "typ", "typst", "tex", "latex", "ltx"])
+        .add_filter(
+            "Markdown",
+            &[
+                "md", "markdown", "txt", "typ", "typst", "tex", "latex", "ltx",
+            ],
+        )
         .blocking_pick_files();
     let paths = match selected {
         Some(paths) => paths
@@ -336,7 +405,12 @@ fn save_as(
         .dialog()
         .file()
         .set_file_name(default_name)
-        .add_filter("Markdown", &["md", "markdown", "txt", "typ", "typst", "tex", "latex", "ltx"])
+        .add_filter(
+            "Markdown",
+            &[
+                "md", "markdown", "txt", "typ", "typst", "tex", "latex", "ltx",
+            ],
+        )
         .blocking_save_file();
     let path = match selected {
         Some(path) => path.into_path().map_err(|e| e.to_string())?,
@@ -364,7 +438,11 @@ fn save_document(
 }
 
 #[tauri::command]
-fn load_session(app: tauri::AppHandle) -> Result<Option<SessionRestore>, String> {
+fn load_session(
+    app: tauri::AppHandle,
+    registry: tauri::State<'_, DocumentRegistry>,
+    locale: Option<String>,
+) -> Result<Option<SessionRestore>, String> {
     let path = session_file_path(&app)?;
     let raw = match std::fs::read_to_string(path) {
         Ok(raw) => raw,
@@ -375,19 +453,42 @@ fn load_session(app: tauri::AppHandle) -> Result<Option<SessionRestore>, String>
         return Ok(None);
     }
     let stored: StoredSession = serde_json::from_str(&raw).map_err(|e| e.to_string())?;
-    if stored.version != SESSION_VERSION || stored.docs.is_empty() {
+    if stored.version != SESSION_VERSION && stored.version != LEGACY_SESSION_VERSION
+        || stored.docs.is_empty()
+    {
         return Ok(None);
     }
+    let loc = parse_locale(locale);
     let docs = stored
         .docs
         .into_iter()
-        .map(|document| NativeDocument {
-            id: document.id,
-            name: document.name,
-            path: document.path,
-            content: document.content,
-            dirty: document.dirty,
-            handle: None,
+        .map(|document| {
+            let StoredDocument {
+                id,
+                name,
+                path: raw_path,
+                content,
+                dirty,
+                kind: raw_kind,
+            } = document;
+            let kind = raw_kind.unwrap_or_else(|| {
+                raw_path
+                    .as_deref()
+                    .map(Path::new)
+                    .map(kind_from_path)
+                    .unwrap_or_default()
+            });
+            let (path, handle) =
+                restore_session_path(loc, &registry, raw_path.as_deref(), &content);
+            NativeDocument {
+                id,
+                name,
+                path,
+                content,
+                dirty,
+                handle,
+                kind,
+            }
         })
         .collect::<Vec<_>>();
     let active_id = if docs.iter().any(|doc| doc.id == stored.active_id) {
@@ -423,6 +524,7 @@ fn save_session(
         if document.content.len() as u64 > MAX_FILE_BYTES {
             return Err(t(loc, "file.docTooLarge"));
         }
+        let document_path = document.path.clone();
         let path = match document.handle {
             Some(handle) => {
                 let path = registry
@@ -434,7 +536,7 @@ fn save_session(
                     .ok_or_else(|| t(loc, "file.sessionUnavailable"))?;
                 Some(path.to_string_lossy().into_owned())
             }
-            None => document.path,
+            None => document_path.clone(),
         };
         docs.push(StoredDocument {
             id: document.id,
@@ -442,6 +544,13 @@ fn save_session(
             path,
             content: document.content,
             dirty: document.dirty,
+            kind: Some(document.kind.unwrap_or_else(|| {
+                document_path
+                    .as_deref()
+                    .map(Path::new)
+                    .map(kind_from_path)
+                    .unwrap_or_default()
+            })),
         });
     }
     let stored = StoredSession {
@@ -493,12 +602,19 @@ fn write_pdf_bytes(
             return Err(t(loc, "pdf.directoryMissing"));
         }
     }
-    std::fs::write(&path, &pdf_bytes).map_err(|e| e.to_string())?;
-    // Verify it looks like a PDF
+    if pdf_bytes.len() as u64 > MAX_PDF_BYTES {
+        return Err(tf(
+            loc,
+            "file.contentTooLarge",
+            &(MAX_PDF_BYTES / (1024 * 1024)).to_string(),
+        ));
+    }
+    // Validate before touching the selected destination so invalid output
+    // can never overwrite an existing PDF.
     if pdf_bytes.len() < 5 || &pdf_bytes[..5] != b"%PDF-" {
         return Err(t(loc, "pdf.invalidPdf"));
     }
-    Ok(())
+    write_atomic_bytes(loc, &path, &pdf_bytes)
 }
 
 /// Force-exit the application. The JS `window.close()`/`window.destroy()`
@@ -545,10 +661,7 @@ fn alert(message: String, locale: Option<String>) {
     }
     #[cfg(target_os = "windows")]
     {
-        let title_wide: Vec<u16> = OsStr::new(&title)
-            .encode_wide()
-            .chain(Some(0))
-            .collect();
+        let title_wide: Vec<u16> = OsStr::new(&title).encode_wide().chain(Some(0)).collect();
         let text: Vec<u16> = OsStr::new(&message).encode_wide().chain(Some(0)).collect();
         unsafe {
             MessageBoxW(
@@ -643,8 +756,7 @@ async fn export_pdf(
         target_os = "openbsd"
     ))]
     {
-        let url = url::Url::from_file_path(&path)
-            .map_err(|_| t(loc, "pdf.invalidPath"))?;
+        let url = url::Url::from_file_path(&path).map_err(|_| t(loc, "pdf.invalidPath"))?;
         let uri = url.as_str().to_string();
         let (result_tx, result_rx) = mpsc::channel::<Result<(), String>>();
         window
@@ -672,8 +784,7 @@ async fn export_pdf(
 
                 // `print()` is asynchronous: hold the operation until WebKitGTK
                 // emits `finished` or `failed`, then drop it to avoid cycles.
-                let keepalive =
-                    std::rc::Rc::new(std::cell::RefCell::new(Some(operation.clone())));
+                let keepalive = std::rc::Rc::new(std::cell::RefCell::new(Some(operation.clone())));
                 let keepalive_failed = std::rc::Rc::clone(&keepalive);
                 let keepalive_finished = std::rc::Rc::clone(&keepalive);
                 let failed_tx = result_tx.clone();
@@ -711,28 +822,6 @@ async fn export_pdf(
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn rejects_empty_and_directory_paths() {
-        assert!(normalize_path(Locale::En, Path::new("")).is_err());
-        assert!(normalize_path(Locale::En, Path::new(".")).is_err());
-    }
-
-    #[test]
-    fn atomic_write_replaces_content() {
-        let root = std::env::temp_dir().join(format!("meditor-test-{}", std::process::id()));
-        std::fs::create_dir_all(&root).unwrap();
-        let path = root.join("document.md");
-        write_atomic(Locale::En, &path, "one").unwrap();
-        write_atomic(Locale::En, &path, "two").unwrap();
-        assert_eq!(std::fs::read_to_string(&path).unwrap(), "two");
-        let _ = std::fs::remove_dir_all(root);
-    }
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -763,4 +852,67 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rejects_empty_and_directory_paths() {
+        assert!(normalize_path(Locale::En, Path::new("")).is_err());
+        assert!(normalize_path(Locale::En, Path::new(".")).is_err());
+    }
+
+    #[test]
+    fn detects_document_kinds_from_paths() {
+        assert_eq!(kind_from_path(Path::new("paper.typ")), DocumentKind::Typst);
+        assert_eq!(kind_from_path(Path::new("paper.tex")), DocumentKind::Latex);
+        assert_eq!(
+            kind_from_path(Path::new("paper.md")),
+            DocumentKind::Markdown
+        );
+    }
+
+    #[test]
+    fn atomic_write_replaces_content() {
+        let root = std::env::temp_dir().join(format!("meditor-test-{}", std::process::id()));
+        std::fs::create_dir_all(&root).unwrap();
+        let path = root.join("document.md");
+        write_atomic(Locale::En, &path, "one").unwrap();
+        write_atomic(Locale::En, &path, "two").unwrap();
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "two");
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn atomic_bytes_write_preserves_pdf_signature() {
+        let root = std::env::temp_dir().join(format!("meditor-pdf-test-{}", std::process::id()));
+        std::fs::create_dir_all(&root).unwrap();
+        let path = root.join("document.pdf");
+        write_atomic_bytes(Locale::En, &path, b"%PDF-1.7").unwrap();
+        assert_eq!(std::fs::read(&path).unwrap(), b"%PDF-1.7");
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn restores_a_handle_only_for_an_unchanged_file() {
+        let root =
+            std::env::temp_dir().join(format!("meditor-session-test-{}", std::process::id()));
+        std::fs::create_dir_all(&root).unwrap();
+        let path = root.join("document.md");
+        std::fs::write(&path, "same").unwrap();
+        let registry = DocumentRegistry(Mutex::new(HashMap::new()));
+
+        let (restored_path, handle) =
+            restore_session_path(Locale::En, &registry, path.to_str(), "same");
+        assert_eq!(restored_path, Some(path.to_string_lossy().into_owned()));
+        assert!(handle.is_some());
+
+        std::fs::write(&path, "changed").unwrap();
+        let (_, changed_handle) =
+            restore_session_path(Locale::En, &registry, path.to_str(), "same");
+        assert!(changed_handle.is_none());
+        let _ = std::fs::remove_dir_all(root);
+    }
 }

@@ -45,7 +45,7 @@
 
 ### Export & Distribution
 
-- **Export to PDF** vector (selectable text, vector KaTeX and Mermaid) via WebKitGTK printing, without system dialog. A4 format with 2.5 cm margins.
+- **Export to PDF** vector (selectable text, vector KaTeX and Mermaid) via WebKitGTK printing, without system dialog. A4 format with 2.5 cm margins on Linux. Typst and LaTeX export use their WASM engines on supported desktop targets.
 - Packaged as **AppImage**, **deb**, and **rpm** via `tauri build`.
 
 ## Tech Stack
@@ -88,21 +88,36 @@ pnpm tauri dev
 
 `pnpm tauri dev` starts Vite and the native window with hot reload.
 
+For reproducible LaTeX compilation, start the local TeX Live Ondemand service
+before launching the app:
+
+```bash
+docker compose -f docker-compose.texlive.yml up -d
+cp .env.example .env.local
+pnpm tauri dev
+```
+
+See [docs/texlive-ondemand.md](docs/texlive-ondemand.md) for endpoint checks
+and shutdown instructions. Without this service, the bundled LaTeX WASM still
+loads, but package resolution depends on the historical public endpoint.
+
 > To test only the frontend in the browser: `pnpm dev` (desktop features — open/save, PDF, and session — require the native app).
 
 ### Running Tests
 
 ```bash
 pnpm test:run          # Frontend unit tests (Vitest)
+pnpm test:coverage     # Unit tests + V8 coverage report in coverage/
 pnpm test:e2e          # E2E specs in real headless Chrome (see tests/e2e)
+pnpm test:e2e:latex    # Opt-in: full LaTeX E2E (requires Docker TeX Live)
 pnpm test:all          # Unit + E2E, one shot
-pnpm verify            # Full pipeline: eslint + tsc + unit + E2E + cargo check/test
+pnpm verify            # Lint, typecheck, audit, tests, E2E, fmt, Clippy and Rust tests
 cargo test -p meditor  # Backend tests (Rust) alone
 ```
 
 The **pre-commit hook** (husky) runs `pnpm verify` on every commit — nothing broken lands. Skip it in an emergency with `HUSKY=0 git commit ...`.
 
-E2E specs live in `tests/e2e/` and use a zero-dependency CDP driver (`cdp.mjs`) against a real headless Chrome: dialogs and the window close guard (with a faithful Tauri IPC shim), the high-contrast theme's WCAG ratios, and the keyboard shortcuts.
+E2E specs live in `tests/e2e/` and use a zero-dependency CDP driver (`cdp.mjs`) against a real headless Chrome: dialogs and the window close guard (with a faithful Tauri IPC shim), the high-contrast theme's WCAG ratios, and the keyboard shortcuts. CI additionally runs dependency auditing, lint, TypeScript, V8 coverage, Rust formatting and Clippy. The expensive full LaTeX + Docker verification is available as the manually triggered `LaTeX integration` GitHub Actions workflow, so ordinary pull requests do not download several GB of TeX Live.
 
 ## Build
 
@@ -154,6 +169,8 @@ meditor/
 │   ├── paged.css             # Document view styles (A4)
 │   ├── sample.ts             # Sample document
 │   ├── session.ts            # Session serialization types/helpers
+│   ├── documentUtils.ts      # Document kind detection/normalization
+│   ├── sanitizeSvg.ts        # SVG allowlist sanitization
 │   ├── types.ts              # Shared types
 │   ├── ErrorBoundary.tsx     # React error boundary
 │   ├── TypstPreview.tsx      # Typst WASM compiler + SVG preview

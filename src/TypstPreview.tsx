@@ -8,6 +8,7 @@ import {
 } from "react";
 import type { TranslationFn } from "./i18n/translations";
 import { getTypst } from "./typstEngine";
+import { sanitizeSvg } from "./sanitizeSvg";
 import "./Preview.css";
 
 /**
@@ -129,11 +130,13 @@ const TypstPreview = forwardRef<TypstPreviewHandle, Props>(
         const mySeq = seqRef.current;
         try {
           const result = await $typst.svg({ mainContent: value });
+          const safeSvg = sanitizeSvg(result);
+          if (!safeSvg) throw new Error("Typst produced invalid or unsafe SVG");
           if (cancelled || mySeq !== seqRef.current) return;
-          setSvg(result);
+          setSvg(safeSvg);
           setLoading(false);
           // Count <svg> elements to know how many pages were rendered
-          const count = (result.match(/<svg[\s>]/g) || []).length;
+          const count = (safeSvg.match(/<svg[\s>]/g) || []).length;
           setPageCount(count);
         } catch (e) {
           if (cancelled || mySeq !== seqRef.current) return;

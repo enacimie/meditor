@@ -1,0 +1,10 @@
+services:
+  texlive-ondemand:
+    build:
+      context: ./docker/texlive-ondemand
+      args:
+        TEXLIVE_ONDEMAND_REF: cc2146e220658f5ee0f8643355252ae0995fbc98
+    container_name: meditor-texlive-ondemand
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5000:5001"

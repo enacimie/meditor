@@ -188,7 +188,6 @@ export const bn = {
   "preview.typstCompiling": "Typst কম্পাইল হচ্ছে…",
   "preview.typstError": "Typst:",
   "preview.pages": "pages",
-  "preview.latexNotice": "LaTeX compilation coming soon — showing raw source.",
   "preview.latexCompiling": "Compiling LaTeX...",
   "preview.latexError": "LaTeX:",
   "preview.latexEmpty": "Empty LaTeX document.",

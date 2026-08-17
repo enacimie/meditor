@@ -268,9 +268,18 @@ mod tests {
 
     #[test]
     fn formats_arguments() {
-        assert_eq!(tf(Locale::En, "file.tooLarge", "64"), "File exceeds the 64 MiB limit");
-        assert_eq!(tf(Locale::Es, "file.tooLarge", "64"), "El archivo supera el límite de 64 MiB");
-        assert_eq!(tf(Locale::Fr, "file.tooLarge", "64"), "Le fichier dépasse la limite de 64 Mio");
+        assert_eq!(
+            tf(Locale::En, "file.tooLarge", "64"),
+            "File exceeds the 64 MiB limit"
+        );
+        assert_eq!(
+            tf(Locale::Es, "file.tooLarge", "64"),
+            "El archivo supera el límite de 64 MiB"
+        );
+        assert_eq!(
+            tf(Locale::Fr, "file.tooLarge", "64"),
+            "Le fichier dépasse la limite de 64 Mio"
+        );
     }
 
     #[test]
@@ -308,8 +317,25 @@ mod tests {
 
     #[test]
     fn all_pdf_keys_translate() {
-        for key in ["pdf.notSupported","pdf.invalidPath","pdf.directoryMissing","pdf.timeout","pdf.emptyFile","pdf.invalidPdf"] {
-            for locale in [Locale::En, Locale::Es, Locale::Fr, Locale::Ps, Locale::Sd, Locale::Zgh, Locale::Kab, Locale::Shi, Locale::Rif] {
+        for key in [
+            "pdf.notSupported",
+            "pdf.invalidPath",
+            "pdf.directoryMissing",
+            "pdf.timeout",
+            "pdf.emptyFile",
+            "pdf.invalidPdf",
+        ] {
+            for locale in [
+                Locale::En,
+                Locale::Es,
+                Locale::Fr,
+                Locale::Ps,
+                Locale::Sd,
+                Locale::Zgh,
+                Locale::Kab,
+                Locale::Shi,
+                Locale::Rif,
+            ] {
                 let result = t(locale, key);
                 assert!(!result.is_empty());
                 assert_ne!(result, key);
@@ -319,8 +345,30 @@ mod tests {
 
     #[test]
     fn all_file_keys_translate() {
-        for key in ["file.emptyPath","file.isDirectory","file.noParent","file.noFileName","file.notFound","file.documentUnavailable","file.directoryMissing","file.registryLock","file.sessionUnavailable","file.sessionTooLarge","file.docTooLarge"] {
-            for locale in [Locale::En, Locale::Es, Locale::Fr, Locale::Ps, Locale::Sd, Locale::Zgh, Locale::Kab, Locale::Shi, Locale::Rif] {
+        for key in [
+            "file.emptyPath",
+            "file.isDirectory",
+            "file.noParent",
+            "file.noFileName",
+            "file.notFound",
+            "file.documentUnavailable",
+            "file.directoryMissing",
+            "file.registryLock",
+            "file.sessionUnavailable",
+            "file.sessionTooLarge",
+            "file.docTooLarge",
+        ] {
+            for locale in [
+                Locale::En,
+                Locale::Es,
+                Locale::Fr,
+                Locale::Ps,
+                Locale::Sd,
+                Locale::Zgh,
+                Locale::Kab,
+                Locale::Shi,
+                Locale::Rif,
+            ] {
                 let result = t(locale, key);
                 assert!(!result.is_empty());
                 assert_ne!(result, key);

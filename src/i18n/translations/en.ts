@@ -102,7 +102,7 @@ export const en = {
   "preview.typstCompiling": "Compiling Typst...",
   "preview.typstError": "Typst:",
   "preview.pages": "pages",
-  "preview.latexNotice": "LaTeX compilation coming soon — showing raw source.",
+  "preview.latexNotice": "LaTeX preview needs TeX Live packages from the configured endpoint.",
   "preview.latexCompiling": "Compiling LaTeX...",
   "preview.latexError": "LaTeX:",
   "preview.latexEmpty": "Empty LaTeX document.",

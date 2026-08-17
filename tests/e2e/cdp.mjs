@@ -243,12 +243,12 @@ export class CdpSession {
   }
 
   /** Evaluate a JS expression in the page and return its value. */
-  async evaluate(expression) {
+  async evaluate(expression, timeoutMs = SEND_TIMEOUT_MS) {
     const res = await this.send("Runtime.evaluate", {
       expression,
       returnByValue: true,
       awaitPromise: true,
-    });
+    }, timeoutMs);
     if (res.result?.exceptionDetails) {
       const detail = res.result.exceptionDetails;
       throw new Error(

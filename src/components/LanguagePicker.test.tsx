@@ -122,48 +122,68 @@ describe("LanguagePicker", () => {
   // ── Keyboard navigation ─────────────────────────────────────────
 
   describe("keyboard navigation", () => {
-    it("ArrowDown focuses the first option when nothing is focused", () => {
+    it("exposes combobox semantics and keeps focus on the input", () => {
       renderPicker();
-      const input = screen.getByLabelText("Search language");
+      const input = screen.getByRole("combobox");
+      const list = screen.getByRole("listbox");
+      expect(input.getAttribute("aria-controls")).toBe(list.id);
+      expect(input.getAttribute("aria-expanded")).toBe("true");
+      expect(input.getAttribute("aria-autocomplete")).toBe("list");
+      expect(input.getAttribute("aria-activedescendant")).toBeTruthy();
+    });
+
+    it("ArrowDown activates the first option without moving focus", () => {
+      renderPicker();
+      const input = screen.getByRole("combobox");
       fireEvent.keyDown(input, { key: "ArrowDown" });
       const options = screen.getAllByRole("option");
-      expect(options[0]).toBe(document.activeElement);
+      expect(input).toBe(document.activeElement);
+      expect(input.getAttribute("aria-activedescendant")).toBe(options[1].id);
     });
 
     it("ArrowDown cycles through options", () => {
       renderPicker();
-      const input = screen.getByLabelText("Search language");
-      // First arrow down → first option
+      const input = screen.getByRole("combobox");
+      // First arrow down advances from the first active option.
       fireEvent.keyDown(input, { key: "ArrowDown" });
       const options = screen.getAllByRole("option");
-      expect(options[0]).toBe(document.activeElement);
-      // Second → second option
+      expect(input).toBe(document.activeElement);
+      expect(input.getAttribute("aria-activedescendant")).toBe(options[1].id);
+      // Second → third option
       fireEvent.keyDown(input, { key: "ArrowDown" });
-      expect(options[1]).toBe(document.activeElement);
+      expect(input.getAttribute("aria-activedescendant")).toBe(options[2].id);
     });
 
-    it("ArrowUp moves focus into the list from the search input", () => {
+    it("ArrowUp wraps the active descendant while keeping focus in the combobox", () => {
       renderPicker();
-      const input = screen.getByLabelText("Search language");
-      // Tab to blur the input so handleKeyDown uses the list
+      const input = screen.getByRole("combobox");
+      const options = screen.getAllByRole("option");
       fireEvent.keyDown(input, { key: "ArrowUp" });
-      // Focus should now be on one of the option buttons (not the input)
-      const focused = document.activeElement;
-      expect(focused?.getAttribute("role")).toBe("option");
+      expect(document.activeElement).toBe(input);
+      expect(input.getAttribute("aria-activedescendant")).toBe(options[options.length - 1].id);
     });
 
     it("ArrowDown wraps from last to first", () => {
       renderPicker();
-      const input = screen.getByLabelText("Search language");
+      const input = screen.getByRole("combobox");
       const options = screen.getAllByRole("option");
       const lastIdx = options.length - 1;
-      // Navigate to first, then go up to wrap to last, then down to wrap to first
+      // Navigate forward, back, then forward again.
       fireEvent.keyDown(input, { key: "ArrowDown" });
-      expect(options[0]).toBe(document.activeElement);
+      expect(input.getAttribute("aria-activedescendant")).toBe(options[1].id);
       fireEvent.keyDown(input, { key: "ArrowUp" });
-      expect(options[lastIdx]).toBe(document.activeElement);
-      fireEvent.keyDown(input, { key: "ArrowDown" });
-      expect(options[0]).toBe(document.activeElement);
+      expect(input.getAttribute("aria-activedescendant")).toBe(options[0].id);
+      fireEvent.keyDown(input, { key: "ArrowUp" });
+      expect(input.getAttribute("aria-activedescendant")).toBe(options[lastIdx].id);
+    });
+
+    it("Enter selects the active filtered language", () => {
+      const onSelect = vi.fn();
+      renderPicker("en", onSelect);
+      const input = screen.getByRole("combobox");
+      fireEvent.change(input, { target: { value: "German" } });
+      fireEvent.keyDown(input, { key: "Enter" });
+      expect(onSelect).toHaveBeenCalledWith("de");
     });
 
     it("Escape calls onSelect with current language (close without change)", () => {
@@ -175,14 +195,15 @@ describe("LanguagePicker", () => {
       expect(onSelect).toHaveBeenCalledTimes(1);
     });
 
-    it("Arrow keys only affect the listbox options, not other buttons", () => {
+    it("Arrow keys stay inside the combobox instead of moving menu focus", () => {
       renderPicker();
-      const input = screen.getByLabelText("Search language");
+      const input = screen.getByRole("combobox");
       // Navigate down twice
       fireEvent.keyDown(input, { key: "ArrowDown" });
       fireEvent.keyDown(input, { key: "ArrowDown" });
       const options = screen.getAllByRole("option");
-      expect(options[1]).toBe(document.activeElement);
+      expect(input).toBe(document.activeElement);
+      expect(input.getAttribute("aria-activedescendant")).toBe(options[2].id);
     });
   });
 
