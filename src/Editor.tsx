@@ -105,7 +105,19 @@ function applyLatexLang(
 }
 
 /** Theme fragment carrying only the user-configurable typography. */
+const fontThemeCache = new Map<string, Extension>();
+
+/**
+ * Theme fragment carrying only the user-configurable typography.
+ *
+ * Memoised because EditorView.theme() mints a fresh StyleModule on every
+ * call and CodeMirror mounts them cumulatively without ever unmounting: a
+ * single drag of the size slider would otherwise leave one dead rule per step.
+ */
 function fontTheme(fontSize: number, fontFamily: string): Extension {
+  const key = fontSize + "|" + fontFamily;
+  const cached = fontThemeCache.get(key);
+  if (cached) return cached;
   return EditorView.theme({
     "&": { fontSize: `${fontSize}px` },
     ".cm-scroller": { fontFamily: fontStackFor(fontFamily) },
@@ -189,6 +201,10 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   // always uses what the user has now, not what a stale closure captured.
   const wrapRef = useRef(wrap);
   wrapRef.current = wrap;
+  const fontSizeRef = useRef(fontSize);
+  fontSizeRef.current = fontSize;
+  const fontFamilyRef = useRef(fontFamily);
+  fontFamilyRef.current = fontFamily;
   const zenModeRef = useRef(zenMode);
   zenModeRef.current = zenMode;
   const zenPlaceholderRef = useRef(zenPlaceholder);
@@ -214,6 +230,9 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
           zenModeRef.current && zenPlaceholderRef.current
             ? placeholder(zenPlaceholderRef.current)
             : [],
+        ),
+        fontCompartment.current.reconfigure(
+          fontTheme(fontSizeRef.current, fontFamilyRef.current),
         ),
         languageCompartment.current.reconfigure(languageExtRef.current),
       ],

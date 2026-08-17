@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, cleanup, fireEvent, waitFor } from "@testing-library/react";
 import PreferencesDialog from "./PreferencesDialog";
 import {
+  EDITOR_FONT_FAMILIES,
   DEFAULT_EDITOR_FONT_FAMILY,
   DEFAULT_EDITOR_FONT_SIZE,
   clampFontSize,
@@ -92,6 +93,47 @@ describe("PreferencesDialog", () => {
     await waitFor(() => expect(onClose).toHaveBeenCalled());
   });
 
+  it("keeps Tab inside the dialog", () => {
+    render(<PreferencesDialog t={t} value={value} onChange={vi.fn()} onClose={vi.fn()} />);
+    const panel = document.querySelector(".prefs-panel")!;
+    const focusables = [...panel.querySelectorAll<HTMLElement>("button, input, select")];
+    expect(focusables.length).toBeGreaterThan(2);
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+
+    // Tab on the last control wraps to the first.
+    last.focus();
+    fireEvent.keyDown(document.querySelector(".prefs-overlay")!, { key: "Tab" });
+    expect(document.activeElement).toBe(first);
+
+    // Shift+Tab on the first wraps to the last.
+    first.focus();
+    fireEvent.keyDown(document.querySelector(".prefs-overlay")!, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(last);
+  });
+
+  it("keeps Tab inside the dialog", () => {
+    // The focus trap is the most intricate part of the component and had no
+    // coverage at all.
+    render(<PreferencesDialog t={t} value={value} onChange={vi.fn()} onClose={vi.fn()} />);
+    const panel = document.querySelector(".prefs-panel")!;
+    const overlay = document.querySelector(".prefs-overlay")!;
+    const focusables = [...panel.querySelectorAll<HTMLElement>("button, input, select")];
+    expect(focusables.length).toBeGreaterThan(2);
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+
+    // Tab on the last control wraps round to the first.
+    last.focus();
+    fireEvent.keyDown(overlay, { key: "Tab" });
+    expect(document.activeElement).toBe(first);
+
+    // Shift+Tab on the first wraps round to the last.
+    first.focus();
+    fireEvent.keyDown(overlay, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(last);
+  });
+
   it("closes when clicking the backdrop but not the panel", async () => {
     const onClose = vi.fn();
     render(<PreferencesDialog t={t} value={value} onChange={vi.fn()} onClose={onClose} />);
@@ -121,8 +163,15 @@ describe("editorPreferences", () => {
   });
 
   it("resolves a font stack for every offered family", () => {
-    expect(fontStackFor("system")).toContain("monospace");
-    expect(fontStackFor("serif")).toContain("Georgia");
-    expect(fontStackFor("nonexistent")).toContain("monospace");
+    for (const font of EDITOR_FONT_FAMILIES) {
+      expect(fontStackFor(font.id)).toBe(font.stack);
+    }
+  });
+
+  it("falls back to the first family for anything unknown", () => {
+    // Compared against the actual stack, not just "monospace": that word
+    // appears in five of the six stacks, so matching it proved nothing.
+    expect(fontStackFor("nonexistent")).toBe(EDITOR_FONT_FAMILIES[0].stack);
+    expect(fontStackFor("")).toBe(EDITOR_FONT_FAMILIES[0].stack);
   });
 });
