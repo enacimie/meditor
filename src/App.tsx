@@ -864,10 +864,13 @@ export default function App() {
         return;
       }
       if (confirmRequest || renameRequest || shortcutsOpen) return;
+      if (preferencesOpen || aboutOpen) return;
       editorRef.current?.focusSearch();
     },
     openPreferences: () => {
       if (!ready || confirmRequest || renameRequest) return;
+      // Two aria-modal dialogs at once would trap focus in the wrong one.
+      if (shortcutsOpen || aboutOpen) return;
       setPreferencesOpen(true);
     },
     nextTab: () => cycleTab(1),
