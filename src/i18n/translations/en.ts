@@ -140,6 +140,7 @@ export const en = {
   "menu.saveAs": "Save as",
   "menu.exportPdf": "Export PDF",
   "menu.exportHtml": "Export HTML",
+  "menu.about": "About meditor",
   "menu.newTab": "New tab",
   "menu.closeAll": "Close all tabs",
   "menu.closeOthers": "Close other tabs",
@@ -197,6 +198,13 @@ export const en = {
   "lang.searchAria": "Search language",
   "lang.clearSearch": "Clear search",
   "lang.noResults": "No languages found",
+  // About dialog
+  "about.title": "About meditor",
+  "about.tagline": "A local-first Markdown, Typst and LaTeX editor for the desktop.",
+  "about.version": (v: string) => `Version ${v}`,
+  "about.license": "License",
+  "about.source": "Source code",
+  "about.close": "Close",
   // Misc
   "misc.title": "meditor",
 };

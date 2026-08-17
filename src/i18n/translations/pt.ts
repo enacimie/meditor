@@ -199,4 +199,11 @@ export const pt = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Sobre o meditor",
+  "about.title": "Sobre o meditor",
+  "about.tagline": "Um editor local de Markdown, Typst e LaTeX para a área de trabalho.",
+  "about.version": (v: string) => `Versão ${v}`,
+  "about.license": "Licença",
+  "about.source": "Código-fonte",
+  "about.close": "Fechar",
 };

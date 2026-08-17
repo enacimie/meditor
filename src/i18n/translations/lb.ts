@@ -170,4 +170,11 @@ export const lb = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Iwwer meditor",
+  "about.title": "Iwwer meditor",
+  "about.tagline": "E lokalen Markdown-, Typst- a LaTeX-Editeur fir den Desktop.",
+  "about.version": (v: string) => `Versioun ${v}`,
+  "about.license": "Lizenz",
+  "about.source": "Quellcode",
+  "about.close": "Zoumaachen",
 };

@@ -174,4 +174,11 @@ export const nl = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Over meditor",
+  "about.title": "Over meditor",
+  "about.tagline": "Een lokaal werkende Markdown-, Typst- en LaTeX-editor voor de desktop.",
+  "about.version": (v: string) => `Versie ${v}`,
+  "about.license": "Licentie",
+  "about.source": "Broncode",
+  "about.close": "Sluiten",
 };

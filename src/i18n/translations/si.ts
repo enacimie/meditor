@@ -193,4 +193,11 @@ export const si = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "meditor පිළිබඳ",
+  "about.title": "meditor පිළිබඳ",
+  "about.tagline": "desktop සඳහා දේශීය-ප්‍රථම Markdown, Typst සහ LaTeX සංස්කාරකය.",
+  "about.version": (v: string) => `අනුවාදය ${v}`,
+  "about.license": "බලපත්‍රය",
+  "about.source": "මූල කේතය",
+  "about.close": "වසන්න",
 };

@@ -170,4 +170,11 @@ export const ga = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Maidir le meditor",
+  "about.title": "Maidir le meditor",
+  "about.tagline": "Eagarthóir Markdown, Typst agus LaTeX áitiúil-tosaigh don deasc.",
+  "about.version": (v: string) => `Leagan ${v}`,
+  "about.license": "Ceadúnas",
+  "about.source": "Cód foinseach",
+  "about.close": "Dún",
 };

@@ -170,4 +170,11 @@ export const fi = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Tietoja meditor",
+  "about.title": "Tietoja meditor",
+  "about.tagline": "Paikallinen Markdown-, Typst- ja LaTeX-editori työpöydälle.",
+  "about.version": (v: string) => `Versio ${v}`,
+  "about.license": "Lisenssi",
+  "about.source": "Lähdekoodi",
+  "about.close": "Sulje",
 };

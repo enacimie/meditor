@@ -169,4 +169,11 @@ export const uk = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Про meditor",
+  "about.title": "Про meditor",
+  "about.tagline": "Локальний редактор Markdown, Typst і LaTeX для робочого столу.",
+  "about.version": (v: string) => `Версія ${v}`,
+  "about.license": "Ліцензія",
+  "about.source": "Вихідний код",
+  "about.close": "Закрити",
 };

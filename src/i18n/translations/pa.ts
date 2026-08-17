@@ -169,4 +169,11 @@ export const pa = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "meditor ਬਾਰੇ",
+  "about.title": "meditor ਬਾਰੇ",
+  "about.tagline": "ਡੈਸਕਟਾਪ ਲਈ ਸਥਾਨਕ-ਪਹਿਲਾਂ Markdown, Typst ਅਤੇ LaTeX ਸੰਪਾਦਕ।",
+  "about.version": (v: string) => `ਵਰਜਨ ${v}`,
+  "about.license": "ਲਾਇਸੰਸ",
+  "about.source": "ਸਰੋਤ ਕੋਡ",
+  "about.close": "ਬੰਦ ਕਰੋ",
 };

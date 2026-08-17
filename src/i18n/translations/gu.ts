@@ -169,4 +169,11 @@ export const gu = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "meditor વિશે",
+  "about.title": "meditor વિશે",
+  "about.tagline": "ડેસ્કટોપ માટે સ્થાનિક-પ્રથમ Markdown, Typst અને LaTeX એડિટર.",
+  "about.version": (v: string) => `આવૃત્તિ ${v}`,
+  "about.license": "લાઇસન્સ",
+  "about.source": "સ્રોત કોડ",
+  "about.close": "બંધ કરો",
 };

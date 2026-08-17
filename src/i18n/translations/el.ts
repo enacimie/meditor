@@ -170,4 +170,11 @@ export const el = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Σχετικά με το meditor",
+  "about.title": "Σχετικά με το meditor",
+  "about.tagline": "Ένας τοπικός επεξεργαστής Markdown, Typst και LaTeX για την επιφάνεια εργασίας.",
+  "about.version": (v: string) => `Έκδοση ${v}`,
+  "about.license": "Άδεια",
+  "about.source": "Πηγαίος κώδικας",
+  "about.close": "Κλείσιμο",
 };

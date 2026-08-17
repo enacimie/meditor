@@ -23,6 +23,7 @@ import StatusBar from "./components/StatusBar";
 import ConfirmDialog from "./components/ConfirmDialog";
 import RenameDialog from "./components/RenameDialog";
 import ShortcutsOverlay from "./components/ShortcutsOverlay";
+import AboutDialog from "./components/AboutDialog";
 import Outline from "./components/Outline";
 import { parseHeadings, type Heading } from "./components/outlineUtils";
 import { useTranslation } from "./i18n/I18nProvider";
@@ -207,6 +208,7 @@ export default function App() {
   } | null>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [outlineOpen, setOutlineOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const [cursorLine, setCursorLine] = useState(0);
 
   // Extracted hooks
@@ -539,6 +541,16 @@ export default function App() {
     setZenMode((z) => !z);
   }, []);
 
+  /** Move `step` tabs from the active one, wrapping around like the tab bar. */
+  const cycleTab = useCallback((step: number) => {
+    const list = docsRef.current;
+    if (list.length < 2) return;
+    const current = list.findIndex((d) => d.id === activeIdRef.current);
+    if (current === -1) return;
+    const next = (current + step + list.length) % list.length;
+    setActiveId(list[next].id);
+  }, []);
+
   // In-window confirmation (replaces the native GTK/system dialog). Stable
   // identity so the once-registered close guard can reference it safely.
   const confirmDialog = useCallback((message: string): Promise<boolean> => {
@@ -864,6 +876,8 @@ export default function App() {
       if (confirmRequest || renameRequest || shortcutsOpen) return;
       editorRef.current?.focusSearch();
     },
+    nextTab: () => cycleTab(1),
+    prevTab: () => cycleTab(-1),
     exitZen: () => {
       if (zenMode) setZenMode(false);
     },
@@ -907,6 +921,7 @@ export default function App() {
         onExportHtml={active?.kind === "markdown" ? exportHtml : undefined}
         onCloseAll={closeAllTabs}
         onCloseOthers={closeOtherTabs}
+        onAbout={() => setAboutOpen(true)}
       />
       {zenMode && (
         <button
@@ -1018,6 +1033,8 @@ export default function App() {
               content={active?.content ?? ""}
               onChange={updateContent}
               wrap={wrap}
+              zenMode={zenMode}
+              zenPlaceholder={t("zen.placeholder")}
               kind={active?.kind ?? "markdown"}
               onCursorLineChange={setCursorLine}
             />
@@ -1136,6 +1153,7 @@ export default function App() {
         />
       )}
       {shortcutsOpen && <ShortcutsOverlay t={t} onClose={() => setShortcutsOpen(false)} />}
+      {aboutOpen && <AboutDialog t={t} onClose={() => setAboutOpen(false)} />}
     </div>
   );
 }

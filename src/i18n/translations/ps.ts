@@ -170,4 +170,11 @@ export const ps = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "د meditor په اړه",
+  "about.title": "د meditor په اړه",
+  "about.tagline": "د ډیسټاپ لپاره محلي Markdown، Typst او LaTeX ایډیټر.",
+  "about.version": (v: string) => `بڼه ${v}`,
+  "about.license": "جواز",
+  "about.source": "سرچینه کوډ",
+  "about.close": "تړل",
 };

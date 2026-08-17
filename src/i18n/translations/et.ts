@@ -170,4 +170,11 @@ export const et = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Teave meditor",
+  "about.title": "Teave meditor",
+  "about.tagline": "Kohalik Markdown-, Typst- ja LaTeX-redaktor töölauale.",
+  "about.version": (v: string) => `Versioon ${v}`,
+  "about.license": "Litsents",
+  "about.source": "Lähtekood",
+  "about.close": "Sulge",
 };

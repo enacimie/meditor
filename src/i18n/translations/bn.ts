@@ -194,4 +194,11 @@ export const bn = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "meditor সম্পর্কে",
+  "about.title": "meditor সম্পর্কে",
+  "about.tagline": "ডেস্কটপের জন্য একটি লোকাল-ফার্স্ট Markdown, Typst এবং LaTeX এডিটর।",
+  "about.version": (v: string) => `সংস্করণ ${v}`,
+  "about.license": "লাইসেন্স",
+  "about.source": "সোর্স কোড",
+  "about.close": "বন্ধ করুন",
 };

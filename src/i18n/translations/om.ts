@@ -170,4 +170,11 @@ export const om = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Waa'ee meditor",
+  "about.title": "Waa'ee meditor",
+  "about.tagline": "Gulaalaa Markdown, Typst fi LaTeX naannoo kan desktop.",
+  "about.version": (v: string) => `Fooyya'aa ${v}`,
+  "about.license": "Hayyama",
+  "about.source": "Koodii madda",
+  "about.close": "Cufi",
 };

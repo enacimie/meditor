@@ -169,4 +169,11 @@ export const am = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "ስለ meditor",
+  "about.title": "ስለ meditor",
+  "about.tagline": "ለዴስክቶፕ የሚሆን በአካባቢው የተመሠረተ የMarkdown፣ Typst እና LaTeX አርታዒ።",
+  "about.version": (v: string) => `ስሪት ${v}`,
+  "about.license": "ፈቃድ",
+  "about.source": "የምንጭ ኮድ",
+  "about.close": "ዝጋ",
 };

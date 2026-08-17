@@ -46,6 +46,7 @@
 ### Export & Distribution
 
 - **Export to PDF** vector (selectable text, vector KaTeX and Mermaid) via WebKitGTK printing, without system dialog. A4 format with 2.5 cm margins on Linux. Typst and LaTeX export use their WASM engines on supported desktop targets.
+- **Export to HTML**: a single self-contained file (styles embedded, Mermaid diagrams as inline SVG, KaTeX already expanded) that opens in any browser with no network access. Markdown documents only.
 - Packaged as **AppImage**, **deb**, and **rpm** via `tauri build`.
 
 ## Tech Stack

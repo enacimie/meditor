@@ -169,4 +169,11 @@ export const th = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "เกี่ยวกับ meditor",
+  "about.title": "เกี่ยวกับ meditor",
+  "about.tagline": "ตัวแก้ไข Markdown, Typst และ LaTeX แบบโลคอลสำหรับเดสก์ท็อป",
+  "about.version": (v: string) => `เวอร์ชัน ${v}`,
+  "about.license": "ใบอนุญาต",
+  "about.source": "ซอร์สโค้ด",
+  "about.close": "ปิด",
 };

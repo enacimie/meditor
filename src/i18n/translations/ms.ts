@@ -169,4 +169,11 @@ export const ms = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Perihal meditor",
+  "about.title": "Perihal meditor",
+  "about.tagline": "Penyunting Markdown, Typst dan LaTeX setempat-pertama untuk desktop.",
+  "about.version": (v: string) => `Versi ${v}`,
+  "about.license": "Lesen",
+  "about.source": "Kod sumber",
+  "about.close": "Tutup",
 };

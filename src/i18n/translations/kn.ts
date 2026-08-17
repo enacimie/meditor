@@ -169,4 +169,11 @@ export const kn = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "meditor ಬಗ್ಗೆ",
+  "about.title": "meditor ಬಗ್ಗೆ",
+  "about.tagline": "ಡೆಸ್ಕ್‌ಟಾಪ್‌ಗಾಗಿ ಸ್ಥಳೀಯ-ಮೊದಲ Markdown, Typst ಮತ್ತು LaTeX ಎಡಿಟರ್.",
+  "about.version": (v: string) => `ಆವೃತ್ತಿ ${v}`,
+  "about.license": "ಪರವಾನಗಿ",
+  "about.source": "ಮೂಲ ಕೋಡ್",
+  "about.close": "ಮುಚ್ಚಿ",
 };

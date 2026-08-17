@@ -169,4 +169,11 @@ export const vi = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Giới thiệu meditor",
+  "about.title": "Giới thiệu meditor",
+  "about.tagline": "Trình soạn thảo Markdown, Typst và LaTeX cục bộ cho máy tính.",
+  "about.version": (v: string) => `Phiên bản ${v}`,
+  "about.license": "Giấy phép",
+  "about.source": "Mã nguồn",
+  "about.close": "Đóng",
 };

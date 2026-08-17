@@ -170,4 +170,11 @@ export const lv = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Par meditor",
+  "about.title": "Par meditor",
+  "about.tagline": "Lokāls Markdown, Typst un LaTeX redaktors darbvirsmai.",
+  "about.version": (v: string) => `Versija ${v}`,
+  "about.license": "Licence",
+  "about.source": "Pirmkods",
+  "about.close": "Aizvērt",
 };

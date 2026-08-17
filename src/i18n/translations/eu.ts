@@ -170,4 +170,11 @@ export const eu = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "meditor-i buruz",
+  "about.title": "meditor-i buruz",
+  "about.tagline": "Mahaigainerako Markdown, Typst eta LaTeX editore lokal bat.",
+  "about.version": (v: string) => `Bertsioa ${v}`,
+  "about.license": "Lizentzia",
+  "about.source": "Iturburu-kodea",
+  "about.close": "Itxi",
 };

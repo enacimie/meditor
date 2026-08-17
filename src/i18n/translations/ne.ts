@@ -193,4 +193,11 @@ export const ne = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "meditor को बारेमा",
+  "about.title": "meditor को बारेमा",
+  "about.tagline": "डेस्कटपका लागि स्थानीय-पहिलो Markdown, Typst र LaTeX सम्पादक।",
+  "about.version": (v: string) => `संस्करण ${v}`,
+  "about.license": "इजाजतपत्र",
+  "about.source": "स्रोत कोड",
+  "about.close": "बन्द गर्नुहोस्",
 };
