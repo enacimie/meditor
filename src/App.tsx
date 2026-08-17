@@ -23,6 +23,7 @@ import StatusBar from "./components/StatusBar";
 import ConfirmDialog from "./components/ConfirmDialog";
 import RenameDialog from "./components/RenameDialog";
 import ShortcutsOverlay from "./components/ShortcutsOverlay";
+import AboutDialog from "./components/AboutDialog";
 import Outline from "./components/Outline";
 import { parseHeadings, type Heading } from "./components/outlineUtils";
 import { useTranslation } from "./i18n/I18nProvider";
@@ -202,6 +203,7 @@ export default function App() {
   } | null>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [outlineOpen, setOutlineOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const [cursorLine, setCursorLine] = useState(0);
 
   // Extracted hooks
@@ -872,6 +874,7 @@ export default function App() {
         onExportPdf={exportPdf}
         onCloseAll={closeAllTabs}
         onCloseOthers={closeOtherTabs}
+        onAbout={() => setAboutOpen(true)}
       />
       {zenMode && (
         <button
@@ -1101,6 +1104,7 @@ export default function App() {
         />
       )}
       {shortcutsOpen && <ShortcutsOverlay t={t} onClose={() => setShortcutsOpen(false)} />}
+      {aboutOpen && <AboutDialog t={t} onClose={() => setAboutOpen(false)} />}
     </div>
   );
 }
