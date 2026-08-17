@@ -28,6 +28,7 @@ const PreferencesDialog = lazy(() => import("./components/PreferencesDialog"));
 import Outline from "./components/Outline";
 import { parseHeadings, type Heading } from "./components/outlineUtils";
 import { useTranslation } from "./i18n/I18nProvider";
+import { isRtl } from "./i18n/translations";
 import { useThemeEffect } from "./hooks/useThemeEffect";
 import { useSplitDivider } from "./hooks/useSplitDivider";
 import { useNotice } from "./hooks/useNotice";
@@ -49,7 +50,7 @@ import { getTypst } from "./typstEngine";
 import { compileLatexToPdf } from "./latexEngine";
 import "./App.css";
 
-type FileOperation = "open" | "save" | "saveAs" | "export";
+type FileOperation = "open" | "save" | "saveAs" | "export" | "exportHtml";
 
 // Editor/preview preferences. The interface language is NOT part of this
 // object: I18nProvider owns it (meditor.language.v1, with all 20 languages
@@ -129,24 +130,28 @@ function operationNotice(t: ReturnType<typeof useTranslation>["t"], op: FileOper
   if (op === "open") return t("op.opening");
   if (op === "save") return t("op.saving");
   if (op === "saveAs") return t("op.savingAs");
+  if (op === "exportHtml") return t("op.exportingHtml");
   return t("op.exporting");
 }
 
 function operationNoticeDone(t: ReturnType<typeof useTranslation>["t"], op: FileOperation): string {
   if (op === "open") return t("op.opened");
   if (op === "export") return t("op.pdfExported");
+  if (op === "exportHtml") return t("op.htmlExported");
   return t("op.saved");
 }
 
 function operationNoticeError(t: ReturnType<typeof useTranslation>["t"], op: FileOperation): string {
   if (op === "open") return t("op.openError");
   if (op === "export") return t("op.exportError");
+  if (op === "exportHtml") return t("op.exportHtmlError");
   return t("op.saveError");
 }
 
 function operationErrorPrefix(t: ReturnType<typeof useTranslation>["t"], op: FileOperation): string {
   if (op === "open") return t("op.openErrorPrefix");
   if (op === "export") return t("op.exportErrorPrefix");
+  if (op === "exportHtml") return t("op.exportHtmlErrorPrefix");
   return t("op.saveErrorPrefix");
 }
 
@@ -748,6 +753,37 @@ export default function App() {
     }
   }
 
+  async function exportHtml() {
+    // Markdown only: Typst and LaTeX render through their own engines, which
+    // produce PDF rather than the HTML the preview builds.
+    if (!active || active.kind !== "markdown" || !isTauri()) return;
+    if (!beginOperation("exportHtml")) return;
+    try {
+      const base =
+        active.name.replace(/\.(md|markdown|txt)$/i, "") || t("doc.defaultExport");
+      const { exportMarkdownToHtml } = await import("./exportHtml");
+      const html = await exportMarkdownToHtml(active.content, {
+        fileName: base,
+        lang,
+        rtl: isRtl(lang),
+        t,
+      });
+      const saved = await invoke<boolean>("write_html_file", {
+        html,
+        defaultName: `${base}.html`,
+        locale: lang,
+      });
+      // Cancelling the save dialog is not a failure, but it is not a success
+      // either: announcing "HTML exported" with no file is worse than silence.
+      if (saved) showNotice(operationNoticeDone(t, "exportHtml"), "success");
+    } catch (e) {
+      showNotice(operationNoticeError(t, "exportHtml"), "error", 0);
+      await showNativeAlert(operationErrorPrefix(t, "exportHtml") + String(e), lang);
+    } finally {
+      endOperation("exportHtml");
+    }
+  }
+
   async function closeTab(id: string) {
     if (isOperationBusy(busyOperationRef)) return;
     const initial = docsRef.current.find((d) => d.id === id);
@@ -915,6 +951,7 @@ export default function App() {
         onSave={save}
         onSaveAs={saveAs}
         onExportPdf={exportPdf}
+        onExportHtml={active?.kind === "markdown" ? exportHtml : undefined}
         onCloseAll={closeAllTabs}
         onCloseOthers={closeOtherTabs}
         onAbout={() => setAboutOpen(true)}

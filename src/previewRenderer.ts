@@ -81,6 +81,9 @@ async function getMarkdownRenderer() {
  * Render markdown content into an HTML element, processing Mermaid diagrams
  * via Web Workers (with main-thread fallback).
  */
+/** Shared across every consumer, because the Mermaid pool is a singleton. */
+let nextRenderId = 0;
+
 export async function renderContent(
   el: HTMLElement,
   value: string,
@@ -117,7 +120,12 @@ export async function renderContent(
     const pre = code.parentElement;
     if (!pre) continue;
     const src = code.textContent ?? "";
-    const renderId = seqRef.current++;
+    // Module-wide counter: the ids index the shared Mermaid worker pool, so a
+    // preview render and an export running at the same time must not hand out
+    // the same one — a collision resolves a diagram with somebody else's SVG.
+    // seqRef is still advanced so callers keep their own render count.
+    seqRef.current++;
+    const renderId = nextRenderId++;
     const id = `mmd-${renderId}`;
     const line = pre.getAttribute("data-line");
 

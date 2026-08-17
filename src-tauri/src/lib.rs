@@ -624,6 +624,45 @@ fn write_pdf_bytes(
     write_atomic_bytes(loc, &path, &pdf_bytes)
 }
 
+/// Save a self-contained HTML export produced by the frontend.
+///
+/// Returns whether a file was written: cancelling the dialog is a normal
+/// outcome, not an error, and the caller must not claim success for it.
+#[tauri::command]
+fn write_html_file(
+    app: tauri::AppHandle,
+    html: String,
+    default_name: String,
+    locale: Option<String>,
+) -> Result<bool, String> {
+    let loc = parse_locale(locale);
+    let selected = app
+        .dialog()
+        .file()
+        .set_file_name(default_name)
+        .add_filter("HTML", &["html"])
+        .blocking_save_file();
+    let path = match selected {
+        Some(path) => path.into_path().map_err(|e| e.to_string())?,
+        None => return Ok(false),
+    };
+    let path = normalize_path(loc, &path)?;
+    if let Some(parent) = path.parent() {
+        if !parent.exists() {
+            return Err(t(loc, "file.directoryMissing"));
+        }
+    }
+    if html.len() as u64 > MAX_FILE_BYTES {
+        return Err(tf(
+            loc,
+            "file.contentTooLarge",
+            &(MAX_FILE_BYTES / (1024 * 1024)).to_string(),
+        ));
+    }
+    write_atomic(loc, &path, &html)?;
+    Ok(true)
+}
+
 /// Force-exit the application. The JS `window.close()`/`window.destroy()`
 /// calls are unreliable on Linux/WebKitGTK once an `onCloseRequested` JS
 /// listener is registered (Tauri auto-prevent_close's the request and the
@@ -854,6 +893,7 @@ pub fn run() {
             cli_files,
             export_pdf,
             write_pdf_bytes,
+            write_html_file,
             alert,
             exit_app
         ])
