@@ -26,6 +26,23 @@ import net from "node:net";
 
 export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/**
+ * Errors that mean "the page moved on", not "the test is wrong": Chrome throws
+ * these when the execution context is swapped while an evaluation is in
+ * flight, which happens on reloads and during heavy startup work (loading the
+ * Typst/LaTeX WASM, for instance). They are worth retrying, never worth
+ * failing on.
+ */
+function isTransientEvaluationError(error) {
+  const message = String(error?.message ?? error);
+  return (
+    message.includes("Promise was collected") ||
+    message.includes("Execution context was destroyed") ||
+    message.includes("Cannot find context") ||
+    message.includes("Inspected target navigated or closed")
+  );
+}
+
 const CDP_READY_TIMEOUT_MS = 15000;
 const SEND_TIMEOUT_MS = 20000;
 
@@ -297,12 +314,23 @@ export class CdpSession {
    */
   async waitFor(expression, { timeout = 10000, interval = 200, message } = {}) {
     const start = Date.now();
+    let lastTransient = null;
     while (Date.now() - start < timeout) {
-      if (await this.evaluate(expression)) return;
+      try {
+        if (await this.evaluate(expression)) return;
+      } catch (error) {
+        // While the page is (re)loading, the execution context can be replaced
+        // mid-evaluation. That is exactly the state waitFor exists to wait
+        // through, so keep polling instead of failing. Real errors — a typo in
+        // the expression, an exception in the page — still propagate.
+        if (!isTransientEvaluationError(error)) throw error;
+        lastTransient = error;
+      }
       await sleep(interval);
     }
     throw new Error(
-      message ?? `waitFor timed out after ${timeout}ms: ${expression}`,
+      (message ?? `waitFor timed out after ${timeout}ms: ${expression}`) +
+        (lastTransient ? ` (last transient error: ${lastTransient.message})` : ""),
     );
   }
 
