@@ -112,6 +112,8 @@ export const gu = {
   "prefs.fontSize": "ફોન્ટ કદ",
   "prefs.fontFamily": "ફોન્ટ",
   "prefs.fontSystem": "સિસ્ટમ મોનોસ્પેસ",
+  "prefs.spellcheck": "જોડણી તપાસ",
+  "prefs.spellcheckHint": "તમારી સિસ્ટમના જોડણી તપાસકનો ઉપયોગ કરે છે",
   "prefs.sample": "ઝડપી કથ્થઈ શિયાળ આળસુ કૂતરા ઉપર કૂદ્યું.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "અન્ય ટેબ બંધ કરો",

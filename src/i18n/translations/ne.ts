@@ -129,6 +129,8 @@ export const ne = {
   "prefs.fontSize": "फन्ट आकार",
   "prefs.fontFamily": "फन्ट",
   "prefs.fontSystem": "प्रणाली मोनोस्पेस",
+  "prefs.spellcheck": "हिज्जे जाँच",
+  "prefs.spellcheckHint": "तपाईंको प्रणालीको हिज्जे परीक्षक प्रयोग गर्दछ",
   "prefs.sample": "छिटो खैरो स्याल अल्छी कुकुरमाथि उफ्र्यो।",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

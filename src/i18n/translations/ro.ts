@@ -112,6 +112,8 @@ export const ro = {
   "prefs.fontSize": "Dimensiunea fontului",
   "prefs.fontFamily": "Font",
   "prefs.fontSystem": "Monospațiat de sistem",
+  "prefs.spellcheck": "Verificare ortografică",
+  "prefs.spellcheckHint": "Folosește corectorul ortografic al sistemului",
   "prefs.sample": "Vulpea maro sări peste câinele leneș și ținu drumul în zori.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Închide celelalte file",

@@ -129,6 +129,8 @@ export const si = {
   "prefs.fontSize": "අකුරු ප්‍රමාණය",
   "prefs.fontFamily": "අකුරු",
   "prefs.fontSystem": "පද්ධති මොනොස්පේස්",
+  "prefs.spellcheck": "අක්ෂර වින්‍යාස පරීක්ෂාව",
+  "prefs.spellcheckHint": "ඔබේ පද්ධතියේ අක්ෂර වින්‍යාස පරීක්ෂකය භාවිතා කරයි",
   "prefs.sample": "වේගවත් දුඹුරු නරියා කම්මැලි බල්ලා උඩින් පැන්නේය.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

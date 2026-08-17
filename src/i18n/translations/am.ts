@@ -112,6 +112,8 @@ export const am = {
   "prefs.fontSize": "የፊደል መጠን",
   "prefs.fontFamily": "ፊደል",
   "prefs.fontSystem": "የሥርዓቱ ሞኖስፔስ",
+  "prefs.spellcheck": "የፊደል አጻጻፍ ምርመራ",
+  "prefs.spellcheckHint": "በሥርዓትዎ የቀረበውን የፊደል አራሚ ይጠቀማል",
   "prefs.sample": "ቀልጣፋ ቡናማ ቀበሮ ሰነፉን ውሻ ዘለለ።",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "ሌሎች ታቦችን ዝጋ",

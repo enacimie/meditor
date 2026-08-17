@@ -113,6 +113,8 @@ export const mg = {
   "prefs.fontSize": "Haben'ny endri-tsoratra",
   "prefs.fontFamily": "Endri-tsoratra",
   "prefs.fontSystem": "Monospace an'ny rafitra",
+  "prefs.spellcheck": "Fanamarinana tsipelina",
+  "prefs.spellcheckHint": "Mampiasa ny mpanamarina tsipelina ao amin'ny rafitrao",
   "prefs.sample": "Ny amboa mainty mihazakazaka eny an-tanimbary.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Akatona ny tabilao hafa",

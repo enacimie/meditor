@@ -113,6 +113,8 @@ export const bg = {
   "prefs.fontSize": "Размер на шрифта",
   "prefs.fontFamily": "Шрифт",
   "prefs.fontSystem": "Системен равноширок",
+  "prefs.spellcheck": "Проверка на правописа",
+  "prefs.spellcheckHint": "Използва проверката на правописа на системата",
   "prefs.sample": "Жълтата дюля беше щастлива, че пухът, който цъфна, замръзна като гьон.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Затвори другите раздели",

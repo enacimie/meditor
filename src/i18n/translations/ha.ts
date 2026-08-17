@@ -112,6 +112,8 @@ export const ha = {
   "prefs.fontSize": "Girman rubutu",
   "prefs.fontFamily": "Nau'in rubutu",
   "prefs.fontSystem": "Monospace na tsarin",
+  "prefs.spellcheck": "Duba rubutu",
+  "prefs.spellcheckHint": "Yana amfani da mai duba rubutu na tsarinka",
   "prefs.sample": "Ƙaramin yaro ya ɗauki ɓera ya tsallake kare mai barci.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Rufe sauran shafuka",

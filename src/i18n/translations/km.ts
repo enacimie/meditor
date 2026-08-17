@@ -129,6 +129,8 @@ export const km = {
   "prefs.fontSize": "ទំហំពុម្ពអក្សរ",
   "prefs.fontFamily": "ពុម្ពអក្សរ",
   "prefs.fontSystem": "ពុម្ពអក្សរប្រព័ន្ធទទឹងស្មើ",
+  "prefs.spellcheck": "ពិនិត្យអក្ខរាវិរុទ្ធ",
+  "prefs.spellcheckHint": "ប្រើកម្មវិធីពិនិត្យអក្ខរាវិរុទ្ធរបស់ប្រព័ន្ធអ្នក",
   "prefs.sample": "សត្វកញ្ជ្រោងត្នោតរត់លឿនលោតឆ្លងកាត់ឆ្កែខ្ជិល។",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

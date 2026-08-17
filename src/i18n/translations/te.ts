@@ -130,6 +130,8 @@ export const te = {
   "prefs.fontSize": "ఫాంట్ పరిమాణం",
   "prefs.fontFamily": "ఫాంట్",
   "prefs.fontSystem": "సిస్టమ్ మోనోస్పేస్",
+  "prefs.spellcheck": "అక్షరక్రమ తనిఖీ",
+  "prefs.spellcheckHint": "మీ సిస్టమ్ అందించే అక్షరక్రమ తనిఖీని ఉపయోగిస్తుంది",
   "prefs.sample": "వేగవంతమైన గోధుమ రంగు నక్క సోమరి కుక్కపై దూకింది.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "ఇతర ట్యాబ్‌లను మూసివేయి",

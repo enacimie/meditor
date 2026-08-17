@@ -129,6 +129,8 @@ export const uz = {
   "prefs.fontSize": "Shrift oʻlchami",
   "prefs.fontFamily": "Shrift",
   "prefs.fontSystem": "Tizimning bir xil kenglikdagi shrifti",
+  "prefs.spellcheck": "Imlo tekshiruvi",
+  "prefs.spellcheckHint": "Tizimingizning imlo tekshiruvchisidan foydalanadi",
   "prefs.sample": "Tez qoʻngʻir tulki yalqov itning ustidan sakrab oʻtdi.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

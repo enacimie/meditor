@@ -112,6 +112,8 @@ export const uk = {
   "prefs.fontSize": "Розмір шрифту",
   "prefs.fontFamily": "Шрифт",
   "prefs.fontSystem": "Системний моноширинний",
+  "prefs.spellcheck": "Перевірка орфографії",
+  "prefs.spellcheckHint": "Використовує перевірку орфографії вашої системи",
   "prefs.sample": "Чуєш їх, доцю, га? Кумедна ж ти, прощайся без ґольфів!",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Закрити інші вкладки",

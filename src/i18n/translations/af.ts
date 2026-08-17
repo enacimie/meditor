@@ -113,6 +113,8 @@ export const af = {
   "prefs.fontSize": "Lettergrootte",
   "prefs.fontFamily": "Lettertipe",
   "prefs.fontSystem": "Stelsel se monospasiëring",
+  "prefs.spellcheck": "Speltoets",
+  "prefs.spellcheckHint": "Gebruik die speltoetser van jou stelsel",
   "prefs.sample": "Die vinnige bruin jakkals spring oor die lui hond",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

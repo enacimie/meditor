@@ -113,6 +113,8 @@ export const tg = {
   "prefs.fontSize": "Андозаи ҳарф",
   "prefs.fontFamily": "Ҳарф",
   "prefs.fontSystem": "Ҳарфи якпаҳноии система",
+  "prefs.spellcheck": "Санҷиши имло",
+  "prefs.spellcheckHint": "Санҷишгари имлои системаи шуморо истифода мебарад",
   "prefs.sample": "Рӯбоҳи тези қаҳваранг аз болои саги танбал ҷаҳид.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

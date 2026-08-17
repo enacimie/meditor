@@ -117,6 +117,8 @@ export const cs = {
   "prefs.fontSize": "Velikost písma",
   "prefs.fontFamily": "Písmo",
   "prefs.fontSystem": "Systémové neproporcionální",
+  "prefs.spellcheck": "Kontrola pravopisu",
+  "prefs.spellcheckHint": "Používá kontrolu pravopisu vašeho systému",
   "prefs.sample": "Příliš žluťoučký kůň úpěl ďábelské ódy.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Zavřít ostatní karty",

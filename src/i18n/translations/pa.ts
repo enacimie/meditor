@@ -112,6 +112,8 @@ export const pa = {
   "prefs.fontSize": "ਫੌਂਟ ਆਕਾਰ",
   "prefs.fontFamily": "ਫੌਂਟ",
   "prefs.fontSystem": "ਸਿਸਟਮ ਮੋਨੋਸਪੇਸ",
+  "prefs.spellcheck": "ਸ਼ਬਦ-ਜੋੜ ਜਾਂਚ",
+  "prefs.spellcheckHint": "ਤੁਹਾਡੇ ਸਿਸਟਮ ਦਾ ਸ਼ਬਦ-ਜੋੜ ਜਾਂਚਕਾਰ ਵਰਤਦਾ ਹੈ",
   "prefs.sample": "ਤੇਜ਼ ਭੂਰੀ ਲੂੰਬੜੀ ਆਲਸੀ ਕੁੱਤੇ ਉੱਤੇ ਛਾਲ ਮਾਰਦੀ ਹੈ।",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "ਹੋਰ ਟੈਬ ਬੰਦ ਕਰੋ",

@@ -113,6 +113,8 @@ export const mk = {
   "prefs.fontSize": "Големина на фонтот",
   "prefs.fontFamily": "Фонт",
   "prefs.fontSystem": "Системски со еднаква ширина",
+  "prefs.spellcheck": "Проверка на правопис",
+  "prefs.spellcheckHint": "Ја користи проверката на правопис на вашиот систем",
   "prefs.sample": "Ноќта ѕвездите светкаат над џунглата и над градот.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

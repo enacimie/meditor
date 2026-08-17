@@ -113,6 +113,8 @@ export const be = {
   "prefs.fontSize": "Памер шрыфту",
   "prefs.fontFamily": "Шрыфт",
   "prefs.fontSystem": "Сістэмны монашырынны",
+  "prefs.spellcheck": "Праверка правапісу",
+  "prefs.spellcheckHint": "Выкарыстоўвае сістэмны сродак праверкі правапісу",
   "prefs.sample": "Хуткі шэры воўк пераскочыў праз лянівага сабаку.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

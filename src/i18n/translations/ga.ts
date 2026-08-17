@@ -113,6 +113,8 @@ export const ga = {
   "prefs.fontSize": "Méid an chló",
   "prefs.fontFamily": "Cló",
   "prefs.fontSystem": "Aonspásáilte an chórais",
+  "prefs.spellcheck": "Seiceáil litrithe",
+  "prefs.spellcheckHint": "Úsáideann sé litreoir an chórais",
   "prefs.sample": "Chuaigh bé mhórshách le dlúthspád fíorfhinn trí hata mo dhea-phorcáin bhig.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

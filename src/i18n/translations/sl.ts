@@ -113,6 +113,8 @@ export const sl = {
   "prefs.fontSize": "Velikost pisave",
   "prefs.fontFamily": "Pisava",
   "prefs.fontSystem": "Sistemska enopresledna",
+  "prefs.spellcheck": "Preverjanje črkovanja",
+  "prefs.spellcheckHint": "Uporablja črkovalnik vašega sistema",
   "prefs.sample": "Šerif bo za vajo spet skuhal domače žgance.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

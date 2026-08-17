@@ -113,6 +113,8 @@ export const sr = {
   "prefs.fontSize": "Величина фонта",
   "prefs.fontFamily": "Фонт",
   "prefs.fontSystem": "Системски моноспејс",
+  "prefs.spellcheck": "Провера правописа",
+  "prefs.spellcheckHint": "Користи проверу правописа вашег система",
   "prefs.sample": "Љубазни фењерџија чађавог лица хоће да ми покаже штос.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

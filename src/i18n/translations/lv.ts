@@ -113,6 +113,8 @@ export const lv = {
   "prefs.fontSize": "Fonta izmērs",
   "prefs.fontFamily": "Fonts",
   "prefs.fontSystem": "Sistēmas vienplatuma fonts",
+  "prefs.spellcheck": "Pareizrakstības pārbaude",
+  "prefs.spellcheckHint": "Izmanto jūsu sistēmas pareizrakstības pārbaudītāju",
   "prefs.sample": "Glāžšķūņa rūķīši dzērumā čiepj Baha koncertflīģeļu vākus.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

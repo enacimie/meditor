@@ -129,6 +129,8 @@ export const ceb = {
   "prefs.fontSize": "Gidak-on sa font",
   "prefs.fontFamily": "Font",
   "prefs.fontSystem": "Monospace sa sistema",
+  "prefs.spellcheck": "Pagsusi sa espeling",
+  "prefs.spellcheckHint": "Mogamit sa espeling checker sa imong sistema",
   "prefs.sample": "Ang matulin nga kabayo milukso sa taas nga koral.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

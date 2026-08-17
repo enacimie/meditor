@@ -113,6 +113,8 @@ export const lb = {
   "prefs.fontSize": "Schrëftgréisst",
   "prefs.fontFamily": "Schrëft",
   "prefs.fontSystem": "System-Monospace",
+  "prefs.spellcheck": "Rechtschreifkontroll",
+  "prefs.spellcheckHint": "Benotzt d'Rechtschreifkontroll vun Ärem System",
   "prefs.sample": "De séisse Kaffi schmaacht gutt op der Terrass am Fréijoer.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

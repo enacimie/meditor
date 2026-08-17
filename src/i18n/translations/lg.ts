@@ -113,6 +113,8 @@ export const lg = {
   "prefs.fontSize": "Obunene bw'ennukuta",
   "prefs.fontFamily": "Ennukuta",
   "prefs.fontSystem": "Monospace ya sisitemu",
+  "prefs.spellcheck": "Okukebera empandiika",
+  "prefs.spellcheckHint": "Ekozesa akakebera empandiika aka sisitemu yo",
   "prefs.sample": "Embwa enkalu yabuuka ku muti omunene.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

@@ -112,6 +112,8 @@ export const th = {
   "prefs.fontSize": "ขนาดตัวอักษร",
   "prefs.fontFamily": "แบบอักษร",
   "prefs.fontSystem": "แบบอักษรความกว้างคงที่ของระบบ",
+  "prefs.spellcheck": "ตรวจการสะกด",
+  "prefs.spellcheckHint": "ใช้ตัวตรวจการสะกดของระบบของคุณ",
   "prefs.sample": "เป็นมนุษย์สุดประเสริฐเลิศคุณค่า กว่าบรรดาฝูงสัตว์เดรัจฉาน",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "ปิดแท็บอื่น",

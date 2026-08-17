@@ -113,6 +113,8 @@ export const gl = {
   "prefs.fontSize": "Tamaño da letra",
   "prefs.fontFamily": "Tipo de letra",
   "prefs.fontSystem": "Monoespazada do sistema",
+  "prefs.spellcheck": "Corrección ortográfica",
+  "prefs.spellcheckHint": "Usa o corrector ortográfico do sistema",
   "prefs.sample": "Necesitamos unha tipografía chuloa de cor kiwi, que lle zorregue unha labazada visual á xente.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

@@ -113,6 +113,8 @@ export const xh = {
   "prefs.fontSize": "Ubungakanani befonti",
   "prefs.fontFamily": "Ifonti",
   "prefs.fontSystem": "Ifonti yenkqubo enobubanzi obulinganayo",
+  "prefs.spellcheck": "Ukujonga upelo",
+  "prefs.spellcheckHint": "Isebenzisa isijongi-pelo senkqubo yakho",
   "prefs.sample": "Impungutye ekhawulezayo yatsiba inja eyonqenayo.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

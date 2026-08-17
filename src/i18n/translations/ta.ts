@@ -130,6 +130,8 @@ export const ta = {
   "prefs.fontSize": "எழுத்துரு அளவு",
   "prefs.fontFamily": "எழுத்துரு",
   "prefs.fontSystem": "கணினியின் ஒரே அகல எழுத்துரு",
+  "prefs.spellcheck": "எழுத்துப்பிழை சரிபார்ப்பு",
+  "prefs.spellcheckHint": "உங்கள் கணினியின் எழுத்துப்பிழை திருத்தியைப் பயன்படுத்துகிறது",
   "prefs.sample": "விரைவான பழுப்பு நரி சோம்பேறி நாயைத் தாண்டிக் குதித்தது.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "மற்ற தாவல்களை மூடு",

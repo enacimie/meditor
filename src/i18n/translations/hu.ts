@@ -113,6 +113,8 @@ export const hu = {
   "prefs.fontSize": "Betűméret",
   "prefs.fontFamily": "Betűtípus",
   "prefs.fontSystem": "Rendszer rögzített szélességű betűtípusa",
+  "prefs.spellcheck": "Helyesírás-ellenőrzés",
+  "prefs.spellcheckHint": "A rendszer helyesírás-ellenőrzőjét használja",
   "prefs.sample": "Árvíztűrő tükörfúrógép",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Többi lap bezárása",

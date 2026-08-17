@@ -129,6 +129,8 @@ export const ig = {
   "prefs.fontSize": "Ogo mkpụrụedemede",
   "prefs.fontFamily": "Mkpụrụedemede",
   "prefs.fontSystem": "Monospace nke sistemu",
+  "prefs.spellcheck": "Nlele nsụpe",
+  "prefs.spellcheckHint": "Ọ na-eji onye nlele nsụpe nke sistemu gị",
   "prefs.sample": "Nwoke ahụ jiri ọsọ gafere ụzọ n'oge mmiri.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Mechie taabụ ndị ọzọ",

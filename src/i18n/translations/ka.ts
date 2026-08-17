@@ -113,6 +113,8 @@ export const ka = {
   "prefs.fontSize": "შრიფტის ზომა",
   "prefs.fontFamily": "შრიფტი",
   "prefs.fontSystem": "სისტემური თანაბარსიგანიანი",
+  "prefs.spellcheck": "მართლწერის შემოწმება",
+  "prefs.spellcheckHint": "იყენებს თქვენი სისტემის მართლწერის შემმოწმებელს",
   "prefs.sample": "სწრაფი ყავისფერი მელა გადაახტა ზარმაც ძაღლს.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

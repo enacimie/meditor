@@ -112,6 +112,8 @@ export const fa = {
   "prefs.fontSize": "اندازه قلم",
   "prefs.fontFamily": "قلم",
   "prefs.fontSystem": "تک‌فاصله سامانه",
+  "prefs.spellcheck": "غلط‌یاب املایی",
+  "prefs.spellcheckHint": "از غلط‌یاب املایی سامانه شما استفاده می‌کند",
   "prefs.sample": "چند برگ کاغذ ژرف و زیبا روی میز قدیمی افتاده است.",
   "prefs.pixels": (n: unknown) => `${String(n)} پیکسل`,
   "menu.closeOthers": "بستن برگه‌های دیگر",

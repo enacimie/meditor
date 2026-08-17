@@ -112,6 +112,8 @@ export const vi = {
   "prefs.fontSize": "Cỡ chữ",
   "prefs.fontFamily": "Phông chữ",
   "prefs.fontSystem": "Phông đơn cách của hệ thống",
+  "prefs.spellcheck": "Kiểm tra chính tả",
+  "prefs.spellcheckHint": "Sử dụng trình kiểm tra chính tả của hệ thống",
   "prefs.sample": "Do bạch kim rất quý nên sẽ dùng để lắp vô xương.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Đóng tab khác",

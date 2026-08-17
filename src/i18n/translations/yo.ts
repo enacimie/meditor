@@ -112,6 +112,8 @@ export const yo = {
   "prefs.fontSize": "Ìwọ̀n lẹ́tà",
   "prefs.fontFamily": "Lẹ́tà",
   "prefs.fontSystem": "Lẹ́tà ìbú-dọ́gba ti ẹ̀rọ",
+  "prefs.spellcheck": "Àyẹ̀wò ìkọ̀wé",
+  "prefs.spellcheckHint": "Ó ń lo olùyẹ̀wò ìkọ̀wé ti ẹ̀rọ rẹ",
   "prefs.sample": "Ọmọdé kékeré náà ń ṣeré lábẹ́ igi ọ̀pẹ.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Pa taabu miiran",

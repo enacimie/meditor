@@ -113,6 +113,8 @@ export const no = {
   "prefs.fontSize": "Skriftstørrelse",
   "prefs.fontFamily": "Skrift",
   "prefs.fontSystem": "Systemets fastbreddeskrift",
+  "prefs.spellcheck": "Stavekontroll",
+  "prefs.spellcheckHint": "Bruker systemets stavekontroll",
   "prefs.sample": "Vår sære Zulu fra badeøya spilte jo whist og quickstep i min taxi.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Lukk andre faner",

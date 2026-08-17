@@ -112,6 +112,8 @@ export const kn = {
   "prefs.fontSize": "ಅಕ್ಷರ ಗಾತ್ರ",
   "prefs.fontFamily": "ಅಕ್ಷರಶೈಲಿ",
   "prefs.fontSystem": "ಸಿಸ್ಟಂ ಮೊನೊಸ್ಪೇಸ್",
+  "prefs.spellcheck": "ಕಾಗುಣಿತ ಪರಿಶೀಲನೆ",
+  "prefs.spellcheckHint": "ನಿಮ್ಮ ಸಿಸ್ಟಂನ ಕಾಗುಣಿತ ಪರಿಶೀಲಕವನ್ನು ಬಳಸುತ್ತದೆ",
   "prefs.sample": "ಚುರುಕಾದ ಕಂದು ನರಿ ಸೋಮಾರಿ ನಾಯಿಯ ಮೇಲೆ ಹಾರಿತು.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "ಇತರ ಟ್ಯಾಬ್‌ಗಳನ್ನು ಮುಚ್ಚಿ",

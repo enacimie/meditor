@@ -129,6 +129,8 @@ export const ku = {
   "prefs.fontSize": "Mezinahiya cûrenivîsê",
   "prefs.fontFamily": "Cûrenivîs",
   "prefs.fontSystem": "Monospace ya pergalê",
+  "prefs.spellcheck": "Kontrola rastnivîsê",
+  "prefs.spellcheckHint": "Kontrolkera rastnivîsê ya pergala te bikar tîne",
   "prefs.sample": "Rovîyê qehweyî yê bilez li ser kûçikê tembel bazda.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

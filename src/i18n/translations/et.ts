@@ -113,6 +113,8 @@ export const et = {
   "prefs.fontSize": "Fondi suurus",
   "prefs.fontFamily": "Font",
   "prefs.fontSystem": "Süsteemi püsisammfont",
+  "prefs.spellcheck": "Õigekirjakontroll",
+  "prefs.spellcheckHint": "Kasutab süsteemi õigekirjakontrolli",
   "prefs.sample": "Põdur Zagrebi tšellomängija-följetonist Ciqo külmetas kehvas garaažis.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

@@ -112,6 +112,8 @@ export const or = {
   "prefs.fontSize": "ଫଣ୍ଟ ଆକାର",
   "prefs.fontFamily": "ଫଣ୍ଟ",
   "prefs.fontSystem": "ସିଷ୍ଟମ ମନୋସ୍ପେସ",
+  "prefs.spellcheck": "ବନାନ ଯାଞ୍ଚ",
+  "prefs.spellcheckHint": "ଆପଣଙ୍କ ସିଷ୍ଟମର ବନାନ ଯାଞ୍ଚକାରୀ ବ୍ୟବହାର କରେ",
   "prefs.sample": "ଦ୍ରୁତ ବାଦାମୀ ଶିଆଳ ଅଳସ କୁକୁର ଉପରେ ଡେଇଁଲା।",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "ଅନ୍ୟ ଟ୍ୟାବ୍ ବନ୍ଦ କରନ୍ତୁ",

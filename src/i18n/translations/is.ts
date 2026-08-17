@@ -113,6 +113,8 @@ export const is = {
   "prefs.fontSize": "Leturstærð",
   "prefs.fontFamily": "Letur",
   "prefs.fontSystem": "Jafnbreitt letur kerfisins",
+  "prefs.spellcheck": "Stafsetningarleiðrétting",
+  "prefs.spellcheckHint": "Notar stafsetningarleiðréttingu kerfisins",
   "prefs.sample": "Kæmi ný öxi hér ykist þjófum nú bæði víl og ádrepa.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

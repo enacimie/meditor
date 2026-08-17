@@ -130,6 +130,8 @@ export const id = {
   "prefs.fontSize": "Ukuran font",
   "prefs.fontFamily": "Font",
   "prefs.fontSystem": "Monospace sistem",
+  "prefs.spellcheck": "Periksa ejaan",
+  "prefs.spellcheckHint": "Menggunakan pemeriksa ejaan dari sistem Anda",
   "prefs.sample": "Lima ekor kucing lincah melompati pagar kayu yang tua.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Tutup tab lainnya",

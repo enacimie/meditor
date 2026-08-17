@@ -112,6 +112,8 @@ export const jv = {
   "prefs.fontSize": "Ukuran font",
   "prefs.fontFamily": "Font",
   "prefs.fontSystem": "Monospace sistem",
+  "prefs.spellcheck": "Priksa ejaan",
+  "prefs.spellcheckHint": "Nganggo pamriksa ejaan saka sistem sampeyan",
   "prefs.sample": "Kucing lincah mlumpat pager kayu sing wis tuwa.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Tutup tab liyane",

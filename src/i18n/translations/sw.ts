@@ -130,6 +130,8 @@ export const sw = {
   "prefs.fontSize": "Ukubwa wa fonti",
   "prefs.fontFamily": "Fonti",
   "prefs.fontSystem": "Monospace ya mfumo",
+  "prefs.spellcheck": "Ukaguzi wa tahajia",
+  "prefs.spellcheckHint": "Hutumia kikagua tahajia cha mfumo wako",
   "prefs.sample": "Paka mwepesi aliruka juu ya ukuta mrefu.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Funga vichupo vingine",
