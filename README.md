@@ -29,7 +29,8 @@
 - **4 themes**: System, Light, Dark, and a **High Contrast** colorblind-friendly theme (WCAG AA everywhere).
 - **Zen mode** (F11): fullscreen distraction-free writing.
 - **Keyboard shortcuts overlay** (F1) and in-window dialogs for confirm/rename (fully themed and localized).
-- **Preferences** (Ctrl+,): editor font size and family, with a live sample.
+- **Preferences** (Ctrl+,): editor font size and family, with a live sample, and the spell checker toggle.
+- **Spell checking** provided by the platform (Windows and macOS webviews; on Linux it also needs WebKitGTK's own setting), in the interface language.
 - **Status bar** with word/line/character counts and unsaved indicator.
 - **Outline** (table of contents) from headings for quick navigation.
 
