@@ -25,6 +25,10 @@ export type ShortcutHandlers = {
   openShortcuts: () => void;
   /** Ctrl+K / Cmd+K */
   focusSearch: () => void;
+  /** Ctrl+Tab */
+  nextTab: () => void;
+  /** Ctrl+Shift+Tab */
+  prevTab: () => void;
   /** Escape while no modal is open */
   exitZen?: () => void;
 };
@@ -47,6 +51,10 @@ export function useKeyboardShortcuts(
     // The `ready` guard prevents shortcuts from firing during the splash screen.
     const onKey = (e: KeyboardEvent) => {
       const h = handlersRef.current;
+
+      // Nothing is interactive until the session has been restored, so no
+      // shortcut may fire during the splash screen — including the F-keys.
+      if (!ready) return;
 
       if (e.key === "F11") {
         e.preventDefault();
@@ -77,7 +85,15 @@ export function useKeyboardShortcuts(
         return;
       }
 
-      if (!ready || !(e.ctrlKey || e.metaKey)) return;
+      if (!(e.ctrlKey || e.metaKey)) return;
+
+      // Ctrl+Tab cycles tabs, matching the arrow-key behaviour of the tab bar.
+      if (e.key === "Tab") {
+        e.preventDefault();
+        if (e.shiftKey) h.prevTab();
+        else h.nextTab();
+        return;
+      }
 
       const k = e.key.toLowerCase();
 
@@ -92,9 +108,9 @@ export function useKeyboardShortcuts(
         e.preventDefault();
         if (e.shiftKey) h.newTypst();
         else h.newTab();
-      } else if (k === "l") {
+      } else if (k === "l" && e.shiftKey) {
         e.preventDefault();
-        if (e.shiftKey) h.newLatex();
+        h.newLatex();
       } else if (k === "e") {
         e.preventDefault();
         h.exportPdf();
