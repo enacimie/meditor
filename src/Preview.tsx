@@ -17,6 +17,7 @@ import { useTranslation } from "./i18n/I18nProvider";
 import pagedCss from "./paged.css?inline";
 import latexHighlightCss from "./latex-highlight.css?inline";
 import { clearMermaidResources, renderContent, splitLongFencedBlocks } from "./previewRenderer";
+import { isPaginatable } from "./pagedLifecycle";
 
 import type { DocKind } from "./types";
 import "./Preview.css";
@@ -117,6 +118,8 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
 
   const seqRef = useRef(0);
   const tokenRef = useRef(0);
+  /** A pagination was skipped or interrupted because the pane was hidden. */
+  const pendingRef = useRef(false);
   const flashTimerRef = useRef<number | undefined>(undefined);
   const activePreviewerRef = useRef<Previewer | undefined>(undefined);
   const [renderError, setRenderError] = useState<string | null>(null);
@@ -293,6 +296,12 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
         const source = sourceRef.current;
         const paged = pagedRef.current;
         if (!source || !paged) return;
+        // paged.js cannot measure a hidden or detached container (zen mode
+        // hides the whole pane). Defer until it is on screen again.
+        if (!isPaginatable(paged)) {
+          pendingRef.current = true;
+          return;
+        }
         const docValue = splitLongFencedBlocks(deferredValue);
         await renderContent(source, docValue, seqRef, isStale, t);
         if (cancelled || myToken !== tokenRef.current) return;
@@ -311,10 +320,15 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
             destroyPreviewer(previewer);
           }
         } catch (e) {
-          if (!isStale()) {
-            const message = e instanceof Error ? e.message : String(e);
-            setRenderError(`${t("preview.pagedError")} ${message}`);
+          // Losing the container mid-pagination is not a failure: the user
+          // entered zen mode or switched the tab away from Markdown. Retry
+          // once it is measurable again instead of reporting an error.
+          if (isStale() || !isPaginatable(paged)) {
+            pendingRef.current = true;
+            return;
           }
+          const message = e instanceof Error ? e.message : String(e);
+          setRenderError(`${t("preview.pagedError")} ${message}`);
           console.error("paged.js:", e);
         }
       } else {
@@ -343,6 +357,22 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
       if (debounceTimer) clearTimeout(debounceTimer);
     };
   }, [deferredValue, docView, retryToken, t, kind]);
+
+  // Re-run the pagination that was skipped while the pane was hidden, as soon
+  // as it has a box again (leaving zen mode, or the tab going back to
+  // Markdown). ResizeObserver covers every way the pane can reappear.
+  useEffect(() => {
+    const paged = pagedRef.current;
+    if (!paged || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => {
+      if (pendingRef.current && isPaginatable(paged)) {
+        pendingRef.current = false;
+        setRetryToken((token) => token + 1);
+      }
+    });
+    observer.observe(paged);
+    return () => observer.disconnect();
+  }, [kind, docView]);
 
   useEffect(() => {
     return () => {
