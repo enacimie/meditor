@@ -228,6 +228,8 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   fontSizeRef.current = fontSize;
   const fontFamilyRef = useRef(fontFamily);
   fontFamilyRef.current = fontFamily;
+  const spellcheckRef = useRef(spellcheck);
+  spellcheckRef.current = spellcheck;
   const zenModeRef = useRef(zenMode);
   zenModeRef.current = zenMode;
   const zenPlaceholderRef = useRef(zenPlaceholder);
@@ -256,6 +258,9 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
         ),
         fontCompartment.current.reconfigure(
           fontTheme(fontSizeRef.current, fontFamilyRef.current),
+        ),
+        spellcheckCompartment.current.reconfigure(
+          spellcheckAttributes(spellcheckRef.current),
         ),
         languageCompartment.current.reconfigure(languageExtRef.current),
       ],
