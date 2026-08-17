@@ -16,9 +16,10 @@ export function loadLanguage(): Language {
   } catch {
     // Storage unavailable
   }
-  // Detect browser language
+  // Detect browser language. Use the primary subtag rather than the first two
+  // characters, so three-letter codes survive ("fil-PH" is Filipino, not "fi").
   if (typeof navigator !== "undefined") {
-    const nav = navigator.language?.slice(0, 2);
+    const nav = navigator.language?.toLowerCase().split("-")[0];
     if (nav && ALL_LANGS.has(nav)) return nav as Language;
   }
   return "en";

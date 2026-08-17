@@ -25,16 +25,26 @@
               document.documentElement.style.colorScheme = theme;
             }
           }
-          // Mirror the I18nProvider language resolution (all 100 codes + RTL).
+          // Mirror the language resolution of src/i18n/languageStorage.ts: the
+          // stored code wins, otherwise the browser's primary subtag. Codes are
+          // 2 or 3 letters (fil, ceb, zgh, kab, shi, rif).
+          // KEEP IN SYNC with LANGUAGES/isRtl in src/i18n/translations/index.ts —
+          // src/i18n/indexHtml.test.ts fails when these lists drift apart.
+          var ALL_LANGS = "en zh hi es ar fr bn pt ru ur id de ja sw mr te tr ta ko it pl vi th fa nl uk ro he ms fil pa jv ha kn gu am yo or ml my uz ig ne si km kk az ku ht ceb sv da fi no cs sk hu bg el ca sr hr lt lv et sl mk sq hy ka mn lo gl eu is mt cy gd ga lb af zu xh st ny mg so ps tk ky tg tt be bs fo ee lg om sd su zgh kab shi rif";
+          var RTL_LANGS = "ar ur fa he ps sd";
+          function known(list, code) {
+            return (" " + list + " ").indexOf(" " + code + " ") !== -1;
+          }
           var lang = null;
           var rawLang = localStorage.getItem("meditor.language.v1");
-          if (rawLang && /^[a-z]{2}$/.test(rawLang)) lang = rawLang;
+          if (rawLang && known(ALL_LANGS, rawLang)) lang = rawLang;
           if (!lang && navigator && navigator.language) {
-            lang = navigator.language.slice(0, 2);
+            var nav = navigator.language.toLowerCase().split("-")[0];
+            if (known(ALL_LANGS, nav)) lang = nav;
           }
-          if (lang && /^(en|zh|hi|es|ar|fr|bn|pt|ru|ur|id|de|ja|sw|mr|te|tr|ta|ko|it|pl|vi|th|fa|nl|uk|ro|he|ms|fil|pa|jv|ha|kn|gu|am|yo|or|ml|my|uz|ig|ne|si|km|kk|az|ku|ht|ceb|sv|da|fi|no|cs|sk|hu|bg|el|ca|zgh|kab|shi|rif)$/.test(lang)) {
+          if (lang) {
             document.documentElement.lang = lang;
-            if (lang === "ar" || lang === "ur" || lang === "fa" || lang === "he" || lang === "ps" || lang === "sd") {
+            if (known(RTL_LANGS, lang)) {
               document.documentElement.dir = "rtl";
             }
           }
