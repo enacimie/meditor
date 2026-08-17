@@ -16,6 +16,18 @@ default-run = "meditor"
 name = "meditor_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
+# print_probe is a Linux-only testing utility. It must NOT be included in the
+# app bundle (Tauri copies every bin target; macOS universal builds then fail
+# because the binary is only produced on Linux).
+[[bin]]
+name = "print_probe"
+path = "src/bin/print_probe.rs"
+required-features = ["print-probe"]
+
+[features]
+default = []
+print-probe = []
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
