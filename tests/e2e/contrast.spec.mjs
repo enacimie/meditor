@@ -128,11 +128,16 @@ try {
     notice.textContent = 'error';
     document.body.appendChild(notice);
     const read = () => {
+      // Force a style/layout flush so the theme switch is reflected before
+      // reading the computed color (otherwise Chrome on Windows/macOS may
+      // return the stale value).
+      void notice.offsetHeight;
       const s = getComputedStyle(notice);
       return { color: s.color, border: s.borderTopColor };
     };
     const contrast = read();
     root.dataset.theme = 'dark';
+    void root.offsetHeight;
     const dark = read();
     notice.remove();
     root.dataset.theme = 'contrast';

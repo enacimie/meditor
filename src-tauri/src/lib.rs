@@ -913,7 +913,10 @@ mod tests {
 
         let (restored_path, handle) =
             restore_session_path(Locale::En, &registry, path.to_str(), "same");
-        assert_eq!(restored_path, Some(path.to_string_lossy().into_owned()));
+        // `normalize_path` canonicalizes existing files, which resolves
+        // symlinks (macOS /var → /private/var) and Windows `\\?\` prefixes.
+        let expected = std::fs::canonicalize(&path).unwrap();
+        assert_eq!(restored_path, Some(expected.to_string_lossy().into_owned()));
         assert!(handle.is_some());
 
         std::fs::write(&path, "changed").unwrap();
