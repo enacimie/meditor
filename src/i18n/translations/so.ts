@@ -113,6 +113,8 @@ export const so = {
   "prefs.fontSize": "Cabbirka farta",
   "prefs.fontFamily": "Farta",
   "prefs.fontSystem": "Monospace-ka nidaamka",
+  "prefs.spellcheck": "Hubinta higgaadda",
+  "prefs.spellcheckHint": "Wuxuu isticmaalaa hubiyaha higgaadda ee nidaamkaaga",
   "prefs.sample": "Dawacada dheereysa waxay ka boodday eeyga caajiska ah.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

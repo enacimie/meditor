@@ -113,6 +113,8 @@ export const shi = {
   "prefs.fontSize": "ⵜⵉⴷⴷⵉ ⵏ ⵜⵙⴼⵙⵉⵜ",
   "prefs.fontFamily": "ⵜⴰⵙⴼⵙⵉⵜ",
   "prefs.fontSystem": "ⵜⴰⵙⴼⵙⵉⵜ ⵏ ⵓⵏⴰⴳⵔⴰⵡ",
+  "prefs.spellcheck": "ⴰⵙⵏⵇⴷ ⵏ ⵜⵉⵔⵔⴰ",
+  "prefs.spellcheckHint": "ⵉⵙⵙⵎⵔⴰⵙ ⴰⵙⵏⵇⴷ ⵏ ⵜⵉⵔⵔⴰ ⵏ ⵓⵏⴰⴳⵔⴰⵡ ⵏⵏⴽ",
   "prefs.sample": "ⵜⵉⴼⵉⵏⴰⵖ ⴷ ⵜⵉⵔⵔⴰ ⵏ ⵜⵎⴰⵣⵉⵖⵜ",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

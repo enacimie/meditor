@@ -113,6 +113,8 @@ export const ny = {
   "prefs.fontSize": "Kukula kwa mawu",
   "prefs.fontFamily": "Mtundu wa mawu",
   "prefs.fontSystem": "Monospace ya makina",
+  "prefs.spellcheck": "Kuyang'ana kalembedwe",
+  "prefs.spellcheckHint": "Imagwiritsa ntchito choyang'ana kalembedwe cha makina anu",
   "prefs.sample": "Galu wofulumira anadumpha pamwamba pa mpanda.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

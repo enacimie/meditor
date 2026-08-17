@@ -113,6 +113,8 @@ export const hy = {
   "prefs.fontSize": "Տառաչափ",
   "prefs.fontFamily": "Տառատեսակ",
   "prefs.fontSystem": "Համակարգային միատարած",
+  "prefs.spellcheck": "Ուղղագրության ստուգում",
+  "prefs.spellcheckHint": "Օգտագործում է ձեր համակարգի ուղղագրության ստուգիչը",
   "prefs.sample": "Արագ շագանակագույն աղվեսը թռավ ծույլ շան վրայով։",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

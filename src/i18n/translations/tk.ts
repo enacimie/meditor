@@ -113,6 +113,8 @@ export const tk = {
   "prefs.fontSize": "Şrift ölçegi",
   "prefs.fontFamily": "Şrift",
   "prefs.fontSystem": "Ulgamyň birmeňzeş giňlikli şrifti",
+  "prefs.spellcheck": "Ýazuw barlagy",
+  "prefs.spellcheckHint": "Ulgamyňyzyň ýazuw barlagyny ulanýar",
   "prefs.sample": "Çalt goňur tilki ýalta itiň üstünden bökdi.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

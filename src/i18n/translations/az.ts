@@ -129,6 +129,8 @@ export const az = {
   "prefs.fontSize": "Şrift ölçüsü",
   "prefs.fontFamily": "Şrift",
   "prefs.fontSystem": "Sistem monospace",
+  "prefs.spellcheck": "Orfoqrafiya yoxlanışı",
+  "prefs.spellcheckHint": "Sisteminizin orfoqrafiya yoxlayıcısından istifadə edir",
   "prefs.sample": "Zəfər, jaketini də papağını da götür, bu axşam hava çox soyuq olacaq.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

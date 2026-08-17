@@ -113,6 +113,8 @@ export const ps = {
   "prefs.fontSize": "د فونټ کچه",
   "prefs.fontFamily": "فونټ",
   "prefs.fontSystem": "د غونډال یو اندازه فونټ",
+  "prefs.spellcheck": "د املا کتنه",
+  "prefs.spellcheckHint": "ستاسو د غونډال د املا کتونکی کاروي",
   "prefs.sample": "چټک نصواري ګيدړ د سست سپي له پاسه ټوپ کړ.",
   "prefs.pixels": (n: unknown) => `${String(n)} پکسل`,
   "menu.closeOthers": "Close other tabs",

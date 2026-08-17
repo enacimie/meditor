@@ -129,6 +129,8 @@ export const ht = {
   "prefs.fontSize": "Gwosè polis la",
   "prefs.fontFamily": "Polis",
   "prefs.fontSystem": "Monospas sistèm nan",
+  "prefs.spellcheck": "Verifikasyon òtograf",
+  "prefs.spellcheckHint": "Sèvi ak korektè òtograf sistèm ou an",
   "prefs.sample": "Ti chat la kouri vit anba tab la pandan lapli ap tonbe.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

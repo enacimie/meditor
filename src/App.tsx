@@ -39,7 +39,9 @@ import { kindFromPath, normalizeDoc } from "./documentUtils";
 import {
   clampFontSize,
   normalizeFontFamily,
+  normalizeSpellcheck,
   DEFAULT_EDITOR_FONT_FAMILY,
+  DEFAULT_SPELLCHECK,
   DEFAULT_EDITOR_FONT_SIZE,
   type EditorPreferences,
 } from "./editorPreferences";
@@ -65,6 +67,7 @@ const DEFAULT_PREFERENCES: Preferences = {
   theme: "system",
   editorFontSize: DEFAULT_EDITOR_FONT_SIZE,
   editorFontFamily: DEFAULT_EDITOR_FONT_FAMILY,
+  spellcheck: DEFAULT_SPELLCHECK,
 };
 const MAX_PENDING_OPEN_DOCS = 256;
 /** Stable empty list, so a closed outline does not re-render its consumers. */
@@ -94,6 +97,7 @@ function loadPreferences(): Preferences {
       // editor, only fall back to the default.
       editorFontSize: clampFontSize(stored.editorFontSize),
       editorFontFamily: normalizeFontFamily(stored.editorFontFamily),
+      spellcheck: normalizeSpellcheck(stored.spellcheck),
     };
   } catch {
     return DEFAULT_PREFERENCES;
@@ -222,6 +226,7 @@ export default function App() {
   const [editorPrefs, setEditorPrefs] = useState<EditorPreferences>({
     editorFontSize: INITIAL_PREFERENCES.editorFontSize,
     editorFontFamily: INITIAL_PREFERENCES.editorFontFamily,
+    spellcheck: INITIAL_PREFERENCES.spellcheck,
   });
   const [cursorLine, setCursorLine] = useState(0);
 
@@ -1027,6 +1032,7 @@ export default function App() {
               wrap={wrap}
               fontSize={editorPrefs.editorFontSize}
               fontFamily={editorPrefs.editorFontFamily}
+              spellcheck={editorPrefs.spellcheck}
               zenMode={zenMode}
               zenPlaceholder={t("zen.placeholder")}
               kind={active?.kind ?? "markdown"}

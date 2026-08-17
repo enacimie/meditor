@@ -113,6 +113,8 @@ export const ky = {
   "prefs.fontSize": "Ариптин өлчөмү",
   "prefs.fontFamily": "Арип",
   "prefs.fontSystem": "Системалык бирдей туурадагы арип",
+  "prefs.spellcheck": "Орфографияны текшерүү",
+  "prefs.spellcheckHint": "Системаңыздагы орфография текшергичти колдонот",
   "prefs.sample": "Тез күрөң түлкү жалкоо иттин үстүнөн секирди.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

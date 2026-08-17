@@ -113,6 +113,8 @@ export const ca = {
   "prefs.fontSize": "Mida de la lletra",
   "prefs.fontFamily": "Lletra",
   "prefs.fontSystem": "Monoespaiada del sistema",
+  "prefs.spellcheck": "Correcció ortogràfica",
+  "prefs.spellcheckHint": "Utilitza el corrector ortogràfic del sistema",
   "prefs.sample": "Jove xef, porti whisky amb quinze glaçons d'hidrogen, coi!",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Tanca les altres pestanyes",

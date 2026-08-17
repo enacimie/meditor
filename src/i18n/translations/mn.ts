@@ -113,6 +113,8 @@ export const mn = {
   "prefs.fontSize": "Фонтын хэмжээ",
   "prefs.fontFamily": "Фонт",
   "prefs.fontSystem": "Системийн тэгш өргөнтэй фонт",
+  "prefs.spellcheck": "Үг зөв бичих шалгалт",
+  "prefs.spellcheckHint": "Таны системийн зөв бичгийн шалгагчийг ашиглана",
   "prefs.sample": "Хурдан бор үнэг залхуу нохойн дээгүүр үсэрлээ.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

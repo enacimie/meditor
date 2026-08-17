@@ -113,6 +113,8 @@ export const lt = {
   "prefs.fontSize": "Šrifto dydis",
   "prefs.fontFamily": "Šriftas",
   "prefs.fontSystem": "Sistemos lygiaplotis",
+  "prefs.spellcheck": "Rašybos tikrinimas",
+  "prefs.spellcheckHint": "Naudoja jūsų sistemos rašybos tikrinimo priemonę",
   "prefs.sample": "Įlinkdama fechtuotojo špaga sublykčiojusi pragręžė apvalų arbūzą.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

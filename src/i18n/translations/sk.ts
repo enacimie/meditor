@@ -117,6 +117,8 @@ export const sk = {
   "prefs.fontSize": "Veľkosť písma",
   "prefs.fontFamily": "Písmo",
   "prefs.fontSystem": "Systémové neproporcionálne",
+  "prefs.spellcheck": "Kontrola pravopisu",
+  "prefs.spellcheckHint": "Používa kontrolu pravopisu vášho systému",
   "prefs.sample": "Kŕdeľ šťastných ďatľov učí pri ústí Váhu mĺkveho koňa obhrýzať kôru a žrať čerstvé mäso.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Zatvoriť ostatné karty",

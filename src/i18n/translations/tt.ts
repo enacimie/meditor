@@ -113,6 +113,8 @@ export const tt = {
   "prefs.fontSize": "Шрифт зурлыгы",
   "prefs.fontFamily": "Шрифт",
   "prefs.fontSystem": "Системаның бертигез киңлекле шрифты",
+  "prefs.spellcheck": "Дөрес язуны тикшерү",
+  "prefs.spellcheckHint": "Системагызның дөрес язу тикшергечен куллана",
   "prefs.sample": "Җәйге таңда сандугач җырлый, күңелдә моң һәм өмет уяна.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

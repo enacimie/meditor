@@ -113,6 +113,8 @@ export const el = {
   "prefs.fontSize": "Μέγεθος γραμματοσειράς",
   "prefs.fontFamily": "Γραμματοσειρά",
   "prefs.fontSystem": "Σταθερού πλάτους του συστήματος",
+  "prefs.spellcheck": "Ορθογραφικός έλεγχος",
+  "prefs.spellcheckHint": "Χρησιμοποιεί τον ορθογραφικό έλεγχο του συστήματός σας",
   "prefs.sample": "Ξεσκεπάζω την ψυχοφθόρα βδελυγμία.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Κλείσιμο άλλων καρτελών",

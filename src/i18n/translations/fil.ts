@@ -112,6 +112,8 @@ export const fil = {
   "prefs.fontSize": "Laki ng font",
   "prefs.fontFamily": "Font",
   "prefs.fontSystem": "Monospace ng sistema",
+  "prefs.spellcheck": "Pagsusuri ng baybay",
+  "prefs.spellcheckHint": "Gumagamit ng spell checker ng iyong sistema",
   "prefs.sample": "Ang mabilis na kayumangging soro ay lumundag sa tamad na aso.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Isara ang ibang tab",

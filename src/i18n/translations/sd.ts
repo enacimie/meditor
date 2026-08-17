@@ -113,6 +113,8 @@ export const sd = {
   "prefs.fontSize": "فونٽ جي ماپ",
   "prefs.fontFamily": "فونٽ",
   "prefs.fontSystem": "سسٽم مونو اسپيس",
+  "prefs.spellcheck": "اسپيلنگ چڪاس",
+  "prefs.spellcheckHint": "توهان جي سسٽم جو اسپيلنگ چيڪر استعمال ڪري ٿو",
   "prefs.sample": "تيز ڀورو لومڙ سست ڪتي مٿان ٽپو ڏنو.",
   "prefs.pixels": (n: unknown) => `${String(n)} پکسل`,
   "menu.closeOthers": "Close other tabs",

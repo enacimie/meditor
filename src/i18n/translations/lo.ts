@@ -113,6 +113,8 @@ export const lo = {
   "prefs.fontSize": "ຂະໜາດຕົວອັກສອນ",
   "prefs.fontFamily": "ຕົວອັກສອນ",
   "prefs.fontSystem": "ຕົວອັກສອນລະບົບແບບຄວາມກວ້າງເທົ່າກັນ",
+  "prefs.spellcheck": "ກວດຄຳສະກົດ",
+  "prefs.spellcheckHint": "ໃຊ້ຕົວກວດຄຳສະກົດຂອງລະບົບຂອງທ່ານ",
   "prefs.sample": "ໝາຈິ້ງຈອກສີນ້ຳຕານແລ່ນໄວກະໂດດຂ້າມໝາຂີ້ຄ້ານ.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

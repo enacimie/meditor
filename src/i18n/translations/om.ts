@@ -113,6 +113,8 @@ export const om = {
   "prefs.fontSize": "Guddina qubee",
   "prefs.fontFamily": "Qubee",
   "prefs.fontSystem": "Monospace sirnaa",
+  "prefs.spellcheck": "Sakatta'a qubeessuu",
+  "prefs.spellcheckHint": "Sakatta'aa qubeessuu sirna keessanii fayyadama",
   "prefs.sample": "Jaldeessi saffisaan mukicha irra utaale.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

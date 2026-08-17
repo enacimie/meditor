@@ -113,6 +113,8 @@ export const zu = {
   "prefs.fontSize": "Usayizi wefonti",
   "prefs.fontFamily": "Ifonti",
   "prefs.fontSystem": "Ifonti yesistimu enobubanzi obulinganayo",
+  "prefs.spellcheck": "Ukuhlola upelo",
+  "prefs.spellcheckHint": "Isebenzisa isihloli sopelo sesistimu yakho",
   "prefs.sample": "Impungushe esheshayo yeqa inja evilaphayo.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

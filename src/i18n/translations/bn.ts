@@ -130,6 +130,8 @@ export const bn = {
   "prefs.fontSize": "ফন্টের আকার",
   "prefs.fontFamily": "ফন্ট",
   "prefs.fontSystem": "সিস্টেম মনোস্পেস",
+  "prefs.spellcheck": "বানান পরীক্ষা",
+  "prefs.spellcheckHint": "আপনার সিস্টেমের বানান পরীক্ষক ব্যবহার করে",
   "prefs.sample": "দ্রুত বাদামী শিয়াল অলস কুকুরের উপর দিয়ে লাফিয়ে গেল।",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "অন্যান্য ট্যাব বন্ধ করুন",

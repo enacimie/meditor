@@ -130,6 +130,8 @@ export const mr = {
   "prefs.fontSize": "अक्षर आकार",
   "prefs.fontFamily": "फॉन्ट",
   "prefs.fontSystem": "सिस्टम मोनोस्पेस",
+  "prefs.spellcheck": "शुद्धलेखन तपासणी",
+  "prefs.spellcheckHint": "तुमच्या सिस्टमचा शुद्धलेखन तपासक वापरतो",
   "prefs.sample": "चपळ तपकिरी कोल्हा आळशी कुत्र्यावरून उडी मारतो.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "इतर टॅब बंद करा",

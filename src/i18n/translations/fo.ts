@@ -113,6 +113,8 @@ export const fo = {
   "prefs.fontSize": "Skriftstødd",
   "prefs.fontFamily": "Skrift",
   "prefs.fontSystem": "Monospace hjá kervinum",
+  "prefs.spellcheck": "Stavieftirlit",
+  "prefs.spellcheckHint": "Brúkar stavieftirlitið hjá kervinum",
   "prefs.sample": "Vetrarkvøldið var kalt, og bátarnir lógu við bryggjuna.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

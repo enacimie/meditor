@@ -112,6 +112,8 @@ export const es = {
   "prefs.fontSize": "Tamaño de letra",
   "prefs.fontFamily": "Tipografía",
   "prefs.fontSystem": "Monoespaciada del sistema",
+  "prefs.spellcheck": "Corrector ortográfico",
+  "prefs.spellcheckHint": "Usa el corrector que proporciona tu sistema",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "prefs.sample": "El veloz murciélago hindú comía feliz cardillo y kiwi",
   "menu.newTab": "Nueva pestaña",

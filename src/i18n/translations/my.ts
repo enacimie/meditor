@@ -112,6 +112,8 @@ export const my = {
   "prefs.fontSize": "စာလုံးအရွယ်အစား",
   "prefs.fontFamily": "ဖောင့်",
   "prefs.fontSystem": "စနစ်၏ အကျယ်တူဖောင့်",
+  "prefs.spellcheck": "စာလုံးပေါင်းစစ်ဆေးမှု",
+  "prefs.spellcheckHint": "သင့်စနစ်၏ စာလုံးပေါင်းစစ်ဆေးစနစ်ကို အသုံးပြုသည်",
   "prefs.sample": "မြန်ဆန်သော အညိုရောင်မြေခွေးသည် ပျင်းရိသောခွေးကို ကျော်ခုန်သည်။",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "အခြားတဘ်များပိတ်ရန်",

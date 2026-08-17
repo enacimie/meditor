@@ -113,6 +113,8 @@ export const ee = {
   "prefs.fontSize": "Ŋɔŋlɔdzesi ƒe lolome",
   "prefs.fontFamily": "Ŋɔŋlɔdzesi",
   "prefs.fontSystem": "Mɔ̃a ƒe monospace",
+  "prefs.spellcheck": "Ŋɔŋlɔ ƒe kpɔkpɔ",
+  "prefs.spellcheckHint": "Ezãa wò mɔ̃a ƒe ŋɔŋlɔkpɔla",
   "prefs.sample": "Ŋutsu la ƒle agbalẽ ɖeka le ƒuta ɣetrɔ.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

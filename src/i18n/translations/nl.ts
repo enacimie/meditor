@@ -112,6 +112,8 @@ export const nl = {
   "prefs.fontSize": "Tekengrootte",
   "prefs.fontFamily": "Lettertype",
   "prefs.fontSystem": "Systeem-monospace",
+  "prefs.spellcheck": "Spellingcontrole",
+  "prefs.spellcheckHint": "Gebruikt de spellingcontrole van je systeem",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "prefs.sample": "Pa's wijze lynx bezag vroom het fikse aquaduct",
   "menu.closeOthers": "Andere tabbladen sluiten",

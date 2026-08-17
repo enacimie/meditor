@@ -10,9 +10,13 @@ export const MAX_EDITOR_FONT_SIZE = 24;
 export const DEFAULT_EDITOR_FONT_SIZE = 14;
 export const DEFAULT_EDITOR_FONT_FAMILY = "system";
 
+export const DEFAULT_SPELLCHECK = true;
+
 export type EditorPreferences = {
   editorFontSize: number;
   editorFontFamily: string;
+  /** Hand the text to the platform's own spell checker. */
+  spellcheck: boolean;
 };
 
 /**
@@ -70,6 +74,11 @@ export function clampFontSize(value: unknown): number {
     return DEFAULT_EDITOR_FONT_SIZE;
   }
   return Math.min(MAX_EDITOR_FONT_SIZE, Math.max(MIN_EDITOR_FONT_SIZE, Math.round(value)));
+}
+
+/** Read a stored boolean, falling back to the default. */
+export function normalizeSpellcheck(value: unknown): boolean {
+  return typeof value === "boolean" ? value : DEFAULT_SPELLCHECK;
 }
 
 /** Accept a stored family id only if it is still offered. */

@@ -112,6 +112,8 @@ export const he = {
   "prefs.fontSize": "גודל גופן",
   "prefs.fontFamily": "גופן",
   "prefs.fontSystem": "רוחב אחיד של המערכת",
+  "prefs.spellcheck": "בדיקת איות",
+  "prefs.spellcheckHint": "משתמש בבודק האיות של המערכת שלך",
   "prefs.sample": "דג סקרן שט בים מאוכזב ולפתע מצא חברה",
   "prefs.pixels": (n: unknown) => `${String(n)} פיקסל`,
   "menu.closeOthers": "סגור כרטיסיות אחרות",

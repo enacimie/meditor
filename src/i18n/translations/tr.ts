@@ -130,6 +130,8 @@ export const tr = {
   "prefs.fontSize": "Yazı tipi boyutu",
   "prefs.fontFamily": "Yazı tipi",
   "prefs.fontSystem": "Sistem eş aralıklı",
+  "prefs.spellcheck": "Yazım denetimi",
+  "prefs.spellcheckHint": "Sisteminizin yazım denetleyicisini kullanır",
   "prefs.sample": "Pijamalı hasta yağız şoföre çabucak güvendi.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Diğer sekmeleri kapat",

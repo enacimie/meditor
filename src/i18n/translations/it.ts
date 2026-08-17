@@ -130,6 +130,8 @@ export const it = {
   "prefs.fontSize": "Dimensione del carattere",
   "prefs.fontFamily": "Carattere",
   "prefs.fontSystem": "Monospazio di sistema",
+  "prefs.spellcheck": "Controllo ortografico",
+  "prefs.spellcheckHint": "Usa il correttore fornito dal sistema",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "prefs.sample": "Pranzo d'acqua fa volti sghembi",
   "menu.closeOthers": "Chiudi altre schede",

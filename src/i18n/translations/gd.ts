@@ -113,6 +113,8 @@ export const gd = {
   "prefs.fontSize": "Meud a' chrutha-chlò",
   "prefs.fontFamily": "Cruth-clò",
   "prefs.fontSystem": "Aon-leud an t-siostaim",
+  "prefs.spellcheck": "Dearbhadh litreachaidh",
+  "prefs.spellcheckHint": "Cleachdaidh e dearbhair-litreachaidh an t-siostaim agad",
   "prefs.sample": "Chaidh am madadh-ruadh luath thairis air a' chù leisg.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

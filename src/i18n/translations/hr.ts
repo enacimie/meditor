@@ -113,6 +113,8 @@ export const hr = {
   "prefs.fontSize": "Veličina fonta",
   "prefs.fontFamily": "Font",
   "prefs.fontSystem": "Monospace sustava",
+  "prefs.spellcheck": "Provjera pravopisa",
+  "prefs.spellcheckHint": "Koristi provjeru pravopisa vašeg sustava",
   "prefs.sample": "Gojazni đačić s biciklom drži hmelj i finu vatu u džepu.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

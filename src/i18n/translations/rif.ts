@@ -113,6 +113,8 @@ export const rif = {
   "prefs.fontSize": "Tiddi n tsefsit",
   "prefs.fontFamily": "Tasefsit",
   "prefs.fontSystem": "Monospace n unagraw",
+  "prefs.spellcheck": "Asenqed n tira",
+  "prefs.spellcheckHint": "Isseqdac asenqed n tira n unagraw nnec",
   "prefs.sample": "Aryaz nni yusi adlis ɣer taddart nnes.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

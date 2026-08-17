@@ -113,6 +113,8 @@ export const bs = {
   "prefs.fontSize": "Veličina fonta",
   "prefs.fontFamily": "Font",
   "prefs.fontSystem": "Sistemski monospace",
+  "prefs.spellcheck": "Provjera pravopisa",
+  "prefs.spellcheckHint": "Koristi provjeru pravopisa vašeg sistema",
   "prefs.sample": "Fin dječak žuri kroz šumu noseći đačku torbu.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

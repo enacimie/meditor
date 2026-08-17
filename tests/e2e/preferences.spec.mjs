@@ -55,6 +55,31 @@ try {
     { message: `editor font size should follow the slider (was ${before})` },
   );
 
+  // ── The spell checker toggle reaches the content element ──────────
+  // CodeMirror hard-codes spellcheck="false"; the preference must override it,
+  // which is what hands the text to the platform checker.
+  const spellDefault = await page.evaluate(
+    "document.querySelector('.cm-content').getAttribute('spellcheck')",
+  );
+  assert(
+    spellDefault === "true",
+    `spell check should be on by default, got ${spellDefault}`,
+  );
+  await page.evaluate(`(() => {
+    const box = document.querySelector('#prefs-spellcheck');
+    box.click();
+    return true;
+  })()`);
+  await page.waitFor(
+    "document.querySelector('.cm-content').getAttribute('spellcheck') === 'false'",
+    { message: "turning the preference off should disable spell check" },
+  );
+  await page.evaluate("document.querySelector('#prefs-spellcheck').click(); true");
+  await page.waitFor(
+    "document.querySelector('.cm-content').getAttribute('spellcheck') === 'true'",
+    { message: "turning it back on should re-enable spell check" },
+  );
+
   // ── Escape closes it ──────────────────────────────────────────────
   await page.evaluate(`(() => {
     document.querySelector('.prefs-overlay').dispatchEvent(
@@ -86,7 +111,9 @@ try {
     page.consoleErrors.length === 0,
     "console errors: " + page.consoleErrors.join(" | "),
   );
-  console.log("PASS: preferences.spec — Ctrl+, opens, font size applies live and persists");
+  console.log(
+    "PASS: preferences.spec — Ctrl+, opens, font size + spell check apply live and persist",
+  );
 } finally {
   page.close();
 }

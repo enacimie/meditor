@@ -113,6 +113,8 @@ export const da = {
   "prefs.fontSize": "Skriftstørrelse",
   "prefs.fontFamily": "Skrifttype",
   "prefs.fontSystem": "Systemets monospace",
+  "prefs.spellcheck": "Stavekontrol",
+  "prefs.spellcheckHint": "Bruger systemets stavekontrol",
   "prefs.sample": "Quizdeltagerne spiste jordbær med fløde, mens cirkusklovnen Walther spillede på xylofon.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Luk andre faner",

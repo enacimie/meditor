@@ -28,6 +28,7 @@ import {
   fontStackFor,
   DEFAULT_EDITOR_FONT_FAMILY,
   DEFAULT_EDITOR_FONT_SIZE,
+  DEFAULT_SPELLCHECK,
 } from "./editorPreferences";
 import type { DocKind } from "./types";
 import "./Editor.css";
@@ -104,6 +105,23 @@ function applyLatexLang(
   });
 }
 
+/**
+ * CodeMirror sets spellcheck="false" on its content element, so the platform
+ * checker never sees the text. Overriding the attribute hands the document to
+ * whatever the webview provides: WebView2 on Windows and WKWebView on macOS
+ * bring their own; WebKitGTK needs it enabled on the web context as well.
+ *
+ * No `lang` is forced: the content element inherits it from <html>, which
+ * I18nProvider keeps in sync with the interface language.
+ */
+function spellcheckAttributes(enabled: boolean): Extension {
+  return EditorView.contentAttributes.of({
+    spellcheck: enabled ? "true" : "false",
+    autocorrect: enabled ? "on" : "off",
+    autocapitalize: "off",
+  });
+}
+
 /** Theme fragment carrying only the user-configurable typography. */
 const fontThemeCache = new Map<string, Extension>();
 
@@ -141,6 +159,8 @@ type Props = {
   fontSize?: number;
   /** Editor font family id (Preferences). */
   fontFamily?: string;
+  /** Let the platform spell-check the text (Preferences). */
+  spellcheck?: boolean;
   zenMode?: boolean;
   zenPlaceholder?: string;
   /** Fired when the cursor moves (or the active doc changes). 0-based line. */
@@ -158,6 +178,7 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
     wrap,
     fontSize = DEFAULT_EDITOR_FONT_SIZE,
     fontFamily = DEFAULT_EDITOR_FONT_FAMILY,
+    spellcheck = DEFAULT_SPELLCHECK,
     zenMode,
     zenPlaceholder,
     onCursorLineChange,
@@ -171,6 +192,7 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   const extRef = useRef<Extension[]>([]);
   const wrapCompartment = useRef(new Compartment());
   const fontCompartment = useRef(new Compartment());
+  const spellcheckCompartment = useRef(new Compartment());
   const placeholderCompartment = useRef(new Compartment());
   const languageCompartment = useRef(new Compartment());
   const kindSeqRef = useRef(0);
@@ -185,6 +207,7 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   const initialWrap = useRef(wrap);
   const initialFontSize = useRef(fontSize);
   const initialFontFamily = useRef(fontFamily);
+  const initialSpellcheck = useRef(spellcheck);
   const initialZenMode = useRef(zenMode);
   const initialZenPlaceholder = useRef(zenPlaceholder);
   const initialKind = useRef(kind);
@@ -205,6 +228,8 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   fontSizeRef.current = fontSize;
   const fontFamilyRef = useRef(fontFamily);
   fontFamilyRef.current = fontFamily;
+  const spellcheckRef = useRef(spellcheck);
+  spellcheckRef.current = spellcheck;
   const zenModeRef = useRef(zenMode);
   zenModeRef.current = zenMode;
   const zenPlaceholderRef = useRef(zenPlaceholder);
@@ -233,6 +258,9 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
         ),
         fontCompartment.current.reconfigure(
           fontTheme(fontSizeRef.current, fontFamilyRef.current),
+        ),
+        spellcheckCompartment.current.reconfigure(
+          spellcheckAttributes(spellcheckRef.current),
         ),
         languageCompartment.current.reconfigure(languageExtRef.current),
       ],
@@ -327,6 +355,9 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
       fontCompartment.current.of(
         fontTheme(initialFontSize.current, initialFontFamily.current),
       ),
+      spellcheckCompartment.current.of(
+        spellcheckAttributes(initialSpellcheck.current),
+      ),
       EditorView.theme({
         "&": {
           height: "100%",
@@ -404,6 +435,16 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
       ),
     });
   }, [fontSize, fontFamily]);
+
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch({
+      effects: spellcheckCompartment.current.reconfigure(
+        spellcheckAttributes(spellcheck),
+      ),
+    });
+  }, [spellcheck]);
 
   useEffect(() => {
     const view = viewRef.current;

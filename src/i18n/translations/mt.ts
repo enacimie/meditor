@@ -113,6 +113,8 @@ export const mt = {
   "prefs.fontSize": "Daqs tat-tipa",
   "prefs.fontFamily": "Tipa",
   "prefs.fontSystem": "Monospace tas-sistema",
+  "prefs.spellcheck": "Verifika tal-ortografija",
+  "prefs.spellcheckHint": "Juża l-korrettur tal-ortografija tas-sistema tiegħek",
   "prefs.sample": "Il-ġurdien ħarab malajr taħt il-mejda żgħira.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

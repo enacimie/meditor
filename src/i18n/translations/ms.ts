@@ -112,6 +112,8 @@ export const ms = {
   "prefs.fontSize": "Saiz fon",
   "prefs.fontFamily": "Fon",
   "prefs.fontSystem": "Monospace sistem",
+  "prefs.spellcheck": "Semakan ejaan",
+  "prefs.spellcheckHint": "Menggunakan penyemak ejaan sistem anda",
   "prefs.sample": "Kucing lincah melompat pagar kayu yang lama.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Tutup tab lain",

@@ -113,6 +113,8 @@ export const cy = {
   "prefs.fontSize": "Maint y ffont",
   "prefs.fontFamily": "Ffont",
   "prefs.fontSystem": "Monospace y system",
+  "prefs.spellcheck": "Gwirio sillafu",
+  "prefs.spellcheckHint": "Yn defnyddio gwirydd sillafu eich system",
   "prefs.sample": "Parciais fy jac codi baw hud llawn dŵr ger tŷ Mabon.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

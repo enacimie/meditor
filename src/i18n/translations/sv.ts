@@ -113,6 +113,8 @@ export const sv = {
   "prefs.fontSize": "Teckenstorlek",
   "prefs.fontFamily": "Teckensnitt",
   "prefs.fontSystem": "Systemets fasta bredd",
+  "prefs.spellcheck": "Stavningskontroll",
+  "prefs.spellcheckHint": "Använder systemets stavningskontroll",
   "prefs.sample": "Flygande bäckasiner söka hwila på mjuka tuvor.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Stäng andra flikar",

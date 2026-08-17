@@ -130,6 +130,8 @@ export const ru = {
   "prefs.fontSize": "Размер шрифта",
   "prefs.fontFamily": "Шрифт",
   "prefs.fontSystem": "Системный моноширинный",
+  "prefs.spellcheck": "Проверка орфографии",
+  "prefs.spellcheckHint": "Использует системную проверку орфографии",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "prefs.sample": "Съешь же ещё этих мягких французских булок",
   "menu.closeOthers": "Закрыть другие вкладки",

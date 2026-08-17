@@ -113,6 +113,8 @@ export const eu = {
   "prefs.fontSize": "Letra-tamaina",
   "prefs.fontFamily": "Letra-tipoa",
   "prefs.fontSystem": "Sistemako monoespaziatua",
+  "prefs.spellcheck": "Zuzentzaile ortografikoa",
+  "prefs.spellcheckHint": "Sistemaren zuzentzaile ortografikoa erabiltzen du",
   "prefs.sample": "Zaldi azkarrak hesia jauzi zuen txakur nagiaren gainetik.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

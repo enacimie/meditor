@@ -113,6 +113,8 @@ export const sq = {
   "prefs.fontSize": "Madhësia e shkronjave",
   "prefs.fontFamily": "Shkronjat",
   "prefs.fontSystem": "Monospace i sistemit",
+  "prefs.spellcheck": "Kontroll drejtshkrimi",
+  "prefs.spellcheckHint": "Përdor kontrolluesin e drejtshkrimit të sistemit tuaj",
   "prefs.sample": "Fëmijët e vegjël çuan një dhuratë të bukur në shtëpi.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

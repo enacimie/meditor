@@ -112,6 +112,8 @@ export const ml = {
   "prefs.fontSize": "അക്ഷരവലുപ്പം",
   "prefs.fontFamily": "ഫോണ്ട്",
   "prefs.fontSystem": "സിസ്റ്റം മോണോസ്പേസ്",
+  "prefs.spellcheck": "അക്ഷരത്തെറ്റ് പരിശോധന",
+  "prefs.spellcheckHint": "നിങ്ങളുടെ സിസ്റ്റത്തിലെ അക്ഷരപ്പിശക് പരിശോധകൻ ഉപയോഗിക്കുന്നു",
   "prefs.sample": "വേഗതയേറിയ തവിട്ട് കുറുക്കൻ മടിയനായ നായയ്ക്ക് മുകളിലൂടെ ചാടി.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "മറ്റ് ടാബുകൾ അടയ്ക്കുക",

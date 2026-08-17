@@ -130,6 +130,8 @@ export const ko = {
   "prefs.fontSize": "글꼴 크기",
   "prefs.fontFamily": "글꼴",
   "prefs.fontSystem": "시스템 고정폭 글꼴",
+  "prefs.spellcheck": "맞춤법 검사",
+  "prefs.spellcheckHint": "시스템에서 제공하는 맞춤법 검사기를 사용합니다",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "prefs.sample": "다람쥐 헌 쳇바퀴에 타고파",
   "menu.closeOthers": "다른 탭 닫기",

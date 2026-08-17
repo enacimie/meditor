@@ -113,6 +113,8 @@ export const fi = {
   "prefs.fontSize": "Fontin koko",
   "prefs.fontFamily": "Fontti",
   "prefs.fontSystem": "Järjestelmän tasalevyinen",
+  "prefs.spellcheck": "Oikoluku",
+  "prefs.spellcheckHint": "Käyttää järjestelmän oikolukua",
   "prefs.sample": "Albert osti fagotin ja töräytti puhkuvan melodian.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Sulje muut välilehdet",

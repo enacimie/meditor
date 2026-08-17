@@ -129,6 +129,8 @@ export const kk = {
   "prefs.fontSize": "Қаріп өлшемі",
   "prefs.fontFamily": "Қаріп",
   "prefs.fontSystem": "Жүйелік бірқалыпты қаріп",
+  "prefs.spellcheck": "Емлені тексеру",
+  "prefs.spellcheckHint": "Жүйеңіздің емле тексергішін пайдаланады",
   "prefs.sample": "Әсем қыз бағында гүл өсіріп, құстың үнін тыңдады.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

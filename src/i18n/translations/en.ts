@@ -144,6 +144,8 @@ export const en = {
   "prefs.fontSize": "Font size",
   "prefs.fontFamily": "Font",
   "prefs.fontSystem": "System monospace",
+  "prefs.spellcheck": "Spell check",
+  "prefs.spellcheckHint": "Uses the spell checker provided by your system",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "prefs.sample": "The quick brown fox jumps over the lazy dog",
   "menu.newTab": "New tab",

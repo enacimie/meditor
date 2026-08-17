@@ -130,6 +130,8 @@ export const ja = {
   "prefs.fontSize": "文字サイズ",
   "prefs.fontFamily": "フォント",
   "prefs.fontSystem": "システムの等幅フォント",
+  "prefs.spellcheck": "スペルチェック",
+  "prefs.spellcheckHint": "システムのスペルチェッカーを使用します",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "prefs.sample": "いろはにほへと ちりぬるを",
   "menu.closeOthers": "他のタブを閉じる",

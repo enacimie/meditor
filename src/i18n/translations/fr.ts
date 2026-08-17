@@ -130,6 +130,8 @@ export const fr = {
   "prefs.fontSize": "Taille de police",
   "prefs.fontFamily": "Police",
   "prefs.fontSystem": "Monospace du système",
+  "prefs.spellcheck": "Correcteur orthographique",
+  "prefs.spellcheckHint": "Utilise le correcteur fourni par votre système",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "prefs.sample": "Portez ce vieux whisky au juge blond qui fume",
   "menu.closeOthers": "Fermer les autres onglets",

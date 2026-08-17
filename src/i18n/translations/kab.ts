@@ -113,6 +113,8 @@ export const kab = {
   "prefs.fontSize": "Tiddi n tsefsit",
   "prefs.fontFamily": "Tasefsit",
   "prefs.fontSystem": "Monospace n unagraw",
+  "prefs.spellcheck": "Asenqed n tira",
+  "prefs.spellcheckHint": "Yesseqdac asenqed n tira n unagraw-ik",
   "prefs.sample": "Aqcic-nni yeṭṭef adlis-is ɣef ṭṭabla n uxxam.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

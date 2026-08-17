@@ -113,6 +113,8 @@ export const su = {
   "prefs.fontSize": "Ukuran font",
   "prefs.fontFamily": "Font",
   "prefs.fontSystem": "Monospace sistem",
+  "prefs.spellcheck": "Parios éjahan",
+  "prefs.spellcheckHint": "Ngagunakeun parios éjahan ti sistem anjeun",
   "prefs.sample": "Ucing anu gancang luncat kana pager kai.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

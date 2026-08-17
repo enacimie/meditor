@@ -113,6 +113,8 @@ export const st = {
   "prefs.fontSize": "Boholo ba mongolo",
   "prefs.fontFamily": "Mongolo",
   "prefs.fontSystem": "Monospace ya sisteme",
+  "prefs.spellcheck": "Tlhahlobo ya mopeleto",
+  "prefs.spellcheckHint": "E sebedisa sehlahlobi sa mopeleto sa sisteme ya hao",
   "prefs.sample": "Ntja e potlakileng e tlolile lerako le lelelele.",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "menu.closeOthers": "Close other tabs",

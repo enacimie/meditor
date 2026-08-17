@@ -130,6 +130,8 @@ export const ur = {
   "prefs.fontSize": "فونٹ سائز",
   "prefs.fontFamily": "فونٹ",
   "prefs.fontSystem": "سسٹم مونو اسپیس",
+  "prefs.spellcheck": "ہجے کی جانچ",
+  "prefs.spellcheckHint": "آپ کے سسٹم کا ہجے چیکر استعمال کرتا ہے",
   "prefs.sample": "تیز بھوری لومڑی سست کتے کے اوپر سے کود گئی۔",
   "prefs.pixels": (n: unknown) => `${String(n)} پکسل`,
   "menu.closeOthers": "دیگر ٹیبز بند کریں",
