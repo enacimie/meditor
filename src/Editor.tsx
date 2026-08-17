@@ -16,6 +16,11 @@ import {
   buildSmartBackspaceKeymap,
 } from "./editorKeymaps";
 import { useImagePaste } from "./hooks/useImagePaste";
+import {
+  fontStackFor,
+  DEFAULT_EDITOR_FONT_FAMILY,
+  DEFAULT_EDITOR_FONT_SIZE,
+} from "./editorPreferences";
 import type { DocKind } from "./types";
 import "./Editor.css";
 
@@ -77,6 +82,14 @@ function applyLatexLang(view: EditorView, compartment: Compartment, seq: number,
   });
 }
 
+/** Theme fragment carrying only the user-configurable typography. */
+function fontTheme(fontSize: number, fontFamily: string): Extension {
+  return EditorView.theme({
+    "&": { fontSize: `${fontSize}px` },
+    ".cm-scroller": { fontFamily: fontStackFor(fontFamily) },
+  });
+}
+
 export type EditorHandle = {
   scrollToLine: (line: number) => void;
   getCursorLine: () => number;
@@ -90,6 +103,10 @@ type Props = {
   content: string;
   onChange: (content: string) => void;
   wrap: boolean;
+  /** Editor font size in px (Preferences). */
+  fontSize?: number;
+  /** Editor font family id (Preferences). */
+  fontFamily?: string;
   zenMode?: boolean;
   zenPlaceholder?: string;
   /** Fired when the cursor moves (or the active doc changes). 0-based line. */
@@ -99,7 +116,19 @@ type Props = {
 };
 
 const Editor = forwardRef<EditorHandle, Props>(function Editor(
-  { activeId, ids, content, onChange, wrap, zenMode, zenPlaceholder, onCursorLineChange, kind },
+  {
+    activeId,
+    ids,
+    content,
+    onChange,
+    wrap,
+    fontSize = DEFAULT_EDITOR_FONT_SIZE,
+    fontFamily = DEFAULT_EDITOR_FONT_FAMILY,
+    zenMode,
+    zenPlaceholder,
+    onCursorLineChange,
+    kind,
+  },
   ref,
 ) {
   const host = useRef<HTMLDivElement>(null);
@@ -107,6 +136,7 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   const states = useRef(new Map<string, EditorState>());
   const extRef = useRef<Extension[]>([]);
   const wrapCompartment = useRef(new Compartment());
+  const fontCompartment = useRef(new Compartment());
   const placeholderCompartment = useRef(new Compartment());
   const languageCompartment = useRef(new Compartment());
   const kindSeqRef = useRef(0);
@@ -119,6 +149,8 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   const initialActiveId = useRef(activeId);
   const initialContent = useRef(content);
   const initialWrap = useRef(wrap);
+  const initialFontSize = useRef(fontSize);
+  const initialFontFamily = useRef(fontFamily);
   const initialZenMode = useRef(zenMode);
   const initialZenPlaceholder = useRef(zenPlaceholder);
   const initialKind = useRef(kind);
@@ -195,17 +227,19 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
           onCursorLineChangeRef.current?.(line);
         }
       }),
+      // Font size and family live in their own compartment so Preferences can
+      // change them without rebuilding the editor state.
+      fontCompartment.current.of(
+        fontTheme(initialFontSize.current, initialFontFamily.current),
+      ),
       EditorView.theme({
         "&": {
           height: "100%",
           backgroundColor: "var(--bg)",
           color: "var(--fg)",
-          fontSize: "14px",
         },
         ".cm-scroller": {
           overflow: "auto",
-          fontFamily:
-            "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
         },
         ".cm-gutters": {
           backgroundColor: "var(--bg-alt)",
@@ -265,6 +299,16 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
         ),
       });
   }, [wrap]);
+
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch({
+      effects: fontCompartment.current.reconfigure(
+        fontTheme(fontSize, fontFamily),
+      ),
+    });
+  }, [fontSize, fontFamily]);
 
   useEffect(() => {
     const view = viewRef.current;

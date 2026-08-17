@@ -25,6 +25,8 @@ export type ShortcutHandlers = {
   openShortcuts: () => void;
   /** Ctrl+K / Cmd+K */
   focusSearch: () => void;
+  /** Ctrl+, / Cmd+, */
+  openPreferences: () => void;
   /** Escape while no modal is open */
   exitZen?: () => void;
 };
@@ -101,6 +103,9 @@ export function useKeyboardShortcuts(
       } else if (k === "w") {
         e.preventDefault();
         h.closeTab();
+      } else if (k === ",") {
+        e.preventDefault();
+        h.openPreferences();
       } else if (k === "k") {
         e.preventDefault();
         h.focusSearch();

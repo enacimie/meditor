@@ -29,6 +29,7 @@ type Props = {
   onCloseAll: () => void;
   onCloseOthers: () => void;
   onAbout: () => void;
+  onPreferences?: () => void;
 };
 
 const Topbar = memo(function Topbar({
@@ -53,6 +54,7 @@ const Topbar = memo(function Topbar({
   onCloseAll,
   onCloseOthers,
   onAbout,
+  onPreferences,
 }: Props) {
   const menuRef = useRef<HTMLDivElement>(null);
   const menuToggleRef = useRef<HTMLButtonElement>(null);
@@ -273,6 +275,12 @@ const Topbar = memo(function Topbar({
                 <span className="shortcut">{t("menu.shortcut.zen")}</span>
               </button>
               <div className="menu-sep" />
+              {onPreferences && (
+              <button type="button" role="menuitem" onClick={() => { onPreferences(); setMenuOpen(false); menuToggleRef.current?.focus(); }}>
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                {t("menu.preferences")}<span className="shortcut">{t("menu.shortcut.preferences")}</span>
+              </button>
+              )}
               <button type="button" role="menuitem" disabled={busy} onClick={() => { onAbout(); setMenuOpen(false); menuToggleRef.current?.focus(); }}>
                 <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
                 {t("menu.about")}
