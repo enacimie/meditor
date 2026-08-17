@@ -20,11 +20,17 @@ subset, as the opt-in LaTeX workflow does with `latex-full.spec.mjs`.
 
 The runner (`run.mjs`):
 
-1. Starts `pnpm dev` if nothing is listening on `http://127.0.0.1:1420`.
+1. Starts vite if nothing is already serving the app. It probes
+   `http://localhost:1420`, `http://127.0.0.1:1420` and `http://[::1]:1420`,
+   because vite binds to `localhost` — which resolves to `::1` on most systems,
+   so an IPv4-only check reports a healthy server as missing.
 2. Launches headless Chrome on a fresh profile + free CDP port.
 3. Runs every `*.spec.mjs` in this directory, passing `CDP_PORT` and
    `BASE_URL` via the environment.
 4. Tears down Chrome (and vite, if it started it).
+
+`BASE_URL` overrides the probing altogether; `E2E_PORT` and
+`E2E_STARTUP_TIMEOUT_MS` (default 60000) tune the defaults.
 
 ## Writing a spec
 
@@ -33,7 +39,7 @@ import { connect, assert } from "./cdp.mjs";
 
 const page = await connect(Number(process.env.CDP_PORT));
 try {
-  await page.freshPage(process.env.BASE_URL ?? "http://127.0.0.1:1420");
+  await page.freshPage(process.env.BASE_URL ?? "http://localhost:1420");
   await page.waitFor("!!document.querySelector('.cm-content')");
   await page.click(".tab-add");
   assert(await page.exists(".tabbar"), "tab bar visible");

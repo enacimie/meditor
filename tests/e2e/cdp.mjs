@@ -29,14 +29,35 @@ export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const CDP_READY_TIMEOUT_MS = 15000;
 const SEND_TIMEOUT_MS = 20000;
 
-/** Chrome binaries tried in order (override with `chromeBin`). */
+/**
+ * Chrome binaries tried in order (override with `chromeBin` or CHROME_PATH).
+ * Windows installs Chrome outside PATH, so the usual install paths are tried
+ * as well; `%LOCALAPPDATA%` covers per-user installs and Edge is a Chromium
+ * that speaks the same DevTools protocol.
+ */
 const CHROME_BINARIES = [
+  process.env.CHROME_PATH,
   "google-chrome",
   "google-chrome-stable",
   "chromium",
   "chromium-browser",
   "chrome",
-];
+  ...(process.platform === "win32"
+    ? [
+        join(process.env.PROGRAMFILES ?? "C:\\Program Files", "Google", "Chrome", "Application", "chrome.exe"),
+        join(process.env["PROGRAMFILES(X86)"] ?? "C:\\Program Files (x86)", "Google", "Chrome", "Application", "chrome.exe"),
+        join(process.env.LOCALAPPDATA ?? "", "Google", "Chrome", "Application", "chrome.exe"),
+        join(process.env.PROGRAMFILES ?? "C:\\Program Files", "Microsoft", "Edge", "Application", "msedge.exe"),
+        join(process.env["PROGRAMFILES(X86)"] ?? "C:\\Program Files (x86)", "Microsoft", "Edge", "Application", "msedge.exe"),
+      ]
+    : []),
+  ...(process.platform === "darwin"
+    ? [
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        "/Applications/Chromium.app/Contents/MacOS/Chromium",
+      ]
+    : []),
+].filter(Boolean);
 
 /** Find a free TCP port on 127.0.0.1 (avoids conflicts with other runs). */
 export function findFreePort() {
@@ -89,8 +110,16 @@ async function startWith(bin, cdpPort, url) {
     { stdio: "ignore" },
   );
 
+  // spawn() reports a missing binary asynchronously, so without this handler a
+  // candidate that is not installed raises an unhandled 'error' event and kills
+  // the runner before the remaining candidates are tried.
+  let spawnError = null;
+  chrome.on("error", (error) => {
+    spawnError = error;
+  });
+
   const deadline = Date.now() + CDP_READY_TIMEOUT_MS;
-  while (Date.now() < deadline) {
+  while (Date.now() < deadline && !spawnError) {
     try {
       const res = await fetch(`http://127.0.0.1:${cdpPort}/json/version`);
       if (res.ok) {
@@ -114,6 +143,9 @@ async function startWith(bin, cdpPort, url) {
   }
   chrome.kill("SIGKILL");
   rmSync(profileDir, { recursive: true, force: true });
+  if (spawnError) {
+    throw new Error(`binary "${bin}" could not be started: ${spawnError.message}`);
+  }
   throw new Error(`binary "${bin}" did not start within ${CDP_READY_TIMEOUT_MS}ms`);
 }
 

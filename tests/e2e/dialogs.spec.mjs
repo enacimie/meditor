@@ -22,7 +22,7 @@ import { fileURLToPath } from "node:url";
 import { connect, assert } from "./cdp.mjs";
 import { TAURI_SHIM } from "./tauri-shim.mjs";
 
-const BASE_URL = process.env.BASE_URL ?? "http://127.0.0.1:1420";
+const BASE_URL = process.env.BASE_URL ?? "http://localhost:1420";
 const CDP_PORT = Number(process.env.CDP_PORT);
 if (!CDP_PORT) throw new Error("CDP_PORT env var is required");
 
