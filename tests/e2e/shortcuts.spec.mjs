@@ -29,6 +29,21 @@ const artifactsDir = join(dirname(fileURLToPath(import.meta.url)), "artifacts");
 mkdirSync(artifactsDir, { recursive: true });
 
 /** Dispatch a keyboard event on window (the app's global shortcut target). */
+/**
+ * CodeMirror registers its keymap on the editor itself, so a shortcut handled
+ * by the editor (rather than by the app's window listener) has to be
+ * dispatched there.
+ */
+const pressInEditor = (page, key, opts = "") =>
+  page.evaluate(
+    `(() => {
+      const el = document.querySelector('.cm-content');
+      el.focus();
+      el.dispatchEvent(new KeyboardEvent('keydown', { key: ${JSON.stringify(key)}, bubbles: true, cancelable: true, ${opts} }));
+      return true;
+    })()`,
+  );
+
 const press = (page, key, opts = "") =>
   page.evaluate(
     `(() => {
@@ -202,6 +217,43 @@ try {
     await page.send("Emulation.clearDeviceMetricsOverride");
   }
 
+  // ── Ctrl+H opens find & replace, Ctrl+G goes to line ──────────────
+  // Both are advertised in the README and the overlay. Ctrl+G in particular
+  // must win over searchKeymap, which binds Mod-g to "find next".
+  // CodeMirror's "Mod-" is Cmd on macOS and Ctrl everywhere else, so the test
+  // has to press what the platform actually binds.
+  const modKey = (await page.evaluate(
+    "/mac/i.test(navigator.platform || navigator.userAgent)",
+  ))
+    ? "metaKey: true"
+    : "ctrlKey: true";
+
+  await pressInEditor(page, "h", modKey);
+  await page.waitFor("!!document.querySelector('.cm-panel.cm-search')", {
+    message: "Ctrl+H should open the search panel",
+  });
+  const replaceRow = await page.evaluate(`(() => {
+    const panel = document.querySelector('.cm-panel.cm-search');
+    const fields = panel ? panel.querySelectorAll('input.cm-textfield').length : 0;
+    const buttons = panel ? [...panel.querySelectorAll('button')].map((b) => b.textContent) : [];
+    return { fields, buttons };
+  })()`);
+  assert(
+    replaceRow.fields >= 2,
+    `find & replace should expose a replace field (found ${replaceRow.fields})`,
+  );
+
+  // Close the panel so the next shortcut starts from a clean state.
+  await press(page, "Escape");
+
+  await pressInEditor(page, "g", modKey);
+  // The go-to-line dialog is built from the generic showDialog() helper, so it
+  // is identified by its input rather than by a dedicated panel class.
+  await page.waitFor("!!document.querySelector('.cm-panel input[name=\"line\"]')", {
+    message: "Ctrl+G should open the go-to-line dialog, not find-next",
+  });
+  await press(page, "Escape");
+
   // ── Console health ────────────────────────────────────────────────
   assert(
     page.consoleErrors.length === 0,
@@ -209,7 +261,7 @@ try {
   );
 
   console.log(
-    "PASS: shortcuts.spec — F1 overlay (open/Esc/backdrop) + Ctrl+K find (open/focus/highlight/guard)",
+    "PASS: shortcuts.spec — F1 overlay + Ctrl+K find + Ctrl+H replace + Ctrl+G go-to-line",
   );
 } finally {
   page.close();
