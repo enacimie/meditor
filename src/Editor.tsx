@@ -1,4 +1,11 @@
-import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+} from "react";
 import { placeholder, keymap } from "@codemirror/view";
 import { EditorView, basicSetup } from "codemirror";
 import {
@@ -56,9 +63,16 @@ function loadTypstLang(): Extension {
   return [];
 }
 
-function applyTypstLang(view: EditorView, compartment: Compartment, seq: number, seqRef: { current: number }) {
+function applyTypstLang(
+  view: EditorView,
+  compartment: Compartment,
+  seq: number,
+  seqRef: { current: number },
+  appliedRef: { current: Extension },
+) {
   getTypstLang().then((ext) => {
     if (view.viewport && seqRef.current === seq) {
+      appliedRef.current = ext;
       view.dispatch({ effects: compartment.reconfigure(ext) });
     }
   });
@@ -70,9 +84,16 @@ function loadLatexLang(): Extension {
   return [];
 }
 
-function applyLatexLang(view: EditorView, compartment: Compartment, seq: number, seqRef: { current: number }) {
+function applyLatexLang(
+  view: EditorView,
+  compartment: Compartment,
+  seq: number,
+  seqRef: { current: number },
+  appliedRef: { current: Extension },
+) {
   getLatexLang().then((ext) => {
     if (view.viewport && seqRef.current === seq) {
+      appliedRef.current = ext;
       view.dispatch({ effects: compartment.reconfigure(ext) });
     }
   });
@@ -123,6 +144,49 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   const initialZenMode = useRef(zenMode);
   const initialZenPlaceholder = useRef(zenPlaceholder);
   const initialKind = useRef(kind);
+  // Language extension currently applied. view.setState() resets every
+  // compartment to its mount-time value, so restoring the language needs the
+  // resolved extension — for Typst/LaTeX it arrives asynchronously.
+  const languageExtRef = useRef<Extension>(
+    initialKind.current === "typst" || initialKind.current === "latex"
+      ? []
+      : markdown({ base: markdownLanguage, codeLanguages: languages }),
+  );
+
+  // Current values of the props that drive compartments, so the restore below
+  // always uses what the user has now, not what a stale closure captured.
+  const wrapRef = useRef(wrap);
+  wrapRef.current = wrap;
+  const zenModeRef = useRef(zenMode);
+  zenModeRef.current = zenMode;
+  const zenPlaceholderRef = useRef(zenPlaceholder);
+  zenPlaceholderRef.current = zenPlaceholder;
+
+  /**
+   * Re-apply every prop-driven compartment.
+   *
+   * `view.setState()` swaps the whole configuration, which resets each
+   * compartment to the value it was given at mount time. Any compartment that
+   * depends on a prop therefore has to be restored right after — otherwise the
+   * setting silently reverts when the user switches tabs.
+   *
+   * ADDING A COMPARTMENT? Add it here too.
+   */
+  const syncCompartments = useCallback((view: EditorView) => {
+    view.dispatch({
+      effects: [
+        wrapCompartment.current.reconfigure(
+          wrapRef.current ? EditorView.lineWrapping : [],
+        ),
+        placeholderCompartment.current.reconfigure(
+          zenModeRef.current && zenPlaceholderRef.current
+            ? placeholder(zenPlaceholderRef.current)
+            : [],
+        ),
+        languageCompartment.current.reconfigure(languageExtRef.current),
+      ],
+    });
+  }, []);
 
   // Image drag-and-drop + clipboard paste
   const { dragOver, busy, handleDragOver, handleDragEnter, handleDragLeave, handleDrop, handlePaste } =
@@ -288,15 +352,13 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
     kindSeqRef.current++;
     const seq = kindSeqRef.current;
     if (isTypst) {
-      applyTypstLang(view, languageCompartment.current, seq, kindSeqRef);
+      applyTypstLang(view, languageCompartment.current, seq, kindSeqRef, languageExtRef);
     } else if (isLatex) {
-      applyLatexLang(view, languageCompartment.current, seq, kindSeqRef);
+      applyLatexLang(view, languageCompartment.current, seq, kindSeqRef, languageExtRef);
     } else {
-      view.dispatch({
-        effects: languageCompartment.current.reconfigure(
-          markdown({ base: markdownLanguage, codeLanguages: languages }),
-        ),
-      });
+      const ext = markdown({ base: markdownLanguage, codeLanguages: languages });
+      languageExtRef.current = ext;
+      view.dispatch({ effects: languageCompartment.current.reconfigure(ext) });
     }
   }, [kind]);
 
@@ -339,18 +401,14 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
     }
     suppress.current = true;
     view.setState(states.current.get(activeId)!);
-    view.dispatch({
-      effects: wrapCompartment.current.reconfigure(
-        wrap ? EditorView.lineWrapping : [],
-      ),
-    });
+    syncCompartments(view);
     states.current.set(activeId, view.state);
     suppress.current = false;
     // Report the cursor position of the newly active document.
     onCursorLineChangeRef.current?.(
       view.state.doc.lineAt(view.state.selection.main.head).number - 1,
     );
-  }, [activeId, content, wrap]);
+  }, [activeId, content, wrap, syncCompartments]);
 
   useEffect(() => {
     const prev = lastIdsRef.current;
