@@ -744,12 +744,14 @@ export default function App() {
         rtl: isRtl(lang),
         t,
       });
-      await invoke("write_html_file", {
+      const saved = await invoke<boolean>("write_html_file", {
         html,
         defaultName: `${base}.html`,
         locale: lang,
       });
-      showNotice(operationNoticeDone(t, "exportHtml"), "success");
+      // Cancelling the save dialog is not a failure, but it is not a success
+      // either: announcing "HTML exported" with no file is worse than silence.
+      if (saved) showNotice(operationNoticeDone(t, "exportHtml"), "success");
     } catch (e) {
       showNotice(operationNoticeError(t, "exportHtml"), "error", 0);
       await showNativeAlert(operationErrorPrefix(t, "exportHtml") + String(e), lang);

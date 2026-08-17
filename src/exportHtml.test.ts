@@ -1,6 +1,11 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from "vitest";
-import { buildStandaloneHtml, documentTitle, escapeHtml } from "./exportHtml";
+import {
+  buildStandaloneHtml,
+  documentTitle,
+  escapeHtml,
+  inlineKatexFonts,
+} from "./exportHtml";
 
 describe("escapeHtml", () => {
   it("escapes the characters that could break out of markup", () => {
@@ -25,6 +30,42 @@ describe("documentTitle", () => {
 
   it("ignores a hash that is not a heading", () => {
     expect(documentTitle("a # b\n", "notes")).toBe("notes");
+  });
+});
+
+describe("inlineKatexFonts", () => {
+  // KaTeX ships its stylesheet pointing at fonts by path; the bundler rewrites
+  // those paths and adds a hash. Both spellings must end up embedded, or the
+  // exported file loses its maths font.
+  const cases = [
+    ["as shipped", "url(fonts/KaTeX_Main-Regular.woff2)"],
+    ["as bundled", "url(/assets/KaTeX_Main-Regular-BwdEyMDf.woff2)"],
+    ["quoted", `url("fonts/KaTeX_Main-Regular.woff2")`],
+    ["with a query", "url(fonts/KaTeX_Main-Regular.woff2?v=1)"],
+  ] as const;
+
+  for (const [label, url] of cases) {
+    it(`rewrites a font URL ${label}`, () => {
+      const css = `@font-face{font-family:KaTeX_Main;src:${url} format("woff2");}`;
+      const out = inlineKatexFonts(css);
+      expect(out, "the path must not survive").not.toContain("KaTeX_Main-Regular.woff2");
+      expect(out).toContain("url(data:");
+    });
+  }
+
+  it("drops the woff and ttf fallbacks", () => {
+    const css =
+      "@font-face{font-family:KaTeX_Main;src:url(fonts/KaTeX_Main-Regular.woff2) format(\"woff2\")," +
+      "url(fonts/KaTeX_Main-Regular.woff) format(\"woff\")," +
+      "url(fonts/KaTeX_Main-Regular.ttf) format(\"truetype\");}";
+    const out = inlineKatexFonts(css);
+    expect(out).not.toContain(".woff)");
+    expect(out).not.toContain(".ttf)");
+  });
+
+  it("leaves declarations it does not recognise alone", () => {
+    const css = "@font-face{font-family:Other;src:url(fonts/Other-Regular.woff2);}";
+    expect(inlineKatexFonts(css)).toBe(css);
   });
 });
 

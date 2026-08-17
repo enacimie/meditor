@@ -43,7 +43,7 @@ export const zh = {
   "op.openErrorPrefix": "无法打开文件: ",
   "op.saveErrorPrefix": "无法保存: ",
   "op.exportErrorPrefix": "导出 PDF 错误: ",
-  "op.exportHtmlErrorPrefix": "导出 HTML 时出错：",
+  "op.exportHtmlErrorPrefix": "导出 HTML 错误: ",
   "op.cancelled": "已取消",
   "op.filesOpened": (n: number) => `已打开 ${n} 个文件`,
   // 确认

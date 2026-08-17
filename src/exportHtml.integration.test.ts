@@ -33,8 +33,10 @@ describe("exportMarkdownToHtml", () => {
     expect(html).toContain("<title>Report</title>");
     // Markdown actually became HTML.
     expect(html).toContain("<strong>bold</strong>");
-    // The renderer tags blocks with data-line for editor↔preview sync.
     expect(html).toMatch(/<table[\s>]/);
+    // The renderer tags blocks with data-line for editor↔preview sync, and the
+    // export keeps it: the file then maps back onto the source document.
+    expect(html).toMatch(/data-line="\d+"/);
     expect(html).toContain('href="https://example.org"');
     // Styles travel inside the file; nothing is fetched at open time.
     expect(html).toContain("<style>");
@@ -59,6 +61,19 @@ describe("exportMarkdownToHtml", () => {
       t,
     });
     expect(withoutMath).not.toContain("katex");
+  }, 20000);
+
+  it("inlines Mermaid diagrams as SVG", async () => {
+    // The whole point of going through renderContent: diagrams arrive already
+    // rendered and sanitized, so the exported file needs no Mermaid at all.
+    const html = await exportMarkdownToHtml(
+      ["# Diagram", "", "```mermaid", "graph TD;A-->B;", "```", ""].join("\n"),
+      { fileName: "diagram", lang: "en", rtl: false, t },
+    );
+    expect(html).toContain("<svg");
+    // No trace of the source: it became an image, not a code block.
+    expect(html).not.toContain("language-mermaid");
+    expect(html).not.toMatch(/<script\b/);
   }, 20000);
 
   it("marks right-to-left documents", async () => {

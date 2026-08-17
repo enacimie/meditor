@@ -31,7 +31,7 @@ export const ar = {
   "op.saving": "جار الحفظ...",
   "op.savingAs": "جار الحفظ باسم...",
   "op.exporting": "جار تصدير PDF...",
-  "op.exportingHtml": "…جاري تصدير HTML",
+  "op.exportingHtml": "جاري تصدير HTML…",
   "op.opened": "تم فتح الملفات",
   "op.saved": "تم حفظ المستند",
   "op.pdfExported": "تم تصدير PDF",
