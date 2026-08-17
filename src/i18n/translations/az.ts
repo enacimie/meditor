@@ -193,4 +193,11 @@ export const az = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Haqqında meditor",
+  "about.title": "Haqqında meditor",
+  "about.tagline": "Masaüstü üçün lokal-əsaslı Markdown, Typst və LaTeX redaktoru.",
+  "about.version": (v: string) => `Versiya ${v}`,
+  "about.license": "Lisenziya",
+  "about.source": "Mənbə kodu",
+  "about.close": "Bağla",
 };

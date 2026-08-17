@@ -170,4 +170,11 @@ export const xh = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Malunga ne-meditor",
+  "about.title": "Malunga ne-meditor",
+  "about.tagline": "Umhleli weMarkdown, Typst noLaTeX wasekuhlaleni wedesktop.",
+  "about.version": (v: string) => `Inguqulelo ${v}`,
+  "about.license": "Ilayisensi",
+  "about.source": "Ikhowudi yemvelaphi",
+  "about.close": "Vala",
 };

@@ -170,4 +170,11 @@ export const zu = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Mayelana ne-meditor",
+  "about.title": "Mayelana ne-meditor",
+  "about.tagline": "Umhleli we-Markdown, Typst ne-LaTeX wendawo ngedeskithophu.",
+  "about.version": (v: string) => `Inguqulo ${v}`,
+  "about.license": "Ilayisense",
+  "about.source": "Ikhodi yomthombo",
+  "about.close": "Vala",
 };

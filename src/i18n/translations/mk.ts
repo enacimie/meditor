@@ -170,4 +170,11 @@ export const mk = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "За meditor",
+  "about.title": "За meditor",
+  "about.tagline": "Локален уредувач за Markdown, Typst и LaTeX за десктоп.",
+  "about.version": (v: string) => `Верзија ${v}`,
+  "about.license": "Лиценца",
+  "about.source": "Изворен код",
+  "about.close": "Затвори",
 };

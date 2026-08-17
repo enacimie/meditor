@@ -194,4 +194,11 @@ export const zh = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "关于 meditor",
+  "about.title": "关于 meditor",
+  "about.tagline": "面向桌面的本地优先 Markdown、Typst 和 LaTeX 编辑器。",
+  "about.version": (v: string) => `版本 ${v}`,
+  "about.license": "许可证",
+  "about.source": "源代码",
+  "about.close": "关闭",
 };

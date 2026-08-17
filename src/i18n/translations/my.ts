@@ -169,4 +169,11 @@ export const my = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "meditor အကြောင်း",
+  "about.title": "meditor အကြောင်း",
+  "about.tagline": "desktop အတွက် ပြည်တွင်း-ဦးစားပေး Markdown, Typst နှင့် LaTeX တည်းဖြတ်သူ။",
+  "about.version": (v: string) => `ဗားရှင်း ${v}`,
+  "about.license": "လိုင်စင်",
+  "about.source": "ရင်းမြစ်ကုဒ်",
+  "about.close": "ပိတ်မည်",
 };

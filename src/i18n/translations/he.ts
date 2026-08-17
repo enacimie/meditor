@@ -169,4 +169,11 @@ export const he = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "אודות meditor",
+  "about.title": "אודות meditor",
+  "about.tagline": "עורך מקומי של Markdown, Typst ו-LaTeX לשולחן העבודה.",
+  "about.version": (v: string) => `גרסה ${v}`,
+  "about.license": "רישיון",
+  "about.source": "קוד מקור",
+  "about.close": "סגור",
 };

@@ -170,4 +170,11 @@ export const sl = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "O meditor",
+  "about.title": "O meditor",
+  "about.tagline": "Lokalni urejevalnik Markdown, Typst in LaTeX za namizje.",
+  "about.version": (v: string) => `Različica ${v}`,
+  "about.license": "Licenca",
+  "about.source": "Izvorna koda",
+  "about.close": "Zapri",
 };

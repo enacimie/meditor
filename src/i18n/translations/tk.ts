@@ -170,4 +170,11 @@ export const tk = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "meditor barada",
+  "about.title": "meditor barada",
+  "about.tagline": "Iş stoly üçin ýerli Markdown, Typst we LaTeX redaktory.",
+  "about.version": (v: string) => `Wersiýa ${v}`,
+  "about.license": "Lisenziýa",
+  "about.source": "Çeşme kody",
+  "about.close": "Ýap",
 };

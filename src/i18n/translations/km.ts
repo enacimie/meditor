@@ -193,4 +193,11 @@ export const km = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "អំពី meditor",
+  "about.title": "អំពី meditor",
+  "about.tagline": "កម្មវិធីនិពន្ធ Markdown, Typst និង LaTeX មូលដ្ឋានសម្រាប់កុំព្យូទ័រ។",
+  "about.version": (v: string) => `កំណែ ${v}`,
+  "about.license": "អាជ្ញាបណ្ណ",
+  "about.source": "កូដប្រភព",
+  "about.close": "បិទ",
 };

@@ -194,4 +194,11 @@ export const te = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "meditor గురించి",
+  "about.title": "meditor గురించి",
+  "about.tagline": "డెస్క్‌టాప్ కోసం స్థానిక-మొదటి Markdown, Typst మరియు LaTeX ఎడిటర్.",
+  "about.version": (v: string) => `వెర్షన్ ${v}`,
+  "about.license": "లైసెన్స్",
+  "about.source": "సోర్స్ కోడ్",
+  "about.close": "మూసివేయి",
 };

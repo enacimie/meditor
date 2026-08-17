@@ -194,4 +194,11 @@ export const ko = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "meditor 정보",
+  "about.title": "meditor 정보",
+  "about.tagline": "데스크톱용 로컬 우선 Markdown, Typst 및 LaTeX 편집기.",
+  "about.version": (v: string) => `버전 ${v}`,
+  "about.license": "라이선스",
+  "about.source": "소스 코드",
+  "about.close": "닫기",
 };

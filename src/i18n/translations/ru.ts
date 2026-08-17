@@ -194,4 +194,11 @@ export const ru = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "О программе meditor",
+  "about.title": "О программе meditor",
+  "about.tagline": "Локальный редактор Markdown, Typst и LaTeX для рабочего стола.",
+  "about.version": (v: string) => `Версия ${v}`,
+  "about.license": "Лицензия",
+  "about.source": "Исходный код",
+  "about.close": "Закрыть",
 };

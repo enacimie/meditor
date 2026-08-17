@@ -169,4 +169,11 @@ export const pl = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Informacje o meditor",
+  "about.title": "Informacje o meditor",
+  "about.tagline": "Lokalny edytor Markdown, Typst i LaTeX na komputer.",
+  "about.version": (v: string) => `Wersja ${v}`,
+  "about.license": "Licencja",
+  "about.source": "Kod źródłowy",
+  "about.close": "Zamknij",
 };

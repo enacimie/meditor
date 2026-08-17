@@ -193,4 +193,11 @@ export const ku = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Derbarê meditor",
+  "about.title": "Derbarê meditor",
+  "about.tagline": "Edîtorek Markdown, Typst û LaTeX ya herêmî ji bo sermaseyê.",
+  "about.version": (v: string) => `Guherto ${v}`,
+  "about.license": "Lîsans",
+  "about.source": "Koda çavkaniyê",
+  "about.close": "Bigire",
 };

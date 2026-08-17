@@ -170,4 +170,11 @@ export const af = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Oor meditor",
+  "about.title": "Oor meditor",
+  "about.tagline": "'n Lokaal-eerste Markdown-, Typst- en LaTeX-redigeerder vir die lessenaar.",
+  "about.version": (v: string) => `Weergawe ${v}`,
+  "about.license": "Lisensie",
+  "about.source": "Bronkode",
+  "about.close": "Maak toe",
 };

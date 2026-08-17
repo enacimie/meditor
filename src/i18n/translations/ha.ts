@@ -169,4 +169,11 @@ export const ha = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Game da meditor",
+  "about.title": "Game da meditor",
+  "about.tagline": "Editan Markdown, Typst da LaTeX na gida-farko don tebur.",
+  "about.version": (v: string) => `Sigar ${v}`,
+  "about.license": "Lasisi",
+  "about.source": "Lambar tushe",
+  "about.close": "Rufe",
 };

@@ -170,4 +170,11 @@ export const tg = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Дар бораи meditor",
+  "about.title": "Дар бораи meditor",
+  "about.tagline": "Муҳаррири маҳаллии Markdown, Typst ва LaTeX барои мизи корӣ.",
+  "about.version": (v: string) => `Версия ${v}`,
+  "about.license": "Иҷозатнома",
+  "about.source": "Рамзи манбаъ",
+  "about.close": "Пӯшидан",
 };

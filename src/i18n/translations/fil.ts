@@ -169,4 +169,11 @@ export const fil = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Tungkol sa meditor",
+  "about.title": "Tungkol sa meditor",
+  "about.tagline": "Isang local-first na editor ng Markdown, Typst at LaTeX para sa desktop.",
+  "about.version": (v: string) => `Bersyon ${v}`,
+  "about.license": "Lisensya",
+  "about.source": "Source code",
+  "about.close": "Isara",
 };

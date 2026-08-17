@@ -194,4 +194,11 @@ export const it = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Informazioni su meditor",
+  "about.title": "Informazioni su meditor",
+  "about.tagline": "Un editor locale Markdown, Typst e LaTeX per il desktop.",
+  "about.version": (v: string) => `Versione ${v}`,
+  "about.license": "Licenza",
+  "about.source": "Codice sorgente",
+  "about.close": "Chiudi",
 };
