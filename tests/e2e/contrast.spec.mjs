@@ -93,6 +93,20 @@ try {
   assert(theme === "contrast", `expected data-theme=contrast, got ${theme}`);
 
   // Root colors must be the contrast palette (pure black/white).
+  //
+  // Wait for the palette to actually land: on a cold macOS runner the reload
+  // can finish with the editor mounted but the theme's stylesheet not applied
+  // yet, and the root background still reads as transparent — a fixed read
+  // would fail with `rgba(0, 0, 0, 0)` for reasons that have nothing to do
+  // with the colours being tested.
+  await page.waitFor(
+    "getComputedStyle(document.documentElement).backgroundColor !== 'rgba(0, 0, 0, 0)'",
+    {
+      timeout: 10000,
+      message: "the contrast palette never reached :root",
+    },
+  );
+
   const rootColors = await page.evaluate(`(() => {
     const s = getComputedStyle(document.documentElement);
     return {
