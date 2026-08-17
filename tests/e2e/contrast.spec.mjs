@@ -122,9 +122,11 @@ try {
   // Error notices must remain visible in the explicit dark and contrast
   // themes, not only when the OS preference is dark.
   //
-  // Split into separate page.evaluate calls: Chrome on Windows/macOS does not
-  // reliably invalidate `:root[data-theme]` descendant styles within a single
-  // synchronous evaluate, so each theme switch is read in its own turn.
+  // Each theme switch is read in its own page.evaluate, and the switch below
+  // waits for the new colour to actually land: Chrome on Windows/macOS does
+  // not invalidate `:root[data-theme]` descendant styles synchronously, so
+  // reading in the same turn — or even in the next one — could still return
+  // the previous theme's colour.
   const noticeContrast = await page.evaluate(`(() => {
     const root = document.documentElement;
     const notice = document.createElement('div');
@@ -136,6 +138,18 @@ try {
   })()`);
 
   await page.evaluate(`document.documentElement.dataset.theme = 'dark'; true`);
+
+  // Chrome recalculates the styles inherited from :root[data-theme] lazily, so
+  // reading straight after the switch returned the previous theme's colour on
+  // Windows and macOS. Wait for the change to land instead of assuming it has:
+  // polling is deterministic regardless of how slow the runner is.
+  await page.waitFor(
+    `getComputedStyle(document.querySelector('.app-notice.error')).color !== ${JSON.stringify(noticeContrast.color)}`,
+    {
+      timeout: 5000,
+      message: `error notice never picked up the dark theme (still ${noticeContrast.color})`,
+    },
+  );
 
   const noticeDark = await page.evaluate(`(() => {
     const notice = document.querySelector('.app-notice.error');
