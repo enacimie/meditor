@@ -130,6 +130,8 @@ export const hi = {
   "prefs.fontSize": "फ़ॉन्ट आकार",
   "prefs.fontFamily": "फ़ॉन्ट",
   "prefs.fontSystem": "सिस्टम मोनोस्पेस",
+  "prefs.spellcheck": "वर्तनी जाँच",
+  "prefs.spellcheckHint": "आपके सिस्टम का वर्तनी परीक्षक उपयोग करता है",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "prefs.sample": "फ़ॉन्ट पूर्वावलोकन का नमूना पाठ",
   "menu.closeOthers": "अन्य टैब बंद करें",

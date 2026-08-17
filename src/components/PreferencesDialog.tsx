@@ -157,6 +157,26 @@ const PreferencesDialog = memo(function PreferencesDialog({
             </div>
           </div>
 
+          <div className="prefs-row">
+            <label className="prefs-label" htmlFor="prefs-spellcheck">
+              {t("prefs.spellcheck")}
+            </label>
+            <div className="prefs-control">
+              <input
+                id="prefs-spellcheck"
+                type="checkbox"
+                checked={value.spellcheck}
+                aria-describedby="prefs-spellcheck-hint"
+                onChange={(e) =>
+                  onChange({ ...value, spellcheck: e.target.checked })
+                }
+              />
+              <span className="prefs-hint" id="prefs-spellcheck-hint">
+                {t("prefs.spellcheckHint")}
+              </span>
+            </div>
+          </div>
+
           <p className="prefs-preview" style={{
             fontSize: `${value.editorFontSize}px`,
             fontFamily: EDITOR_FONT_FAMILIES.find((f) => f.id === value.editorFontFamily)?.stack,

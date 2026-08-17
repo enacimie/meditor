@@ -130,6 +130,8 @@ export const de = {
   "prefs.fontSize": "Schriftgröße",
   "prefs.fontFamily": "Schriftart",
   "prefs.fontSystem": "System-Monospace",
+  "prefs.spellcheck": "Rechtschreibprüfung",
+  "prefs.spellcheckHint": "Verwendet die Rechtschreibprüfung Ihres Systems",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "prefs.sample": "Franz jagt im komplett verwahrlosten Taxi quer durch Bayern",
   "menu.closeOthers": "Andere Tabs schließen",

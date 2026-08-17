@@ -5,9 +5,11 @@ import PreferencesDialog from "./PreferencesDialog";
 import {
   DEFAULT_EDITOR_FONT_FAMILY,
   DEFAULT_EDITOR_FONT_SIZE,
+  DEFAULT_SPELLCHECK,
   clampFontSize,
   fontStackFor,
   normalizeFontFamily,
+  normalizeSpellcheck,
   MAX_EDITOR_FONT_SIZE,
   MIN_EDITOR_FONT_SIZE,
 } from "../editorPreferences";
@@ -22,6 +24,7 @@ const t = ((key: string, ...args: unknown[]) => {
 const value = {
   editorFontSize: DEFAULT_EDITOR_FONT_SIZE,
   editorFontFamily: DEFAULT_EDITOR_FONT_FAMILY,
+  spellcheck: DEFAULT_SPELLCHECK,
 };
 
 beforeEach(() => {
@@ -75,7 +78,7 @@ describe("PreferencesDialog", () => {
     render(
       <PreferencesDialog
         t={t}
-        value={{ editorFontSize: 20, editorFontFamily: "serif" }}
+        value={{ editorFontSize: 20, editorFontFamily: "serif", spellcheck: true }}
         onChange={vi.fn()}
         onClose={vi.fn()}
       />,
@@ -112,6 +115,13 @@ describe("editorPreferences", () => {
     expect(clampFontSize("18")).toBe(DEFAULT_EDITOR_FONT_SIZE);
     expect(clampFontSize(Number.NaN)).toBe(DEFAULT_EDITOR_FONT_SIZE);
     expect(clampFontSize(undefined)).toBe(DEFAULT_EDITOR_FONT_SIZE);
+  });
+
+  it("reads the stored spell check flag defensively", () => {
+    expect(normalizeSpellcheck(false)).toBe(false);
+    expect(normalizeSpellcheck(true)).toBe(true);
+    expect(normalizeSpellcheck("yes")).toBe(DEFAULT_SPELLCHECK);
+    expect(normalizeSpellcheck(undefined)).toBe(DEFAULT_SPELLCHECK);
   });
 
   it("only accepts font families that are still offered", () => {

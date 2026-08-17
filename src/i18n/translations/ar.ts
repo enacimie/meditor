@@ -130,6 +130,8 @@ export const ar = {
   "prefs.fontSize": "حجم الخط",
   "prefs.fontFamily": "الخط",
   "prefs.fontSystem": "خط النظام أحادي المسافة",
+  "prefs.spellcheck": "التدقيق الإملائي",
+  "prefs.spellcheckHint": "يستخدم المدقق الإملائي الخاص بنظامك",
   "prefs.pixels": (n: unknown) => `${String(n)} بكسل`,
   "prefs.sample": "نص تجريبي لمعاينة الخط",
   "menu.closeOthers": "إغلاق علامات التبويب الأخرى",

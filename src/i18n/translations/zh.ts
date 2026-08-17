@@ -130,6 +130,8 @@ export const zh = {
   "prefs.fontSize": "字号",
   "prefs.fontFamily": "字体",
   "prefs.fontSystem": "系统等宽字体",
+  "prefs.spellcheck": "拼写检查",
+  "prefs.spellcheckHint": "使用系统提供的拼写检查器",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "prefs.sample": "视觉设计中的字体样例",
   "menu.closeOthers": "关闭其他标签页",

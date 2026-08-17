@@ -130,6 +130,8 @@ export const pt = {
   "prefs.fontSize": "Tamanho da letra",
   "prefs.fontFamily": "Tipo de letra",
   "prefs.fontSystem": "Monoespaçada do sistema",
+  "prefs.spellcheck": "Corretor ortográfico",
+  "prefs.spellcheckHint": "Usa o corretor fornecido pelo seu sistema",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "prefs.sample": "Um pequeno jabuti xereta viu dez cegonhas felizes",
   "menu.closeOthers": "Fechar outras abas",

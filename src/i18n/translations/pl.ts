@@ -112,6 +112,8 @@ export const pl = {
   "prefs.fontSize": "Rozmiar czcionki",
   "prefs.fontFamily": "Czcionka",
   "prefs.fontSystem": "Systemowa o stałej szerokości",
+  "prefs.spellcheck": "Sprawdzanie pisowni",
+  "prefs.spellcheckHint": "Używa modułu sprawdzania pisowni systemu",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "prefs.sample": "Pchnąć w tę łódź jeża lub ośm skrzyń fig",
   "menu.closeOthers": "Zamknij inne karty",
