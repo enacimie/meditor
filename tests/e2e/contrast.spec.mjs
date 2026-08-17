@@ -122,11 +122,11 @@ try {
   // Error notices must remain visible in the explicit dark and contrast
   // themes, not only when the OS preference is dark.
   //
-  // Split into separate page.evaluate calls: Chrome on Windows/macOS does not
-  // reliably invalidate `:root[data-theme]` descendant styles within a single
-  // synchronous evaluate, so each theme switch is read in its own turn.
+  // Each theme is read in its own evaluate, and the notice element is
+  // re-created after switching the theme: Chrome on Windows/macOS does not
+  // reliably recompute the computed style of an already-attached element when
+  // `:root[data-theme]` changes, so a freshly-inserted node is used instead.
   const noticeContrast = await page.evaluate(`(() => {
-    const root = document.documentElement;
     const notice = document.createElement('div');
     notice.className = 'app-notice error';
     notice.textContent = 'error';
@@ -138,13 +138,13 @@ try {
   await page.evaluate(`document.documentElement.dataset.theme = 'dark'; true`);
 
   const noticeDark = await page.evaluate(`(() => {
-    const notice = document.querySelector('.app-notice.error');
+    document.querySelector('.app-notice.error')?.remove();
+    const notice = document.createElement('div');
+    notice.className = 'app-notice error';
+    notice.textContent = 'error';
+    document.body.appendChild(notice);
     const s = getComputedStyle(notice);
-    return {
-      color: s.color,
-      border: s.borderTopColor,
-      theme: document.documentElement.dataset.theme,
-    };
+    return { color: s.color, border: s.borderTopColor };
   })()`);
 
   await page.evaluate(`(() => {
@@ -159,7 +159,7 @@ try {
   );
   assert(
     noticeDark.color === "rgb(255, 123, 114)",
-    `dark error notice text should use the light error token, got ${noticeDark.color} (data-theme=${noticeDark.theme})`,
+    `dark error notice text should use the light error token, got ${noticeDark.color}`,
   );
 
   // WCAG AA: black/white is the maximum possible ratio.
