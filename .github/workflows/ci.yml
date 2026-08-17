@@ -3,8 +3,10 @@ name: CI
 on:
   push:
     branches: [main]
+  # No branch filter: a pull request targeting any branch (for example a stacked
+  # PR based on another PR's branch) must still be validated. With
+  # `branches: [main]` those PRs silently ran no checks at all.
   pull_request:
-    branches: [main]
 
 permissions:
   contents: read
@@ -14,6 +16,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Full frontend gate: lint, types, audit, coverage, E2E and the production
+  # build. Linux only — these steps are platform-independent and running them
+  # once keeps the pipeline fast.
   test-frontend:
     runs-on: ubuntu-latest
     steps:
@@ -39,14 +44,47 @@ jobs:
           path: coverage/
           if-no-files-found: ignore
 
+  # meditor ships for Windows and macOS too, so the parts that can behave
+  # differently per platform (path handling, the E2E runner, the production
+  # build) are exercised there as well. The expensive, platform-independent
+  # steps stay in the job above.
+  test-frontend-os:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test:run
+      - run: pnpm test:e2e
+      - run: pnpm build
+
   test-backend:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
       - name: Install system dependencies
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -57,7 +95,9 @@ jobs:
             librsvg2-dev \
             libgtk-3-dev \
             libglib2.0-dev
-      - working-directory: src-tauri
+      # Formatting is platform-independent; checking it once is enough.
+      - if: runner.os == 'Linux'
+        working-directory: src-tauri
         run: cargo fmt --check
       - working-directory: src-tauri
         run: cargo clippy --all-targets -- -D warnings

@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type MutableRefObject,
@@ -23,7 +24,7 @@ import ConfirmDialog from "./components/ConfirmDialog";
 import RenameDialog from "./components/RenameDialog";
 import ShortcutsOverlay from "./components/ShortcutsOverlay";
 import Outline from "./components/Outline";
-import { parseHeadings } from "./components/outlineUtils";
+import { parseHeadings, type Heading } from "./components/outlineUtils";
 import { useTranslation } from "./i18n/I18nProvider";
 import { useThemeEffect } from "./hooks/useThemeEffect";
 import { useSplitDivider } from "./hooks/useSplitDivider";
@@ -55,6 +56,8 @@ const DEFAULT_PREFERENCES: Preferences = {
   theme: "system",
 };
 const MAX_PENDING_OPEN_DOCS = 256;
+/** Stable empty list, so a closed outline does not re-render its consumers. */
+const EMPTY_HEADINGS: Heading[] = [];
 
 function loadPreferences(): Preferences {
   if (typeof window === "undefined") return DEFAULT_PREFERENCES;
@@ -230,7 +233,13 @@ export default function App() {
   const closeGuardRef = useRef<Promise<unknown> | null>(null);
   const active = docs.find((d) => d.id === activeId) ?? docs[0];
   activeIdRef.current = activeId;
-  const headings = active ? parseHeadings(active.content) : [];
+  // Parsing runs over the whole document, so keep it off the keystroke path:
+  // only the outline panel consumes this, and it is closed by default.
+  const activeContent = active?.content ?? "";
+  const headings = useMemo(
+    () => (outlineOpen ? parseHeadings(activeContent) : EMPTY_HEADINGS),
+    [outlineOpen, activeContent],
+  );
   // Typst and LaTeX currently do not expose stable source locations in their
   // rendered output, so their preview↔editor sync controls must not pretend
   // to work. Markdown provides data-line metadata for both directions.
