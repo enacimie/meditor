@@ -555,6 +555,16 @@ export default function App() {
     setZenMode((z) => !z);
   }, []);
 
+  /** Move `step` tabs from the active one, wrapping around like the tab bar. */
+  const cycleTab = useCallback((step: number) => {
+    const list = docsRef.current;
+    if (list.length < 2) return;
+    const current = list.findIndex((d) => d.id === activeIdRef.current);
+    if (current === -1) return;
+    const next = (current + step + list.length) % list.length;
+    setActiveId(list[next].id);
+  }, []);
+
   // In-window confirmation (replaces the native GTK/system dialog). Stable
   // identity so the once-registered close guard can reference it safely.
   const confirmDialog = useCallback((message: string): Promise<boolean> => {
@@ -855,6 +865,8 @@ export default function App() {
       if (!ready || confirmRequest || renameRequest) return;
       setPreferencesOpen(true);
     },
+    nextTab: () => cycleTab(1),
+    prevTab: () => cycleTab(-1),
     exitZen: () => {
       if (zenMode) setZenMode(false);
     },
@@ -1012,6 +1024,8 @@ export default function App() {
               wrap={wrap}
               fontSize={editorPrefs.editorFontSize}
               fontFamily={editorPrefs.editorFontFamily}
+              zenMode={zenMode}
+              zenPlaceholder={t("zen.placeholder")}
               kind={active?.kind ?? "markdown"}
               onCursorLineChange={setCursorLine}
             />

@@ -204,4 +204,11 @@ export const ja = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "meditor について",
+  "about.title": "meditor について",
+  "about.tagline": "デスクトップ向けのローカルファーストな Markdown、Typst、LaTeX エディター。",
+  "about.version": (v: string) => `バージョン ${v}`,
+  "about.license": "ライセンス",
+  "about.source": "ソースコード",
+  "about.close": "閉じる",
 };

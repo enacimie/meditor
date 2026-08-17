@@ -204,4 +204,11 @@ export const ar = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "حول meditor",
+  "about.title": "حول meditor",
+  "about.tagline": "محرر محلي-أولًا لـ Markdown وTypst وLaTeX لسطح المكتب.",
+  "about.version": (v: string) => `الإصدار ${v}`,
+  "about.license": "الترخيص",
+  "about.source": "شفرة المصدر",
+  "about.close": "إغلاق",
 };

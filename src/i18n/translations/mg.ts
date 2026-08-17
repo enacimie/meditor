@@ -170,4 +170,11 @@ export const mg = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Momba ny meditor",
+  "about.title": "Momba ny meditor",
+  "about.tagline": "Mpandika Markdown, Typst ary LaTeX an-toerana ho an'ny birao.",
+  "about.version": (v: string) => `Versiona ${v}`,
+  "about.license": "Lisansa",
+  "about.source": "Kaody loharano",
+  "about.close": "Akatona",
 };

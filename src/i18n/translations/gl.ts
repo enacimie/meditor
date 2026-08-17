@@ -170,4 +170,11 @@ export const gl = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Acerca de meditor",
+  "about.title": "Acerca de meditor",
+  "about.tagline": "Un editor local de Markdown, Typst e LaTeX para o escritorio.",
+  "about.version": (v: string) => `Versión ${v}`,
+  "about.license": "Licenza",
+  "about.source": "Código fonte",
+  "about.close": "Pechar",
 };

@@ -194,4 +194,11 @@ export const ta = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "meditor பற்றி",
+  "about.title": "meditor பற்றி",
+  "about.tagline": "டெஸ்க்டாப்பிற்கான லோக்கல்-முதல் Markdown, Typst மற்றும் LaTeX எடிட்டர்.",
+  "about.version": (v: string) => `பதிப்பு ${v}`,
+  "about.license": "உரிமம்",
+  "about.source": "மூலக் குறியீடு",
+  "about.close": "மூடு",
 };

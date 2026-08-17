@@ -194,4 +194,11 @@ export const ur = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "meditor کے بارے میں",
+  "about.title": "meditor کے بارے میں",
+  "about.tagline": "ڈیسک ٹاپ کے لیے مقامی Markdown، Typst اور LaTeX ایڈیٹر۔",
+  "about.version": (v: string) => `ورژن ${v}`,
+  "about.license": "لائسنس",
+  "about.source": "سورس کوڈ",
+  "about.close": "بند کریں",
 };

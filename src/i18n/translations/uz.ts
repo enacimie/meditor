@@ -193,4 +193,11 @@ export const uz = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "meditor haqida",
+  "about.title": "meditor haqida",
+  "about.tagline": "Ish stoli uchun mahalliy Markdown, Typst va LaTeX muharriri.",
+  "about.version": (v: string) => `Versiya ${v}`,
+  "about.license": "Litsenziya",
+  "about.source": "Manba kodi",
+  "about.close": "Yopish",
 };

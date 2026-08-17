@@ -170,4 +170,11 @@ export const so = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Ku saabsan meditor",
+  "about.title": "Ku saabsan meditor",
+  "about.tagline": "Tifaftiraha Markdown, Typst iyo LaTeX ee maxalliga ah ee desktop.",
+  "about.version": (v: string) => `Nooca ${v}`,
+  "about.license": "Shatiga",
+  "about.source": "Koodhka isha",
+  "about.close": "Xir",
 };

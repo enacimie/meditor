@@ -169,4 +169,11 @@ export const ml = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "meditor-നെ കുറിച്ച്",
+  "about.title": "meditor-നെ കുറിച്ച്",
+  "about.tagline": "ഡെസ്ക്ടോപ്പിനായുള്ള പ്രാദേശിക Markdown, Typst, LaTeX എഡിറ്റർ.",
+  "about.version": (v: string) => `പതിപ്പ് ${v}`,
+  "about.license": "ലൈസൻസ്",
+  "about.source": "സോഴ്സ് കോഡ്",
+  "about.close": "അടയ്ക്കുക",
 };

@@ -194,4 +194,11 @@ export const sw = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Kuhusu meditor",
+  "about.title": "Kuhusu meditor",
+  "about.tagline": "Kihariri cha ndani cha Markdown, Typst na LaTeX kwa desktop.",
+  "about.version": (v: string) => `Toleo ${v}`,
+  "about.license": "Leseni",
+  "about.source": "Msimbo wa chanzo",
+  "about.close": "Funga",
 };

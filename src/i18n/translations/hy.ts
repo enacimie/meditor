@@ -170,4 +170,11 @@ export const hy = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "meditor-ի մասին",
+  "about.title": "meditor-ի մասին",
+  "about.tagline": "Տեղական Markdown, Typst և LaTeX խմբագրիչ աշխատասեղանի համար։",
+  "about.version": (v: string) => `Տարբերակ ${v}`,
+  "about.license": "Լիցենզիա",
+  "about.source": "Ելակոդ",
+  "about.close": "Փակել",
 };

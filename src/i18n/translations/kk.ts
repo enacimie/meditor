@@ -193,4 +193,11 @@ export const kk = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "meditor туралы",
+  "about.title": "meditor туралы",
+  "about.tagline": "Жұмыс үстеліне арналған жергілікті Markdown, Typst және LaTeX редакторы.",
+  "about.version": (v: string) => `Нұсқа ${v}`,
+  "about.license": "Лицензия",
+  "about.source": "Бастапқы код",
+  "about.close": "Жабу",
 };

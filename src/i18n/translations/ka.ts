@@ -170,4 +170,11 @@ export const ka = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "meditor-ის შესახებ",
+  "about.title": "meditor-ის შესახებ",
+  "about.tagline": "ლოკალური Markdown, Typst და LaTeX რედაქტორი დესკტოპისთვის.",
+  "about.version": (v: string) => `ვერსია ${v}`,
+  "about.license": "ლიცენზია",
+  "about.source": "საწყისი კოდი",
+  "about.close": "დახურვა",
 };

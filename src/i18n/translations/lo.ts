@@ -170,4 +170,11 @@ export const lo = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "ກ່ຽວກັບ meditor",
+  "about.title": "ກ່ຽວກັບ meditor",
+  "about.tagline": "ໂປຣແກຣມແກ້ໄຂ Markdown, Typst ແລະ LaTeX ແບບທ້ອງຖິ່ນສຳລັບ desktop.",
+  "about.version": (v: string) => `ລຸ້ນ ${v}`,
+  "about.license": "ໃບອະນຸຍາດ",
+  "about.source": "ລະຫັດຕົ້ນສະບັບ",
+  "about.close": "ປິດ",
 };

@@ -170,4 +170,11 @@ export const zgh = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "About meditor",
+  "about.title": "About meditor",
+  "about.tagline": "A local-first Markdown, Typst and LaTeX editor for the desktop.",
+  "about.version": (v: string) => `Version ${v}`,
+  "about.license": "License",
+  "about.source": "Source code",
+  "about.close": "Close",
 };

@@ -182,4 +182,11 @@ export const cs = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "O meditor",
+  "about.title": "O meditor",
+  "about.tagline": "Lokální editor Markdown, Typst a LaTeX pro počítač.",
+  "about.version": (v: string) => `Verze ${v}`,
+  "about.license": "Licence",
+  "about.source": "Zdrojový kód",
+  "about.close": "Zavřít",
 };

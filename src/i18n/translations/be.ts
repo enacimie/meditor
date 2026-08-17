@@ -170,4 +170,11 @@ export const be = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Пра meditor",
+  "about.title": "Пра meditor",
+  "about.tagline": "Лакальны рэдактар Markdown, Typst і LaTeX для працоўнага стала.",
+  "about.version": (v: string) => `Версія ${v}`,
+  "about.license": "Ліцэнзія",
+  "about.source": "Зыходны код",
+  "about.close": "Закрыць",
 };

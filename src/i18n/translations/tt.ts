@@ -170,4 +170,11 @@ export const tt = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "meditor турында",
+  "about.title": "meditor турында",
+  "about.tagline": "Эш өстәле өчен җирле Markdown, Typst һәм LaTeX редакторы.",
+  "about.version": (v: string) => `Версия ${v}`,
+  "about.license": "Лицензия",
+  "about.source": "Башлангыч код",
+  "about.close": "Ябу",
 };

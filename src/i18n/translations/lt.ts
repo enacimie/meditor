@@ -170,4 +170,11 @@ export const lt = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Apie meditor",
+  "about.title": "Apie meditor",
+  "about.tagline": "Lokalus Markdown, Typst ir LaTeX redaktorius darbalaukiui.",
+  "about.version": (v: string) => `Versija ${v}`,
+  "about.license": "Licencija",
+  "about.source": "Pirminis kodas",
+  "about.close": "Uždaryti",
 };

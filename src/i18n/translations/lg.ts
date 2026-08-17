@@ -170,4 +170,11 @@ export const lg = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Ebikwata ku meditor",
+  "about.title": "Ebikwata ku meditor",
+  "about.tagline": "Enkozesa ya Markdown, Typst ne LaTeX eya waka ku desktop.",
+  "about.version": (v: string) => `Enkyusa ${v}`,
+  "about.license": "Layisinsi",
+  "about.source": "Source code",
+  "about.close": "Galawo",
 };

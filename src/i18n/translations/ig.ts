@@ -193,4 +193,11 @@ export const ig = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Banyere meditor",
+  "about.title": "Banyere meditor",
+  "about.tagline": "Onye ndezi Markdown, Typst na LaTeX nke mpaghara maka desktọpụ.",
+  "about.version": (v: string) => `Ụdị ${v}`,
+  "about.license": "Akwụkwọ ikike",
+  "about.source": "Koodu isi",
+  "about.close": "Mechie",
 };

@@ -194,4 +194,11 @@ export const id = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Tentang meditor",
+  "about.title": "Tentang meditor",
+  "about.tagline": "Editor lokal Markdown, Typst, dan LaTeX untuk desktop.",
+  "about.version": (v: string) => `Versi ${v}`,
+  "about.license": "Lisensi",
+  "about.source": "Kode sumber",
+  "about.close": "Tutup",
 };

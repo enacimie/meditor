@@ -194,4 +194,11 @@ export const tr = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "meditor Hakkında",
+  "about.title": "meditor Hakkında",
+  "about.tagline": "Masaüstü için yerel öncelikli bir Markdown, Typst ve LaTeX düzenleyicisi.",
+  "about.version": (v: string) => `Sürüm ${v}`,
+  "about.license": "Lisans",
+  "about.source": "Kaynak kodu",
+  "about.close": "Kapat",
 };

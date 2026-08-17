@@ -170,4 +170,11 @@ export const cy = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Ynglŷn â meditor",
+  "about.title": "Ynglŷn â meditor",
+  "about.tagline": "Golygydd lleol-gyntaf Markdown, Typst a LaTeX ar gyfer y bwrdd gwaith.",
+  "about.version": (v: string) => `Fersiwn ${v}`,
+  "about.license": "Trwydded",
+  "about.source": "Cod ffynhonnell",
+  "about.close": "Cau",
 };

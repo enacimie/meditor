@@ -169,4 +169,11 @@ export const fa = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "درباره meditor",
+  "about.title": "درباره meditor",
+  "about.tagline": "ویرایشگر محلی-اول Markdown، Typst و LaTeX برای دسکتاپ.",
+  "about.version": (v: string) => `نسخه ${v}`,
+  "about.license": "مجوز",
+  "about.source": "کد منبع",
+  "about.close": "بستن",
 };

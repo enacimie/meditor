@@ -170,4 +170,11 @@ export const su = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Ngeunaan meditor",
+  "about.title": "Ngeunaan meditor",
+  "about.tagline": "Éditor lokal Markdown, Typst jeung LaTeX pikeun desktop.",
+  "about.version": (v: string) => `Versi ${v}`,
+  "about.license": "Lisénsi",
+  "about.source": "Kode sumber",
+  "about.close": "Tutup",
 };

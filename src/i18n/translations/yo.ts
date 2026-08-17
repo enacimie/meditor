@@ -169,4 +169,11 @@ export const yo = {
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 
+  "menu.about": "Nipa meditor",
+  "about.title": "Nipa meditor",
+  "about.tagline": "Olootu Markdown, Typst àti LaTeX ti agbegbe fun desktop.",
+  "about.version": (v: string) => `Ẹya ${v}`,
+  "about.license": "Ìwe-aṣẹ",
+  "about.source": "Koodu orisun",
+  "about.close": "Pa",
 };
