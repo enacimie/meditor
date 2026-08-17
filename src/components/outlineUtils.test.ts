@@ -75,6 +75,62 @@ describe("parseHeadings", () => {
       { level: 4, text: "Just right", line: 1 },
     ]);
   });
+
+  // ---- Line numbering ----
+
+  /** Previous implementation: re-splits the document at every match. */
+  function parseHeadingsNaive(content: string) {
+    const re = /^(#{1,6}|={1,4})\s+(.+)$/gm;
+    const out: { level: number; text: string; line: number }[] = [];
+    let match: RegExpExecArray | null;
+    while ((match = re.exec(content)) !== null) {
+      out.push({
+        level: match[1].length,
+        text: match[2].trim(),
+        line: content.slice(0, match.index).split("\n").length - 1,
+      });
+    }
+    return out;
+  }
+
+  it("numbers lines exactly like a full re-split of the document", () => {
+    const cases = [
+      "# First line heading\ntext\n## Second\n",
+      "no heading at all\n",
+      "\n\n\n# After blank lines",
+      "# Adjacent\n# Headings\n# In a row\n",
+      "text\n# No trailing newline",
+      "# Only heading",
+      "\n# Leading newline\n\n\n## Gaps\n\n\n\n### More gaps\n",
+      "# Unicode ✨ heading\n\n## Ünïcödé\n",
+    ];
+    for (const content of cases) {
+      expect(parseHeadings(content), JSON.stringify(content)).toEqual(
+        parseHeadingsNaive(content),
+      );
+    }
+  });
+
+  it("numbers lines correctly in a large document", () => {
+    // Exercises the incremental line counter across many headings, where the
+    // previous quadratic form was slowest.
+    const lines: string[] = [];
+    const expected: { level: number; text: string; line: number }[] = [];
+    for (let i = 0; i < 200; i++) {
+      lines.push(`# Heading ${i}`, "", "filler paragraph", "");
+      expected.push({ level: 1, text: `Heading ${i}`, line: i * 4 });
+    }
+    const content = lines.join("\n");
+    expect(parseHeadings(content)).toEqual(expected);
+    expect(parseHeadings(content)).toEqual(parseHeadingsNaive(content));
+  });
+
+  it("handles CRLF documents", () => {
+    // \r stays in the captured text; what matters is that the line index is
+    // not thrown off by the extra character.
+    const headings = parseHeadings("# One\r\n\r\n## Two\r\n");
+    expect(headings.map((h) => h.line)).toEqual([0, 2]);
+  });
 });
 
 describe("findActiveHeading", () => {
