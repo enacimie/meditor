@@ -79,12 +79,33 @@ try {
       split: +w('.split').toFixed(2),
       inner: innerWidth,
       direction: getComputedStyle(document.querySelector('.split')).flexDirection,
-      // This is what went wrong once and is worth reporting if it ever does
-      // again: the pane kept the divider ratio as an inline style and the
-      // layout rule lost to it, on Windows and macOS but not Linux.
-      pane0: (() => {
-        const p = document.querySelector('.split > .pane');
-        return p && { computedFlex: getComputedStyle(p).flex, inline: p.getAttribute('style') };
+      // Windows and macOS keep reporting the pane at half width while Linux
+      // does not, and the obvious explanations are all ruled out. Report the
+      // whole state: both panes, and whether the layout rules are in the
+      // stylesheet and their media query applies.
+      panes: [...document.querySelectorAll('.split > .pane')].map((p) => {
+        const cs = getComputedStyle(p);
+        return {
+          w: +p.getBoundingClientRect().width.toFixed(1),
+          display: cs.display,
+          flex: [cs.flexGrow, cs.flexShrink, cs.flexBasis].join('/'),
+          cssText: p.style.cssText,
+        };
+      }),
+      screenMedia: matchMedia('screen').matches,
+      printMedia: matchMedia('print').matches,
+      layoutRules: (() => {
+        const found = [];
+        const walk = (rules) => {
+          for (const r of rules ?? []) {
+            if (r.cssRules) { walk(r.cssRules); continue; }
+            if (r.selectorText?.includes('layout-')) found.push(r.cssText.slice(0, 120));
+          }
+        };
+        for (const sheet of document.styleSheets) {
+          try { walk(sheet.cssRules); } catch { found.push('(cross-origin sheet)'); }
+        }
+        return found;
       })(),
     };
   })()`);
@@ -94,7 +115,12 @@ try {
     share > 0.95,
     `the visible pane should span the whole workspace, took ${(share * 100).toFixed(1)}% ` +
       `(pane ${widths.pane} of split ${widths.split}, viewport ${widths.inner}) ` +
-      JSON.stringify(widths.pane0),
+      JSON.stringify({
+        panes: widths.panes,
+        screenMedia: widths.screenMedia,
+        printMedia: widths.printMedia,
+        layoutRules: widths.layoutRules,
+      }),
   );
   assert(
     widths.pane > split.paneWidth * 1.5,
