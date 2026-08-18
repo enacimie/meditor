@@ -35,7 +35,7 @@ import { useNotice } from "./hooks/useNotice";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 
 import type { Doc, DocKind } from "./types";
-import type { Theme } from "./components/types";
+import type { LayoutMode, Theme } from "./components/types";
 import { kindFromPath, normalizeDoc } from "./documentUtils";
 import {
   clampFontSize,
@@ -59,6 +59,7 @@ type Preferences = {
   docView: boolean;
   wrap: boolean;
   theme: Theme;
+  layoutMode: LayoutMode;
 } & EditorPreferences;
 
 const PREFERENCES_KEY = "meditor.preferences.v1";
@@ -66,6 +67,7 @@ const DEFAULT_PREFERENCES: Preferences = {
   docView: true,
   wrap: true,
   theme: "system",
+  layoutMode: "split",
   editorFontSize: DEFAULT_EDITOR_FONT_SIZE,
   editorFontFamily: DEFAULT_EDITOR_FONT_FAMILY,
   spellcheck: DEFAULT_SPELLCHECK,
@@ -89,11 +91,18 @@ function loadPreferences(): Preferences {
       stored.theme === "contrast"
         ? stored.theme
         : DEFAULT_PREFERENCES.theme;
+    const layoutMode =
+      stored.layoutMode === "editor" ||
+      stored.layoutMode === "split" ||
+      stored.layoutMode === "preview"
+        ? stored.layoutMode
+        : DEFAULT_PREFERENCES.layoutMode;
     return {
       docView:
         typeof stored.docView === "boolean" ? stored.docView : DEFAULT_PREFERENCES.docView,
       wrap: typeof stored.wrap === "boolean" ? stored.wrap : DEFAULT_PREFERENCES.wrap,
       theme,
+      layoutMode,
       // Clamped/whitelisted: a stale or hand-edited value must not break the
       // editor, only fall back to the default.
       editorFontSize: clampFontSize(stored.editorFontSize),
@@ -211,6 +220,9 @@ export default function App() {
   const [docView, setDocView] = useState(INITIAL_PREFERENCES.docView);
   const [wrap, setWrap] = useState(INITIAL_PREFERENCES.wrap);
   const [theme, setTheme] = useState<Theme>(INITIAL_PREFERENCES.theme);
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>(
+    INITIAL_PREFERENCES.layoutMode,
+  );
   const [menuOpen, setMenuOpen] = useState(false);
   const [zenMode, setZenMode] = useState(false);
   const [compactLayout, setCompactLayout] = useState(false);
@@ -503,8 +515,8 @@ export default function App() {
 
   useEffect(() => {
     if (!ready) return;
-    savePreferences({ docView, wrap, theme, ...editorPrefs });
-  }, [docView, wrap, theme, editorPrefs, ready]);
+    savePreferences({ docView, wrap, theme, layoutMode, ...editorPrefs });
+  }, [docView, wrap, theme, layoutMode, editorPrefs, ready]);
 
   function beginOperation(operation: FileOperation): boolean {
     if (isOperationBusy(busyOperationRef)) return false;
@@ -856,8 +868,25 @@ export default function App() {
     }
   }
 
-  function handleReverseSync(line: number) {
+  /**
+   * Jump to a line of the source, bringing the editor back if it is hidden.
+   *
+   * In preview-only mode the editor is display:none, so CodeMirror cannot
+   * measure anything: the scroll has to wait for the layout to come back,
+   * hence the frame. scrollToLine() ends in view.focus(), so the reader lands
+   * ready to type.
+   */
+  function goToCode(line: number) {
+    if (layoutMode === "preview") {
+      setLayoutMode("split");
+      requestAnimationFrame(() => editorRef.current?.scrollToLine(line));
+      return;
+    }
     editorRef.current?.scrollToLine(line);
+  }
+
+  function handleReverseSync(line: number) {
+    goToCode(line);
   }
 
   function handleForwardSync() {
@@ -867,7 +896,7 @@ export default function App() {
 
   function handleReverseSyncButton() {
     const line = previewRef.current?.getTargetLine() ?? 0;
-    editorRef.current?.scrollToLine(line);
+    goToCode(line);
   }
 
   // Keyboard shortcuts — extracted to its own hook
@@ -901,8 +930,12 @@ export default function App() {
       }
       if (confirmRequest || renameRequest || shortcutsOpen) return;
       if (preferencesOpen || aboutOpen) return;
+      // The editor is hidden in preview-only mode: focusing it would move the
+      // caret somewhere the user cannot see.
+      if (layoutMode === "preview") return;
       editorRef.current?.focusSearch();
     },
+    setLayout: setLayoutMode,
     openPreferences: () => {
       if (!ready || confirmRequest || renameRequest) return;
       // Two aria-modal dialogs at once would trap focus in the wrong one.
@@ -931,7 +964,14 @@ export default function App() {
   }
 
   return (
-    <div className={`app${zenMode ? " zen" : ""}`}>
+    <div
+      className={
+        "app" +
+        (zenMode ? " zen" : "") +
+        // Split is the default, so it needs no class of its own.
+        (layoutMode !== "split" ? ` layout-${layoutMode}` : "")
+      }
+    >
       <Topbar
         t={t}
         lang={lang}
@@ -994,7 +1034,8 @@ export default function App() {
         >
           <div className="pane-header">
             <span className="pane-title">{t("pane.editor")}</span>
-            {markdownSyncAvailable && (
+            {/* Pointless without the preview on screen. */}
+            {markdownSyncAvailable && layoutMode === "split" && (
               <button
                 type="button"
                 className="sync-btn"

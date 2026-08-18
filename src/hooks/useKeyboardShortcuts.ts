@@ -27,6 +27,8 @@ export type ShortcutHandlers = {
   focusSearch: () => void;
   /** Ctrl+, / Cmd+, */
   openPreferences: () => void;
+  /** Ctrl+1 / Ctrl+2 / Ctrl+3 — editor only, split, preview only */
+  setLayout: (mode: "editor" | "split" | "preview") => void;
   /** Ctrl+Tab */
   nextTab: () => void;
   /** Ctrl+Shift+Tab */
@@ -125,6 +127,11 @@ export function useKeyboardShortcuts(
       } else if (k === "k") {
         e.preventDefault();
         h.focusSearch();
+      } else if (!e.shiftKey && !e.altKey && (k === "1" || k === "2" || k === "3")) {
+        // !altKey matters on Spanish keyboards, where AltGr arrives as
+        // Ctrl+Alt and would otherwise swallow the digits.
+        e.preventDefault();
+        h.setLayout(k === "1" ? "editor" : k === "2" ? "split" : "preview");
       }
     };
 
