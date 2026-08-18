@@ -29,6 +29,15 @@ const panes = () =>
     };
   })()`);
 
+/** Interface controls that must not end up inside the document. */
+const CHROME = [".topbar", ".tabbar", ".pane-header", ".statusbar", ".zen-exit"];
+
+const visibleChrome = () =>
+  page.evaluate(`(() => ${JSON.stringify(CHROME)}
+    .map((sel) => [sel, document.querySelector(sel)])
+    .filter(([, el]) => el && getComputedStyle(el).display !== 'none')
+    .map(([sel]) => sel))()`);
+
 const setMedia = (media) => page.send("Emulation.setEmulatedMedia", { media });
 
 try {
@@ -43,6 +52,13 @@ try {
   assert(
     normal.display[1] !== "none",
     `the preview pane is the document and must be printed, got display: ${normal.display[1]}`,
+  );
+
+  // The buttons and the word count are the app, not the document.
+  const chromeInPrint = await visibleChrome();
+  assert(
+    chromeInPrint.length === 0,
+    `no interface should reach the printed page, got: ${chromeInPrint.join(", ")}`,
   );
 
   // ── Zen must not change what comes out ───────────────────────────
@@ -69,6 +85,11 @@ try {
   assert(
     zenInPrint.display[0] === "none",
     "the editor pane should not be printed from zen either",
+  );
+  const zenChrome = await visibleChrome();
+  assert(
+    zenChrome.length === 0,
+    `no interface should reach the printed page from zen either, got: ${zenChrome.join(", ")}`,
   );
 
   await setMedia("");

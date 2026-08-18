@@ -491,8 +491,17 @@ body,
     color: #000000;
   }
 
+  /*
+   * None of this is the document: the pane header carries buttons ("Go to
+   * code"), the status bar a word count, and the zen exit is a control. They
+   * were reaching the exported PDF because only the topbar and tabbar were
+   * being hidden here.
+   */
   .topbar,
-  .tabbar {
+  .tabbar,
+  .pane-header,
+  .statusbar,
+  .zen-exit {
     display: none !important;
   }
 
