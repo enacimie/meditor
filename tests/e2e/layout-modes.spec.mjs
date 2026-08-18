@@ -79,34 +79,19 @@ try {
       split: +w('.split').toFixed(2),
       inner: innerWidth,
       direction: getComputedStyle(document.querySelector('.split')).flexDirection,
-      // Windows and macOS keep reporting the pane at half width while Linux
-      // does not, and the obvious explanations are all ruled out. Report the
-      // whole state: both panes, and whether the layout rules are in the
-      // stylesheet and their media query applies.
+      // Both panes, declared and computed. This pane went half-width on the
+      // Windows and macOS runners while the sizing lived in CSS, and telling
+      // "the rule did not win" from "the pane is genuinely hidden" needs the
+      // declared value next to the computed one.
       panes: [...document.querySelectorAll('.split > .pane')].map((p) => {
         const cs = getComputedStyle(p);
         return {
           w: +p.getBoundingClientRect().width.toFixed(1),
           display: cs.display,
-          flex: [cs.flexGrow, cs.flexShrink, cs.flexBasis].join('/'),
-          cssText: p.style.cssText,
+          computed: [cs.flexGrow, cs.flexShrink, cs.flexBasis].join('/'),
+          declared: p.style.flex,
         };
       }),
-      screenMedia: matchMedia('screen').matches,
-      printMedia: matchMedia('print').matches,
-      layoutRules: (() => {
-        const found = [];
-        const walk = (rules) => {
-          for (const r of rules ?? []) {
-            if (r.cssRules) { walk(r.cssRules); continue; }
-            if (r.selectorText?.includes('layout-')) found.push(r.cssText.slice(0, 120));
-          }
-        };
-        for (const sheet of document.styleSheets) {
-          try { walk(sheet.cssRules); } catch { found.push('(cross-origin sheet)'); }
-        }
-        return found;
-      })(),
     };
   })()`);
   assert(widths.direction === "row", `the pinned viewport should lay the panes out in a row, got ${widths.direction}`);
@@ -115,12 +100,7 @@ try {
     share > 0.95,
     `the visible pane should span the whole workspace, took ${(share * 100).toFixed(1)}% ` +
       `(pane ${widths.pane} of split ${widths.split}, viewport ${widths.inner}) ` +
-      JSON.stringify({
-        panes: widths.panes,
-        screenMedia: widths.screenMedia,
-        printMedia: widths.printMedia,
-        layoutRules: widths.layoutRules,
-      }),
+      JSON.stringify(widths.panes),
   );
   assert(
     widths.pane > split.paneWidth * 1.5,

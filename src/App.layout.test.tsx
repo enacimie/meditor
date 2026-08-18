@@ -153,39 +153,40 @@ describe("layout modes", () => {
   });
 
   /*
-   * The pane carries the divider ratio as an inline `flex`. While a pane is
-   * hidden that ratio means nothing, and leaving it in place made the CSS
-   * fight it — a fight the Windows and macOS runners lost, showing the editor
-   * at half width with dead space beside it. So assert on the absence of the
-   * attribute rather than on a width jsdom cannot compute.
+   * Pane sizing is written inline by App.tsx, not left to the stylesheet: the
+   * divider ratio while both panes share the workspace, the whole workspace
+   * otherwise. Doing it from CSS meant overriding an inline value, which the
+   * Windows and macOS CI runners did not resolve reliably — the editor kept
+   * half the width with dead space beside it. jsdom computes no layout, so
+   * assert on the declared value, and let the E2E spec measure real widths.
    */
-  it("drops the split ratio from the panes outside split view", async () => {
+  it("gives the whole workspace to the visible pane outside split view", async () => {
     await renderApp();
     const panes = () => [...document.querySelectorAll<HTMLElement>(".split > .pane")];
     expect(panes()).toHaveLength(2);
-    for (const pane of panes()) expect(pane.style.flex).not.toBe("");
+    for (const pane of panes()) expect(pane.style.flex).toMatch(/^0 0 \d+%$/);
 
     fireEvent.keyDown(window, { key: "1", ctrlKey: true });
     await waitFor(() => expect(app().classList.contains("layout-editor")).toBe(true));
-    for (const pane of panes()) expect(pane.style.flex).toBe("");
+    for (const pane of panes()) expect(pane.style.flex).toBe("1 1 100%");
 
     fireEvent.keyDown(window, { key: "3", ctrlKey: true });
     await waitFor(() => expect(app().classList.contains("layout-preview")).toBe(true));
-    for (const pane of panes()) expect(pane.style.flex).toBe("");
+    for (const pane of panes()) expect(pane.style.flex).toBe("1 1 100%");
 
     // Back to split, the ratio returns.
     fireEvent.keyDown(window, { key: "2", ctrlKey: true });
     await waitFor(() => {
-      for (const pane of panes()) expect(pane.style.flex).not.toBe("");
+      for (const pane of panes()) expect(pane.style.flex).toMatch(/^0 0 \d+%$/);
     });
   });
 
-  it("drops the split ratio in zen mode too, which had the same clash", async () => {
+  it("gives zen mode the whole workspace too, which had the same clash", async () => {
     await renderApp();
     fireEvent.keyDown(window, { key: "F11" });
     await waitFor(() => expect(app().classList.contains("zen")).toBe(true));
     for (const pane of document.querySelectorAll<HTMLElement>(".split > .pane")) {
-      expect(pane.style.flex).toBe("");
+      expect(pane.style.flex).toBe("1 1 100%");
     }
   });
 

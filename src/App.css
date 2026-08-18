@@ -310,8 +310,11 @@ body,
  *
  * Scoped with :not(.zen) so zen mode — which is a writing mode, always the
  * editor alone — keeps winning; leaving zen restores the chosen layout with
- * no JavaScript involved. `flex` needs !important to beat the inline style
- * that carries the split ratio.
+ * no JavaScript involved.
+ *
+ * Hiding only. The size of the pane that stays is decided in App.tsx, which
+ * writes the right `flex` for the current mode: overriding an inline value
+ * from here did not resolve reliably on the Windows and macOS CI runners.
  */
 @media screen {
   .app:not(.zen).layout-editor .pane:last-child,
@@ -319,11 +322,6 @@ body,
   .app:not(.zen).layout-preview .pane:first-child,
   .app:not(.zen).layout-preview .split-divider {
     display: none !important;
-  }
-
-  .app:not(.zen).layout-editor .pane:first-child,
-  .app:not(.zen).layout-preview .pane:last-child {
-    flex: 1 1 100% !important;
   }
 }
 
