@@ -47,4 +47,10 @@ glib = "0.18"
 
 [target."cfg(target_os = \"windows\")".dependencies]
 winapi = { version = "0.3", features = ["winuser"] }
+# Printing to PDF goes through WebView2, the same webview Tauri already embeds
+# on Windows. Both crates are MIT and were already in the tree via wry, so this
+# only makes the dependency direct — nothing new ends up in the binary. Pinned
+# to the versions wry resolves, so the COM interface types are the same ones.
+webview2-com = "0.38"
+windows = "0.61"
 

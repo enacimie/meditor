@@ -45,6 +45,14 @@ function isTransientEvaluationError(error) {
 
 const CDP_READY_TIMEOUT_MS = 15000;
 const SEND_TIMEOUT_MS = 20000;
+/*
+ * Navigation gets its own, longer budget. The specs run against the Vite dev
+ * server, which compiles the module graph on demand, so the first hit of a run
+ * is far slower than any later command — enough to blow past SEND_TIMEOUT_MS on
+ * a cold CI runner, which is exactly how contrast.spec (the first spec to run,
+ * alphabetically) failed with "CDP command timed out: Page.navigate".
+ */
+const NAVIGATION_TIMEOUT_MS = 60000;
 
 /**
  * Chrome binaries tried in order (override with `chromeBin` or CHROME_PATH).
@@ -291,7 +299,17 @@ export class CdpSession {
     });
   }
 
-  /** Evaluate a JS expression in the page and return its value. */
+  /**
+   * Evaluate a JS expression in the page and return its value.
+   *
+   * If the expression sets its own deadline, pass a `timeoutMs` above it.
+   * Otherwise this command gives up first and the page-side promise is left
+   * running, which Chrome later reports as "Promise was collected" — a
+   * confusing way to be told the budgets disagree.
+   *
+   * @param {string} expression
+   * @param {number} [timeoutMs] - must exceed any timeout inside `expression`.
+   */
   async evaluate(expression, timeoutMs = SEND_TIMEOUT_MS) {
     const res = await this.send("Runtime.evaluate", {
       expression,
@@ -335,12 +353,12 @@ export class CdpSession {
   }
 
   async navigate(url) {
-    await this.send("Page.navigate", { url });
+    await this.send("Page.navigate", { url }, NAVIGATION_TIMEOUT_MS);
     await sleep(300);
   }
 
   async reload() {
-    await this.send("Page.reload", { ignoreCache: true });
+    await this.send("Page.reload", { ignoreCache: true }, NAVIGATION_TIMEOUT_MS);
     await sleep(300);
   }
 

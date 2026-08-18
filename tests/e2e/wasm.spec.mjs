@@ -55,7 +55,7 @@ try {
     } finally {
       try { engine?.closeWorker(); } catch { /* best effort */ }
     }
-  })()`);
+  })()`, 60000);
   assert(latexLoad.ok, `LaTeX local WASM worker failed: ${latexLoad.error || "unknown error"}`);
 
   assert(
