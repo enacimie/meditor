@@ -131,10 +131,25 @@ try {
         stranded.push((last.innerText || '').replace(/\s+/g, ' ').slice(0, 30));
       }
     }
-    return { stranded, wrappers: document.querySelectorAll('.keep-with-next').length };
+    const source = document.querySelector('.preview-source');
+    const firstBlock = source?.firstElementChild;
+    return {
+      stranded,
+      wrappers: document.querySelectorAll('.keep-with-next').length,
+      // If the grouping did not happen, these say why: it only runs when the
+      // offscreen source container has layout to measure.
+      pages: document.querySelectorAll('.pagedjs_page').length,
+      sourceBlocks: source ? source.children.length : -1,
+      sourceHeight: source ? source.offsetHeight : -1,
+      firstBlockHeight: firstBlock ? firstBlock.offsetHeight : -1,
+      docView: !!document.querySelector('.paged-view'),
+    };
   })()`);
 
-  assert(layout.wrappers > 0, "headings should have been grouped with their content");
+  assert(
+    layout.wrappers > 0,
+    "headings should have been grouped with their content: " + JSON.stringify(layout),
+  );
   /*
    * One is tolerated, and it is a known paged.js limit rather than slack in the
    * rule: when the group holds something that already carries
