@@ -290,11 +290,24 @@ body,
 /* ---- Zen mode ---- */
 .app.zen .topbar,
 .app.zen .tabbar,
-.app.zen .pane:last-child,
 .app.zen .pane-header,
 .app.zen .split-divider,
 .app.zen .statusbar {
   display: none !important;
+}
+
+/*
+ * Hiding the preview pane is a screen-only idea. On paper that pane IS the
+ * document: `export_pdf` prints this very webview, and the @media print block
+ * below reveals it with `.pane ~ .pane { display: block }` — without
+ * !important, so an unscoped `display: none !important` here wins and the
+ * export comes out blank. Ctrl+E is a global shortcut that works in zen, so
+ * that combination is one keystroke away.
+ */
+@media screen {
+  .app.zen .pane:last-child {
+    display: none !important;
+  }
 }
 
 .app.zen .pane:first-child {
