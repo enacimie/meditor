@@ -16,7 +16,8 @@ use std::{
     target_os = "dragonfly",
     target_os = "freebsd",
     target_os = "netbsd",
-    target_os = "openbsd"
+    target_os = "openbsd",
+    target_os = "windows"
 ))]
 use std::sync::mpsc;
 use tauri::{Emitter, Manager};
@@ -27,7 +28,8 @@ use tauri_plugin_dialog::DialogExt;
     target_os = "dragonfly",
     target_os = "freebsd",
     target_os = "netbsd",
-    target_os = "openbsd"
+    target_os = "openbsd",
+    target_os = "windows"
 ))]
 use std::time::Duration;
 
@@ -49,6 +51,13 @@ use std::ffi::OsStr;
 use std::os::windows::ffi::OsStrExt;
 #[cfg(target_os = "windows")]
 use std::ptr;
+
+#[cfg(target_os = "windows")]
+use webview2_com::Microsoft::Web::WebView2::Win32::{ICoreWebView2Environment6, ICoreWebView2_7};
+#[cfg(target_os = "windows")]
+use webview2_com::PrintToPdfCompletedHandler;
+#[cfg(target_os = "windows")]
+use windows::core::{Interface, PCWSTR};
 
 const MAX_FILE_BYTES: u64 = 64 * 1024 * 1024;
 const MAX_SESSION_BYTES: u64 = 25 * 1024 * 1024;
@@ -734,12 +743,19 @@ fn alert(message: String, locale: Option<String>) {
     }
 }
 
+/// Print the live webview to a PDF the user picks.
+///
+/// `paged` is true when the preview is the paginated document view, which lays
+/// out its own A4 pages complete with margins. Asking the printer for margins
+/// on top of that insets every page twice and spills each one onto a second
+/// sheet, so the export gains a blank page for every real one.
 #[tauri::command]
 async fn export_pdf(
     app: tauri::AppHandle,
     window: tauri::WebviewWindow,
     default_name: String,
     locale: Option<String>,
+    paged: Option<bool>,
 ) -> Result<(), String> {
     let loc = parse_locale(locale);
 
@@ -748,11 +764,130 @@ async fn export_pdf(
         target_os = "dragonfly",
         target_os = "freebsd",
         target_os = "netbsd",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "windows"
     )))]
     {
-        let _ = (app, window, default_name, loc);
+        let _ = (app, window, default_name, loc, paged);
         Err(t(loc, "pdf.notSupported"))
+    }
+
+    /*
+     * Windows. WebView2 can print the page it is showing straight to a file,
+     * so the shape is the same as the GTK path below: pick a destination, hand
+     * it to the webview, wait for the completion callback off the main thread,
+     * and then check what actually landed on disk.
+     *
+     * `with_webview` dispatches to the main thread and returns, so the wait
+     * must not happen here — blocking the main thread would stop the message
+     * loop the callback needs.
+     */
+    #[cfg(target_os = "windows")]
+    {
+        // WebView2 measures in inches. A4 with the same 25 mm margins the GTK
+        // path sets, so both platforms produce the same page.
+        const A4_WIDTH_IN: f64 = 8.268;
+        const A4_HEIGHT_IN: f64 = 11.693;
+        // 25 mm, matching the GTK path — but only when the page still needs
+        // them. See the `paged` parameter.
+        const MARGIN_IN: f64 = 0.984;
+        let margin = if paged.unwrap_or(true) {
+            0.0
+        } else {
+            MARGIN_IN
+        };
+
+        let path = {
+            let selected = app
+                .dialog()
+                .file()
+                .set_file_name(default_name)
+                .add_filter("PDF", &["pdf"])
+                .blocking_save_file();
+            match selected {
+                Some(path) => path.into_path().map_err(|e| e.to_string())?,
+                None => return Ok(()),
+            }
+        };
+        let path = normalize_path(loc, &path)?;
+        if let Some(parent) = path.parent() {
+            if !parent.exists() {
+                return Err(t(loc, "pdf.directoryMissing"));
+            }
+        }
+
+        // PrintToPdf takes a null-terminated wide string.
+        let wide: Vec<u16> = path.as_os_str().encode_wide().chain(Some(0)).collect();
+
+        let (result_tx, result_rx) = mpsc::channel::<Result<(), String>>();
+        let setup_tx = result_tx.clone();
+        window
+            .with_webview(move |webview| {
+                let started = (|| -> Result<(), String> {
+                    let core = unsafe { webview.controller().CoreWebView2() }
+                        .map_err(|e| e.to_string())?;
+                    let printer: ICoreWebView2_7 = core.cast().map_err(|e| e.to_string())?;
+                    let environment: ICoreWebView2Environment6 =
+                        webview.environment().cast().map_err(|e| e.to_string())?;
+                    let settings =
+                        unsafe { environment.CreatePrintSettings() }.map_err(|e| e.to_string())?;
+                    unsafe {
+                        settings
+                            .SetPageWidth(A4_WIDTH_IN)
+                            .map_err(|e| e.to_string())?;
+                        settings
+                            .SetPageHeight(A4_HEIGHT_IN)
+                            .map_err(|e| e.to_string())?;
+                        settings.SetMarginTop(margin).map_err(|e| e.to_string())?;
+                        settings
+                            .SetMarginBottom(margin)
+                            .map_err(|e| e.to_string())?;
+                        settings.SetMarginLeft(margin).map_err(|e| e.to_string())?;
+                        settings.SetMarginRight(margin).map_err(|e| e.to_string())?;
+                        settings
+                            .SetShouldPrintBackgrounds(true)
+                            .map_err(|e| e.to_string())?;
+                    }
+                    let done_tx = result_tx;
+                    let handler =
+                        PrintToPdfCompletedHandler::create(Box::new(move |result, succeeded| {
+                            let outcome = match result {
+                                Err(error) => Err(error.to_string()),
+                                Ok(()) if succeeded => Ok(()),
+                                // WebView2 declined without raising an error.
+                                Ok(()) => Err(t(loc, "pdf.invalidPdf")),
+                            };
+                            let _ = done_tx.send(outcome);
+                            Ok(())
+                        }));
+                    unsafe { printer.PrintToPdf(PCWSTR(wide.as_ptr()), &settings, &handler) }
+                        .map_err(|e| e.to_string())
+                })();
+                if let Err(error) = started {
+                    let _ = setup_tx.send(Err(error));
+                }
+            })
+            .map_err(|e| e.to_string())?;
+
+        let completion = tauri::async_runtime::spawn_blocking(move || {
+            result_rx.recv_timeout(Duration::from_secs(60))
+        })
+        .await
+        .map_err(|error| tf(loc, "pdf.waitFailed", &error.to_string()))?;
+        completion.map_err(|_| t(loc, "pdf.timeout"))??;
+
+        let metadata = std::fs::metadata(&path).map_err(|e| e.to_string())?;
+        if metadata.len() == 0 {
+            return Err(t(loc, "pdf.emptyFile"));
+        }
+        let mut header = [0_u8; 5];
+        let mut file = std::fs::File::open(&path).map_err(|e| e.to_string())?;
+        use std::io::Read;
+        file.read_exact(&mut header).map_err(|e| e.to_string())?;
+        if &header != b"%PDF-" {
+            return Err(t(loc, "pdf.invalidPdf"));
+        }
+        Ok(())
     }
 
     #[cfg(any(
@@ -802,6 +937,15 @@ async fn export_pdf(
         target_os = "openbsd"
     ))]
     {
+        /*
+         * Left alone on purpose. The GTK page setup below asks for the same
+         * 25 mm margins the paginated preview already draws inside each of its
+         * pages, so this path very likely doubles them exactly as the Windows
+         * one did — but that could not be verified here, and changing print
+         * behaviour blind on the platform that has been shipping is worse than
+         * reporting it. Measured on Windows: 7 preview pages came out as 9.
+         */
+        let _ = paged;
         let url = url::Url::from_file_path(&path).map_err(|_| t(loc, "pdf.invalidPath"))?;
         let uri = url.as_str().to_string();
         let (result_tx, result_rx) = mpsc::channel::<Result<(), String>>();
