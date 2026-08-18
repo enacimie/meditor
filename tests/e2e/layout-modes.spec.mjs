@@ -32,12 +32,24 @@ const visibility = (page) =>
       editor: box('.cm-editor'),
       preview: box('.preview-scroll'),
       divider: box('.split-divider'),
+      paneWidth: +(document.querySelector('.pane')?.getBoundingClientRect().width ?? 0).toFixed(2),
       classes: document.querySelector('.app')?.className ?? '',
     };
   })()`);
 
 const page = await connect(CDP_PORT);
 try {
+  // Pin the viewport. The workspace stacks vertically below 760px, and the
+  // pane widths this spec measures follow from it, so leaving the size to
+  // whatever the runner's headless Chrome defaults to makes the result depend
+  // on the machine. Cleared in the finally, as shortcuts.spec.mjs does.
+  await page.send("Emulation.setDeviceMetricsOverride", {
+    width: 1280,
+    height: 800,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+
   await page.freshPage(BASE_URL);
   await page.waitFor("!!document.querySelector('.cm-content')", { timeout: 20000 });
 
@@ -55,13 +67,31 @@ try {
   assert(!editorOnly.preview, "preview must be hidden in editor-only mode");
   assert(!editorOnly.divider, "divider must be hidden when a pane is hidden");
 
-  // The editor should now own the full width, not the split ratio.
-  const fullWidth = await page.evaluate(`(() => {
-    const pane = document.querySelector('.pane');
-    const split = document.querySelector('.split');
-    return Math.abs(pane.getBoundingClientRect().width - split.getBoundingClientRect().width) < 2;
+  // The editor should now own the workspace instead of the split ratio. Stated
+  // as a proportion rather than an exact pixel match: what matters is that
+  // `flex: 1 1 100%` won over the inline ratio, and a runner is free to spend
+  // a stray pixel on rounding or a scrollbar. The measurements travel with the
+  // failure so a red CI run says what it actually saw.
+  const widths = await page.evaluate(`(() => {
+    const w = (s) => document.querySelector(s)?.getBoundingClientRect().width ?? 0;
+    return {
+      pane: +w('.pane').toFixed(2),
+      split: +w('.split').toFixed(2),
+      inner: innerWidth,
+      direction: getComputedStyle(document.querySelector('.split')).flexDirection,
+    };
   })()`);
-  assert(fullWidth, "the visible pane should span the whole workspace");
+  assert(widths.direction === "row", `the pinned viewport should lay the panes out in a row, got ${widths.direction}`);
+  const share = widths.split > 0 ? widths.pane / widths.split : 0;
+  assert(
+    share > 0.95,
+    `the visible pane should span the whole workspace, took ${(share * 100).toFixed(1)}% ` +
+      `(pane ${widths.pane} of split ${widths.split}, viewport ${widths.inner})`,
+  );
+  assert(
+    widths.pane > split.paneWidth * 1.5,
+    `the pane should have grown past the split ratio: ${split.paneWidth} → ${widths.pane}`,
+  );
 
   // ── Typing while hidden, then coming back, must repaginate ────────
   await page.evaluate(`(() => {
@@ -152,5 +182,7 @@ try {
     "PASS: layout-modes.spec — editor / split / preview, repagination, jump back, persistence and zen",
   );
 } finally {
+  // Later specs share this browser and expect the default metrics back.
+  await page.send("Emulation.clearDeviceMetricsOverride").catch(() => {});
   page.close();
 }
