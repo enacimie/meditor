@@ -21,6 +21,7 @@ jobs:
   # once keeps the pipeline fast.
   test-frontend:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -49,6 +50,7 @@ jobs:
   # build) are exercised there as well. The expensive, platform-independent
   # steps stay in the job above.
   test-frontend-os:
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -70,6 +72,7 @@ jobs:
       - run: pnpm build
 
   test-backend:
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -85,6 +88,7 @@ jobs:
           workspaces: src-tauri
       - name: Install system dependencies
         if: runner.os == 'Linux'
+        timeout-minutes: 10
         run: |
           sudo apt-get update
           sudo apt-get install -y \
