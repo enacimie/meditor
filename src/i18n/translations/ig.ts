@@ -84,6 +84,10 @@ export const ig = {
   "pane.web": "Webụ",
   "pane.document": "Akwụkwọ",
   "pane.viewMode": "Ụdị nlele",
+  "layout.label": "Nhazi ebe ọrụ",
+  "layout.editorOnly": "Naanị ndezi",
+  "layout.split": "Ndezi na nlele",
+  "layout.previewOnly": "Naanị nlele",
   "pane.resize": "Gbanwee nha panelụ",
   "pane.resizeHint": "Dọrọ iji gbanwee nha",
   // Editor

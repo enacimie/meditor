@@ -84,6 +84,10 @@ export const kk = {
   "pane.web": "Веб",
   "pane.document": "Құжат",
   "pane.viewMode": "Алдын ала қарау режимі",
+  "layout.label": "Жұмыс аймағының орналасуы",
+  "layout.editorOnly": "Тек редактор",
+  "layout.split": "Редактор және алдын ала қарау",
+  "layout.previewOnly": "Тек алдын ала қарау",
   "pane.resize": "Панель өлшемін өзгерту",
   "pane.resizeHint": "Өлшемін өзгерту үшін сүйреңіз",
   // Editor

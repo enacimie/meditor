@@ -84,6 +84,10 @@ export const si = {
   "pane.web": "වෙබ්",
   "pane.document": "ලේඛනය",
   "pane.viewMode": "පෙරදසුන් ආකාරය",
+  "layout.label": "කාර්ය අවකාශ සැකැස්ම",
+  "layout.editorOnly": "සංස්කාරක පමණි",
+  "layout.split": "සංස්කාරක සහ පෙරදසුන",
+  "layout.previewOnly": "පෙරදසුන පමණි",
   "pane.resize": "පැනල ප්‍රමාණය වෙනස් කරන්න",
   "pane.resizeHint": "ප්‍රමාණය වෙනස් කිරීමට අදින්න",
   // Editor

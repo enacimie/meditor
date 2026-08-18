@@ -85,6 +85,10 @@ export const ar = {
   "pane.web": "ويب",
   "pane.document": "مستند",
   "pane.viewMode": "وضع المعاينة",
+  "layout.label": "تخطيط مساحة العمل",
+  "layout.editorOnly": "المحرر فقط",
+  "layout.split": "المحرر والمعاينة",
+  "layout.previewOnly": "المعاينة فقط",
   "pane.resize": "تغيير حجم اللوحات",
   "pane.resizeHint": "اسحب لتغيير الحجم",
   // Editor

@@ -84,6 +84,10 @@ export const uz = {
   "pane.web": "Veb",
   "pane.document": "Hujjat",
   "pane.viewMode": "Ko'rib chiqish rejimi",
+  "layout.label": "Ish maydoni tartibi",
+  "layout.editorOnly": "Faqat muharrir",
+  "layout.split": "Muharrir va ko'rib chiqish",
+  "layout.previewOnly": "Faqat ko'rib chiqish",
   "pane.resize": "Panellarni o'lchamlash",
   "pane.resizeHint": "O'lchamlash uchun sudrang",
   // Editor

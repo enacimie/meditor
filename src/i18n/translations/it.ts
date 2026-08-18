@@ -85,6 +85,10 @@ export const it = {
   "pane.web": "Web",
   "pane.document": "Documento",
   "pane.viewMode": "Modalità anteprima",
+  "layout.label": "Disposizione dell'area di lavoro",
+  "layout.editorOnly": "Solo editor",
+  "layout.split": "Editor e anteprima",
+  "layout.previewOnly": "Solo anteprima",
   "pane.resize": "Ridimensiona pannelli",
   "pane.resizeHint": "Trascina per ridimensionare",
   // Editor

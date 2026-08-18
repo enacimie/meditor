@@ -84,6 +84,10 @@ export const ceb = {
   "pane.web": "Web",
   "pane.document": "Dokumento",
   "pane.viewMode": "Preview mode",
+  "layout.label": "Ayos sa workspace",
+  "layout.editorOnly": "Editor lang",
+  "layout.split": "Editor ug preview",
+  "layout.previewOnly": "Preview lang",
   "pane.resize": "Usba ang gidak-on sa mga panel",
   "pane.resizeHint": "I-drag aron usbon ang gidak-on",
   // Editor

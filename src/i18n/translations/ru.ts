@@ -85,6 +85,10 @@ export const ru = {
   "pane.web": "Web",
   "pane.document": "Документ",
   "pane.viewMode": "Режим предпросмотра",
+  "layout.label": "Компоновка рабочей области",
+  "layout.editorOnly": "Только редактор",
+  "layout.split": "Редактор и предпросмотр",
+  "layout.previewOnly": "Только предпросмотр",
   "pane.resize": "Изменить размер панелей",
   "pane.resizeHint": "Перетащите для изменения размера",
   // Редактор

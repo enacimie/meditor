@@ -84,6 +84,10 @@ export const km = {
   "pane.web": "វេប",
   "pane.document": "ឯកសារ",
   "pane.viewMode": "របៀបមើលជាមុន",
+  "layout.label": "ប្លង់តំបន់ធ្វើការ",
+  "layout.editorOnly": "កម្មវិធីកែសម្រួលតែប៉ុណ្ណោះ",
+  "layout.split": "កម្មវិធីកែសម្រួល និងមើលជាមុន",
+  "layout.previewOnly": "មើលជាមុនតែប៉ុណ្ណោះ",
   "pane.resize": "ប្ដូរទំហំផ្ទាំង",
   "pane.resizeHint": "អូសដើម្បីប្ដូរទំហំ",
   // Editor

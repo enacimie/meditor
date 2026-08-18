@@ -85,6 +85,10 @@ export const mr = {
   "pane.web": "वेब",
   "pane.document": "दस्तऐवज",
   "pane.viewMode": "पूर्वावलोकन मोड",
+  "layout.label": "कार्यक्षेत्र मांडणी",
+  "layout.editorOnly": "फक्त संपादक",
+  "layout.split": "संपादक आणि पूर्वावलोकन",
+  "layout.previewOnly": "फक्त पूर्वावलोकन",
   "pane.resize": "पॅनेलचा आकार बदला",
   "pane.resizeHint": "आकार बदलण्यासाठी ड्रॅग करा",
   // Editor

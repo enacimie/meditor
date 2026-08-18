@@ -84,6 +84,10 @@ export const ht = {
   "pane.web": "Wèb",
   "pane.document": "Dokiman",
   "pane.viewMode": "Mòd apèsi",
+  "layout.label": "Dispozisyon espas travay",
+  "layout.editorOnly": "Editè sèlman",
+  "layout.split": "Editè ak apèsi",
+  "layout.previewOnly": "Apèsi sèlman",
   "pane.resize": "Chanje gwosè pano yo",
   "pane.resizeHint": "Trennen pou chanje gwosè",
   // Editor
