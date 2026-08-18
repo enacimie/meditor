@@ -118,9 +118,9 @@ export const tr = {
   "file.directoryMissing": "Destination folder does not exist",
   "file.sessionTooLarge": "Session exceeds allowed limit",
   "file.saveFailed": "Could not save",
-  "file.openFailed": "Could not open belge",
-  "file.registryLock": "Could not access belge registry",
-  "file.sessionUnavailable": "A belge is no longer available",
+  "file.openFailed": "Belge açılamadı",
+  "file.registryLock": "Belge kaydına erişilemedi",
+  "file.sessionUnavailable": "Bir belge artık kullanılamıyor",
   // Menu items
   "menu.saveAs": "Farklı kaydet",
   "menu.exportPdf": "PDF dışa aktar",

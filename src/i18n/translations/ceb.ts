@@ -92,7 +92,7 @@ export const ceb = {
   "preview.unavailable": "Dili magamit ang preview",
   "preview.retry": "Sulayi pag-usab",
   "preview.renderError": "Dili makamugna og preview:",
-  "preview.pagedError": "Dili makamugna og Dokumento nga view:",
+  "preview.pagedError": "Dili makamugna sa panglantaw nga Dokumento:",
   "preview.mermaidError": "Mermaid:",
   // Session
   "session.restoreError": "Dili ma-restore ang sesyon",
