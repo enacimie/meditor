@@ -76,9 +76,27 @@ try {
     const w = (s) => document.querySelector(s)?.getBoundingClientRect().width ?? 0;
     return {
       pane: +w('.pane').toFixed(2),
+      paneInSplit: +w('.split > .pane').toFixed(2),
+      paneCount: document.querySelectorAll('.pane').length,
       split: +w('.split').toFixed(2),
       inner: innerWidth,
       direction: getComputedStyle(document.querySelector('.split')).flexDirection,
+      // Diagnostics: on the CI runners the pane stayed at the split ratio while
+      // the display:none half of the same CSS block did apply. Ask the browser
+      // directly whether the selector matches instead of guessing.
+      pane0: (() => {
+        const p = document.querySelector('.split > .pane');
+        return p && {
+          matchesRule: p.matches('.app:not(.zen).layout-editor .pane:first-child'),
+          isFirstChild: p === p.parentElement.firstElementChild,
+          computedFlex: getComputedStyle(p).flex,
+          inline: p.getAttribute('style'),
+        };
+      })(),
+      splitChildren: [...document.querySelector('.split').children].map(
+        (c) => c.tagName.toLowerCase() + '.' + (c.className || '(none)'),
+      ),
+      appClass: document.querySelector('.app').className,
     };
   })()`);
   assert(widths.direction === "row", `the pinned viewport should lay the panes out in a row, got ${widths.direction}`);
@@ -86,7 +104,14 @@ try {
   assert(
     share > 0.95,
     `the visible pane should span the whole workspace, took ${(share * 100).toFixed(1)}% ` +
-      `(pane ${widths.pane} of split ${widths.split}, viewport ${widths.inner})`,
+      `(pane ${widths.pane} of split ${widths.split}, viewport ${widths.inner}) ` +
+      JSON.stringify({
+        pane0: widths.pane0,
+        paneInSplit: widths.paneInSplit,
+        paneCount: widths.paneCount,
+        splitChildren: widths.splitChildren,
+        appClass: widths.appClass,
+      }),
   );
   assert(
     widths.pane > split.paneWidth * 1.5,
