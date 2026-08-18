@@ -742,7 +742,14 @@ export default function App() {
           locale: lang,
         });
       } else {
-        await invoke("export_pdf", { defaultName: `${base}.pdf`, locale: lang });
+        await invoke("export_pdf", {
+          defaultName: `${base}.pdf`,
+          locale: lang,
+          // The paginated preview already draws A4 pages with their own
+          // margins; asking the printer for margins too would inset every
+          // page a second time and split it across two sheets.
+          paged: docView,
+        });
       }
       showNotice(operationNoticeDone(t, "export"), "success");
     } catch (e) {
