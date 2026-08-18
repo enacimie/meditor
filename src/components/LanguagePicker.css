@@ -52,7 +52,15 @@
   opacity: 0.45;
 }
 
-.lang-search-clear {
+/*
+ * The clear button lives inside the app menu, and `.menu-panel button` there
+ * lays every button out as a full-width row. That selector is one class more
+ * specific than this one, so it won this rule and stretched the button to the
+ * whole panel; with `flex-shrink: 0` it then squeezed the search field to zero
+ * and the text being typed was clipped out of sight. Matching its specificity
+ * puts the button back to its own size.
+ */
+.lang-picker .lang-search-clear {
   flex-shrink: 0;
   width: 20px;
   height: 20px;
