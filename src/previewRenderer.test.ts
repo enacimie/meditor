@@ -187,10 +187,15 @@ describe("keepHeadingsWithContent", () => {
     expect(root.querySelector(".keep-with-next")).toBeNull();
   });
 
-  it("does nothing when the container has no layout to measure", () => {
+  it("still groups when there is no layout to measure", () => {
+    // Skipping here would switch the feature off in silence whenever the
+    // offscreen container has not been laid out yet — which is exactly what
+    // happened, and made the E2E spec fail only when the whole suite ran.
+    // Grouping something that turns out too tall is the milder failure:
+    // paged.js just splits it, as it did before any of this existed.
     const root = build("<h2>Title</h2><p>Body</p>");
     keepHeadingsWithContent(root, fixed(0));
-    expect(root.querySelector(".keep-with-next")).toBeNull();
+    expect(root.querySelector(".keep-with-next")).toBeTruthy();
   });
 
   it("preserves document order and every data-line", () => {

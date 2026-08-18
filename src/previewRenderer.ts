@@ -83,9 +83,11 @@ export function keepHeadingsWithContent(
     const group = blocks.slice(i, end + 1);
     const height = group.reduce((total, el) => total + measure(el), 0);
 
-    // A zero measure means the container has no layout yet. Leaving the
-    // document alone beats guessing at its geometry.
-    if (height > 0 && height <= KEEP_TOGETHER_MAX_PX) {
+    // Fail open: a zero measure means the container had no layout to offer,
+    // and skipping would turn the feature off silently. Grouping something
+    // that turns out too tall is the milder failure — paged.js simply splits
+    // it, which is what it did before any of this.
+    if (height === 0 || height <= KEEP_TOGETHER_MAX_PX) {
       const wrapper = root.ownerDocument.createElement("div");
       wrapper.className = "keep-with-next";
       // The last child decides which sibling rule has to be restored around
