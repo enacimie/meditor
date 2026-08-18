@@ -66,6 +66,23 @@
   margin: 1em 0 0.3em;
 }
 
+/*
+ * Keep a heading with what it introduces. Without this a section title can be
+ * the last thing on a page, with its first paragraph starting on the next one —
+ * the reader sees a title, white space, and then has to turn the page to find
+ * out what it was announcing. `break-after: avoid` moves the heading forward
+ * instead; `break-inside: avoid` stops a two-line title being split in half.
+ */
+.markdown-body.doc h1,
+.markdown-body.doc h2,
+.markdown-body.doc h3,
+.markdown-body.doc h4,
+.markdown-body.doc h5,
+.markdown-body.doc h6 {
+  break-after: avoid;
+  break-inside: avoid;
+}
+
 .markdown-body.doc ul,
 .markdown-body.doc ol {
   margin: 0.5em 0;
