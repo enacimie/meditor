@@ -272,3 +272,43 @@
   background: var(--border);
   margin: 4px 6px;
 }
+
+/* ---- Workspace layout switch ----
+ *
+ * A segmented control: three buttons welded into one, so it reads as a single
+ * choice rather than three independent toggles. Placed after the generic
+ * `.actions button` rules on purpose — same specificity, so order decides.
+ */
+.layout-switch {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.layout-switch button {
+  border: none;
+  border-radius: 0;
+  padding: 5px 8px;
+}
+
+/* Logical property: the seam follows the writing direction in RTL layouts. */
+.layout-switch button + button {
+  border-inline-start: 1px solid var(--border);
+}
+
+/* The group already lifts as a whole; per-button nudging would break it. */
+.layout-switch button:hover {
+  transform: none;
+  background: var(--bg-alt, rgba(127, 127, 127, 0.12));
+}
+
+.layout-switch button[aria-checked="true"] {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+.layout-switch button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}

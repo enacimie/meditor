@@ -84,6 +84,10 @@ export const az = {
   "pane.web": "Veb",
   "pane.document": "Sənəd",
   "pane.viewMode": "Ön baxış rejimi",
+  "layout.label": "İş sahəsinin düzümü",
+  "layout.editorOnly": "Yalnız redaktor",
+  "layout.split": "Redaktor və ön baxış",
+  "layout.previewOnly": "Yalnız ön baxış",
   "pane.resize": "Panelləri ölçüləndir",
   "pane.resizeHint": "Ölçüləndirmək üçün sürüşdürün",
   // Editor

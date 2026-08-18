@@ -17,3 +17,15 @@ export type Notice = {
   kind: "info" | "success" | "error";
   message: string;
 };
+
+/**
+ * How the workspace is laid out.
+ *
+ * - `editor`: only the editor, for writing without the preview alongside.
+ * - `split`: editor and preview side by side (the default).
+ * - `preview`: only the preview, for reading a document without its source.
+ *
+ * Zen mode is orthogonal: it always shows the editor alone, and leaving it
+ * restores whichever layout was chosen.
+ */
+export type LayoutMode = "editor" | "split" | "preview";

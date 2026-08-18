@@ -84,6 +84,10 @@ export const ne = {
   "pane.web": "वेब",
   "pane.document": "कागजात",
   "pane.viewMode": "पूर्वावलोकन मोड",
+  "layout.label": "कार्यक्षेत्र लेआउट",
+  "layout.editorOnly": "सम्पादक मात्र",
+  "layout.split": "सम्पादक र पूर्वावलोकन",
+  "layout.previewOnly": "पूर्वावलोकन मात्र",
   "pane.resize": "प्यानलहरूको आकार परिवर्तन गर्नुहोस्",
   "pane.resizeHint": "आकार परिवर्तन गर्न तान्नुहोस्",
   // Editor

@@ -85,6 +85,10 @@ export const id = {
   "pane.web": "Web",
   "pane.document": "Dokumen",
   "pane.viewMode": "Pratinjau mode",
+  "layout.label": "Tata letak ruang kerja",
+  "layout.editorOnly": "Hanya editor",
+  "layout.split": "Editor dan pratinjau",
+  "layout.previewOnly": "Hanya pratinjau",
   "pane.resize": "Resize panels",
   "pane.resizeHint": "Drag to resize",
   // Editor

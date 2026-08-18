@@ -85,6 +85,10 @@ export const bn = {
   "pane.web": "ওয়েব",
   "pane.document": "ডকুমেন্ট",
   "pane.viewMode": "প্রাকদর্শন মোড",
+  "layout.label": "কর্মক্ষেত্রের বিন্যাস",
+  "layout.editorOnly": "শুধু সম্পাদক",
+  "layout.split": "সম্পাদক ও প্রাকদর্শন",
+  "layout.previewOnly": "শুধু প্রাকদর্শন",
   "pane.resize": "প্যানেলের আকার পরিবর্তন করুন",
   "pane.resizeHint": "আকার পরিবর্তন করতে টানুন",
   // Editor

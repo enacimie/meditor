@@ -85,6 +85,10 @@ export const tr = {
   "pane.web": "Web",
   "pane.document": "Belge",
   "pane.viewMode": "Önizleme modu",
+  "layout.label": "Çalışma alanı düzeni",
+  "layout.editorOnly": "Yalnızca düzenleyici",
+  "layout.split": "Düzenleyici ve önizleme",
+  "layout.previewOnly": "Yalnızca önizleme",
   "pane.resize": "Panelleri yeniden boyutlandır",
   "pane.resizeHint": "Yeniden boyutlandırmak için sürükle",
   // Düzenleyici

@@ -85,6 +85,10 @@ export const pt = {
   "pane.web": "Web",
   "pane.document": "Documento",
   "pane.viewMode": "Modo de visualização",
+  "layout.label": "Disposição do espaço de trabalho",
+  "layout.editorOnly": "Apenas editor",
+  "layout.split": "Editor e visualização",
+  "layout.previewOnly": "Apenas visualização",
   "pane.resize": "Redimensionar painéis",
   "pane.resizeHint": "Arraste para redimensionar",
   // Editor

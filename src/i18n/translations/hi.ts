@@ -85,6 +85,10 @@ export const hi = {
   "pane.web": "वेब",
   "pane.document": "दस्तावेज़",
   "pane.viewMode": "पूर्वावलोकन मोड",
+  "layout.label": "कार्यक्षेत्र लेआउट",
+  "layout.editorOnly": "केवल संपादक",
+  "layout.split": "संपादक और पूर्वावलोकन",
+  "layout.previewOnly": "केवल पूर्वावलोकन",
   "pane.resize": "पैनल का आकार बदलें",
   "pane.resizeHint": "आकार बदलने के लिए खींचें",
   // Editor

@@ -85,6 +85,10 @@ export const de = {
   "pane.web": "Web",
   "pane.document": "Dokument",
   "pane.viewMode": "Vorschaumodus",
+  "layout.label": "Arbeitsbereich-Layout",
+  "layout.editorOnly": "Nur Editor",
+  "layout.split": "Editor und Vorschau",
+  "layout.previewOnly": "Nur Vorschau",
   "pane.resize": "Panels skalieren",
   "pane.resizeHint": "Ziehen zum Skalieren",
   // Editor

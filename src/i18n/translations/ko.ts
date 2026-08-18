@@ -85,6 +85,10 @@ export const ko = {
   "pane.web": "Web",
   "pane.document": "문서",
   "pane.viewMode": "미리보기 모드",
+  "layout.label": "작업 영역 레이아웃",
+  "layout.editorOnly": "편집기만",
+  "layout.split": "편집기와 미리보기",
+  "layout.previewOnly": "미리보기만",
   "pane.resize": "패널 크기 조정",
   "pane.resizeHint": "드래그하여 크기 조정",
   // 편집기

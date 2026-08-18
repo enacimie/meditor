@@ -85,6 +85,10 @@ export const ta = {
   "pane.web": "வலை",
   "pane.document": "ஆவணம்",
   "pane.viewMode": "முன்னோட்ட முறை",
+  "layout.label": "பணியிட அமைப்பு",
+  "layout.editorOnly": "தொகுப்பான் மட்டும்",
+  "layout.split": "தொகுப்பான் மற்றும் முன்னோட்டம்",
+  "layout.previewOnly": "முன்னோட்டம் மட்டும்",
   "pane.resize": "பலகங்களின் அளவை மாற்று",
   "pane.resizeHint": "அளவை மாற்ற இழுக்கவும்",
   // Editor

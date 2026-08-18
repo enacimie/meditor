@@ -314,6 +314,30 @@ body,
   flex: 1 1 100% !important;
 }
 
+/* ---- Workspace layout modes ----
+ *
+ * Screen only, on purpose: PDF export prints this very webview, and the
+ * @media print block below reveals the preview pane so the document comes
+ * out. Hiding a pane with !important outside a screen query would win over
+ * that and export a blank PDF while in editor-only mode.
+ *
+ * Scoped with :not(.zen) so zen mode — which is a writing mode, always the
+ * editor alone — keeps winning; leaving zen restores the chosen layout with
+ * no JavaScript involved.
+ *
+ * Hiding only. The size of the pane that stays is decided in App.tsx, which
+ * writes the right `flex` for the current mode: overriding an inline value
+ * from here did not resolve reliably on the Windows and macOS CI runners.
+ */
+@media screen {
+  .app:not(.zen).layout-editor .pane:last-child,
+  .app:not(.zen).layout-editor .split-divider,
+  .app:not(.zen).layout-preview .pane:first-child,
+  .app:not(.zen).layout-preview .split-divider {
+    display: none !important;
+  }
+}
+
 .app.zen .editor-host .cm-scroller {
   max-width: 720px;
   margin: 0 auto;

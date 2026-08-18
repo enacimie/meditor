@@ -85,6 +85,10 @@ export const zh = {
   "pane.web": "Web",
   "pane.document": "文档",
   "pane.viewMode": "预览模式",
+  "layout.label": "工作区布局",
+  "layout.editorOnly": "仅编辑器",
+  "layout.split": "编辑器和预览",
+  "layout.previewOnly": "仅预览",
   "pane.resize": "调整面板大小",
   "pane.resizeHint": "拖动以调整大小",
   // 编辑器

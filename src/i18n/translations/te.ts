@@ -85,6 +85,10 @@ export const te = {
   "pane.web": "వెబ్",
   "pane.document": "డాక్యుమెంట్",
   "pane.viewMode": "ప్రివ్యూ మోడ్",
+  "layout.label": "వర్క్‌స్పేస్ లేఅవుట్",
+  "layout.editorOnly": "ఎడిటర్ మాత్రమే",
+  "layout.split": "ఎడిటర్ మరియు ప్రివ్యూ",
+  "layout.previewOnly": "ప్రివ్యూ మాత్రమే",
   "pane.resize": "ప్యానెళ్ల పరిమాణం మార్చు",
   "pane.resizeHint": "పరిమాణం మార్చడానికి లాగండి",
   // Editor

@@ -84,6 +84,10 @@ export const ku = {
   "pane.web": "Web",
   "pane.document": "Belge",
   "pane.viewMode": "Moda pêşdîtinê",
+  "layout.label": "Rêkxistina qada xebatê",
+  "layout.editorOnly": "Tenê edîtor",
+  "layout.split": "Edîtor û pêşdîtin",
+  "layout.previewOnly": "Tenê pêşdîtin",
   "pane.resize": "Mezinahiya panelan biguherîne",
   "pane.resizeHint": "Bikişîne ji bo guherandina mezinahiyê",
   // Editor

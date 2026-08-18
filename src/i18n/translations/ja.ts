@@ -85,6 +85,10 @@ export const ja = {
   "pane.web": "Web",
   "pane.document": "ドキュメント",
   "pane.viewMode": "プレビューモード",
+  "layout.label": "ワークスペースのレイアウト",
+  "layout.editorOnly": "エディタのみ",
+  "layout.split": "エディタとプレビュー",
+  "layout.previewOnly": "プレビューのみ",
   "pane.resize": "パネルのサイズ変更",
   "pane.resizeHint": "ドラッグしてサイズ変更",
   // エディタ

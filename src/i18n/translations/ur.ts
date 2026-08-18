@@ -85,6 +85,10 @@ export const ur = {
   "pane.web": "ویب",
   "pane.document": "دستاویز",
   "pane.viewMode": "پیش نظارہ موڈ",
+  "layout.label": "کام کی جگہ کی ترتیب",
+  "layout.editorOnly": "صرف ایڈیٹر",
+  "layout.split": "ایڈیٹر اور پیش نظارہ",
+  "layout.previewOnly": "صرف پیش نظارہ",
   "pane.resize": "پینل کا سائز تبدیل کریں",
   "pane.resizeHint": "سائز تبدیل کرنے کے لیے گھسیٹیں",
   // Editor

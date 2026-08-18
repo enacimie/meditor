@@ -85,6 +85,10 @@ export const sw = {
   "pane.web": "Wavuti",
   "pane.document": "Hati",
   "pane.viewMode": "Hali ya onyesho la awali",
+  "layout.label": "Mpangilio wa eneo la kazi",
+  "layout.editorOnly": "Kihariri pekee",
+  "layout.split": "Kihariri na onyesho la awali",
+  "layout.previewOnly": "Onyesho la awali pekee",
   "pane.resize": "Badilisha ukubwa wa paneli",
   "pane.resizeHint": "Vuta kubadilisha ukubwa",
   // Editor
