@@ -36,7 +36,7 @@ import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 
 import type { Doc, DocKind } from "./types";
 import type { LayoutMode, Theme } from "./components/types";
-import { kindFromPath, normalizeDoc } from "./documentUtils";
+import { kindFromPath, nextUntitledName, normalizeDoc } from "./documentUtils";
 import {
   clampFontSize,
   normalizeFontFamily,
@@ -166,8 +166,6 @@ function operationErrorPrefix(t: ReturnType<typeof useTranslation>["t"], op: Fil
 
 const INITIAL_PREFERENCES = loadPreferences();
 
-let untitledCounter = 0;
-
 function baseName(path: string): string {
   return path.split(/[/\\]/).pop() ?? path;
 }
@@ -179,19 +177,24 @@ function newId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
 }
 
+/**
+ * @param existing - documents already open, so an untitled one gets a name none
+ * of them is using. Required rather than optional: getting it wrong produces
+ * two tabs called the same thing.
+ */
 function makeDoc(
   content: string,
+  existing: Doc[],
   path: string | null = null,
   name?: string,
   kind?: DocKind,
 ): Doc {
-  untitledCounter += 1;
   return {
     id: newId(),
     path,
     content,
     dirty: false,
-    name: name ?? (path ? baseName(path) : `Doc ${untitledCounter}`),
+    name: name ?? (path ? baseName(path) : nextUntitledName(existing)),
     kind: kind ?? (path ? kindFromPath(path) : "markdown"),
   };
 }
@@ -345,7 +348,7 @@ export default function App() {
         }
       }
       if (!base.length) {
-        const d = makeDoc(SAMPLE);
+        const d = makeDoc(SAMPLE, base);
         base = [d];
         startActive = d.id;
       }
@@ -554,21 +557,21 @@ export default function App() {
 
   const newTab = useCallback(() => {
     if (isOperationBusy(busyOperationRef)) return;
-    const doc = makeDoc("");
+    const doc = makeDoc("", docsRef.current);
     setDocs((prev) => [...prev, doc]);
     setActiveId(doc.id);
   }, []);
 
   const newTypstTab = useCallback(() => {
     if (isOperationBusy(busyOperationRef)) return;
-    const doc = makeDoc(TYPST_SAMPLE, null, undefined, "typst");
+    const doc = makeDoc(TYPST_SAMPLE, docsRef.current, null, undefined, "typst");
     setDocs((prev) => [...prev, doc]);
     setActiveId(doc.id);
   }, []);
 
   const newLatexTab = useCallback(() => {
     if (isOperationBusy(busyOperationRef)) return;
-    const doc = makeDoc(LATEX_SAMPLE, null, undefined, "latex");
+    const doc = makeDoc(LATEX_SAMPLE, docsRef.current, null, undefined, "latex");
     setDocs((prev) => [...prev, doc]);
     setActiveId(doc.id);
   }, []);
@@ -816,7 +819,7 @@ export default function App() {
     if (idx < 0) return;
     const next = current.filter((d) => d.id !== id);
     if (next.length === 0) {
-      const fresh = makeDoc("");
+      const fresh = makeDoc("", []);
       docsRef.current = [fresh];
       setDocs([fresh]);
       setActiveId(fresh.id);
@@ -836,7 +839,7 @@ export default function App() {
       const ok = await confirmDialog(t("confirm.unsavedClose"));
       if (!ok) return;
     }
-    const fresh = makeDoc("");
+    const fresh = makeDoc("", []);
     docsRef.current = [fresh];
     setDocs([fresh]);
     setActiveId(fresh.id);
@@ -854,7 +857,7 @@ export default function App() {
     }
     const kept = current.filter((d) => d.id === activeIdRef.current);
     if (kept.length === 0) {
-      const fresh = makeDoc("");
+      const fresh = makeDoc("", []);
       docsRef.current = [fresh];
       setDocs([fresh]);
       setActiveId(fresh.id);
