@@ -334,6 +334,13 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
       } else {
         const web = webRef.current;
         if (!web) return;
+        // Same deferral as the paginated branch: with the pane hidden (zen, or
+        // an editor-only layout) rendering into it is work nobody sees. The
+        // observer below picks it up when the pane comes back.
+        if (!isPaginatable(web)) {
+          pendingRef.current = true;
+          return;
+        }
         await renderContent(web, deferredValue, seqRef, isStale, t);
       }
     };
@@ -358,19 +365,19 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
     };
   }, [deferredValue, docView, retryToken, t, kind]);
 
-  // Re-run the pagination that was skipped while the pane was hidden, as soon
-  // as it has a box again (leaving zen mode, or the tab going back to
-  // Markdown). ResizeObserver covers every way the pane can reappear.
+  // Re-run whatever render was skipped while the pane was hidden, as soon as
+  // it has a box again — leaving zen mode, switching the layout back, or the
+  // tab returning to Markdown. ResizeObserver covers every way it can reappear.
   useEffect(() => {
-    const paged = pagedRef.current;
-    if (!paged || typeof ResizeObserver === "undefined") return;
+    const target = docView ? pagedRef.current : webRef.current;
+    if (!target || typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(() => {
-      if (pendingRef.current && isPaginatable(paged)) {
+      if (pendingRef.current && isPaginatable(target)) {
         pendingRef.current = false;
         setRetryToken((token) => token + 1);
       }
     });
-    observer.observe(paged);
+    observer.observe(target);
     return () => observer.disconnect();
   }, [kind, docView]);
 

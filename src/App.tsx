@@ -996,6 +996,8 @@ export default function App() {
         onCloseOthers={closeOtherTabs}
         onAbout={() => setAboutOpen(true)}
         onPreferences={() => setPreferencesOpen(true)}
+        layoutMode={layoutMode}
+        onLayoutModeChange={setLayoutMode}
       />
       {zenMode && (
         <button

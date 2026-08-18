@@ -93,6 +93,10 @@ export const en = {
   "pane.web": "Web",
   "pane.document": "Document",
   "pane.viewMode": "Preview mode",
+  "layout.label": "Workspace layout",
+  "layout.editorOnly": "Editor only",
+  "layout.split": "Editor and preview",
+  "layout.previewOnly": "Preview only",
   "pane.resize": "Resize panels",
   "pane.resizeHint": "Drag to resize",
   // Editor

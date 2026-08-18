@@ -1,7 +1,7 @@
 import { memo, useRef, useEffect, useState, lazy, Suspense, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import type { Language, TranslationFn } from "../i18n/translations";
-import { LANGUAGES } from "../i18n/translations";
-import type { Theme, Notice } from "./types";
+import { LANGUAGES, isRtl } from "../i18n/translations";
+import type { Theme, Notice, LayoutMode } from "./types";
 import "./Topbar.css";
 
 /** Lazy-loaded — only fetched when the user opens the language picker. */
@@ -32,7 +32,46 @@ type Props = {
   onCloseOthers: () => void;
   onAbout: () => void;
   onPreferences?: () => void;
+  layoutMode: LayoutMode;
+  onLayoutModeChange: (mode: LayoutMode) => void;
 };
+
+/**
+ * Workspace layouts, in the order they appear in the switch: editor on the
+ * left, both in the middle, preview on the right — matching what each one
+ * shows on screen.
+ */
+const LAYOUT_MODES: ReadonlyArray<{
+  value: LayoutMode;
+  labelKey: "layout.editorOnly" | "layout.split" | "layout.previewOnly";
+  shortcut: string;
+  icon: React.ReactNode;
+}> = [
+  {
+    value: "editor",
+    labelKey: "layout.editorOnly",
+    shortcut: "Ctrl+1",
+    icon: (
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+    ),
+  },
+  {
+    value: "split",
+    labelKey: "layout.split",
+    shortcut: "Ctrl+2",
+    icon: (
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16"/></svg>
+    ),
+  },
+  {
+    value: "preview",
+    labelKey: "layout.previewOnly",
+    shortcut: "Ctrl+3",
+    icon: (
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+    ),
+  },
+];
 
 const Topbar = memo(function Topbar({
   t,
@@ -58,9 +97,12 @@ const Topbar = memo(function Topbar({
   onCloseOthers,
   onAbout,
   onPreferences,
+  layoutMode,
+  onLayoutModeChange,
 }: Props) {
   const menuRef = useRef<HTMLDivElement>(null);
   const menuToggleRef = useRef<HTMLButtonElement>(null);
+  const layoutGroupRef = useRef<HTMLDivElement>(null);
   const themeOptionsRef = useRef<HTMLDivElement>(null);
   const [langPickerOpen, setLangPickerOpen] = useState(false);
   const [themePickerOpen, setThemePickerOpen] = useState(false);
@@ -83,7 +125,7 @@ const Topbar = memo(function Topbar({
       }
     }
     document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
+  return () => document.removeEventListener("mousedown", onClick);
   }, [menuOpen, setMenuOpen]);
 
   useEffect(() => {
@@ -114,6 +156,26 @@ const Topbar = memo(function Topbar({
       menuToggleRef.current?.focus();
     }
   }
+
+  /** Arrow keys move within the group and select as they go (APG radiogroup). */
+  const handleLayoutKeys = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    const horizontal = e.key === "ArrowRight" || e.key === "ArrowLeft";
+    if (!horizontal && e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+    e.preventDefault();
+    // In right-to-left interfaces the horizontal arrows are mirrored.
+    const rtl = isRtl(lang);
+    const forward =
+      e.key === "ArrowDown" ||
+      (e.key === "ArrowRight" && !rtl) ||
+      (e.key === "ArrowLeft" && rtl);
+    const current = LAYOUT_MODES.findIndex((m) => m.value === layoutMode);
+    const next =
+      (current + (forward ? 1 : -1) + LAYOUT_MODES.length) % LAYOUT_MODES.length;
+    onLayoutModeChange(LAYOUT_MODES[next].value);
+    const radios =
+      layoutGroupRef.current?.querySelectorAll<HTMLButtonElement>('[role="radio"]');
+    radios?.[next]?.focus();
+  };
 
   const busy = busyOperation !== null;
 
@@ -160,6 +222,29 @@ const Topbar = memo(function Topbar({
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
           <span className="btn-label">{t("topbar.save")}</span>
         </button>
+        <div
+          className="layout-switch"
+          role="radiogroup"
+          aria-label={t("layout.label")}
+          ref={layoutGroupRef}
+          onKeyDown={handleLayoutKeys}
+        >
+          {LAYOUT_MODES.map((mode) => (
+            <button
+              key={mode.value}
+              type="button"
+              role="radio"
+              aria-checked={layoutMode === mode.value}
+              // Roving tabindex: the group is one tab stop, arrows move within.
+              tabIndex={layoutMode === mode.value ? 0 : -1}
+              aria-label={t(mode.labelKey)}
+              title={`${t(mode.labelKey)} (${mode.shortcut})`}
+              onClick={() => onLayoutModeChange(mode.value)}
+            >
+              {mode.icon}
+            </button>
+          ))}
+        </div>
         <div className="menu-dropdown" ref={menuRef}>
           <button
             type="button"
