@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from "vitest";
-import { splitLongFencedBlocks } from "./previewRenderer";
+import { splitLongFencedBlocks, keepHeadingsWithContent } from "./previewRenderer";
 
 /* ---- splitLongFencedBlocks ---- */
 describe("splitLongFencedBlocks", () => {
@@ -121,5 +121,88 @@ describe("splitLongFencedBlocks", () => {
   it("does not split non-fenced backtick sequences", () => {
     const input = "Inline `code` with `backticks` and ```not a block";
     expect(splitLongFencedBlocks(input, 5)).toBe(input);
+  });
+});
+
+/* ---- keepHeadingsWithContent ---- */
+describe("keepHeadingsWithContent", () => {
+  /** Build a block container, giving every child a data-line like the renderer does. */
+  function build(html: string): HTMLElement {
+    const root = document.createElement("div");
+    root.innerHTML = html;
+    [...root.children].forEach((el, i) => el.setAttribute("data-line", String(i + 1)));
+    return root;
+  }
+
+  /** jsdom lays nothing out, so heights come from here instead of offsetHeight. */
+  const fixed = (px: number) => () => px;
+
+  const lines = (root: HTMLElement) =>
+    [...root.querySelectorAll("[data-line]")].map((el) => el.getAttribute("data-line"));
+
+  it("keeps a heading with the block that follows it", () => {
+    const root = build("<h2>Title</h2><p>Body</p><p>More</p>");
+    keepHeadingsWithContent(root, fixed(20));
+
+    const wrapper = root.querySelector(".keep-with-next");
+    expect(wrapper).toBeTruthy();
+    expect([...wrapper!.children].map((el) => el.tagName)).toEqual(["H2", "P"]);
+    // The paragraph left outside stays a sibling of the wrapper.
+    expect(root.children.length).toBe(2);
+  });
+
+  it("groups a run of consecutive headings with the first real block", () => {
+    const root = build("<h2>Section</h2><h3>Subsection</h3><pre>code</pre><p>After</p>");
+    keepHeadingsWithContent(root, fixed(20));
+
+    const wrappers = root.querySelectorAll(".keep-with-next");
+    expect(wrappers).toHaveLength(1);
+    expect([...wrappers[0].children].map((el) => el.tagName)).toEqual(["H2", "H3", "PRE"]);
+  });
+
+  it("leaves a trailing heading alone, having nothing to keep it with", () => {
+    const root = build("<p>Body</p><h2>The end</h2>");
+    keepHeadingsWithContent(root, fixed(20));
+    expect(root.querySelector(".keep-with-next")).toBeNull();
+  });
+
+  it("marks the wrapper with what it ends in, so the sibling rules survive", () => {
+    const withP = build("<h2>T</h2><p>B</p>");
+    keepHeadingsWithContent(withP, fixed(20));
+    expect(withP.querySelector(".keep-with-next")!.className).toContain("keep-with-next--p");
+
+    const withPre = build("<h2>T</h2><pre>c</pre>");
+    keepHeadingsWithContent(withPre, fixed(20));
+    expect(withPre.querySelector(".keep-with-next")!.className).toContain("keep-with-next--pre");
+
+    const withList = build("<h2>T</h2><ul><li>a</li></ul>");
+    keepHeadingsWithContent(withList, fixed(20));
+    expect(withList.querySelector(".keep-with-next")!.className).toBe("keep-with-next");
+  });
+
+  it("does not group what would not fit on a page anyway", () => {
+    const root = build("<h2>Title</h2><pre>a very tall code block</pre>");
+    // 600 px is past the 60 % of a page this is willing to hold together.
+    keepHeadingsWithContent(root, fixed(600));
+    expect(root.querySelector(".keep-with-next")).toBeNull();
+  });
+
+  it("does nothing when the container has no layout to measure", () => {
+    const root = build("<h2>Title</h2><p>Body</p>");
+    keepHeadingsWithContent(root, fixed(0));
+    expect(root.querySelector(".keep-with-next")).toBeNull();
+  });
+
+  it("preserves document order and every data-line", () => {
+    const html = "<h1>A</h1><p>1</p><h2>B</h2><h3>C</h3><p>2</p><p>3</p>";
+    const before = lines(build(html));
+
+    const root = build(html);
+    keepHeadingsWithContent(root, fixed(20));
+
+    expect(lines(root)).toEqual(before);
+    // Reverse sync walks up from the click target, so nesting must not hide it.
+    const nested = root.querySelector(".keep-with-next h2");
+    expect(nested!.closest("[data-line]")).toBe(nested);
   });
 });

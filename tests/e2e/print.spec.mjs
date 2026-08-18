@@ -98,6 +98,55 @@ try {
   );
   await page.waitFor("!document.querySelector('.app').classList.contains('zen')");
 
+  /*
+   * A heading must not be the last thing on a page, with what it introduces
+   * starting on the next one. `break-after: avoid` alone does not manage it —
+   * paged.js will not chain it across a run of consecutive headings — so
+   * previewRenderer groups each run with its first block into one element.
+   */
+  await page.waitFor("document.querySelectorAll('.pagedjs_page').length > 0", {
+    timeout: 30000,
+    interval: 500,
+    message: "the paginated view should render",
+  });
+  await page.waitFor(
+    `(() => {
+      const n = document.querySelectorAll('.pagedjs_page').length;
+      const previous = window.__printPages ?? -1;
+      window.__printPages = n;
+      return n > 0 && n === previous;
+    })()`,
+    { timeout: 30000, interval: 500, message: "pagination should settle" },
+  );
+
+  const layout = await page.evaluate(`(() => {
+    const SEL = 'h1,h2,h3,h4,h5,h6,p,ul,ol,dl,table,pre,blockquote,figure';
+    const stranded = [];
+    for (const page of document.querySelectorAll('.pagedjs_page')) {
+      const area = page.querySelector('.pagedjs_area') || page;
+      const blocks = [...area.querySelectorAll(SEL)]
+        .filter((el) => el.getBoundingClientRect().height > 0);
+      const last = blocks[blocks.length - 1];
+      if (last && /^H[1-6]$/.test(last.tagName)) {
+        stranded.push((last.innerText || '').replace(/\s+/g, ' ').slice(0, 30));
+      }
+    }
+    return { stranded, wrappers: document.querySelectorAll('.keep-with-next').length };
+  })()`);
+
+  assert(layout.wrappers > 0, "headings should have been grouped with their content");
+  /*
+   * One is tolerated, and it is a known paged.js limit rather than slack in the
+   * rule: when the group holds something that already carries
+   * `break-inside: avoid` of its own — a Mermaid figure, say — paged.js splits
+   * the outer group anyway. Measured on this sample: two stranded headings
+   * without the grouping, one with it, and the same page count either way.
+   */
+  assert(
+    layout.stranded.length <= 1,
+    `headings left alone at the foot of a page: ${JSON.stringify(layout.stranded)}`,
+  );
+
   assert(page.consoleErrors.length === 0, "console errors: " + page.consoleErrors.join(" | "));
   console.log("PASS: print.spec — the preview reaches the printed page, from zen too");
 } finally {
