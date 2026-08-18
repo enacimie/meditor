@@ -505,6 +505,19 @@ body,
     display: none !important;
   }
 
+  /*
+   * The app fills the window and hides its own overflow, which is right on
+   * screen and fatal on paper: the document gets clipped at one viewport and
+   * only the first page carries any content. Printing needs the page to grow
+   * to whatever the document is.
+   */
+  html,
+  body,
+  #root {
+    height: auto;
+    overflow: visible;
+  }
+
   .app {
     height: auto;
   }
@@ -530,12 +543,16 @@ body,
     width: 100%;
   }
 
-  .preview-scroll {
-    overflow: visible;
-  }
-
+  /*
+   * The scroller's padding gives the preview breathing room inside its pane.
+   * On paper it is dead space that pushes the paginated view 18 mm down, and
+   * every page boundary with it — each page then spills a strip onto the next
+   * sheet and the export gains a blank page for every real one.
+   */
+  .preview-scroll,
   .preview-scroll.doc-bg {
-    padding-inline: 8px;
+    overflow: visible;
+    padding: 0;
   }
 
   .paged-view {

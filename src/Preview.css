@@ -802,6 +802,19 @@
   }
 }
 
+/* ---- Print: paginated Markdown ---- */
+@media print {
+  /*
+   * The drop shadow and the gap between pages exist to make the paginated view
+   * look like sheets of paper on screen. On actual paper they are a grey frame
+   * printed around every page.
+   */
+  .paged-view .pagedjs_page {
+    margin: 0;
+    box-shadow: none;
+  }
+}
+
 /* ---- Print: Typst ---- */
 @media print {
   .typst-preview {
