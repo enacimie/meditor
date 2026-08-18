@@ -31,6 +31,7 @@
 
 - **104 languages** with a searchable selector in the menu. Full RTL support (Arabic, Urdu, Persian, Pashto, Sindhi, Hebrew, etc.).
 - **4 themes**: System, Light, Dark, and a **High Contrast** colorblind-friendly theme (WCAG AA everywhere).
+- **Layout modes** (Ctrl+1/2/3): editor only, editor and preview, or preview only — reading a document without its source. The choice is remembered.
 - **Zen mode** (F11): fullscreen distraction-free writing.
 - **Keyboard shortcuts overlay** (F1) and in-window dialogs for confirm/rename (fully themed and localized).
 - **Preferences** (Ctrl+,): editor font size and family, with a live sample, and the spell checker toggle.
@@ -158,6 +159,9 @@ To run the AppImage on distros without FUSE: `./meditor_*.AppImage --appimage-ex
 | `Ctrl+,`        | Preferences     |
 | `F1`            | Shortcuts overlay |
 | `F2`            | Rename tab      |
+| `Ctrl+1`        | Editor only     |
+| `Ctrl+2`        | Editor and preview |
+| `Ctrl+3`        | Preview only    |
 | `F11`           | Zen mode        |
 
 Press **F1** anytime for the full list. Also: **double-click** in preview to jump to code, and **drag the divider** to resize panels.
