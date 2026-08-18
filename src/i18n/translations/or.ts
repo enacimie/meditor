@@ -193,4 +193,5 @@ export const or = {
   "about.license": "ଲାଇସେନ୍ସ",
   "about.source": "ସୋର୍ସ କୋଡ୍",
   "about.close": "ବନ୍ଦ",
+  "preview.latexNotice": "LaTeX ପୂର୍ବାବଲୋକନ ପାଇଁ କନଫିଗର ହୋଇଥିବା ଏଣ୍ଡପଏଣ୍ଟରୁ TeX Live ପ୍ୟାକେଜ ଆବଶ୍ୟକ।",
 };

@@ -193,4 +193,5 @@ export const ms = {
   "about.license": "Lesen",
   "about.source": "Kod sumber",
   "about.close": "Tutup",
+  "preview.latexNotice": "Pratonton LaTeX memerlukan pakej TeX Live daripada titik akhir yang dikonfigurasi.",
 };

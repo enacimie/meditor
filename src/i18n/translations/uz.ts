@@ -217,4 +217,5 @@ export const uz = {
   "about.license": "Litsenziya",
   "about.source": "Manba kodi",
   "about.close": "Yopish",
+  "preview.latexNotice": "LaTeX oldindan ko‘rish uchun sozlangan oxirgi nuqtadan TeX Live paketlari kerak.",
 };

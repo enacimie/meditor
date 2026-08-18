@@ -194,4 +194,5 @@ export const tt = {
   "about.license": "Лицензия",
   "about.source": "Башлангыч код",
   "about.close": "Ябу",
+  "preview.latexNotice": "LaTeX алдан карау өчен көйләнгән очкы ноктадан TeX Live пакетлары кирәк.",
 };

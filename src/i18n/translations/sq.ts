@@ -194,4 +194,5 @@ export const sq = {
   "about.license": "Licenca",
   "about.source": "Kodi burimor",
   "about.close": "Mbyll",
+  "preview.latexNotice": "Parapamja e LaTeX kërkon paketat TeX Live nga pika fundore e konfiguruar.",
 };

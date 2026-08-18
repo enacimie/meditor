@@ -194,4 +194,5 @@ export const af = {
   "about.license": "Lisensie",
   "about.source": "Bronkode",
   "about.close": "Maak toe",
+  "preview.latexNotice": "LaTeX-voorskou benodig TeX Live-pakkette vanaf die gekonfigureerde eindpunt.",
 };

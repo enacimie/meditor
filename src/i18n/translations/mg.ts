@@ -194,4 +194,5 @@ export const mg = {
   "about.license": "Lisansa",
   "about.source": "Kaody loharano",
   "about.close": "Akatona",
+  "preview.latexNotice": "Ny fijery mialoha ny LaTeX dia mila fonosana TeX Live avy amin'ny teboka farany voikirakira.",
 };

@@ -194,4 +194,5 @@ export const eu = {
   "about.license": "Lizentzia",
   "about.source": "Iturburu-kodea",
   "about.close": "Itxi",
+  "preview.latexNotice": "LaTeX aurreikuspegiak konfiguratutako amaiera-puntutik TeX Live paketeak behar ditu.",
 };

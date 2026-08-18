@@ -194,4 +194,5 @@ export const el = {
   "about.license": "Άδεια",
   "about.source": "Πηγαίος κώδικας",
   "about.close": "Κλείσιμο",
+  "preview.latexNotice": "Η προεπισκόπηση LaTeX απαιτεί πακέτα TeX Live από το διαμορφωμένο τελικό σημείο.",
 };

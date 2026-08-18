@@ -194,4 +194,5 @@ export const st = {
   "about.license": "Laesense",
   "about.source": "Khoutu ea mohloli",
   "about.close": "Koala",
+  "preview.latexNotice": "Ponelopele ea LaTeX e hloka liphutheloana tsa TeX Live ho tloha ntlheng ea qetello e hlophisitsoeng.",
 };

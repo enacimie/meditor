@@ -194,4 +194,5 @@ export const bg = {
   "about.license": "Лиценз",
   "about.source": "Изходен код",
   "about.close": "Затвори",
+  "preview.latexNotice": "Визуализацията на LaTeX изисква пакети TeX Live от конфигурираната крайна точка.",
 };

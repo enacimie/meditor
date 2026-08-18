@@ -194,4 +194,5 @@ export const no = {
   "about.license": "Lisens",
   "about.source": "Kildekode",
   "about.close": "Lukk",
+  "preview.latexNotice": "LaTeX-forhåndsvisning krever TeX Live-pakker fra det konfigurerte endepunktet.",
 };

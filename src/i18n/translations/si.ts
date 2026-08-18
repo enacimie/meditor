@@ -217,4 +217,5 @@ export const si = {
   "about.license": "බලපත්‍රය",
   "about.source": "මූල කේතය",
   "about.close": "වසන්න",
+  "preview.latexNotice": "LaTeX පෙරදසුනට වින්‍යාසගත අන්ත ලක්ෂ්‍යයෙන් TeX Live ඇසුරුම් අවශ්‍ය වේ.",
 };

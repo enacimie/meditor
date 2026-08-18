@@ -193,4 +193,5 @@ export const jv = {
   "about.license": "Lisènsi",
   "about.source": "Kode sumber",
   "about.close": "Tutup",
+  "preview.latexNotice": "Pratinjau LaTeX mbutuhake paket TeX Live saka endpoint sing dikonfigurasi.",
 };

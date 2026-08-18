@@ -194,4 +194,5 @@ export const ky = {
   "about.license": "Лицензия",
   "about.source": "Баштапкы код",
   "about.close": "Жабуу",
+  "preview.latexNotice": "LaTeX алдын ала көрүүсү конфигурацияланган акыркы чекиттен TeX Live топтомдорун талап кылат.",
 };

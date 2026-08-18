@@ -194,4 +194,5 @@ export const lt = {
   "about.license": "Licencija",
   "about.source": "Pirminis kodas",
   "about.close": "Uždaryti",
+  "preview.latexNotice": "LaTeX peržiūrai reikalingi TeX Live paketai iš sukonfigūruoto galinio taško.",
 };

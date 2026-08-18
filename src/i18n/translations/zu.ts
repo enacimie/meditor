@@ -194,4 +194,5 @@ export const zu = {
   "about.license": "Ilayisense",
   "about.source": "Ikhodi yomthombo",
   "about.close": "Vala",
+  "preview.latexNotice": "Ukubuka kuqala kwe-LaTeX kudinga amaphakheji we-TeX Live kusuka ekupheleni okumisiwe.",
 };

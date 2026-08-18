@@ -193,4 +193,5 @@ export const gu = {
   "about.license": "લાઇસન્સ",
   "about.source": "સ્રોત કોડ",
   "about.close": "બંધ કરો",
+  "preview.latexNotice": "LaTeX પૂર્વાવલોકનને ગોઠવેલા એન્ડપોઇન્ટમાંથી TeX Live પેકેજની જરૂર છે.",
 };

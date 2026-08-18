@@ -194,4 +194,5 @@ export const hy = {
   "about.license": "Լիցենզիա",
   "about.source": "Ելակոդ",
   "about.close": "Փակել",
+  "preview.latexNotice": "LaTeX-ի նախադիտումը պահանջում է TeX Live փաթեթներ կարգավորված վերջնակետից:",
 };

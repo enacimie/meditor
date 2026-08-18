@@ -194,4 +194,5 @@ export const xh = {
   "about.license": "Ilayisensi",
   "about.source": "Ikhowudi yemvelaphi",
   "about.close": "Vala",
+  "preview.latexNotice": "Imboniso yangaphambili ye-LaTeX ifuna iipakethi ze-TeX Live kwindawo yokuphela emiselweyo.",
 };

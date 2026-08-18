@@ -206,4 +206,5 @@ export const sk = {
   "about.license": "Licencia",
   "about.source": "Zdrojový kód",
   "about.close": "Zavrieť",
+  "preview.latexNotice": "Ukážka LaTeX vyžaduje balíky TeX Live z nakonfigurovaného koncového bodu.",
 };

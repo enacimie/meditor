@@ -194,4 +194,5 @@ export const lv = {
   "about.license": "Licence",
   "about.source": "Pirmkods",
   "about.close": "Aizvērt",
+  "preview.latexNotice": "LaTeX priekšskatījumam ir nepieciešamas TeX Live pakotnes no konfigurētā galapunkta.",
 };

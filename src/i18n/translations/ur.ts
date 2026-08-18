@@ -218,4 +218,5 @@ export const ur = {
   "about.license": "لائسنس",
   "about.source": "سورس کوڈ",
   "about.close": "بند کریں",
+  "preview.latexNotice": "LaTeX پیش منظر کو تشکیل شدہ اینڈ پوائنٹ سے TeX Live پیکیجز کی ضرورت ہے۔",
 };

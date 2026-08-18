@@ -194,4 +194,5 @@ export const mt = {
   "about.license": "Liċenzja",
   "about.source": "Kodiċi sors",
   "about.close": "Agħlaq",
+  "preview.latexNotice": "Il-preview ta' LaTeX teħtieġ pakketti TeX Live mill-endpoint ikkonfigurat.",
 };

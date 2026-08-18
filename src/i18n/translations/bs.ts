@@ -194,4 +194,5 @@ export const bs = {
   "about.license": "Licenca",
   "about.source": "Izvorni kod",
   "about.close": "Zatvori",
+  "preview.latexNotice": "LaTeX pregled zahtijeva TeX Live pakete s konfigurirane krajnje tačke.",
 };

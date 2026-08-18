@@ -194,4 +194,5 @@ export const mk = {
   "about.license": "Лиценца",
   "about.source": "Изворен код",
   "about.close": "Затвори",
+  "preview.latexNotice": "Прегледот на LaTeX бара TeX Live пакети од конфигурираната крајна точка.",
 };

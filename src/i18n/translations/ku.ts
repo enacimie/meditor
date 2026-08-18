@@ -217,4 +217,5 @@ export const ku = {
   "about.license": "Lîsans",
   "about.source": "Koda çavkaniyê",
   "about.close": "Bigire",
+  "preview.latexNotice": "Pêşdîtina LaTeX ji xala dawî ya veavakirî pakêtên TeX Live hewce dike.",
 };

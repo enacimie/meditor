@@ -193,4 +193,5 @@ export const fil = {
   "about.license": "Lisensya",
   "about.source": "Source code",
   "about.close": "Isara",
+  "preview.latexNotice": "Kailangan ng LaTeX preview ng mga TeX Live package mula sa naka-configure na endpoint.",
 };

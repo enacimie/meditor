@@ -217,4 +217,5 @@ export const ig = {
   "about.license": "Akwụkwọ ikike",
   "about.source": "Koodu isi",
   "about.close": "Mechie",
+  "preview.latexNotice": "Nhụchalụ LaTeX chọrọ ngwugwu TeX Live site na njedebe ahaziri ahazi.",
 };

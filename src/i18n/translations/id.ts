@@ -218,4 +218,5 @@ export const id = {
   "about.license": "Lisensi",
   "about.source": "Kode sumber",
   "about.close": "Tutup",
+  "preview.latexNotice": "Pratinjau LaTeX memerlukan paket TeX Live dari titik akhir yang dikonfigurasi.",
 };

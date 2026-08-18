@@ -194,4 +194,5 @@ export const ny = {
   "about.license": "Layisensi",
   "about.source": "Source code",
   "about.close": "Tsekani",
+  "preview.latexNotice": "Chionetsero cha LaTeX chimafuna maphukusi a TeX Live kuchokera kumapeto kokonzedwa.",
 };

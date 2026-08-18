@@ -218,4 +218,5 @@ export const ta = {
   "about.license": "உரிமம்",
   "about.source": "மூலக் குறியீடு",
   "about.close": "மூடு",
+  "preview.latexNotice": "LaTeX முன்னோட்டத்திற்கு கட்டமைக்கப்பட்ட முனைப்புள்ளியிலிருந்து TeX Live தொகுப்புகள் தேவை.",
 };

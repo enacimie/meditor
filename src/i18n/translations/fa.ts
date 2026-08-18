@@ -193,4 +193,5 @@ export const fa = {
   "about.license": "مجوز",
   "about.source": "کد منبع",
   "about.close": "بستن",
+  "preview.latexNotice": "پیش‌نمایش LaTeX به بسته‌های TeX Live از نقطه پایانی پیکربندی‌شده نیاز دارد.",
 };

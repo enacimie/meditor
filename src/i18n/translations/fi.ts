@@ -194,4 +194,5 @@ export const fi = {
   "about.license": "Lisenssi",
   "about.source": "Lähdekoodi",
   "about.close": "Sulje",
+  "preview.latexNotice": "LaTeX-esikatselu vaatii TeX Live -paketit määritetystä päätepisteestä.",
 };

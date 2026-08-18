@@ -193,4 +193,5 @@ export const yo = {
   "about.license": "Ìwe-aṣẹ",
   "about.source": "Koodu orisun",
   "about.close": "Pa",
+  "preview.latexNotice": "Àtẹ́lẹ̀wò LaTeX nílò àwọn ìdìpọ̀ TeX Live láti ibi òpin tí a ṣètò.",
 };

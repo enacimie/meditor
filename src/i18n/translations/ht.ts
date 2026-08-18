@@ -217,4 +217,5 @@ export const ht = {
   "about.license": "Lisans",
   "about.source": "Kòd sous",
   "about.close": "Fèmen",
+  "preview.latexNotice": "Apèsi LaTeX bezwen pake TeX Live ki soti nan pwen final ki konfigire a.",
 };

@@ -194,4 +194,5 @@ export const sl = {
   "about.license": "Licenca",
   "about.source": "Izvorna koda",
   "about.close": "Zapri",
+  "preview.latexNotice": "Predogled LaTeX potrebuje pakete TeX Live iz konfigurirane končne točke.",
 };

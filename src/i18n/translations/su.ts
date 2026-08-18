@@ -194,4 +194,5 @@ export const su = {
   "about.license": "Lisénsi",
   "about.source": "Kode sumber",
   "about.close": "Tutup",
+  "preview.latexNotice": "Pratinjau LaTeX merlukeun pakét TeX Live ti endpoint anu dikonpigurasikeun.",
 };

@@ -217,4 +217,5 @@ export const km = {
   "about.license": "អាជ្ញាបណ្ណ",
   "about.source": "កូដប្រភព",
   "about.close": "បិទ",
+  "preview.latexNotice": "ការមើលជាមុនរបស់ LaTeX ត្រូវការកញ្ចប់ TeX Live ពីចំណុចបញ្ចប់ដែលបានកំណត់រចនាសម្ព័ន្ធ។",
 };

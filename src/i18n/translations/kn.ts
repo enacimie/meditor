@@ -193,4 +193,5 @@ export const kn = {
   "about.license": "ಪರವಾನಗಿ",
   "about.source": "ಮೂಲ ಕೋಡ್",
   "about.close": "ಮುಚ್ಚಿ",
+  "preview.latexNotice": "LaTeX ಪೂರ್ವವೀಕ್ಷಣೆಗೆ ಸಂರಚಿತ ಎಂಡ್‌ಪಾಯಿಂಟ್‌ನಿಂದ TeX Live ಪ್ಯಾಕೇಜ್‌ಗಳ ಅಗತ್ಯವಿದೆ.",
 };

@@ -194,4 +194,5 @@ export const tg = {
   "about.license": "Иҷозатнома",
   "about.source": "Рамзи манбаъ",
   "about.close": "Пӯшидан",
+  "preview.latexNotice": "Пешнамоиши LaTeX бастаҳои TeX Live-ро аз нуқтаи ниҳоии танзимшуда талаб мекунад.",
 };

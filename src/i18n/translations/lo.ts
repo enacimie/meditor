@@ -194,4 +194,5 @@ export const lo = {
   "about.license": "ໃບອະນຸຍາດ",
   "about.source": "ລະຫັດຕົ້ນສະບັບ",
   "about.close": "ປິດ",
+  "preview.latexNotice": "ການເບິ່ງຕົວຢ່າງ LaTeX ຕ້ອງການຊຸດ TeX Live ຈາກຈຸດປາຍທາງທີ່ໄດ້ກຳນົດຄ່າ.",
 };

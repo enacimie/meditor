@@ -194,4 +194,5 @@ export const cy = {
   "about.license": "Trwydded",
   "about.source": "Cod ffynhonnell",
   "about.close": "Cau",
+  "preview.latexNotice": "Mae rhagolwg LaTeX angen pecynnau TeX Live o'r diweddbwynt a ffurfweddwyd.",
 };

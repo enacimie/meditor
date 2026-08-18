@@ -194,4 +194,5 @@ export const ga = {
   "about.license": "Ceadúnas",
   "about.source": "Cód foinseach",
   "about.close": "Dún",
+  "preview.latexNotice": "Teastaíonn pacáistí TeX Live ón gcríochphointe cumraithe don réamhamharc LaTeX.",
 };

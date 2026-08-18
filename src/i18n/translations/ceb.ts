@@ -217,4 +217,5 @@ export const ceb = {
   "about.license": "Lisensya",
   "about.source": "Source code",
   "about.close": "Isira",
+  "preview.latexNotice": "Ang LaTeX preview nanginahanglan og TeX Live packages gikan sa gi-configure nga endpoint.",
 };

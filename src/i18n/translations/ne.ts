@@ -217,4 +217,5 @@ export const ne = {
   "about.license": "इजाजतपत्र",
   "about.source": "स्रोत कोड",
   "about.close": "बन्द गर्नुहोस्",
+  "preview.latexNotice": "LaTeX पूर्वावलोकनलाई कन्फिगर गरिएको इन्डपोइन्टबाट TeX Live प्याकेजहरू आवश्यक पर्दछ।",
 };

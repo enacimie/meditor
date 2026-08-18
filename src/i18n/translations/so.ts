@@ -194,4 +194,5 @@ export const so = {
   "about.license": "Shatiga",
   "about.source": "Koodhka isha",
   "about.close": "Xir",
+  "preview.latexNotice": "Horudhaca LaTeX wuxuu u baahan yahay xirmooyinka TeX Live ee barta dhamaadka ee la habeeyay.",
 };

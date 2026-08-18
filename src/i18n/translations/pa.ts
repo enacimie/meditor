@@ -193,4 +193,5 @@ export const pa = {
   "about.license": "ਲਾਇਸੰਸ",
   "about.source": "ਸਰੋਤ ਕੋਡ",
   "about.close": "ਬੰਦ ਕਰੋ",
+  "preview.latexNotice": "LaTeX ਪੂਰਵ-ਦਰਸ਼ਨ ਨੂੰ ਸੰਰਚਿਤ ਐਂਡਪੁਆਇੰਟ ਤੋਂ TeX Live ਪੈਕੇਜਾਂ ਦੀ ਲੋੜ ਹੈ।",
 };

@@ -193,4 +193,5 @@ export const he = {
   "about.license": "רישיון",
   "about.source": "קוד מקור",
   "about.close": "סגור",
+  "preview.latexNotice": "תצוגה מקדימה של LaTeX דורשת חבילות TeX Live מנקודת הקצה המוגדרת.",
 };

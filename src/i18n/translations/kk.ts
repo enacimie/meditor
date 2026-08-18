@@ -217,4 +217,5 @@ export const kk = {
   "about.license": "Лицензия",
   "about.source": "Бастапқы код",
   "about.close": "Жабу",
+  "preview.latexNotice": "LaTeX алдын ала қарауы теңшелген соңғы нүктеден TeX Live пакеттерін қажет етеді.",
 };

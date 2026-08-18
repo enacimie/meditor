@@ -206,4 +206,5 @@ export const cs = {
   "about.license": "Licence",
   "about.source": "Zdrojový kód",
   "about.close": "Zavřít",
+  "preview.latexNotice": "Náhled LaTeX vyžaduje balíčky TeX Live z nakonfigurovaného koncového bodu.",
 };

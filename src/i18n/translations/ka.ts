@@ -194,4 +194,5 @@ export const ka = {
   "about.license": "ლიცენზია",
   "about.source": "საწყისი კოდი",
   "about.close": "დახურვა",
+  "preview.latexNotice": "LaTeX-ის გადახედვას სჭირდება TeX Live პაკეტები კონფიგურირებული ბოლო წერტილიდან.",
 };

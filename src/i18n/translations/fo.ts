@@ -194,4 +194,5 @@ export const fo = {
   "about.license": "Loyvi",
   "about.source": "Keldukotu",
   "about.close": "Lata aftur",
+  "preview.latexNotice": "LaTeX-forsýning krevur TeX Live-pakkar frá tí stillaða endapunktinum.",
 };

@@ -194,4 +194,5 @@ export const om = {
   "about.license": "Hayyama",
   "about.source": "Koodii madda",
   "about.close": "Cufi",
+  "preview.latexNotice": "Durargiin LaTeX paakeejiiwwan TeX Live qabxii dhuma qindaa'e irraa barbaada.",
 };

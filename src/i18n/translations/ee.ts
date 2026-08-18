@@ -194,4 +194,5 @@ export const ee = {
   "about.license": "Mɔɖegbalẽ",
   "about.source": "Source code",
   "about.close": "Tu",
+  "preview.latexNotice": "LaTeX ŋudzedze kpɔkpɔ do ŋgɔ bia TeX Live fefewo tso teƒe si woɖo la gbɔ.",
 };

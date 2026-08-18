@@ -193,4 +193,5 @@ export const th = {
   "about.license": "ใบอนุญาต",
   "about.source": "ซอร์สโค้ด",
   "about.close": "ปิด",
+  "preview.latexNotice": "การแสดงตัวอย่าง LaTeX ต้องการแพ็กเกจ TeX Live จากจุดปลายทางที่กำหนดค่าไว้",
 };

@@ -194,4 +194,5 @@ export const da = {
   "about.license": "Licens",
   "about.source": "Kildekode",
   "about.close": "Luk",
+  "preview.latexNotice": "LaTeX-forhåndsvisning kræver TeX Live-pakker fra det konfigurerede slutpunkt.",
 };

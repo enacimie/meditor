@@ -193,4 +193,5 @@ export const uk = {
   "about.license": "Ліцензія",
   "about.source": "Вихідний код",
   "about.close": "Закрити",
+  "preview.latexNotice": "Для попереднього перегляду LaTeX потрібні пакунки TeX Live з налаштованої кінцевої точки.",
 };

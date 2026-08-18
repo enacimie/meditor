@@ -218,4 +218,5 @@ export const bn = {
   "about.license": "লাইসেন্স",
   "about.source": "সোর্স কোড",
   "about.close": "বন্ধ করুন",
+  "preview.latexNotice": "LaTeX প্রিভিউয়ের জন্য কনফিগার করা এন্ডপয়েন্ট থেকে TeX Live প্যাকেজের প্রয়োজন।",
 };

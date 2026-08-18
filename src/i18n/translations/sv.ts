@@ -194,4 +194,5 @@ export const sv = {
   "about.license": "Licens",
   "about.source": "Källkod",
   "about.close": "Stäng",
+  "preview.latexNotice": "LaTeX-förhandsgranskning kräver TeX Live-paket från den konfigurerade slutpunkten.",
 };

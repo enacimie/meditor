@@ -194,4 +194,5 @@ export const sd = {
   "about.license": "لائسنس",
   "about.source": "سورس ڪوڊ",
   "about.close": "بند ڪريو",
+  "preview.latexNotice": "LaTeX پيش-نگاهه کي ترتيب ڏنل اينڊ پوائنٽ مان TeX Live پيڪيجز جي ضرورت آهي.",
 };

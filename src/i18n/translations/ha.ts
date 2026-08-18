@@ -193,4 +193,5 @@ export const ha = {
   "about.license": "Lasisi",
   "about.source": "Lambar tushe",
   "about.close": "Rufe",
+  "preview.latexNotice": "Duba LaTeX yana buƙatar fakitin TeX Live daga ƙarshen da aka saita.",
 };

@@ -217,4 +217,5 @@ export const az = {
   "about.license": "Lisenziya",
   "about.source": "Mənbə kodu",
   "about.close": "Bağla",
+  "preview.latexNotice": "LaTeX önizləməsi konfiqurasiya edilmiş son nöqtədən TeX Live paketlərini tələb edir.",
 };

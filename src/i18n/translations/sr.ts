@@ -194,4 +194,5 @@ export const sr = {
   "about.license": "Лиценца",
   "about.source": "Изворни код",
   "about.close": "Затвори",
+  "preview.latexNotice": "Преглед LaTeX-а захтева TeX Live пакете са конфигурисане крајње тачке.",
 };

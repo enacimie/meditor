@@ -218,4 +218,5 @@ export const te = {
   "about.license": "లైసెన్స్",
   "about.source": "సోర్స్ కోడ్",
   "about.close": "మూసివేయి",
+  "preview.latexNotice": "LaTeX ప్రివ్యూకు కాన్ఫిగర్ చేయబడిన ఎండ్‌పాయింట్ నుండి TeX Live ప్యాకేజీలు అవసరం.",
 };

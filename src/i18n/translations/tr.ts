@@ -218,4 +218,5 @@ export const tr = {
   "about.license": "Lisans",
   "about.source": "Kaynak kodu",
   "about.close": "Kapat",
+  "preview.latexNotice": "LaTeX önizlemesi, yapılandırılan uç noktadan TeX Live paketlerine ihtiyaç duyar.",
 };

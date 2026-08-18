@@ -194,4 +194,5 @@ export const ps = {
   "about.license": "جواز",
   "about.source": "سرچینه کوډ",
   "about.close": "تړل",
+  "preview.latexNotice": "د LaTeX مخکتنې ته د تنظیم شوي پای ټکي څخه د TeX Live کڅوړو اړتیا ده.",
 };

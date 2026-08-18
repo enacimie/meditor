@@ -193,4 +193,5 @@ export const ro = {
   "about.license": "Licență",
   "about.source": "Cod sursă",
   "about.close": "Închide",
+  "preview.latexNotice": "Previzualizarea LaTeX necesită pachete TeX Live de la punctul final configurat.",
 };

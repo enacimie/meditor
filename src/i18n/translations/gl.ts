@@ -194,4 +194,5 @@ export const gl = {
   "about.license": "Licenza",
   "about.source": "Código fonte",
   "about.close": "Pechar",
+  "preview.latexNotice": "A vista previa de LaTeX necesita paquetes TeX Live desde o punto final configurado.",
 };

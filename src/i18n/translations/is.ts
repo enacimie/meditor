@@ -194,4 +194,5 @@ export const is = {
   "about.license": "Leyfi",
   "about.source": "Frumkóði",
   "about.close": "Loka",
+  "preview.latexNotice": "LaTeX-forskoðun krefst TeX Live-pakka frá uppsettu endapunkti.",
 };

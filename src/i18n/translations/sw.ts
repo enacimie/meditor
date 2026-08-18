@@ -218,4 +218,5 @@ export const sw = {
   "about.license": "Leseni",
   "about.source": "Msimbo wa chanzo",
   "about.close": "Funga",
+  "preview.latexNotice": "Hakiki ya LaTeX inahitaji vifurushi vya TeX Live kutoka sehemu ya mwisho iliyosanidiwa.",
 };

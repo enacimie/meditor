@@ -193,4 +193,5 @@ export const am = {
   "about.license": "ፈቃድ",
   "about.source": "የምንጭ ኮድ",
   "about.close": "ዝጋ",
+  "preview.latexNotice": "የLaTeX ቅድመ እይታ ከተዋቀረው መጨረሻ TeX Live ፓኬጆችን ይፈልጋል።",
 };

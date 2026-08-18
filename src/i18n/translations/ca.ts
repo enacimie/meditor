@@ -194,4 +194,5 @@ export const ca = {
   "about.license": "Llicència",
   "about.source": "Codi font",
   "about.close": "Tancar",
+  "preview.latexNotice": "La previsualització de LaTeX necessita els paquets TeX Live del punt final configurat.",
 };

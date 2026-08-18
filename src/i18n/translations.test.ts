@@ -69,10 +69,7 @@ describe("translations", () => {
    * Adding a key to English without translating it must fail the build; the
    * only way to silence that is to add it here on purpose.
    */
-  const KNOWN_PARTIAL_KEYS = new Set<string>([
-    // Translated in en, es and the twelve most widely spoken UI languages.
-    "preview.latexNotice",
-  ]);
+  const KNOWN_PARTIAL_KEYS = new Set<string>([]);
 
   it("every English key is defined in every language", () => {
     const missing: string[] = [];

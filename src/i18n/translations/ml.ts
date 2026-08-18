@@ -193,4 +193,5 @@ export const ml = {
   "about.license": "ലൈസൻസ്",
   "about.source": "സോഴ്സ് കോഡ്",
   "about.close": "അടയ്ക്കുക",
+  "preview.latexNotice": "കോൺഫിഗർ ചെയ്ത എൻഡ്‌പോയിന്റിൽ നിന്ന് LaTeX പ്രിവ്യൂവിന് TeX Live പാക്കേജുകൾ ആവശ്യമാണ്.",
 };

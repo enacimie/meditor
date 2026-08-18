@@ -194,4 +194,5 @@ export const lb = {
   "about.license": "Lizenz",
   "about.source": "Quellcode",
   "about.close": "Zoumaachen",
+  "preview.latexNotice": "LaTeX-Virschau brauch TeX Live-Päck vum konfiguréierten Endpunkt.",
 };

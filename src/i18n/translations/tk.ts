@@ -194,4 +194,5 @@ export const tk = {
   "about.license": "Lisenziýa",
   "about.source": "Çeşme kody",
   "about.close": "Ýap",
+  "preview.latexNotice": "LaTeX deslapky synlamak üçin sazlanan gutarnykly nokatdan TeX Live paketleri talap edilýär.",
 };

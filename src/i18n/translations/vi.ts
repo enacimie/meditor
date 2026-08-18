@@ -193,4 +193,5 @@ export const vi = {
   "about.license": "Giấy phép",
   "about.source": "Mã nguồn",
   "about.close": "Đóng",
+  "preview.latexNotice": "Xem trước LaTeX cần các gói TeX Live từ điểm cuối đã cấu hình.",
 };

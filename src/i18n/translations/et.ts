@@ -194,4 +194,5 @@ export const et = {
   "about.license": "Litsents",
   "about.source": "Lähtekood",
   "about.close": "Sulge",
+  "preview.latexNotice": "LaTeX-i eelvaade vajab seadistatud lõpp-punktist TeX Live'i pakette.",
 };

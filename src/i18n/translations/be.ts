@@ -194,4 +194,5 @@ export const be = {
   "about.license": "Ліцэнзія",
   "about.source": "Зыходны код",
   "about.close": "Закрыць",
+  "preview.latexNotice": "Папярэдні прагляд LaTeX патрабуе пакеты TeX Live з наладжанага канчатковага пункта.",
 };

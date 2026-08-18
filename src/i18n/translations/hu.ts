@@ -194,4 +194,5 @@ export const hu = {
   "about.license": "Licenc",
   "about.source": "Forráskód",
   "about.close": "Bezárás",
+  "preview.latexNotice": "A LaTeX előnézethez TeX Live csomagok szükségesek a beállított végponttól.",
 };

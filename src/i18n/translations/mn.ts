@@ -194,4 +194,5 @@ export const mn = {
   "about.license": "Лиценз",
   "about.source": "Эх код",
   "about.close": "Хаах",
+  "preview.latexNotice": "LaTeX урьдчилан харахад тохируулсан эцсийн цэгээс TeX Live багцууд шаардлагатай.",
 };

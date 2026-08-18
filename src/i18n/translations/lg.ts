@@ -194,4 +194,5 @@ export const lg = {
   "about.license": "Layisinsi",
   "about.source": "Source code",
   "about.close": "Galawo",
+  "preview.latexNotice": "Okulaba kwa LaTeX kwetaaga ebipaketi bya TeX Live okuva ku nkomerero eyategekebwa.",
 };

@@ -218,4 +218,5 @@ export const mr = {
   "about.license": "परवाना",
   "about.source": "स्रोत कोड",
   "about.close": "बंद करा",
+  "preview.latexNotice": "LaTeX पूर्वदृश्यासाठी कॉन्फिगर केलेल्या एंडपॉइंटमधून TeX Live पॅकेजेसची आवश्यकता आहे.",
 };

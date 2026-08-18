@@ -193,4 +193,5 @@ export const my = {
   "about.license": "လိုင်စင်",
   "about.source": "ရင်းမြစ်ကုဒ်",
   "about.close": "ပိတ်မည်",
+  "preview.latexNotice": "LaTeX အကြိုမြင်ကွင်းသည် သတ်မှတ်ထားသော အဆုံးမှတ်မှ TeX Live အထုပ်များကို လိုအပ်သည်။",
 };

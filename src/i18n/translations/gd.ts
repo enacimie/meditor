@@ -194,4 +194,5 @@ export const gd = {
   "about.license": "Ceadachas",
   "about.source": "Còd tùsail",
   "about.close": "Dùin",
+  "preview.latexNotice": "Tha ro-shealladh LaTeX feumach air pacaidean TeX Live bhon phuing-crìche a chaidh a rèiteachadh.",
 };
