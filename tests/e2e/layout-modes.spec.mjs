@@ -67,22 +67,31 @@ try {
   assert(!editorOnly.preview, "preview must be hidden in editor-only mode");
   assert(!editorOnly.divider, "divider must be hidden when a pane is hidden");
 
-  // The editor should now own the workspace instead of the split ratio. Stated
-  // as a proportion rather than an exact pixel match: what matters is that
-  // `flex: 1 1 100%` won over the inline ratio, and a runner is free to spend
-  // a stray pixel on rounding or a scrollbar. The measurements travel with the
-  // failure so a red CI run says what it actually saw.
-  const widths = await page.evaluate(`(() => {
-    const w = (s) => document.querySelector(s)?.getBoundingClientRect().width ?? 0;
-    return {
-      pane: +w('.split > .pane').toFixed(2),
-      split: +w('.split').toFixed(2),
-      inner: innerWidth,
-      direction: getComputedStyle(document.querySelector('.split')).flexDirection,
-      // Both panes, declared and computed. This pane went half-width on the
-      // Windows and macOS runners while the sizing lived in CSS, and telling
-      // "the rule did not win" from "the pane is genuinely hidden" needs the
-      // declared value next to the computed one.
+  /*
+   * The editor should now own the workspace instead of the split ratio — but
+   * wait for the box to say so rather than measuring the instant the class
+   * appears. Layout is asynchronous: on a loaded CI runner the browser was
+   * still reporting the previous geometry, and the previous `flex`, for a
+   * frame or two after React had written the new one. Measuring right away
+   * read that stale state and called a working feature broken.
+   *
+   * Stated as a proportion, not an exact pixel match: a runner is free to
+   * spend a stray pixel on rounding or a scrollbar.
+   */
+  const spansWorkspace = `(() => {
+    const p = document.querySelector('.split > .pane');
+    const s = document.querySelector('.split');
+    if (!p || !s) return false;
+    const total = s.getBoundingClientRect().width;
+    return total > 0 && p.getBoundingClientRect().width / total > 0.95;
+  })()`;
+  try {
+    await page.waitFor(spansWorkspace, { timeout: 10000, interval: 100 });
+  } catch {
+    // Never got there. Report what the panes actually declare and compute, so
+    // a stale-layout flake and a real layout bug can be told apart.
+    const state = await page.evaluate(`(() => ({
+      split: +document.querySelector('.split').getBoundingClientRect().width.toFixed(1),
       panes: [...document.querySelectorAll('.split > .pane')].map((p) => {
         const cs = getComputedStyle(p);
         return {
@@ -92,15 +101,20 @@ try {
           declared: p.style.flex,
         };
       }),
+    }))()`);
+    assert(false, "the visible pane should span the whole workspace: " + JSON.stringify(state));
+  }
+
+  const widths = await page.evaluate(`(() => {
+    const w = (s) => document.querySelector(s)?.getBoundingClientRect().width ?? 0;
+    return {
+      pane: +w('.split > .pane').toFixed(2),
+      direction: getComputedStyle(document.querySelector('.split')).flexDirection,
     };
   })()`);
-  assert(widths.direction === "row", `the pinned viewport should lay the panes out in a row, got ${widths.direction}`);
-  const share = widths.split > 0 ? widths.pane / widths.split : 0;
   assert(
-    share > 0.95,
-    `the visible pane should span the whole workspace, took ${(share * 100).toFixed(1)}% ` +
-      `(pane ${widths.pane} of split ${widths.split}, viewport ${widths.inner}) ` +
-      JSON.stringify(widths.panes),
+    widths.direction === "row",
+    `the pinned viewport should lay the panes out in a row, got ${widths.direction}`,
   );
   assert(
     widths.pane > split.paneWidth * 1.5,
