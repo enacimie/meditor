@@ -83,6 +83,35 @@
   break-inside: avoid;
 }
 
+/*
+ * `break-after: avoid` above stops a heading being separated from what follows
+ * it, but paged.js does not chain it: with a section title followed straight by
+ * a subsection title, it moves the subsection forward and strands the section
+ * title. previewRenderer.ts groups those runs into one element so this rule can
+ * do the work instead.
+ *
+ * The two `+` rules restore what the wrapper interrupts: the paragraph indent
+ * of `p + p` and the seam removal of `pre + pre`, which keeps the chunks of a
+ * split code block looking continuous. The marker class says what the wrapper
+ * ends with.
+ *
+ * Simple selectors only. This file is not injected into the document — it is
+ * handed to paged.js as text and parsed by its own engine, which silently
+ * produces no pages at all when it meets `:is()`.
+ */
+.markdown-body.doc .keep-with-next {
+  break-inside: avoid;
+}
+
+.markdown-body.doc .keep-with-next--p + p {
+  text-indent: 1.6em;
+}
+
+.markdown-body.doc .keep-with-next--pre + pre {
+  margin-top: 0;
+  border-top: none;
+}
+
 .markdown-body.doc ul,
 .markdown-body.doc ol {
   margin: 0.5em 0;

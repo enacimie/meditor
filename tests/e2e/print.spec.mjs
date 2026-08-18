@@ -98,6 +98,87 @@ try {
   );
   await page.waitFor("!document.querySelector('.app').classList.contains('zen')");
 
+  /*
+   * A heading must not be the last thing on a page, with what it introduces
+   * starting on the next one. `break-after: avoid` alone does not manage it —
+   * paged.js will not chain it across a run of consecutive headings — so
+   * previewRenderer groups each run with its first block into one element.
+   */
+  await page.waitFor("document.querySelectorAll('.pagedjs_page').length > 0", {
+    timeout: 30000,
+    interval: 500,
+    message: "the paginated view should render",
+  });
+  await page.waitFor(
+    `(() => {
+      const n = document.querySelectorAll('.pagedjs_page').length;
+      const previous = window.__printPages ?? -1;
+      window.__printPages = n;
+      return n > 0 && n === previous;
+    })()`,
+    { timeout: 30000, interval: 500, message: "pagination should settle" },
+  );
+
+  const layout = await page.evaluate(`(() => {
+    // Mermaid renders to a div, not a figure: leaving it out of this list made
+    // the heading above it look like the last thing on the page.
+    const SEL = 'h1,h2,h3,h4,h5,h6,p,ul,ol,dl,table,pre,blockquote,figure,.mermaid,.mermaid-error,.katex-display';
+    const stranded = [];
+    for (const page of document.querySelectorAll('.pagedjs_page')) {
+      const area = page.querySelector('.pagedjs_area') || page;
+      const blocks = [...area.querySelectorAll(SEL)]
+        .filter((el) => el.getBoundingClientRect().height > 0);
+      const last = blocks[blocks.length - 1];
+      if (last && /^H[1-6]$/.test(last.tagName)) {
+        const group = last.closest('.keep-with-next');
+        stranded.push({
+          title: (last.innerText || '').replace(/\s+/g, ' ').slice(0, 30),
+          // Grouped at all? And if so, did paged.js tear the group apart
+          // anyway — which it does when the group holds something that
+          // already carries break-inside: avoid, such as a Mermaid figure.
+          grouped: !!group,
+          groupSplit: !!(group && (group.hasAttribute('data-split-from') ||
+            group.hasAttribute('data-split-to'))),
+        });
+      }
+    }
+    const source = document.querySelector('.preview-source');
+    const firstBlock = source?.firstElementChild;
+    return {
+      stranded,
+      wrappers: document.querySelectorAll('.keep-with-next').length,
+      // If the grouping did not happen, these say why: it only runs when the
+      // offscreen source container has layout to measure.
+      pages: document.querySelectorAll('.pagedjs_page').length,
+      sourceBlocks: source ? source.children.length : -1,
+      sourceHeight: source ? source.offsetHeight : -1,
+      firstBlockHeight: firstBlock ? firstBlock.offsetHeight : -1,
+      docView: !!document.querySelector('.paged-view'),
+    };
+  })()`);
+
+  assert(
+    layout.wrappers > 0,
+    "headings should have been grouped with their content: " + JSON.stringify(layout),
+  );
+  /*
+   * Assert the contract, not a count: how many headings end up stranded on this
+   * sample depends on font metrics, and those differ per platform. What must
+   * hold everywhere is that a heading is only ever left alone for a reason we
+   * know about — either the height guard declined to group it, or paged.js tore
+   * the group apart despite `break-inside: avoid`, which it does when the group
+   * holds something that already carries that rule, such as a Mermaid figure.
+   *
+   * A heading stranded inside an intact group means the mechanism has quietly
+   * stopped working.
+   */
+  const unexplained = layout.stranded.filter((h) => h.grouped && !h.groupSplit);
+  assert(
+    unexplained.length === 0,
+    `headings left alone at the foot of a page while their group was intact: ` +
+      JSON.stringify(unexplained),
+  );
+
   assert(page.consoleErrors.length === 0, "console errors: " + page.consoleErrors.join(" | "));
   console.log("PASS: print.spec — the preview reaches the printed page, from zen too");
 } finally {

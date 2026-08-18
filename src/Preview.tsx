@@ -18,6 +18,7 @@ import pagedCss from "./paged.css?inline";
 import latexHighlightCss from "./latex-highlight.css?inline";
 import { clearMermaidResources, renderContent, splitLongFencedBlocks } from "./previewRenderer";
 import { isPaginatable } from "./pagedLifecycle";
+import { keepHeadingsWithContent } from "./previewRenderer";
 
 import type { DocKind } from "./types";
 import "./Preview.css";
@@ -306,6 +307,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
         await renderContent(source, docValue, seqRef, isStale, t);
         if (cancelled || myToken !== tokenRef.current) return;
         wrapCodeLines(source);
+        keepHeadingsWithContent(source);
         paged.innerHTML = "";
         let previewer: Previewer;
         try {

@@ -31,6 +31,79 @@ export function splitLongFencedBlocks(md: string, maxLines = CODE_BLOCK_MAX_LINE
   });
 }
 
+/** A4's content box is 247 mm tall, which is about 934 px at 96 dpi. */
+const PAGE_CONTENT_PX = 934;
+
+/**
+ * Past this, a heading group is not worth keeping in one piece: paged.js would
+ * have nowhere to put it and would leave a page-sized hole rather than break
+ * the rule.
+ */
+const KEEP_TOGETHER_MAX_PX = PAGE_CONTENT_PX * 0.6;
+
+const HEADING_TAG = /^H[1-6]$/;
+
+/**
+ * Keep each heading on the same page as whatever it introduces.
+ *
+ * `break-after: avoid` on the heading gets most of the way there, but paged.js
+ * does not chain it: given `## Section` followed by `### Subsection`, it moves
+ * the subsection and its content to the next page and leaves the section title
+ * stranded at the foot of the previous one. Turning the run into a single
+ * element fixes that, because `break-inside: avoid` *is* honoured.
+ *
+ * A group is the heading, any headings immediately after it, and the first
+ * block that is not a heading — the thing the titles are announcing.
+ *
+ * Only ever called on the offscreen container that feeds the paginated view,
+ * so the web preview, the reverse sync and the HTML export keep working on the
+ * flat structure they expect.
+ *
+ * @param root - container whose direct children are the document's blocks.
+ * @param measure - height of an element; injectable because jsdom reports 0.
+ */
+export function keepHeadingsWithContent(
+  root: HTMLElement,
+  measure: (el: HTMLElement) => number = (el) => el.offsetHeight,
+): void {
+  const blocks = Array.from(root.children) as HTMLElement[];
+  let i = 0;
+
+  while (i < blocks.length) {
+    if (!HEADING_TAG.test(blocks[i].tagName)) {
+      i += 1;
+      continue;
+    }
+
+    let end = i;
+    while (end < blocks.length && HEADING_TAG.test(blocks[end].tagName)) end += 1;
+    // A heading with nothing after it has nothing to be kept with.
+    if (end >= blocks.length) break;
+
+    const group = blocks.slice(i, end + 1);
+    const height = group.reduce((total, el) => total + measure(el), 0);
+
+    // Fail open: a zero measure means the container had no layout to offer,
+    // and skipping would turn the feature off silently. Grouping something
+    // that turns out too tall is the milder failure — paged.js simply splits
+    // it, which is what it did before any of this.
+    if (height === 0 || height <= KEEP_TOGETHER_MAX_PX) {
+      const wrapper = root.ownerDocument.createElement("div");
+      wrapper.className = "keep-with-next";
+      // The last child decides which sibling rule has to be restored around
+      // the wrapper: see the `+` selectors in paged.css.
+      const lastTag = group[group.length - 1].tagName;
+      if (lastTag === "P") wrapper.classList.add("keep-with-next--p");
+      else if (lastTag === "PRE") wrapper.classList.add("keep-with-next--pre");
+
+      root.insertBefore(wrapper, group[0]);
+      for (const el of group) wrapper.append(el);
+    }
+
+    i = end + 1;
+  }
+}
+
 let markdownPromise: Promise<typeof import("./markdown")> | undefined;
 let markdownStylesPromise: Promise<unknown[]> | undefined;
 let mermaidPromise: Promise<typeof import("./mermaidPool")> | undefined;
