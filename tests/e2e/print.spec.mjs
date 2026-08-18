@@ -120,7 +120,9 @@ try {
   );
 
   const layout = await page.evaluate(`(() => {
-    const SEL = 'h1,h2,h3,h4,h5,h6,p,ul,ol,dl,table,pre,blockquote,figure';
+    // Mermaid renders to a div, not a figure: leaving it out of this list made
+    // the heading above it look like the last thing on the page.
+    const SEL = 'h1,h2,h3,h4,h5,h6,p,ul,ol,dl,table,pre,blockquote,figure,.mermaid,.mermaid-error,.katex-display';
     const stranded = [];
     for (const page of document.querySelectorAll('.pagedjs_page')) {
       const area = page.querySelector('.pagedjs_area') || page;
@@ -128,7 +130,16 @@ try {
         .filter((el) => el.getBoundingClientRect().height > 0);
       const last = blocks[blocks.length - 1];
       if (last && /^H[1-6]$/.test(last.tagName)) {
-        stranded.push((last.innerText || '').replace(/\s+/g, ' ').slice(0, 30));
+        const group = last.closest('.keep-with-next');
+        stranded.push({
+          title: (last.innerText || '').replace(/\s+/g, ' ').slice(0, 30),
+          // Grouped at all? And if so, did paged.js tear the group apart
+          // anyway — which it does when the group holds something that
+          // already carries break-inside: avoid, such as a Mermaid figure.
+          grouped: !!group,
+          groupSplit: !!(group && (group.hasAttribute('data-split-from') ||
+            group.hasAttribute('data-split-to'))),
+        });
       }
     }
     const source = document.querySelector('.preview-source');
@@ -151,15 +162,21 @@ try {
     "headings should have been grouped with their content: " + JSON.stringify(layout),
   );
   /*
-   * One is tolerated, and it is a known paged.js limit rather than slack in the
-   * rule: when the group holds something that already carries
-   * `break-inside: avoid` of its own — a Mermaid figure, say — paged.js splits
-   * the outer group anyway. Measured on this sample: two stranded headings
-   * without the grouping, one with it, and the same page count either way.
+   * Assert the contract, not a count: how many headings end up stranded on this
+   * sample depends on font metrics, and those differ per platform. What must
+   * hold everywhere is that a heading is only ever left alone for a reason we
+   * know about — either the height guard declined to group it, or paged.js tore
+   * the group apart despite `break-inside: avoid`, which it does when the group
+   * holds something that already carries that rule, such as a Mermaid figure.
+   *
+   * A heading stranded inside an intact group means the mechanism has quietly
+   * stopped working.
    */
+  const unexplained = layout.stranded.filter((h) => h.grouped && !h.groupSplit);
   assert(
-    layout.stranded.length <= 1,
-    `headings left alone at the foot of a page: ${JSON.stringify(layout.stranded)}`,
+    unexplained.length === 0,
+    `headings left alone at the foot of a page while their group was intact: ` +
+      JSON.stringify(unexplained),
   );
 
   assert(page.consoleErrors.length === 0, "console errors: " + page.consoleErrors.join(" | "));
