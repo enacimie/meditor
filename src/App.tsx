@@ -963,6 +963,16 @@ export default function App() {
     );
   }
 
+  /*
+   * The divider ratio is only meaningful while both panes share the workspace.
+   * Emitted at any other time it leaves an inline `flex` on the pane for the
+   * layout and zen rules to fight, and that fight is not reliably won: on the
+   * Windows and macOS CI runners the inline value beat `flex: 1 1 100%
+   * !important`, leaving the visible pane at half width with dead space beside
+   * it. Not writing the style is both simpler and platform-independent.
+   */
+  const sharingTheWorkspace = layoutMode === "split" && !zenMode;
+
   return (
     <div
       className={
@@ -1032,7 +1042,7 @@ export default function App() {
       >
         <div
           className="pane"
-          style={{ flex: `0 0 ${split}%` }}
+          style={sharingTheWorkspace ? { flex: `0 0 ${split}%` } : undefined}
         >
           <div className="pane-header">
             <span className="pane-title">{t("pane.editor")}</span>
@@ -1147,7 +1157,10 @@ export default function App() {
           onPointerUp={onDividerUp}
           onLostPointerCapture={onDividerUp}
         />
-        <div className="pane" style={{ flex: `0 0 ${100 - split}%` }}>
+        <div
+          className="pane"
+          style={sharingTheWorkspace ? { flex: `0 0 ${100 - split}%` } : undefined}
+        >
           <div className="pane-header">
             <span className="pane-title">{t("pane.preview")}</span>
             {markdownSyncAvailable && (

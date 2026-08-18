@@ -152,6 +152,43 @@ describe("layout modes", () => {
     expect(document.querySelector(".cm-search")).toBeNull();
   });
 
+  /*
+   * The pane carries the divider ratio as an inline `flex`. While a pane is
+   * hidden that ratio means nothing, and leaving it in place made the CSS
+   * fight it — a fight the Windows and macOS runners lost, showing the editor
+   * at half width with dead space beside it. So assert on the absence of the
+   * attribute rather than on a width jsdom cannot compute.
+   */
+  it("drops the split ratio from the panes outside split view", async () => {
+    await renderApp();
+    const panes = () => [...document.querySelectorAll<HTMLElement>(".split > .pane")];
+    expect(panes()).toHaveLength(2);
+    for (const pane of panes()) expect(pane.style.flex).not.toBe("");
+
+    fireEvent.keyDown(window, { key: "1", ctrlKey: true });
+    await waitFor(() => expect(app().classList.contains("layout-editor")).toBe(true));
+    for (const pane of panes()) expect(pane.style.flex).toBe("");
+
+    fireEvent.keyDown(window, { key: "3", ctrlKey: true });
+    await waitFor(() => expect(app().classList.contains("layout-preview")).toBe(true));
+    for (const pane of panes()) expect(pane.style.flex).toBe("");
+
+    // Back to split, the ratio returns.
+    fireEvent.keyDown(window, { key: "2", ctrlKey: true });
+    await waitFor(() => {
+      for (const pane of panes()) expect(pane.style.flex).not.toBe("");
+    });
+  });
+
+  it("drops the split ratio in zen mode too, which had the same clash", async () => {
+    await renderApp();
+    fireEvent.keyDown(window, { key: "F11" });
+    await waitFor(() => expect(app().classList.contains("zen")).toBe(true));
+    for (const pane of document.querySelectorAll<HTMLElement>(".split > .pane")) {
+      expect(pane.style.flex).toBe("");
+    }
+  });
+
   it("keeps the chosen mode while zen mode takes over", async () => {
     await renderApp();
     fireEvent.keyDown(window, { key: "3", ctrlKey: true });
