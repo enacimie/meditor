@@ -1,6 +1,6 @@
 [package]
 name = "meditor"
-version = "0.1.0"
+version = "0.1.1"
 description = "Desktop Markdown/Typst/LaTeX editor with live preview and PDF export"
 authors = ["meditor contributors"]
 license = "AGPL-3.0-or-later"
