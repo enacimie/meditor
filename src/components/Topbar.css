@@ -5,6 +5,10 @@
   gap: 16px;
   min-height: 42px;
   padding: 6px 14px;
+  /* Clear the status bar and notch on a phone; 0 on every desktop. */
+  padding-top: calc(6px + var(--safe-area-top, 0px));
+  padding-left: calc(14px + var(--safe-area-left, 0px));
+  padding-right: calc(14px + var(--safe-area-right, 0px));
   border-bottom: 1px solid var(--border);
   background: var(--bg-alt);
   flex-shrink: 0;

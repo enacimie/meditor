@@ -117,6 +117,13 @@
   --accent: #0969da;
   --accent-fg: #ffffff;
   --code-bg: #f6f8fa;
+  /* System window insets. Android sets these through a JS bridge (the window
+     is edge-to-edge there and Tauri does not expose the insets); iOS gets them
+     from env(); everywhere else they are 0. */
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   font-size: 16px;
   line-height: 1.5;
@@ -360,8 +367,8 @@ body,
   /* The only way out of zen mode besides Esc, so it must not end up under a
      notch or a rounded corner — on a phone that would leave no way out at
      all. `max()` keeps the desktop inset unchanged, where the insets are 0. */
-  top: max(12px, env(safe-area-inset-top, 0px));
-  right: max(12px, env(safe-area-inset-right, 0px));
+  top: max(12px, var(--safe-area-top, env(safe-area-inset-top, 0px)));
+  right: max(12px, var(--safe-area-right, env(safe-area-inset-right, 0px)));
   z-index: 1200;
   display: inline-flex;
   align-items: center;

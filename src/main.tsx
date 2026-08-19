@@ -3,6 +3,12 @@ import ReactDOM from "react-dom/client";
 import { I18nProvider } from "./i18n/I18nProvider";
 import { ErrorBoundary } from "./ErrorBoundary";
 import App from "./App";
+import { applyAndroidSafeArea } from "./safeArea";
+
+// Before React paints, so the first frame already clears the system UI. On
+// Android the window is edge-to-edge and the insets come from a JS bridge; on
+// every other platform this is a no-op.
+applyAndroidSafeArea();
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
