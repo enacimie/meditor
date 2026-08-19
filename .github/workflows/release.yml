@@ -35,6 +35,10 @@ jobs:
         run: |
           # Same mirror stall as ci.yml, and it matters more here: a release
           # that dies on apt leaves the tag without its Linux bundles.
+          for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.sources /etc/apt/sources.list.d/*.list; do
+            [ -f "$f" ] || continue
+            sudo sed -i 's|https\?://azure\.archive\.ubuntu\.com/ubuntu|http://archive.ubuntu.com/ubuntu|g' "$f"
+          done
           APT_OPTS="-o Acquire::Retries=3 -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15"
           updated=false
           for attempt in 1 2 3; do

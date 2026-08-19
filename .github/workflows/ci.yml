@@ -95,14 +95,24 @@ jobs:
         timeout-minutes: 20
         run: |
           # The runner's default mirror, azure.archive.ubuntu.com, goes quiet
-          # often enough to be a pattern rather than bad luck: every line comes
-          # back Ign:, apt falls through to archive.ubuntu.com, and then stalls
-          # with no timeout of its own until this step is killed at 20 minutes.
-          # That has taken out runs on main as well as on pull requests.
+          # often enough to be a pattern rather than bad luck, and it takes the
+          # whole run with it: every line comes back Ign:, and then apt sits
+          # there until this step is killed at twenty minutes.
           #
-          # Bounded timeouts turn a twenty-minute hang into a few quick
-          # failures, and retrying the whole update gives the mirror a chance
-          # to answer rather than failing the build over one bad minute.
+          # Timeouts alone do not save it — measured, not assumed: with
+          # Acquire::http::Timeout=15 in place the InRelease files were fetched
+          # and then the Packages indices hung for nineteen silent minutes
+          # anyway. What the same log does show is archive.ubuntu.com answering
+          # normally in the very same second. So the mirror comes out of the
+          # sources rather than being waited on. Both formats are handled:
+          # deb822 .sources on 24.04, one-line sources.list on 22.04.
+          # security.ubuntu.com is a different host and is left alone.
+          for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.sources /etc/apt/sources.list.d/*.list; do
+            [ -f "$f" ] || continue
+            sudo sed -i 's|https\?://azure\.archive\.ubuntu\.com/ubuntu|http://archive.ubuntu.com/ubuntu|g' "$f"
+          done
+          # Bounded transfer timeouts and retries on top, for the ordinary
+          # transient failure that is not this one.
           APT_OPTS="-o Acquire::Retries=3 -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15"
           updated=false
           for attempt in 1 2 3; do
