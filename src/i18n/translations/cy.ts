@@ -82,6 +82,8 @@ export const cy = {
   "pane.resize": "Resize panels",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Wrthi'n llwytho golygydd...",
+  "editor.undo": "Dadwneud",
+  "editor.redo": "Ailwneud",
   "preview.unavailable": "Rhagolwg ddim ar gael",
   "preview.retry": "Rhoi cynnig eto",
   "preview.renderError": "Methwyd creu'r rhagolwg:",

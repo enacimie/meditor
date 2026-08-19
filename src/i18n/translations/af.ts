@@ -82,6 +82,8 @@ export const af = {
   "pane.resize": "Resize paneels",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Laai redigeerder...",
+  "editor.undo": "Ontdoen",
+  "editor.redo": "Herdoen",
   "preview.unavailable": "Voorskou nie beskikbaar nie",
   "preview.retry": "Probeer weer",
   "preview.renderError": "Kon nie voorskou genereer nie:",

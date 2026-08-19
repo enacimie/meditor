@@ -82,6 +82,8 @@ export const bg = {
   "pane.resize": "Преоразмери панелите",
   "pane.resizeHint": "Плъзнете за преоразмеряване",
   "editor.loading": "Зареждане на редактора...",
+  "editor.undo": "Отмяна",
+  "editor.redo": "Повтаряне",
   "preview.unavailable": "Прегледът не е наличен",
   "preview.retry": "Опитайте отново",
   "preview.renderError": "Не може да се генерира преглед:",

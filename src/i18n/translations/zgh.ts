@@ -82,6 +82,8 @@ export const zgh = {
   "pane.resize": "ⵙⵏⴼⵍ ⵜⵉⵖⵣⵉ ⵏ ⵉⴳⴰⵍⵉⵙⵏ",
   "pane.resizeHint": "ⵣⵡⵓⵔ ⴰⴷ ⵜⵙⵏⴼⵍⴷ ⵜⵉⵖⵣⵉ",
   "editor.loading": "ⴰⵣⵓⵏ ⵏ ⵓⵎⴰⵔⴰ...",
+  "editor.undo": "ⵙⴼⵙⵅ",
+  "editor.redo": "ⴰⵍⵙ",
   "preview.unavailable": "ⵜⴰⵏⵏⴰⵢⵜ ⵓⵔ ⵜⵍⵍⵉ",
   "preview.retry": "ⴰⵔⵎ ⴷⴰⵖ",
   "preview.renderError": "ⵓⵔ ⵉⵣⵎⵉⵔ ⴰⴷ ⵉⵙⵏⴼⵍⵓⵍ ⵜⴰⵏⵏⴰⵢⵜ:",

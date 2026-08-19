@@ -82,6 +82,8 @@ export const is = {
   "pane.resize": "Resize spjalds",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Hleður ritill...",
+  "editor.undo": "Afturkalla",
+  "editor.redo": "Endurtaka",
   "preview.unavailable": "Forskoðun ekki tiltækt",
   "preview.retry": "Reyna aftur",
   "preview.renderError": "Ekki tókst að búa til forskoðun:",

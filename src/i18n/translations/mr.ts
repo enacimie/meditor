@@ -93,6 +93,8 @@ export const mr = {
   "pane.resizeHint": "आकार बदलण्यासाठी ड्रॅग करा",
   // Editor
   "editor.loading": "संपादक लोड होत आहे...",
+  "editor.undo": "पूर्ववत करा",
+  "editor.redo": "पुन्हा करा",
   // Preview
   "preview.unavailable": "पूर्वावलोकन अनुपलब्ध",
   "preview.retry": "पुन्हा प्रयत्न करा",

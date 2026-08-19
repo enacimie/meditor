@@ -82,6 +82,8 @@ export const ga = {
   "pane.resize": "Resize painéals",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Ag lódáil eagarthóir...",
+  "editor.undo": "Cealaigh",
+  "editor.redo": "Athdhéan",
   "preview.unavailable": "Réamhamharc nach bhfuil ar fáil",
   "preview.retry": "Bain triail eile as",
   "preview.renderError": "Níorbh fhéidir an réamhamharc a chruthú:",

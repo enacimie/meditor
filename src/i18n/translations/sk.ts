@@ -86,6 +86,8 @@ export const sk = {
   "pane.resize": "Zmeniť veľkosť panelov",
   "pane.resizeHint": "Ťahajte pre zmenu veľkosti",
   "editor.loading": "Načítava sa editor...",
+  "editor.undo": "Späť",
+  "editor.redo": "Znova",
   "preview.unavailable": "Náhľad nie je dostupný",
   "preview.retry": "Skúsiť znova",
   "preview.renderError": "Nedá sa vygenerovať náhľad:",

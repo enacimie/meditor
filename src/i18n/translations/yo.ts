@@ -81,6 +81,8 @@ export const yo = {
   "pane.resize": "Yí ìwọ̀n pánẹ́lì padà",
   "pane.resizeHint": "Fà láti yí ìwọ̀n padà",
   "editor.loading": "Olóòtú ń bọ̀...",
+  "editor.undo": "Dá padà",
+  "editor.redo": "Tún ṣe",
   "preview.unavailable": "Àwòtẹ́lẹ̀ kò sí",
   "preview.retry": "Tún gbìyànjú",
   "preview.renderError": "Kò ṣeé ṣẹ̀dá àwòtẹ́lẹ̀:",

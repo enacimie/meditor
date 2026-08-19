@@ -82,6 +82,8 @@ export const fo = {
   "pane.resize": "Resize panels",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Lesur inn ritil...",
+  "editor.undo": "Angra",
+  "editor.redo": "Endurgera",
   "preview.unavailable": "Forhondsyvirlit ikki tøkt",
   "preview.retry": "Royna aftur",
   "preview.renderError": "Kundi ikki gera forhondsyvirlit:",

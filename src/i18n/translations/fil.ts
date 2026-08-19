@@ -81,6 +81,8 @@ export const fil = {
   "pane.resize": "Baguhin ang laki ng panel",
   "pane.resizeHint": "I-drag para baguhin ang laki",
   "editor.loading": "Naglo-load ng editor...",
+  "editor.undo": "I-undo",
+  "editor.redo": "I-redo",
   "preview.unavailable": "Hindi available ang preview",
   "preview.retry": "Subukan muli",
   "preview.renderError": "Hindi makabuo ng preview:",

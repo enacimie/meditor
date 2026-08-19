@@ -82,6 +82,8 @@ export const eu = {
   "pane.resize": "Resize panelas",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Kargatzen editorea...",
+  "editor.undo": "Desegin",
+  "editor.redo": "Berregin",
   "preview.unavailable": "Aurrebista ez erabilgarri",
   "preview.retry": "Saiatu berriro",
   "preview.renderError": "Ezin izan da aurrebista sortu:",

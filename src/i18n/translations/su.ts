@@ -82,6 +82,8 @@ export const su = {
   "pane.resize": "Resize papnéls",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Ngamuat pangédit...",
+  "editor.undo": "Bolaykeun",
+  "editor.redo": "Balikan deui",
   "preview.unavailable": "Sawangan teu sayogi",
   "preview.retry": "Coba deui",
   "preview.renderError": "Teu bisa nyieun sawangan:",

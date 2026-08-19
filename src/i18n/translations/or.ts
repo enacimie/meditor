@@ -81,6 +81,8 @@ export const or = {
   "pane.resize": "ପ୍ୟାନେଲ୍ ଆକାର ବଦଳାନ୍ତୁ",
   "pane.resizeHint": "ଆକାର ବଦଳାଇବାକୁ ଟାଣନ୍ତୁ",
   "editor.loading": "ସମ୍ପାଦକ ଲୋଡ୍ ହେଉଛି...",
+  "editor.undo": "ପୂର୍ବବତ୍ କରନ୍ତୁ",
+  "editor.redo": "ପୁନଃ କରନ୍ତୁ",
   "preview.unavailable": "ପୂର୍ବାବଲୋକନ ଉପଲବ୍ଧ ନାହିଁ",
   "preview.retry": "ପୁଣି ଚେଷ୍ଟା",
   "preview.renderError": "ପୂର୍ବାବଲୋକନ ସୃଷ୍ଟି କରି ପାରିଲା ନାହିଁ:",

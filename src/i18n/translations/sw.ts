@@ -93,6 +93,8 @@ export const sw = {
   "pane.resizeHint": "Vuta kubadilisha ukubwa",
   // Editor
   "editor.loading": "Inapakia kihariri...",
+  "editor.undo": "Tendua",
+  "editor.redo": "Rudia",
   // Preview
   "preview.unavailable": "Onyesho la awali halipatikani",
   "preview.retry": "Jaribu tena",

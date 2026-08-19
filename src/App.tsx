@@ -33,6 +33,7 @@ import { useThemeEffect } from "./hooks/useThemeEffect";
 import { useSplitDivider } from "./hooks/useSplitDivider";
 import { useNotice } from "./hooks/useNotice";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
+import { useCoarsePointer, prefersCoarsePointer } from "./hooks/useCoarsePointer";
 
 import type { Doc, DocKind } from "./types";
 import type { LayoutMode, Theme } from "./components/types";
@@ -72,6 +73,19 @@ const DEFAULT_PREFERENCES: Preferences = {
   editorFontFamily: DEFAULT_EDITOR_FONT_FAMILY,
   spellcheck: DEFAULT_SPELLCHECK,
 };
+/**
+ * Whether a first run should open in the paginated A4 view.
+ *
+ * On a desktop, yes — it is the nicer way to read a document. On a phone it is
+ * the wrong answer twice over: an A4 page is 794px wide and a phone is not, so
+ * it arrives either shrunk past legibility or needing sideways scrolling to
+ * read a line. Only the default moves; a choice made explicitly, on either
+ * kind of device, is what gets stored and what comes back.
+ */
+function defaultDocView(): boolean {
+  return !prefersCoarsePointer();
+}
+
 const MAX_PENDING_OPEN_DOCS = 256;
 /** Stable empty list, so a closed outline does not re-render its consumers. */
 const EMPTY_HEADINGS: Heading[] = [];
@@ -80,7 +94,7 @@ function loadPreferences(): Preferences {
   if (typeof window === "undefined") return DEFAULT_PREFERENCES;
   try {
     const raw = window.localStorage.getItem(PREFERENCES_KEY);
-    if (!raw) return DEFAULT_PREFERENCES;
+    if (!raw) return { ...DEFAULT_PREFERENCES, docView: defaultDocView() };
     const value: unknown = JSON.parse(raw);
     if (!value || typeof value !== "object") return DEFAULT_PREFERENCES;
     const stored = value as Partial<Preferences>;
@@ -98,8 +112,7 @@ function loadPreferences(): Preferences {
         ? stored.layoutMode
         : DEFAULT_PREFERENCES.layoutMode;
     return {
-      docView:
-        typeof stored.docView === "boolean" ? stored.docView : DEFAULT_PREFERENCES.docView,
+      docView: typeof stored.docView === "boolean" ? stored.docView : defaultDocView(),
       wrap: typeof stored.wrap === "boolean" ? stored.wrap : DEFAULT_PREFERENCES.wrap,
       theme,
       layoutMode,
@@ -226,6 +239,27 @@ export default function App() {
   const [layoutMode, setLayoutMode] = useState<LayoutMode>(
     INITIAL_PREFERENCES.layoutMode,
   );
+  const coarsePointer = useCoarsePointer();
+
+  /*
+   * Side-by-side panes need a mouse and a wide screen; a phone has neither.
+   * So on a touch screen the workspace is one pane or the other, and every
+   * route into `split` lands on the reader instead — the stored preference
+   * from a desktop session, Ctrl+2 from an attached keyboard, and the jumps
+   * between panes, which get their own treatment further down because they
+   * are aiming at a particular pane rather than at both.
+   */
+  const chooseLayout = useCallback(
+    (mode: LayoutMode) => {
+      setLayoutMode(coarsePointer && mode === "split" ? "preview" : mode);
+    },
+    [coarsePointer],
+  );
+
+  useEffect(() => {
+    if (!coarsePointer) return;
+    setLayoutMode((mode) => (mode === "split" ? "preview" : mode));
+  }, [coarsePointer]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [zenMode, setZenMode] = useState(false);
   const [compactLayout, setCompactLayout] = useState(false);
@@ -448,6 +482,48 @@ export default function App() {
       // the first close request or skipped the final session save.
     };
   }, []);
+
+  /*
+   * Write the session out the moment the app stops being visible.
+   *
+   * The close guard below covers a window being closed, and the debounce
+   * above covers ordinary typing — but Android fires neither. The system
+   * freezes the WebView when you switch away and may kill the process later
+   * without running anything else, so a pending debounce simply never lands
+   * and the last edits are gone.
+   *
+   * `visibilitychange` is the last moment anything is guaranteed to run, so
+   * the debounce is collapsed into an immediate write there. `pagehide`
+   * catches the cases visibility does not: a reload, a tab closing.
+   *
+   * Desktop gets the same treatment, where it is a small win rather than a
+   * necessity — minimising or switching workspaces now checkpoints the
+   * session instead of leaving it to the timer.
+   */
+  useEffect(() => {
+    if (!ready || !isTauri()) return;
+    const flush = () => {
+      if (sessionTimerRef.current !== undefined) {
+        window.clearTimeout(sessionTimerRef.current);
+        sessionTimerRef.current = undefined;
+      }
+      writeSessionOrdered(
+        docsRef.current,
+        activeIdRef.current,
+        splitRatioRef.current,
+      ).catch((error) => console.error("Could not save session", error));
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pagehide", flush);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pagehide", flush);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, splitRatioRef]);
 
   useEffect(() => {
     if (!ready || !isTauri()) return;
@@ -931,6 +1007,18 @@ export default function App() {
   }
 
   /**
+   * The layout that brings `pane` into view.
+   *
+   * On a desktop that is the split, which keeps the pane you were in. A touch
+   * screen has no split to fall back on, so the jump has to hand the whole
+   * workspace to the pane it is aiming at — otherwise "go to code" from the
+   * reader would go nowhere at all.
+   */
+  function revealing(pane: "editor" | "preview"): LayoutMode {
+    return coarsePointer ? pane : "split";
+  }
+
+  /**
    * Jump to a line of the source, bringing the editor back if it is hidden.
    *
    * In preview-only mode the editor is display:none, so CodeMirror cannot
@@ -940,7 +1028,7 @@ export default function App() {
    */
   function goToCode(line: number) {
     if (layoutMode === "preview") {
-      setLayoutMode("split");
+      setLayoutMode(revealing("editor"));
       requestAnimationFrame(() => editorRef.current?.scrollToLine(line));
       return;
     }
@@ -948,6 +1036,14 @@ export default function App() {
   }
 
   function handleReverseSync(line: number) {
+    /*
+     * Only a mouse means this. A tap is how you read on a phone, and turning
+     * every tap into "jump to the source" would throw the reader into the
+     * editor — with the on-screen keyboard over half the screen — for touching
+     * the paragraph they were reading. The mark still lands, so the "go to
+     * code" button in the header has somewhere to go.
+     */
+    if (coarsePointer) return;
     goToCode(line);
   }
 
@@ -962,7 +1058,7 @@ export default function App() {
    */
   function goToPreview(line: number) {
     if (layoutMode === "editor") {
-      setLayoutMode("split");
+      setLayoutMode(revealing("preview"));
       requestAnimationFrame(() => previewRef.current?.scrollToLine(line));
       return;
     }
@@ -976,6 +1072,24 @@ export default function App() {
   function handleReverseSyncButton() {
     const line = previewRef.current?.getTargetLine() ?? 0;
     goToCode(line);
+  }
+
+  /**
+   * Open the find panel, bringing the editor back if it is hidden.
+   *
+   * Ctrl+K deliberately refuses to do that (see the shortcut below): it moves
+   * focus, and moving focus into a pane nobody can see is worse than doing
+   * nothing. Picking "find" from the menu is an explicit request, so it takes
+   * the reader to the source instead of quietly failing.
+   */
+  function findInDocument() {
+    if (!ready) return;
+    if (layoutMode === "preview") {
+      setLayoutMode(revealing("editor"));
+      requestAnimationFrame(() => editorRef.current?.focusSearch());
+      return;
+    }
+    editorRef.current?.focusSearch();
   }
 
   // Keyboard shortcuts — extracted to its own hook
@@ -1017,7 +1131,7 @@ export default function App() {
       if (layoutMode === "preview") return;
       editorRef.current?.focusSearch();
     },
-    setLayout: setLayoutMode,
+    setLayout: chooseLayout,
     openPreferences: () => {
       if (!ready || confirmRequest || renameRequest) return;
       // Two aria-modal dialogs at once would trap focus in the wrong one.
@@ -1096,7 +1210,9 @@ export default function App() {
         onAbout={() => setAboutOpen(true)}
         onPreferences={() => setPreferencesOpen(true)}
         layoutMode={layoutMode}
-        onLayoutModeChange={setLayoutMode}
+        onLayoutModeChange={chooseLayout}
+        onFind={findInDocument}
+        coarsePointer={coarsePointer}
       />
       {zenMode && (
         <button
@@ -1159,6 +1275,37 @@ export default function App() {
                 </svg>
                 {t("pane.goToPreview")}
               </button>
+            )}
+            {/* Only where they are the only way. A touch keyboard has no Ctrl,
+                so without these there is no undo at all; on a desktop Ctrl+Z
+                is right there and two more buttons would just be clutter. */}
+            {coarsePointer && (
+              <>
+                <button
+                  type="button"
+                  className="sync-btn history-btn"
+                  onClick={() => editorRef.current?.undo()}
+                  aria-label={t("editor.undo")}
+                  title={t("editor.undo")}
+                >
+                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 7v6h6" />
+                    <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  className="sync-btn history-btn"
+                  onClick={() => editorRef.current?.redo()}
+                  aria-label={t("editor.redo")}
+                  title={t("editor.redo")}
+                >
+                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 7v6h-6" />
+                    <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7" />
+                  </svg>
+                </button>
+              </>
             )}
             <button
               type="button"

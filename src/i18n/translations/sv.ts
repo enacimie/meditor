@@ -82,6 +82,8 @@ export const sv = {
   "pane.resize": "Ändra panelstorlek",
   "pane.resizeHint": "Dra för att ändra storlek",
   "editor.loading": "Laddar redigerare...",
+  "editor.undo": "Ångra",
+  "editor.redo": "Gör om",
   "preview.unavailable": "Förhandsvisning ej tillgänglig",
   "preview.retry": "Försök igen",
   "preview.renderError": "Kunde inte generera förhandsvisning:",

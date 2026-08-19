@@ -93,6 +93,8 @@ export const ja = {
   "pane.resizeHint": "ドラッグしてサイズ変更",
   // エディタ
   "editor.loading": "エディタを読み込み中...",
+  "editor.undo": "元に戻す",
+  "editor.redo": "やり直し",
   // プレビュー
   "preview.unavailable": "プレビューは利用できません",
   "preview.retry": "再試行",

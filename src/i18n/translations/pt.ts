@@ -93,6 +93,8 @@ export const pt = {
   "pane.resizeHint": "Arraste para redimensionar",
   // Editor
   "editor.loading": "Carregando editor...",
+  "editor.undo": "Desfazer",
+  "editor.redo": "Refazer",
   // Visualização
   "preview.unavailable": "Visualização indisponível",
   "preview.retry": "Tentar novamente",

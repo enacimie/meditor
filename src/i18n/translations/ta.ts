@@ -93,6 +93,8 @@ export const ta = {
   "pane.resizeHint": "அளவை மாற்ற இழுக்கவும்",
   // Editor
   "editor.loading": "தொகுப்பான் ஏற்றப்படுகிறது...",
+  "editor.undo": "செயல்தவிர்",
+  "editor.redo": "மீண்டும் செய்",
   // Preview
   "preview.unavailable": "முன்னோட்டம் கிடைக்கவில்லை",
   "preview.retry": "மீண்டும் முயற்சி செய்",

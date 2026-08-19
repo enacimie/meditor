@@ -93,6 +93,8 @@ export const de = {
   "pane.resizeHint": "Ziehen zum Skalieren",
   // Editor
   "editor.loading": "Editor wird geladen...",
+  "editor.undo": "Rückgängig",
+  "editor.redo": "Wiederholen",
   // Vorschau
   "preview.unavailable": "Vorschau nicht verfügbar",
   "preview.retry": "Wiederholen",

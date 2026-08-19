@@ -81,6 +81,8 @@ export const nl = {
   "pane.resize": "Panelen vergroten/verkleinen",
   "pane.resizeHint": "Sleep om te vergroten/verkleinen",
   "editor.loading": "Editor laden...",
+  "editor.undo": "Ongedaan maken",
+  "editor.redo": "Opnieuw",
   "preview.unavailable": "Voorbeeld niet beschikbaar",
   "preview.retry": "Opnieuw",
   "preview.renderError": "Kon voorbeeld niet genereren:",

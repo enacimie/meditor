@@ -81,6 +81,8 @@ export const fa = {
   "pane.resize": "تغییر اندازه پنل‌ها",
   "pane.resizeHint": "برای تغییر اندازه بکشید",
   "editor.loading": "در حال بارگذاری ویرایشگر...",
+  "editor.undo": "واگرد",
+  "editor.redo": "از نو",
   "preview.unavailable": "پیش‌نمایش در دسترس نیست",
   "preview.retry": "تلاش مجدد",
   "preview.renderError": "نتوانست پیش‌نمایش ایجاد کند:",

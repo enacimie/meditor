@@ -93,6 +93,8 @@ export const bn = {
   "pane.resizeHint": "আকার পরিবর্তন করতে টানুন",
   // Editor
   "editor.loading": "সম্পাদক লোড হচ্ছে...",
+  "editor.undo": "পূর্বাবস্থায় ফেরান",
+  "editor.redo": "পুনরায় করুন",
   // Preview
   "preview.unavailable": "প্রাকদর্শন অনুপলব্ধ",
   "preview.retry": "পুনরায় চেষ্টা করুন",

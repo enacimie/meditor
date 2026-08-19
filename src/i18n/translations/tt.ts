@@ -82,6 +82,8 @@ export const tt = {
   "pane.resize": "Панельләр үлчәмен үзгәртү",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Йөкләнә мөхәррир...",
+  "editor.undo": "Кире кайтару",
+  "editor.redo": "Кабатлау",
   "preview.unavailable": "Алдан карау мөмкин түгел",
   "preview.retry": "Кабат тырышу",
   "preview.renderError": "Алдан карауны ясап булмады:",

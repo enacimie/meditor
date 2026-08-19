@@ -82,6 +82,8 @@ export const be = {
   "pane.resize": "Змяніць памер панэляў",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Загрузка рэдактар...",
+  "editor.undo": "Адрабіць",
+  "editor.redo": "Паўтарыць",
   "preview.unavailable": "Прадпрагляд недаступна",
   "preview.retry": "Паспрабаваць зноў",
   "preview.renderError": "Не ўдалося стварыць прадпрагляд:",

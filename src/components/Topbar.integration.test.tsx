@@ -50,6 +50,7 @@ function renderTopbar(overrides: {
         setLanguage={handleSetLanguage}
         layoutMode="split"
         onLayoutModeChange={vi.fn()}
+        onFind={vi.fn()}
         notice={null}
         busyOperation={null}
         menuOpen={menuOpen}

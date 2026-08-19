@@ -81,6 +81,8 @@ export const th = {
   "pane.resize": "ปรับขนาดแผง",
   "pane.resizeHint": "ลากเพื่อปรับขนาด",
   "editor.loading": "กำลังโหลดตัวแก้ไข...",
+  "editor.undo": "เลิกทำ",
+  "editor.redo": "ทำซ้ำ",
   "preview.unavailable": "ตัวอย่างไม่พร้อมใช้งาน",
   "preview.retry": "ลองใหม่",
   "preview.renderError": "ไม่สามารถสร้างตัวอย่าง:",

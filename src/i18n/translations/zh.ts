@@ -93,6 +93,8 @@ export const zh = {
   "pane.resizeHint": "拖动以调整大小",
   // 编辑器
   "editor.loading": "正在加载编辑器...",
+  "editor.undo": "撤销",
+  "editor.redo": "重做",
   // 预览
   "preview.unavailable": "预览不可用",
   "preview.retry": "重试",

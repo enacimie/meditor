@@ -93,6 +93,8 @@ export const ko = {
   "pane.resizeHint": "드래그하여 크기 조정",
   // 편집기
   "editor.loading": "편집기 로딩 중...",
+  "editor.undo": "실행 취소",
+  "editor.redo": "다시 실행",
   // 미리보기
   "preview.unavailable": "미리보기를 사용할 수 없습니다",
   "preview.retry": "다시 시도",

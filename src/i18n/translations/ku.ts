@@ -92,6 +92,8 @@ export const ku = {
   "pane.resizeHint": "Bikişîne ji bo guherandina mezinahiyê",
   // Editor
   "editor.loading": "Edîtor tê barkirin...",
+  "editor.undo": "Vegerîne",
+  "editor.redo": "Dubare bike",
   // Preview
   "preview.unavailable": "Pêşdîtin ne berdest e",
   "preview.retry": "Dîsa biceribîne",

@@ -92,6 +92,8 @@ export const kk = {
   "pane.resizeHint": "Өлшемін өзгерту үшін сүйреңіз",
   // Editor
   "editor.loading": "Редактор жүктелуде...",
+  "editor.undo": "Болдырмау",
+  "editor.redo": "Қайталау",
   // Preview
   "preview.unavailable": "Алдын ала қарау қолжетімсіз",
   "preview.retry": "Қайталау",

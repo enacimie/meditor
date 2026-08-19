@@ -82,6 +82,8 @@ export const tk = {
   "pane.resize": "Resize panels",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Ýüklenýär redaktor...",
+  "editor.undo": "Yzyna al",
+  "editor.redo": "Gaýtala",
   "preview.unavailable": "Öňünden görüş elýeterli däl",
   "preview.retry": "Gaýtadan synanşyk",
   "preview.renderError": "Öňünden görnüşi döredip bolmady:",

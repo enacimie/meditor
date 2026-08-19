@@ -82,6 +82,8 @@ export const tg = {
   "pane.resize": "Тағйири андозаи панелҳо",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Бор шуда истодааст муҳаррир...",
+  "editor.undo": "Бекор кардан",
+  "editor.redo": "Такрор кардан",
   "preview.unavailable": "Пешнамоиш дастнорас",
   "preview.retry": "Аз нав кӯшидан",
   "preview.renderError": "Пешнамоишро сохтан нашуд:",

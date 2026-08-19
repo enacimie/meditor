@@ -82,6 +82,8 @@ export const ka = {
   "pane.resize": "პანელების ზომის შეცვლა",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "ჩატვირთვა რედაქტორი...",
+  "editor.undo": "დაბრუნება",
+  "editor.redo": "გამეორება",
   "preview.unavailable": "წინასწარი მიუწვდომელი",
   "preview.retry": "ხელახლა ცდა",
   "preview.renderError": "წინასწარი ხედის შექმნა ვერ მოხერხდა:",

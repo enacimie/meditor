@@ -82,6 +82,8 @@ export const fi = {
   "pane.resize": "Muuta paneelien kokoa",
   "pane.resizeHint": "Vedä muuttaaksesi kokoa",
   "editor.loading": "Ladataan muokkainta...",
+  "editor.undo": "Kumoa",
+  "editor.redo": "Tee uudelleen",
   "preview.unavailable": "Esikatselu ei käytettävissä",
   "preview.retry": "Yritä uudelleen",
   "preview.renderError": "Esikatselun luonti epäonnistui:",

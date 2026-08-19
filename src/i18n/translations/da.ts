@@ -82,6 +82,8 @@ export const da = {
   "pane.resize": "Ændr panelstørrelse",
   "pane.resizeHint": "Træk for at ændre størrelse",
   "editor.loading": "Indlæser editor...",
+  "editor.undo": "Fortryd",
+  "editor.redo": "Gendan",
   "preview.unavailable": "Forhåndsvisning ikke tilgængelig",
   "preview.retry": "Prøv igen",
   "preview.renderError": "Kunne ikke generere forhåndsvisning:",

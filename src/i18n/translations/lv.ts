@@ -82,6 +82,8 @@ export const lv = {
   "pane.resize": "Resize paneliss",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Ielādē redaktors...",
+  "editor.undo": "Atsaukt",
+  "editor.redo": "Atkārtot",
   "preview.unavailable": "Priekšskatījums nepieejams",
   "preview.retry": "Mēģināt vēlreiz",
   "preview.renderError": "Neizdevās izveidot priekšskatījumu:",

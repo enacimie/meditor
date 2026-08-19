@@ -93,6 +93,8 @@ export const ru = {
   "pane.resizeHint": "Перетащите для изменения размера",
   // Редактор
   "editor.loading": "Загрузка редактора...",
+  "editor.undo": "Отменить",
+  "editor.redo": "Повторить",
   // Предпросмотр
   "preview.unavailable": "Предпросмотр недоступен",
   "preview.retry": "Повторить",

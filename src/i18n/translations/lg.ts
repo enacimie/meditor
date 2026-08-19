@@ -82,6 +82,8 @@ export const lg = {
   "pane.resize": "Resize paaniros",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Kikka eky'okulungamya...",
+  "editor.undo": "Ddayo",
+  "editor.redo": "Ddamu okukola",
   "preview.unavailable": "Okulaba nga tekuna tekiriiwo",
   "preview.retry": "Ddamu okulambika",
   "preview.renderError": "Tekisobose kukola kulaba:",

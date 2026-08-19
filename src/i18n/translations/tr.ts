@@ -93,6 +93,8 @@ export const tr = {
   "pane.resizeHint": "Yeniden boyutlandırmak için sürükle",
   // Düzenleyici
   "editor.loading": "Düzenleyici yükleniyor...",
+  "editor.undo": "Geri al",
+  "editor.redo": "Yinele",
   // Önizleme
   "preview.unavailable": "Önizleme kullanılamıyor",
   "preview.retry": "Tekrar dene",

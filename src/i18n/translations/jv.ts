@@ -81,6 +81,8 @@ export const jv = {
   "pane.resize": "Ganti ukuran panel",
   "pane.resizeHint": "Seret kanggo ganti ukuran",
   "editor.loading": "Ngamot editor...",
+  "editor.undo": "Batalake",
+  "editor.redo": "Baleni",
   "preview.unavailable": "Pratayang ora kasedhiya",
   "preview.retry": "Coba maneh",
   "preview.renderError": "Ora bisa nggawe pratayang:",

@@ -82,6 +82,8 @@ export const so = {
   "pane.resize": "Resize daashads",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Wuu shubanayaa tifaftire...",
+  "editor.undo": "Ka noqo",
+  "editor.redo": "Dib u samee",
   "preview.unavailable": "Horudhac la heli karo ma aha",
   "preview.retry": "Isku day mar kale",
   "preview.renderError": "Horudhaca lama abuuri karin:",

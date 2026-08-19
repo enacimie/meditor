@@ -86,6 +86,8 @@ export const cs = {
   "pane.resize": "Změnit velikost panelů",
   "pane.resizeHint": "Táhněte pro změnu velikosti",
   "editor.loading": "Načítání editoru...",
+  "editor.undo": "Zpět",
+  "editor.redo": "Znovu",
   "preview.unavailable": "Náhled není dostupný",
   "preview.retry": "Zkusit znovu",
   "preview.renderError": "Nelze vygenerovat náhled:",

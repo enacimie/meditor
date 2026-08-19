@@ -82,6 +82,8 @@ export const zu = {
   "pane.resize": "Resize iphanelis",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Iyalayisha isihleli...",
+  "editor.undo": "Hlehlisa",
+  "editor.redo": "Yenza futhi",
   "preview.unavailable": "Ukuhlolwa kuqala ayitholakali",
   "preview.retry": "Zama futhi",
   "preview.renderError": "Ayikwazanga ukwenza ukubuka kuqala:",

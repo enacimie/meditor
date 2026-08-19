@@ -93,6 +93,8 @@ export const te = {
   "pane.resizeHint": "పరిమాణం మార్చడానికి లాగండి",
   // Editor
   "editor.loading": "ఎడిటర్ లోడ్ అవుతోంది...",
+  "editor.undo": "రద్దు చేయి",
+  "editor.redo": "మళ్లీ చేయి",
   // Preview
   "preview.unavailable": "ప్రివ్యూ అందుబాటులో లేదు",
   "preview.retry": "మళ్లీ ప్రయత్నించు",

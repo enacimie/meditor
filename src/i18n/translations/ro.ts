@@ -81,6 +81,8 @@ export const ro = {
   "pane.resize": "Redimensionează panourile",
   "pane.resizeHint": "Trage pentru a redimensiona",
   "editor.loading": "Se încarcă editorul...",
+  "editor.undo": "Anulează",
+  "editor.redo": "Refă",
   "preview.unavailable": "Previzualizare indisponibilă",
   "preview.retry": "Reîncearcă",
   "preview.renderError": "Nu s-a putut genera previzualizarea:",

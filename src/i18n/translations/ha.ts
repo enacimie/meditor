@@ -81,6 +81,8 @@ export const ha = {
   "pane.resize": "Canja girman fanni",
   "pane.resizeHint": "Ja don canja girman",
   "editor.loading": "Ana lodawa edita...",
+  "editor.undo": "Soke",
+  "editor.redo": "Maimaita",
   "preview.unavailable": "Samfoti ba ya samuwa",
   "preview.retry": "Sake gwadawa",
   "preview.renderError": "Ba a iya ƙirƙirar samfoti ba:",

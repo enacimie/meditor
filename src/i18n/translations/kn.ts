@@ -81,6 +81,8 @@ export const kn = {
   "pane.resize": "ಫಲಕಗಳ ಗಾತ್ರ ಬದಲಾಯಿಸಿ",
   "pane.resizeHint": "ಗಾತ್ರ ಬದಲಾಯಿಸಲು ಎಳೆಯಿರಿ",
   "editor.loading": "ಸಂಪಾದಕ ಲೋಡ್ ಆಗುತ್ತಿದೆ...",
+  "editor.undo": "ರದ್ದುಗೊಳಿಸಿ",
+  "editor.redo": "ಪುನಃ ಮಾಡಿ",
   "preview.unavailable": "ಮುನ್ನೋಟ ಲಭ್ಯವಿಲ್ಲ",
   "preview.retry": "ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ",
   "preview.renderError": "ಮುನ್ನೋಟ ರಚಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ:",

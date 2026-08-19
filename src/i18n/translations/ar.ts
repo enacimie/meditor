@@ -93,6 +93,8 @@ export const ar = {
   "pane.resizeHint": "اسحب لتغيير الحجم",
   // Editor
   "editor.loading": "جار تحميل المحرر...",
+  "editor.undo": "تراجع",
+  "editor.redo": "إعادة",
   // Preview
   "preview.unavailable": "المعاينة غير متوفرة",
   "preview.retry": "إعادة المحاولة",

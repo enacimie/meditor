@@ -93,6 +93,8 @@ export const fr = {
   "pane.resizeHint": "Glisser pour redimensionner",
   // Éditeur
   "editor.loading": "Chargement de l'éditeur...",
+  "editor.undo": "Annuler",
+  "editor.redo": "Rétablir",
   // Aperçu
   "preview.unavailable": "Aperçu indisponible",
   "preview.retry": "Réessayer",

@@ -82,6 +82,8 @@ export const mg = {
   "pane.resize": "Hanova habe tontolo",
   "pane.resizeHint": "Tariho hanova habe",
   "editor.loading": "Mampiditra mpanova...",
+  "editor.undo": "Foanana",
+  "editor.redo": "Averina",
   "preview.unavailable": "Tsy misy fijerena mialoha",
   "preview.retry": "Andramo indray",
   "preview.renderError": "Tsy afaka mamorona fijerena mialoha:",

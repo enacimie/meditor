@@ -93,6 +93,8 @@ export const hi = {
   "pane.resizeHint": "आकार बदलने के लिए खींचें",
   // Editor
   "editor.loading": "संपादक लोड हो रहा है...",
+  "editor.undo": "पूर्ववत् करें",
+  "editor.redo": "फिर से करें",
   // Preview
   "preview.unavailable": "पूर्वावलोकन अनुपलब्ध",
   "preview.retry": "पुनः प्रयास करें",
