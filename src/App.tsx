@@ -34,6 +34,7 @@ import { useSplitDivider } from "./hooks/useSplitDivider";
 import { useNotice } from "./hooks/useNotice";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useCoarsePointer, prefersCoarsePointer } from "./hooks/useCoarsePointer";
+import { usePlatform, isMobilePlatform } from "./hooks/usePlatform";
 
 import type { Doc, DocKind } from "./types";
 import type { LayoutMode, Theme } from "./components/types";
@@ -236,6 +237,7 @@ export default function App() {
   const [docView, setDocView] = useState(INITIAL_PREFERENCES.docView);
   const [wrap, setWrap] = useState(INITIAL_PREFERENCES.wrap);
   const [theme, setTheme] = useState<Theme>(INITIAL_PREFERENCES.theme);
+  const platform = usePlatform();
   const [layoutMode, setLayoutMode] = useState<LayoutMode>(
     INITIAL_PREFERENCES.layoutMode,
   );
@@ -1172,6 +1174,22 @@ export default function App() {
    * left a narrower version of the same race. An inline value that is simply
    * correct for the current mode has neither problem.
    */
+  /*
+   * Whether "export to PDF" leads anywhere for the document in front of us.
+   *
+   * Not a single answer per platform, because the two routes are different.
+   * Typst and LaTeX compile to PDF in the frontend's own WASM and hand the
+   * bytes to Rust to write, which works anywhere the file dialog does —
+   * Android included. Markdown goes through the webview's native printing,
+   * which exists on Linux and Windows only, so on a phone the entry would be
+   * a menu row whose entire job is to raise an error.
+   *
+   * `platform` is null until Rust answers, and in a browser where there is
+   * nothing to ask; that counts as available so the menu does not flicker.
+   */
+  const pdfExportAvailable =
+    !isMobilePlatform(platform) || (active?.kind ?? "markdown") !== "markdown";
+
   const sharingTheWorkspace = layoutMode === "split" && !zenMode;
   const paneFlex = (percent: number) =>
     sharingTheWorkspace ? `0 0 ${percent}%` : "1 1 100%";
@@ -1203,7 +1221,7 @@ export default function App() {
         onOpen={openFiles}
         onSave={save}
         onSaveAs={saveAs}
-        onExportPdf={exportPdf}
+        onExportPdf={pdfExportAvailable ? exportPdf : undefined}
         onExportHtml={active?.kind === "markdown" ? exportHtml : undefined}
         onCloseAll={closeAllTabs}
         onCloseOthers={closeOtherTabs}

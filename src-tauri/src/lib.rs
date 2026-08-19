@@ -26,6 +26,7 @@ use std::sync::mpsc;
 use tauri::Emitter;
 use tauri::Manager;
 use tauri_plugin_dialog::DialogExt;
+use tauri_plugin_fs::{FilePath, FsExt, OpenOptions};
 
 #[cfg(any(
     target_os = "linux",
@@ -77,7 +78,110 @@ fn max_file_mib() -> u64 {
     MAX_FILE_BYTES / (1024 * 1024)
 }
 
-struct DocumentRegistry(Mutex<HashMap<String, PathBuf>>);
+/// Where an open document lives.
+///
+/// On a desktop this is always a filesystem path and everything below is
+/// ordinary file I/O. Android's picker hands back a `content://` URI from the
+/// Storage Access Framework instead, and that is not a path in any useful
+/// sense: there is no parent directory to put a temporary file in, nothing to
+/// rename, nothing to canonicalise, and `FilePath::into_path()` rejects it
+/// outright. Both shapes live in `FilePath`, so the branch happens once in
+/// the four helpers below rather than in every command.
+type Location = FilePath;
+
+struct DocumentRegistry(Mutex<HashMap<String, Location>>);
+
+/// The filesystem path a location denotes, if it is one.
+///
+/// Every desktop caller gets `Some` and carries on as before; a content URI
+/// is the only thing that yields `None`.
+fn as_path(location: &Location) -> Option<&Path> {
+    match location {
+        FilePath::Path(path) => Some(path.as_path()),
+        FilePath::Url(_) => None,
+    }
+}
+
+/// What the frontend shows and stores in the session.
+fn location_display(location: &Location) -> String {
+    match location {
+        FilePath::Path(path) => path.to_string_lossy().into_owned(),
+        FilePath::Url(url) => url.to_string(),
+    }
+}
+
+/// The document's own name.
+///
+/// A content URI carries no file name in its text — the name lives in the
+/// provider's metadata, which is what `PathResolver::file_name` queries.
+fn location_name(app: &tauri::AppHandle, locale: Locale, location: &Location) -> String {
+    match location {
+        FilePath::Path(path) => base_name(locale, path),
+        FilePath::Url(url) => app
+            .path()
+            .file_name(url.as_str())
+            .unwrap_or_else(|| t(locale, "doc.untitled")),
+    }
+}
+
+/// Read a document, whatever it is stored behind.
+fn read_location(
+    app: &tauri::AppHandle,
+    locale: Locale,
+    location: &Location,
+) -> Result<String, String> {
+    let Some(path) = as_path(location) else {
+        // A path is checked against its metadata before being read; a content
+        // URI has no metadata to consult, so the ceiling has to be enforced
+        // while reading instead. One byte past the limit is enough to know it
+        // is over — reading the whole thing first would let a phone run itself
+        // out of memory on a file it was always going to refuse.
+        use std::io::Read;
+        let mut options = OpenOptions::new();
+        options.read(true);
+        let file = app
+            .fs()
+            .open(location.clone(), options)
+            .map_err(|e| e.to_string())?;
+        let mut bytes = Vec::new();
+        file.take(MAX_FILE_BYTES + 1)
+            .read_to_end(&mut bytes)
+            .map_err(|e| e.to_string())?;
+        if bytes.len() as u64 > MAX_FILE_BYTES {
+            return Err(tf(locale, "file.tooLarge", &max_file_mib().to_string()));
+        }
+        return String::from_utf8(bytes).map_err(|e| e.to_string());
+    };
+    read_path(locale, path)
+}
+
+/// Write a document, whatever it is stored behind.
+///
+/// The desktop path keeps the write-and-rename dance unchanged. A content URI
+/// cannot have one: the Storage Access Framework hands over a file descriptor
+/// for that one document and nothing else, with no sibling to write beside
+/// and no directory entry to swap. Writing is therefore in place, and an
+/// interrupted save can leave a truncated file — a real difference in
+/// durability, not a stylistic one, and the reason this is spelled out here.
+fn write_location(
+    app: &tauri::AppHandle,
+    locale: Locale,
+    location: &Location,
+    bytes: &[u8],
+) -> Result<(), String> {
+    let Some(path) = as_path(location) else {
+        use std::io::Write;
+        let mut options = OpenOptions::new();
+        options.write(true).truncate(true).create(true);
+        let mut file = app
+            .fs()
+            .open(location.clone(), options)
+            .map_err(|e| e.to_string())?;
+        file.write_all(bytes).map_err(|e| e.to_string())?;
+        return file.flush().map_err(|e| e.to_string());
+    };
+    write_atomic_bytes(locale, path, bytes)
+}
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq, Default)]
 #[serde(rename_all = "lowercase")]
@@ -207,14 +311,14 @@ fn normalize_path(locale: Locale, path: &Path) -> Result<PathBuf, String> {
 fn register_normalized(
     locale: Locale,
     registry: &DocumentRegistry,
-    path: PathBuf,
+    location: Location,
 ) -> Result<String, String> {
     let handle = next_handle();
     registry
         .0
         .lock()
         .map_err(|_| t(locale, "file.registryLock"))?
-        .insert(handle.clone(), path);
+        .insert(handle.clone(), location);
     Ok(handle)
 }
 
@@ -229,22 +333,39 @@ fn read_path(locale: Locale, path: &Path) -> Result<String, String> {
     std::fs::read_to_string(path).map_err(|e| e.to_string())
 }
 
-fn document_from_path(
+/// Canonicalise a location, where that means anything.
+///
+/// A path gets the usual treatment — resolved, symlinks followed, directories
+/// rejected. A content URI is already the provider's own opaque identifier
+/// for one document; there is nothing to resolve and nothing to check until
+/// it is opened.
+fn normalize_location(locale: Locale, location: Location) -> Result<Location, String> {
+    match as_path(&location) {
+        Some(path) => normalize_path(locale, path).map(FilePath::Path),
+        None => Ok(location),
+    }
+}
+
+fn document_from_location(
+    app: &tauri::AppHandle,
     locale: Locale,
-    path: PathBuf,
+    location: Location,
     registry: &DocumentRegistry,
 ) -> Result<NativeDocument, String> {
-    let normalized = normalize_path(locale, &path)?;
-    let content = read_path(locale, &normalized)?;
+    let normalized = normalize_location(locale, location)?;
+    let content = read_location(app, locale, &normalized)?;
+    let name = location_name(app, locale, &normalized);
     let handle = register_normalized(locale, registry, normalized.clone())?;
     Ok(NativeDocument {
         id: next_handle(),
-        name: base_name(locale, &normalized),
-        path: Some(normalized.to_string_lossy().into_owned()),
+        // The extension is read off the name rather than the location: a
+        // content URI's own text says nothing about the format.
+        kind: kind_from_path(Path::new(&name)),
+        name,
+        path: Some(location_display(&normalized)),
         content,
         dirty: false,
         handle: Some(handle),
-        kind: kind_from_path(&normalized),
     })
 }
 
@@ -257,20 +378,23 @@ fn files_from_args(args: &[String]) -> Vec<PathBuf> {
         .collect()
 }
 
-fn documents_from_paths(
+fn documents_from_locations(
+    app: &tauri::AppHandle,
     locale: Locale,
-    paths: impl IntoIterator<Item = PathBuf>,
+    locations: impl IntoIterator<Item = Location>,
     registry: &DocumentRegistry,
 ) -> Vec<NativeDocument> {
-    paths
+    locations
         .into_iter()
-        .filter_map(|path| match document_from_path(locale, path, registry) {
-            Ok(document) => Some(document),
-            Err(error) => {
-                eprintln!("{}", tf(locale, "file.openFailed", &error));
-                None
-            }
-        })
+        .filter_map(
+            |location| match document_from_location(app, locale, location, registry) {
+                Ok(document) => Some(document),
+                Err(error) => {
+                    eprintln!("{}", tf(locale, "file.openFailed", &error));
+                    None
+                }
+            },
+        )
         .collect()
 }
 
@@ -336,22 +460,31 @@ fn write_atomic_bytes(locale: Locale, path: &Path, content: &[u8]) -> Result<(),
 }
 
 fn saved_document(
+    app: &tauri::AppHandle,
     locale: Locale,
-    path: PathBuf,
+    location: Location,
     content: String,
     registry: &DocumentRegistry,
 ) -> Result<NativeDocument, String> {
-    let normalized = normalize_path(locale, &path)?;
-    write_atomic(locale, &normalized, &content)?;
+    let normalized = normalize_location(locale, location)?;
+    if content.len() as u64 > MAX_FILE_BYTES {
+        return Err(tf(
+            locale,
+            "file.contentTooLarge",
+            &max_file_mib().to_string(),
+        ));
+    }
+    write_location(app, locale, &normalized, content.as_bytes())?;
+    let name = location_name(app, locale, &normalized);
     let handle = register_normalized(locale, registry, normalized.clone())?;
     Ok(NativeDocument {
         id: next_handle(),
-        name: base_name(locale, &normalized),
-        path: Some(normalized.to_string_lossy().into_owned()),
+        kind: kind_from_path(Path::new(&name)),
+        name,
+        path: Some(location_display(&normalized)),
         content,
         dirty: false,
         handle: Some(handle),
-        kind: kind_from_path(&normalized),
     })
 }
 
@@ -364,6 +497,12 @@ fn parse_locale(raw: Option<String>) -> Locale {
 /// If the file changed or disappeared, keep the path for display but leave the
 /// handle empty so the frontend routes the next save through Save As instead
 /// of silently overwriting an external edit.
+///
+/// Paths only, deliberately. A stored `content://` URI is not reattachable:
+/// the picker grants access for the life of the process, so after a restart
+/// the URI is a string the app is no longer allowed to open. It comes back as
+/// a display value with no handle, which is exactly the "save routes through
+/// Save As" behaviour this function already has for a file that moved.
 fn restore_session_path(
     locale: Locale,
     registry: &DocumentRegistry,
@@ -384,7 +523,7 @@ fn restore_session_path(
     if !matches_snapshot {
         return (Some(path_string), None);
     }
-    let handle = register_normalized(locale, registry, path).ok();
+    let handle = register_normalized(locale, registry, FilePath::Path(path)).ok();
     (Some(path_string), handle)
 }
 
@@ -405,14 +544,14 @@ fn open_files(
             ],
         )
         .blocking_pick_files();
-    let paths = match selected {
-        Some(paths) => paths
-            .into_iter()
-            .map(|path| path.into_path().map_err(|e| e.to_string()))
-            .collect::<Result<Vec<_>, _>>()?,
+    // Taken as they come. Converting to a path here was what made every open
+    // fail on Android: the picker returns a content:// URI and `into_path()`
+    // rejects one outright.
+    let locations = match selected {
+        Some(locations) => locations,
         None => return Ok(Vec::new()),
     };
-    Ok(documents_from_paths(loc, paths, &registry))
+    Ok(documents_from_locations(&app, loc, locations, &registry))
 }
 
 #[tauri::command]
@@ -435,29 +574,33 @@ fn save_as(
             ],
         )
         .blocking_save_file();
-    let path = match selected {
-        Some(path) => path.into_path().map_err(|e| e.to_string())?,
+    let location = match selected {
+        Some(location) => location,
         None => return Ok(None),
     };
-    saved_document(loc, path, content, &registry).map(Some)
+    saved_document(&app, loc, location, content, &registry).map(Some)
 }
 
 #[tauri::command]
 fn save_document(
+    app: tauri::AppHandle,
     handle: String,
     content: String,
     registry: tauri::State<'_, DocumentRegistry>,
     locale: Option<String>,
 ) -> Result<(), String> {
     let loc = parse_locale(locale);
-    let path = registry
+    let location = registry
         .0
         .lock()
         .map_err(|_| t(loc, "file.registryLock"))?
         .get(&handle)
         .cloned()
         .ok_or_else(|| t(loc, "file.documentUnavailable"))?;
-    write_atomic(loc, &path, &content)
+    if content.len() as u64 > MAX_FILE_BYTES {
+        return Err(tf(loc, "file.contentTooLarge", &max_file_mib().to_string()));
+    }
+    write_location(&app, loc, &location, content.as_bytes())
 }
 
 #[tauri::command]
@@ -550,14 +693,14 @@ fn save_session(
         let document_path = document.path.clone();
         let path = match document.handle {
             Some(handle) => {
-                let path = registry
+                let location = registry
                     .0
                     .lock()
                     .map_err(|_| t(loc, "file.registryLock"))?
                     .get(&handle)
                     .cloned()
                     .ok_or_else(|| t(loc, "file.sessionUnavailable"))?;
-                Some(path.to_string_lossy().into_owned())
+                Some(location_display(&location))
             }
             None => document_path.clone(),
         };
@@ -592,12 +735,14 @@ fn save_session(
 
 #[tauri::command]
 fn cli_files(
+    app: tauri::AppHandle,
     registry: tauri::State<'_, DocumentRegistry>,
     locale: Option<String>,
 ) -> Vec<NativeDocument> {
     let loc = parse_locale(locale);
     let args: Vec<String> = std::env::args().collect();
-    documents_from_paths(loc, files_from_args(&args), &registry)
+    let locations = files_from_args(&args).into_iter().map(FilePath::Path);
+    documents_from_locations(&app, loc, locations, &registry)
 }
 
 /// Save raw PDF bytes from the Typst WASM compiler.
@@ -615,12 +760,12 @@ fn write_pdf_bytes(
         .set_file_name(default_name)
         .add_filter("PDF", &["pdf"])
         .blocking_save_file();
-    let path = match selected {
-        Some(path) => path.into_path().map_err(|e| e.to_string())?,
+    let location = match selected {
+        Some(location) => location,
         None => return Ok(()),
     };
-    let path = normalize_path(loc, &path)?;
-    if let Some(parent) = path.parent() {
+    let location = normalize_location(loc, location)?;
+    if let Some(parent) = as_path(&location).and_then(Path::parent) {
         if !parent.exists() {
             return Err(t(loc, "pdf.directoryMissing"));
         }
@@ -637,7 +782,7 @@ fn write_pdf_bytes(
     if pdf_bytes.len() < 5 || &pdf_bytes[..5] != b"%PDF-" {
         return Err(t(loc, "pdf.invalidPdf"));
     }
-    write_atomic_bytes(loc, &path, &pdf_bytes)
+    write_location(&app, loc, &location, &pdf_bytes)
 }
 
 /// Save a self-contained HTML export produced by the frontend.
@@ -658,12 +803,12 @@ fn write_html_file(
         .set_file_name(default_name)
         .add_filter("HTML", &["html"])
         .blocking_save_file();
-    let path = match selected {
-        Some(path) => path.into_path().map_err(|e| e.to_string())?,
+    let location = match selected {
+        Some(location) => location,
         None => return Ok(false),
     };
-    let path = normalize_path(loc, &path)?;
-    if let Some(parent) = path.parent() {
+    let location = normalize_location(loc, location)?;
+    if let Some(parent) = as_path(&location).and_then(Path::parent) {
         if !parent.exists() {
             return Err(t(loc, "file.directoryMissing"));
         }
@@ -675,8 +820,20 @@ fn write_html_file(
             &(MAX_FILE_BYTES / (1024 * 1024)).to_string(),
         ));
     }
-    write_atomic(loc, &path, &html)?;
+    write_location(&app, loc, &location, html.as_bytes())?;
     Ok(true)
+}
+
+/// Which operating system this is, so the interface can stop offering what
+/// the backend cannot do.
+///
+/// PDF export and printing exist on Linux and Windows and nowhere else; on
+/// Android they would open a menu entry that fails. The frontend asks once at
+/// startup rather than guessing from the user agent, which on Android says
+/// "Linux" and would guess wrong.
+#[tauri::command]
+fn platform() -> &'static str {
+    std::env::consts::OS
 }
 
 /// Force-exit the application. The JS `window.close()`/`window.destroy()`
@@ -1142,7 +1299,8 @@ pub fn run() {
     #[cfg(desktop)]
     let builder = builder.plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
         let registry = app.state::<DocumentRegistry>();
-        let documents = documents_from_paths(Locale::En, files_from_args(&args), &registry);
+        let locations = files_from_args(&args).into_iter().map(FilePath::Path);
+        let documents = documents_from_locations(app, Locale::En, locations, &registry);
         if !documents.is_empty() {
             let _ = app.emit("open-documents", documents);
         }
@@ -1154,6 +1312,10 @@ pub fn run() {
     builder
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        // Registered for its Rust API only — `app.fs()` panics without it.
+        // Its JS commands stay unreachable: capabilities/default.json does not
+        // grant `fs:default`, so the frontend gains no new access to the disk.
+        .plugin(tauri_plugin_fs::init())
         .manage(DocumentRegistry(Mutex::new(HashMap::new())))
         .invoke_handler(tauri::generate_handler![
             open_files,
@@ -1167,6 +1329,7 @@ pub fn run() {
             write_pdf_bytes,
             write_html_file,
             alert,
+            platform,
             exit_app
         ])
         .run(tauri::generate_context!())
@@ -1181,6 +1344,68 @@ mod tests {
     fn rejects_empty_and_directory_paths() {
         assert!(normalize_path(Locale::En, Path::new("")).is_err());
         assert!(normalize_path(Locale::En, Path::new(".")).is_err());
+    }
+
+    /// The whole Android file story turns on this one branch: everything the
+    /// desktop does must still be recognised as a path, and a content URI
+    /// must not be. Getting it backwards would either break every desktop
+    /// save or silently route Android writes into the atomic-rename code that
+    /// cannot work there.
+    #[test]
+    fn tells_a_path_from_a_content_uri() {
+        let path = FilePath::Path(PathBuf::from("/home/someone/notes.md"));
+        assert_eq!(as_path(&path), Some(Path::new("/home/someone/notes.md")));
+
+        let uri: FilePath = "content://com.android.providers.downloads/document/42"
+            .parse()
+            .expect("a content URI should parse as a FilePath");
+        assert!(
+            as_path(&uri).is_none(),
+            "a content URI is not a path, whatever it looks like"
+        );
+    }
+
+    #[test]
+    fn shows_a_location_as_itself() {
+        let path = FilePath::Path(PathBuf::from("/home/someone/notes.md"));
+        assert_eq!(location_display(&path), "/home/someone/notes.md");
+
+        let raw = "content://com.android.providers.downloads/document/42";
+        let uri: FilePath = raw.parse().unwrap();
+        assert_eq!(location_display(&uri), raw);
+    }
+
+    /// A content URI is the provider's own identifier for one document.
+    /// Canonicalising it is not merely unnecessary, it is not possible — so
+    /// normalisation has to let it through untouched rather than fail.
+    #[test]
+    fn leaves_a_content_uri_alone_when_normalising() {
+        let raw = "content://com.android.providers.downloads/document/42";
+        let uri: FilePath = raw.parse().unwrap();
+        let normalized = normalize_location(Locale::En, uri).expect("should pass through");
+        assert_eq!(location_display(&normalized), raw);
+    }
+
+    /// Document kind used to be read off the full path and is now read off
+    /// the name, because a content URI's text says nothing about the format.
+    /// The two must agree for every desktop case.
+    #[test]
+    fn kind_from_the_name_matches_kind_from_the_path() {
+        for full in [
+            "/home/someone/paper.typ",
+            "/home/someone/paper.tex",
+            "/home/someone/notes.md",
+            "/home/someone/plain",
+            "/home/someone/.md",
+        ] {
+            let path = Path::new(full);
+            let name = path.file_name().unwrap().to_string_lossy().into_owned();
+            assert_eq!(
+                kind_from_path(path),
+                kind_from_path(Path::new(&name)),
+                "{full} should have the same kind by name as by path"
+            );
+        }
     }
 
     #[test]

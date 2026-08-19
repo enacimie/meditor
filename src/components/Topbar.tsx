@@ -26,7 +26,8 @@ type Props = {
   onOpen: () => void;
   onSave: () => void;
   onSaveAs: () => void;
-  onExportPdf: () => void;
+  /** Omitted where the backend cannot produce a PDF for this document. */
+  onExportPdf?: () => void;
   /** Only offered for Markdown: Typst/LaTeX render through their own engines. */
   onExportHtml?: () => void;
   onCloseAll: () => void;
@@ -291,10 +292,12 @@ const Topbar = memo(function Topbar({
                 <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
                 {t("menu.saveAs")}<span className="shortcut">{t("menu.shortcut.saveAs")}</span>
               </button>
-              <button type="button" role="menuitem" disabled={busy} onClick={() => { onExportPdf(); setMenuOpen(false); menuToggleRef.current?.focus(); }}>
-                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15l3 3 3-3"/></svg>
-                {t("menu.exportPdf")}<span className="shortcut">{t("menu.shortcut.export")}</span>
-              </button>
+              {onExportPdf && (
+                <button type="button" role="menuitem" disabled={busy} onClick={() => { onExportPdf(); setMenuOpen(false); menuToggleRef.current?.focus(); }}>
+                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15l3 3 3-3"/></svg>
+                  {t("menu.exportPdf")}<span className="shortcut">{t("menu.shortcut.export")}</span>
+                </button>
+              )}
               {/* The only way to reach the find panel without a Ctrl key,
                   which is to say: the only way on a phone. */}
               <button type="button" role="menuitem" disabled={busy} onClick={() => { onFind(); setMenuOpen(false); }}>
