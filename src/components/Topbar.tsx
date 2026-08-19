@@ -2,6 +2,7 @@ import { memo, useRef, useEffect, useState, lazy, Suspense, type KeyboardEvent a
 import type { Language, TranslationFn } from "../i18n/translations";
 import { LANGUAGES, isRtl } from "../i18n/translations";
 import type { Theme, Notice, LayoutMode } from "./types";
+import brandIcon from "../assets/meditor-icon.png";
 import "./Topbar.css";
 
 /** Lazy-loaded — only fetched when the user opens the language picker. */
@@ -197,7 +198,7 @@ const Topbar = memo(function Topbar({
 
   return (
     <header className="topbar">
-      <span className="brand">{t("app.brand")}</span>
+      <img className="brand-icon" src={brandIcon} alt={t("app.brand")} />
       {notice && (
         <div
           className={`app-notice ${notice.kind}`}

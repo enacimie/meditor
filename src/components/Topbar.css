@@ -82,11 +82,11 @@
   background: #ffff00;
 }
 
-.brand {
-  color: var(--fg);
-  font-weight: 750;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
+.brand-icon {
+  width: 22px;
+  height: 22px;
+  display: block;
+  flex-shrink: 0;
 }
 
 .actions {

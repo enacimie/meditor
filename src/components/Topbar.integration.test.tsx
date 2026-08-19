@@ -89,7 +89,7 @@ import React from "react";
 describe("Topbar integration", () => {
   it("renders brand and action buttons", () => {
     renderTopbar();
-    expect(screen.getByText("meditor")).toBeDefined();
+    expect(screen.getByAltText("meditor")).toBeDefined();
     expect(screen.getByLabelText("New tab (Ctrl+N)")).toBeDefined();
     expect(screen.getByLabelText("Open files (Ctrl+O)")).toBeDefined();
     expect(screen.getByLabelText("Save (Ctrl+S)")).toBeDefined();
