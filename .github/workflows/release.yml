@@ -35,6 +35,11 @@ jobs:
         run: |
           # Same mirror stall as ci.yml, and it matters more here: a release
           # that dies on apt leaves the tag without its Linux bundles.
+          # The mirror lives behind `mirror+file:/etc/apt/apt-mirrors.txt`,
+          # not in the sources themselves — see ci.yml for the whole story.
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            echo "http://archive.ubuntu.com/ubuntu/" | sudo tee /etc/apt/apt-mirrors.txt >/dev/null
+          fi
           for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.sources /etc/apt/sources.list.d/*.list; do
             [ -f "$f" ] || continue
             sudo sed -i 's|https\?://azure\.archive\.ubuntu\.com/ubuntu|http://archive.ubuntu.com/ubuntu|g' "$f"

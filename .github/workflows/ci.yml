@@ -101,16 +101,30 @@ jobs:
           #
           # Timeouts alone do not save it — measured, not assumed: with
           # Acquire::http::Timeout=15 in place the InRelease files were fetched
-          # and then the Packages indices hung for nineteen silent minutes
+          # and the Packages indices then hung for nineteen silent minutes
           # anyway. What the same log does show is archive.ubuntu.com answering
-          # normally in the very same second. So the mirror comes out of the
-          # sources rather than being waited on. Both formats are handled:
-          # deb822 .sources on 24.04, one-line sources.list on 22.04.
-          # security.ubuntu.com is a different host and is left alone.
+          # normally in the very same second, so the answer is to stop asking
+          # Azure at all.
+          #
+          # The runner does not name a mirror in its sources: they say
+          # `mirror+file:/etc/apt/apt-mirrors.txt`, and that file lists Azure
+          # first with archive.ubuntu.com behind it. That indirection is why
+          # rewriting sources.list alone changed nothing — the second attempt
+          # at this did exactly that and Azure kept showing up. Both are
+          # handled now; security.ubuntu.com is a different host, left alone.
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            echo "http://archive.ubuntu.com/ubuntu/" | sudo tee /etc/apt/apt-mirrors.txt >/dev/null
+          fi
           for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.sources /etc/apt/sources.list.d/*.list; do
             [ -f "$f" ] || continue
             sudo sed -i 's|https\?://azure\.archive\.ubuntu\.com/ubuntu|http://archive.ubuntu.com/ubuntu|g' "$f"
           done
+          # Printed so that if this ever stalls again the log says which
+          # mirrors apt was actually given, instead of leaving it to guesswork.
+          echo "--- apt mirrors in effect ---"
+          cat /etc/apt/apt-mirrors.txt 2>/dev/null || echo "(no apt-mirrors.txt)"
+          grep -rhE "^(deb |URIs:)" /etc/apt/sources.list /etc/apt/sources.list.d/ 2>/dev/null | sort -u
+          echo "-----------------------------"
           # Bounded transfer timeouts and retries on top, for the ordinary
           # transient failure that is not this one.
           APT_OPTS="-o Acquire::Retries=3 -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15"
