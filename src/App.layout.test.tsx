@@ -131,15 +131,39 @@ describe("layout modes", () => {
     });
   });
 
-  it("hides the go-to-preview button outside split", async () => {
+  /*
+   * Both panes offer a jump to the other one, and both bring that pane back
+   * when it is off screen. The editor's button used to be hidden outside the
+   * split view while the preview's stayed, so reading mode could reach the
+   * source but writing mode could not reach the preview.
+   */
+  it("offers the jump to the preview from an editor-only layout", async () => {
     await renderApp();
     const label = "Go to cursor position in preview";
-    expect(document.querySelector(`[aria-label="${label}"]`)).toBeTruthy();
+    const button = () => document.querySelector<HTMLElement>(`[aria-label="${label}"]`);
+    expect(button()).toBeTruthy();
 
     fireEvent.keyDown(window, { key: "1", ctrlKey: true });
-    await waitFor(() =>
-      expect(document.querySelector(`[aria-label="${label}"]`)).toBeNull(),
+    await waitFor(() => expect(app().classList.contains("layout-editor")).toBe(true));
+    expect(button()).toBeTruthy();
+
+    // Using it brings the preview back, the way its counterpart restores the
+    // editor from reading mode.
+    fireEvent.click(button()!);
+    await waitFor(() => expect(app().className).not.toContain("layout-"));
+  });
+
+  it("still restores the editor from reading mode, unchanged", async () => {
+    await renderApp();
+    fireEvent.keyDown(window, { key: "3", ctrlKey: true });
+    await waitFor(() => expect(app().classList.contains("layout-preview")).toBe(true));
+
+    const back = document.querySelector<HTMLElement>(
+      '.split > .pane:last-child .pane-header .sync-btn',
     );
+    expect(back).toBeTruthy();
+    fireEvent.click(back!);
+    await waitFor(() => expect(app().className).not.toContain("layout-"));
   });
 
   it("does not focus the hidden editor with Ctrl+K in preview mode", async () => {

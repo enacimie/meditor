@@ -899,9 +899,26 @@ export default function App() {
     goToCode(line);
   }
 
-  function handleForwardSync() {
-    const line = editorRef.current?.getCursorLine() ?? 0;
+  /*
+   * Mirror of goToCode. Both panes offer a jump to the other one, and both
+   * bring that pane back when it is off screen — otherwise the button in the
+   * solo layouts would point at something the user cannot see.
+   *
+   * The preview needs more care than the editor: while its pane is hidden its
+   * rendering is deferred, so right after the switch it holds nothing to
+   * scroll to. It remembers the request and applies it once it has rendered.
+   */
+  function goToPreview(line: number) {
+    if (layoutMode === "editor") {
+      setLayoutMode("split");
+      requestAnimationFrame(() => previewRef.current?.scrollToLine(line));
+      return;
+    }
     previewRef.current?.scrollToLine(line);
+  }
+
+  function handleForwardSync() {
+    goToPreview(editorRef.current?.getCursorLine() ?? 0);
   }
 
   function handleReverseSyncButton() {
@@ -1063,8 +1080,10 @@ export default function App() {
         >
           <div className="pane-header">
             <span className="pane-title">{t("pane.editor")}</span>
-            {/* Pointless without the preview on screen. */}
-            {markdownSyncAvailable && layoutMode === "split" && (
+            {/* Shown whenever the editor is, like its counterpart in the
+                other pane: from an editor-only layout it brings the preview
+                back and scrolls there. */}
+            {markdownSyncAvailable && (
               <button
                 type="button"
                 className="sync-btn"
