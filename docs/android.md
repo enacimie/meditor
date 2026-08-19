@@ -10,13 +10,11 @@ honest about what the app can and cannot do there yet.
 | --- | --- |
 | Editing, live preview, Markdown / Typst / LaTeX rendering | works |
 | Session restore (open tabs and their contents) | works |
-| Opening and saving files | **broken** — see [Files](#files) |
-| PDF export, printing | not available; the button reports it |
-| Layout, touch targets, on-screen keyboard | **not adapted yet** |
+| Opening and saving files | works, with one limit — see [Files](#files) |
+| Layout, touch targets, on-screen keyboard | adapted |
+| PDF export of Typst and LaTeX | works (compiled in the frontend's WASM) |
+| PDF export of Markdown, printing | not available; the menu entry is hidden |
 | Release signing, Play Store | out of scope |
-
-The last two rows are the next two pieces of work. What exists today is a build
-that compiles, installs and runs, which is what everything else has to sit on.
 
 ## Building
 
@@ -112,23 +110,43 @@ Artifacts, download, unzip, install.
 
 ## Files
 
-Opening and saving does not work yet, and it fails in a specific way worth
-recording.
+Android hands apps a `content://` URI from the Storage Access Framework rather
+than a filesystem path. That is not a path in any useful sense: there is no
+parent directory to write a temporary file into, nothing to rename, nothing to
+canonicalise. Everything is read and written through the file descriptor the
+framework hands over, which `tauri-plugin-fs` resolves.
 
-Android hands apps a `content://` URI from the Storage Access Framework, not a
-filesystem path. `open_files`, `save_as`, `write_pdf_bytes` and `write_html_file`
-all convert the picker's result with `FilePath::into_path()`, which rejects a
-`content://` URI outright. The picker opens, you choose a file, and the
-operation fails.
+Two consequences are worth knowing about.
 
-The fix is to read and write through the file descriptor the SAF gives, which
-`tauri-plugin-fs` already knows how to resolve. That is the next piece of work
-after the touch layout.
+**Saving is not atomic.** On a desktop meditor writes to a temporary file
+beside the target and renames it over the top, so an interrupted save leaves
+the original intact. The framework grants a descriptor for one document and
+nothing else — no sibling to write beside, no directory entry to swap — so on
+Android the file is written in place. An interrupted save can leave it
+truncated. This is a real difference in durability, not a stylistic one.
 
-One consequence is already handled: sessions are stored whole — contents
-included — in the app's private config directory, which behaves normally on
-Android. Tabs survive a restart even though the link to the original file does
-not.
+**A reopened file forgets where it came from.** The picker grants access for
+the life of the process (the dialog plugin uses `ACTION_GET_CONTENT`, which
+carries no persistable permission), so after a restart the stored URI is a
+string the app is no longer allowed to open. The document itself comes back
+intact — sessions store contents whole, in the app's private directory, which
+behaves normally — but its link to the original file does not, and the next
+save goes through "save as". Fixing that properly needs `ACTION_OPEN_DOCUMENT`
+and `takePersistableUriPermission`, which is a change to the dialog plugin
+upstream rather than to this app.
+
+## PDF export
+
+Split, because the two routes are not the same thing.
+
+**Typst and LaTeX** are compiled to PDF by the frontend's own WASM engines and
+the bytes handed to Rust to write. That works anywhere the file dialog does,
+Android included.
+
+**Markdown** goes through the webview's native printing, which exists on Linux
+and Windows only. On Android the menu entry is hidden rather than left to raise
+an error — the interface asks Rust which platform it is on (`platform`) rather
+than guessing from the user agent, which on Android says "Linux".
 
 ## The application id
 

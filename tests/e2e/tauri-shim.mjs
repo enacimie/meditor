@@ -61,6 +61,11 @@ export const TAURI_SHIM = `(() => {
         return [];
       case "load_session":
         return SESSION;
+      // The interface asks Rust which OS it is on rather than trusting the
+      // user agent. Answering "linux" keeps the specs on the desktop path,
+      // where every menu entry is offered.
+      case "platform":
+        return "linux";
       case "save_session":
       case "save_document":
       case "save_as":
