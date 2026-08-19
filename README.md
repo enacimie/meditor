@@ -141,6 +141,19 @@ Produces (in `src-tauri/target/release/bundle/`):
 
 To run the AppImage on distros without FUSE: `./meditor_*.AppImage --appimage-extract-and-run` (or install `libfuse2`).
 
+### Android
+
+There is an Android build. It compiles, installs and runs, but the touch layout
+and file access are still being worked on — see
+[docs/android.md](docs/android.md) for what works, how to build a debug APK, and
+where to download one from CI without a local toolchain.
+
+```bash
+source scripts/android-env.sh   # SDK, NDK, JDK, Rust targets, Tauri CLI
+pnpm build                      # the frontend bundle
+./scripts/android-build.sh      # the APK
+```
+
 ## Keyboard Shortcuts
 
 | Shortcut        | Action          |
@@ -198,7 +211,10 @@ meditor/
 │   ├── src/locale.rs         # Localized backend error messages
 │   ├── tauri.conf.json
 │   ├── capabilities/         # Permissions (dialog, opener)
+│   ├── gen/android/          # Android project (generated once, then committed)
 │   └── Cargo.toml
+├── scripts/                  # android-env.sh, android-build.sh
+├── docs/android.md           # Building and installing the Android app
 ├── tests/e2e/                # CDP-driven E2E harness (cdp.mjs, run.mjs, specs)
 └── setup.sh                  # Install system dependencies (Linux)
 ```

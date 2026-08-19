@@ -40,6 +40,9 @@ try {
   // ── Confirm dialog ────────────────────────────────────────────────
   await page.click(".tab-add"); // second tab → tab-close buttons appear
   await page.waitFor("document.querySelectorAll('.tab').length > 1");
+  // The editor has to be back too: it is lazy-loaded and remounts for the new
+  // document, so the tab appears before `.cm-content` does.
+  await page.waitFor("!!document.querySelector('.cm-content')", { timeout: 20000 });
 
   // Make the active (new) tab dirty by typing into CodeMirror.
   await page.evaluate(`(() => {

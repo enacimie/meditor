@@ -186,6 +186,11 @@ try {
   // ── Confirm dialog in contrast mode ────────────────────────────────
   await page.click(".tab-add");
   await page.waitFor("document.querySelectorAll('.tab').length > 1");
+  // And wait for the editor, not just the tab. CodeMirror is lazy-loaded and
+  // remounts for the new document, so there is a window in which the tab is
+  // on screen and `.cm-content` is not there yet. The Windows runner is slow
+  // enough to land in it.
+  await page.waitFor("!!document.querySelector('.cm-content')", { timeout: 20000 });
 
   // Dirty the active tab so closing it opens the confirm dialog.
   await page.evaluate(`(() => {

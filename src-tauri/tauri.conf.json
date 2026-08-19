@@ -34,6 +34,9 @@
     "linux": {
       "deb": { "desktopTemplate": "meditor.desktop" },
       "rpm": { "desktopTemplate": "meditor.desktop" }
+    },
+    "android": {
+      "minSdkVersion": 24
     }
   }
 }
