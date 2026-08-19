@@ -163,6 +163,11 @@ macOS. The **iOS probe** workflow (Actions → Run workflow) generates the Xcode
 project and attempts an unsigned simulator build, then reports how far it got.
 See [docs/ios.md](docs/ios.md).
 
+The app *should* run on Apple devices — the stack supports iOS — but
+distributing to them requires Apple's paid, proprietary developer program, and
+this project does not pay for proprietary developer licenses. iOS stays an
+unsigned probe until someone with an Apple account carries it.
+
 ### Testing
 
 Not every platform is tested by hand. [docs/testing.md](docs/testing.md) lists

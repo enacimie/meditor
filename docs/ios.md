@@ -6,7 +6,17 @@ Tauri v2 targets iOS the same way it targets Android, and the Rust side is
 already prepared for it — the plugins that do not exist on a phone are gated on
 `not(any(target_os = "android", target_os = "ios"))`, and the touch layout keys
 off `(pointer: coarse)` rather than anything Android-specific. What is missing
-is not code, it is a Mac.
+is not code, it is a Mac — and a decision we will not make.
+
+## The Apple license
+
+meditor should run on Apple devices: the stack supports iOS and the Rust side
+is already gated for it, not written out. What stands between the code and a
+distributable build is not technical — it is Apple's developer program.
+Signing for a real device requires a paid, proprietary developer account, and
+this project does not pay for proprietary developer licenses. So there is no
+unsigned, freely installable path on iOS the way there is for Android, and iOS
+stays an unsigned probe until someone with an Apple account wants to carry it.
 
 ## Why there is a workflow instead of a build
 
