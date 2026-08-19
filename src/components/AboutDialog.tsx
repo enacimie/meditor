@@ -15,7 +15,7 @@ const EXIT_MS = 140;
 
 const REPO_URL = "https://github.com/enacimie/meditor";
 const LICENSE_NAME = "GNU Affero General Public License v3.0";
-const FALLBACK_VERSION = "0.1.2";
+const FALLBACK_VERSION = "0.1.3";
 
 function isSafeExternalUrl(value: string): boolean {
   try {
