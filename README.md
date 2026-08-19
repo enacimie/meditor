@@ -163,6 +163,11 @@ macOS. The **iOS probe** workflow (Actions → Run workflow) generates the Xcode
 project and attempts an unsigned simulator build, then reports how far it got.
 See [docs/ios.md](docs/ios.md).
 
+### Testing
+
+Not every platform is tested by hand. [docs/testing.md](docs/testing.md) lists
+who tests what, and which targets are still unreviewed (rpm, macOS, iOS…).
+
 ## Keyboard Shortcuts
 
 | Shortcut        | Action          |
@@ -224,6 +229,8 @@ meditor/
 │   └── Cargo.toml
 ├── scripts/                  # android-env.sh, android-build.sh
 ├── docs/android.md           # Building and installing the Android app
+├── docs/ios.md               # The iOS probe workflow
+├── docs/testing.md           # Who tests which platform, and what is unreviewed
 ├── tests/e2e/                # CDP-driven E2E harness (cdp.mjs, run.mjs, specs)
 └── setup.sh                  # Install system dependencies (Linux)
 ```
