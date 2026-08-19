@@ -154,6 +154,14 @@ pnpm build                      # the frontend bundle
 ./scripts/android-build.sh      # the APK
 ```
 
+### iOS
+
+Unknown, and honestly so — nobody on the project has a Mac, an iPhone or an
+Apple developer account, and the CLI's `ios` subcommand does not even exist off
+macOS. The **iOS probe** workflow (Actions → Run workflow) generates the Xcode
+project and attempts an unsigned simulator build, then reports how far it got.
+See [docs/ios.md](docs/ios.md).
+
 ## Keyboard Shortcuts
 
 | Shortcut        | Action          |
