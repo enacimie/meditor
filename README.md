@@ -4,7 +4,7 @@
 
 # meditor
 
-**Desktop Markdown/Typst/LaTeX editor** with live WASM preview, PDF export, and bidirectional editor↔preview sync. Built with [Tauri](https://tauri.app) (Rust) and React. Supports **104 languages** and 3 document formats.
+**Markdown/Typst/LaTeX editor for desktop and mobile** with live WASM preview, PDF export, and bidirectional editor↔preview sync. Built with [Tauri](https://tauri.app) (Rust) and React. Supports **104 languages** and 3 document formats.
 
 ![meditor screenshot](screenshots/screenshot1.png)
 

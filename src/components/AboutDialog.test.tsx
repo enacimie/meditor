@@ -38,7 +38,7 @@ describe("AboutDialog", () => {
   it("renders the brand, version, license and source link", () => {
     renderDialog();
     expect(screen.getByText("meditor")).toBeTruthy();
-    expect(screen.getByText("Version 0.1.1")).toBeTruthy();
+    expect(screen.getByText("Version 0.1.2")).toBeTruthy();
     expect(screen.getByText("GNU Affero General Public License v3.0")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Source code" })).toBeTruthy();
   });

@@ -76,3 +76,48 @@ jobs:
           releaseDraft: true
           prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
           args: ${{ matrix.args }}
+
+  android:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Point Tauri at the runner's NDK
+        run: echo "NDK_HOME=$ANDROID_NDK_LATEST_HOME" >> "$GITHUB_ENV"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: android
+      - run: pnpm install --frozen-lockfile
+      # Same shim as ci.yml: Gradle's rust plugin shells back out to
+      # `cargo tauri android android-studio-script`, so a cargo-tauri must be
+      # on PATH. Forwarding to `pnpm` reuses the already-installed npm CLI.
+      - name: Let Gradle find a Tauri CLI
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          printf '#!/usr/bin/env bash\nexec pnpm "$@"\n' > "$HOME/.local/bin/cargo-tauri"
+          chmod +x "$HOME/.local/bin/cargo-tauri"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: pnpm tauri android build --ci --debug --apk --target aarch64
+      - name: Attach the APK to the release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ github.ref_name }}" \
+            src-tauri/gen/android/app/build/outputs/apk/**/*.apk \
+            --repo "${{ github.repository }}" --clobber

@@ -221,7 +221,7 @@ export const en = {
   "lang.noResults": "No languages found",
   // About dialog
   "about.title": "About meditor",
-  "about.tagline": "A local-first Markdown, Typst and LaTeX editor for the desktop.",
+  "about.tagline": "A local-first Markdown, Typst and LaTeX editor for desktop and mobile.",
   "about.version": (v: string) => `Version ${v}`,
   "about.license": "License",
   "about.source": "Source code",

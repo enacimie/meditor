@@ -181,7 +181,7 @@ export const es = {
   "lang.clearSearch": "Limpiar búsqueda",
   "lang.noResults": "No se encontraron idiomas",
   "about.title": "Acerca de meditor",
-  "about.tagline": "Un editor local de Markdown, Typst y LaTeX para el escritorio.",
+  "about.tagline": "Un editor local de Markdown, Typst y LaTeX para escritorio y móvil.",
   "about.version": (v: string) => `Versión ${v}`,
   "about.license": "Licencia",
   "about.source": "Código fuente",
