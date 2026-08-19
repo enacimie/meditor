@@ -20,7 +20,11 @@ use std::{
     target_os = "windows"
 ))]
 use std::sync::mpsc;
-use tauri::{Emitter, Manager};
+// `Emitter` only serves the single-instance hand-off, which is desktop-only;
+// `Manager` is needed everywhere (`app.path()`, `app.state()`).
+#[cfg(desktop)]
+use tauri::Emitter;
+use tauri::Manager;
 use tauri_plugin_dialog::DialogExt;
 
 #[cfg(any(
@@ -685,10 +689,35 @@ fn exit_app(app: tauri::AppHandle) {
     app.exit(0);
 }
 
+/// Show a native error dialog.
+///
+/// This is the only channel the frontend has for reporting a failed file
+/// operation, so a platform without a branch here does not merely look
+/// different — it swallows every save, open and export error in silence.
+///
+/// Desktop blocks until the dialog is dismissed; mobile does not (see below).
 #[tauri::command]
-fn alert(message: String, locale: Option<String>) {
+fn alert(app: tauri::AppHandle, message: String, locale: Option<String>) {
+    // Each desktop branch below talks to its toolkit directly; only the mobile
+    // one needs the handle.
+    #[cfg(desktop)]
+    let _ = &app;
+
     let loc = parse_locale(locale);
     let title = t(loc, "alert.title");
+
+    // Android and iOS get the plugin's dialog, and get it without blocking:
+    // neither platform has a modal that stops its caller, and every call site
+    // treats the alert as the last thing it does. The frontend keeps its
+    // `await`; it simply resolves once the dialog is on screen.
+    #[cfg(mobile)]
+    {
+        app.dialog()
+            .message(message)
+            .title(title)
+            .kind(tauri_plugin_dialog::MessageDialogKind::Error)
+            .show(|_| {});
+    }
 
     #[cfg(any(
         target_os = "linux",
@@ -1105,17 +1134,24 @@ async fn export_pdf(
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
-            let registry = app.state::<DocumentRegistry>();
-            let documents = documents_from_paths(Locale::En, files_from_args(&args), &registry);
-            if !documents.is_empty() {
-                let _ = app.emit("open-documents", documents);
-            }
-            if let Some(win) = app.get_webview_window("main") {
-                let _ = win.set_focus();
-            }
-        }))
+    let builder = tauri::Builder::default();
+
+    // Second launches only happen where there is a command line to launch
+    // from. On mobile the plugin does not exist at all (see Cargo.toml), so
+    // the step is bound to the target rather than chained unconditionally.
+    #[cfg(desktop)]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+        let registry = app.state::<DocumentRegistry>();
+        let documents = documents_from_paths(Locale::En, files_from_args(&args), &registry);
+        if !documents.is_empty() {
+            let _ = app.emit("open-documents", documents);
+        }
+        if let Some(win) = app.get_webview_window("main") {
+            let _ = win.set_focus();
+        }
+    }));
+
+    builder
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(DocumentRegistry(Mutex::new(HashMap::new())))

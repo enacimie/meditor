@@ -109,3 +109,45 @@ jobs:
         run: cargo test --lib
       - working-directory: src-tauri
         run: cargo check
+
+  # Android compiles from the same sources, and the ways it can break are ones
+  # no desktop job would notice: a plugin that is an empty crate there, an
+  # import left over once its only user is gated out. Building it here keeps
+  # that from rotting between phone tests, and the APK it uploads lets someone
+  # try a change without an SDK, an NDK and a WSL toolchain.
+  build-android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      # The runner image already carries the SDK and an NDK; Tauri looks for
+      # the NDK under NDK_HOME, which the image does not set.
+      - name: Point Tauri at the runner's NDK
+        run: echo "NDK_HOME=$ANDROID_NDK_LATEST_HOME" >> "$GITHUB_ENV"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: android
+      - run: pnpm install --frozen-lockfile
+      # arm64 only: it covers every phone made this decade, and building the
+      # other three would triple the slowest job in the pipeline.
+      - run: pnpm tauri android build --ci --debug --apk --target aarch64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: meditor-android-debug-apk
+          path: src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+          if-no-files-found: error

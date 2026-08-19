@@ -3,3 +3,14 @@
 # carriage return as part of the last word on the line: `set -euo pipefail`
 # fails with "pipefail: invalid option name" and the script dies on line one.
 *.sh text eol=lf
+
+# Same trap, different name: Gradle's wrapper is a shell script without the
+# .sh extension. A CRLF checkout makes Linux read `#!/bin/sh\r` and refuse to
+# run it, which takes out the Android build here and in CI. Its .bat sibling
+# wants the opposite.
+src-tauri/gen/android/gradlew text eol=lf
+src-tauri/gen/android/gradlew.bat text eol=crlf
+
+# The wrapper jar is binary; say so rather than trusting content sniffing,
+# since a single mangled byte makes it unreadable and the failure is obscure.
+*.jar binary

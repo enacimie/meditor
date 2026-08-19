@@ -14,6 +14,11 @@
 # is 1667x1667 at (206,191). The corner radius is 400, solved from the corner
 # arc at two heights on the 512 version and scaled by four.
 #
+# The Android launcher icons are rebuilt here too, when the Android project
+# exists. They are not simply downscales — Android composes them from a
+# foreground and a background of its own — so that step is documented where it
+# happens, further down.
+#
 # Needs ImageMagick: sudo apt-get install imagemagick
 # Node is used only for the macOS .icns; without it the sizes are left in
 # .icns-sizes/ so the packing step can be run separately.
@@ -88,6 +93,78 @@ else
   echo "  node not found — sizes left in .icns-sizes/. Finish with:"
   echo "  node branding/pack-icns.mjs $ICONS/icon.icns \\"
   echo "    16=.icns-sizes/i-16.png ... 1024=.icns-sizes/i-1024.png"
+fi
+
+echo "· android launcher icons"
+# Android composes its own launcher icon: a 108dp canvas of which only the
+# middle 72dp is guaranteed visible, the mask (circle, squircle, teardrop —
+# the launcher decides) applied on top, and a separate background showing
+# through wherever the foreground does not reach.
+#
+# So the plaque is placed at 75% of the canvas. That is large enough to cover
+# the whole visible area under any mask, which is what keeps the background
+# from ever framing the artwork the way `tauri icon` does with its white
+# default, and small enough that the M stays inside the safe circle instead of
+# being clipped by a round mask.
+#
+# The background colour is the average of the plaque's four corners. The
+# plaque runs from #49566A top-left to #1E2733 bottom-right, so no flat colour
+# matches it everywhere — but at 75% it is only ever seen during the launcher's
+# parallax, where a mid slate reads as part of the artwork.
+ANDROID_RES=src-tauri/gen/android/app/src/main/res
+ANDROID_BG='#2D3848'
+FG_SCALE=75
+
+if [ -d "$ANDROID_RES" ]; then
+  # density:launcher-px — the adaptive canvas is 108/48 of the launcher size.
+  for entry in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
+    density=${entry%%:*}
+    launcher=${entry##*:}
+    canvas=$(( launcher * 108 / 48 ))
+    inner=$(( canvas * FG_SCALE / 100 ))
+    dir="$ANDROID_RES/mipmap-$density"
+    mkdir -p "$dir"
+
+    # Legacy icon, for launchers older than adaptive icons: the plaque as it
+    # is, rounded corners and transparency included.
+    png "$launcher" "$dir/ic_launcher.png"
+
+    # Round variant, for the API 25 launchers that ask for one.
+    convert "$TMP/cut.png" -filter Lanczos -resize "${launcher}x${launcher}" \
+            \( +clone -alpha extract -fill black -colorize 100 \
+               -fill white -draw "circle $((launcher/2)),$((launcher/2)) $((launcher/2)),0" \
+               -alpha off \) \
+            -compose CopyOpacity -composite -strip "$dir/ic_launcher_round.png"
+
+    # Adaptive foreground: the plaque centred on a transparent canvas.
+    convert "$TMP/cut.png" -filter Lanczos -resize "${inner}x${inner}" \
+            -background none -gravity center -extent "${canvas}x${canvas}" \
+            -strip "$dir/ic_launcher_foreground.png"
+  done
+
+  mkdir -p "$ANDROID_RES/mipmap-anydpi-v26"
+  cat > "$ANDROID_RES/mipmap-anydpi-v26/ic_launcher.xml" <<'XML'
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+  <background android:drawable="@color/ic_launcher_background" />
+  <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+</adaptive-icon>
+XML
+  cat > "$ANDROID_RES/mipmap-anydpi-v26/ic_launcher_round.xml" <<'XML'
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+  <background android:drawable="@color/ic_launcher_background" />
+  <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+</adaptive-icon>
+XML
+  cat > "$ANDROID_RES/values/ic_launcher_background.xml" <<XML
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <color name="ic_launcher_background">$ANDROID_BG</color>
+</resources>
+XML
+else
+  echo "  no android project (src-tauri/gen/android) — skipped"
 fi
 
 echo "· social preview"
