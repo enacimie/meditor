@@ -82,6 +82,8 @@ export const kab = {
   "pane.resize": "Beddel tiddi n yigalisen",
   "pane.resizeHint": "Zuɣer akken ad tbeddleḍ tiddi",
   "editor.loading": "Asali n umaẓrag...",
+  "editor.undo": "Sefsex",
+  "editor.redo": "Ales",
   "preview.unavailable": "Taskant ur tewjid ara",
   "preview.retry": "Ɛreḍ tikelt nniḍen",
   "preview.renderError": "Ur yezmir ara ad d-isires taskant:",

@@ -82,6 +82,8 @@ export const hu = {
   "pane.resize": "Panelek átméretezése",
   "pane.resizeHint": "Húzza az átméretezéshez",
   "editor.loading": "Szerkesztő betöltése...",
+  "editor.undo": "Visszavonás",
+  "editor.redo": "Újra",
   "preview.unavailable": "Az előnézet nem érhető el",
   "preview.retry": "Próbálja újra",
   "preview.renderError": "Nem lehet létrehozni az előnézetet:",

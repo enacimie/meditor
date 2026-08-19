@@ -92,6 +92,8 @@ export const ceb = {
   "pane.resizeHint": "I-drag aron usbon ang gidak-on",
   // Editor
   "editor.loading": "Nagkarga ang editor...",
+  "editor.undo": "Bawion",
+  "editor.redo": "Balikon",
   // Preview
   "preview.unavailable": "Dili magamit ang preview",
   "preview.retry": "Sulayi pag-usab",

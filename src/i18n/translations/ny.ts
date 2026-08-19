@@ -82,6 +82,8 @@ export const ny = {
   "pane.resize": "Resize gulus",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Ikutsitsa mkonzi...",
+  "editor.undo": "Bwezeretsani",
+  "editor.redo": "Bwerezani",
   "preview.unavailable": "Chiwonetsero sizikupezeka",
   "preview.retry": "Yesaninso",
   "preview.renderError": "Sizinatheke kupanga chiwonetsero:",

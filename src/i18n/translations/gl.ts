@@ -82,6 +82,8 @@ export const gl = {
   "pane.resize": "Resize panels",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Cargando editor...",
+  "editor.undo": "Desfacer",
+  "editor.redo": "Refacer",
   "preview.unavailable": "Vista previa non dispoñíbel",
   "preview.retry": "Tentar de novo",
   "preview.renderError": "Non se puido xerar a vista previa:",

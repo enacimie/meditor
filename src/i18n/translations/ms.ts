@@ -81,6 +81,8 @@ export const ms = {
   "pane.resize": "Ubah saiz panel",
   "pane.resizeHint": "Seret untuk ubah saiz",
   "editor.loading": "Memuat editor...",
+  "editor.undo": "Buat asal",
+  "editor.redo": "Buat semula",
   "preview.unavailable": "Pratonton tidak tersedia",
   "preview.retry": "Cuba lagi",
   "preview.renderError": "Tidak dapat menjana pratonton:",

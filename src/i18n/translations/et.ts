@@ -82,6 +82,8 @@ export const et = {
   "pane.resize": "Resize paneels",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Laadimine redaktor...",
+  "editor.undo": "Võta tagasi",
+  "editor.redo": "Tee uuesti",
   "preview.unavailable": "Eelvaade pole saadaval",
   "preview.retry": "Proovi uuesti",
   "preview.renderError": "Eelvaadet ei õnnestunud luua:",

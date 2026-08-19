@@ -18,6 +18,9 @@ import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { StreamLanguage } from "@codemirror/language";
 import { languages } from "@codemirror/language-data";
 import { search, searchKeymap, openSearchPanel, gotoLine } from "@codemirror/search";
+// The same commands basicSetup already binds to Ctrl+Z / Ctrl+Y, exposed so
+// the on-screen buttons can call them.
+import { undo, redo } from "@codemirror/commands";
 import {
   buildMarkdownPairKeymap,
   buildAutoContinueKeymap,
@@ -118,7 +121,11 @@ function spellcheckAttributes(enabled: boolean): Extension {
   return EditorView.contentAttributes.of({
     spellcheck: enabled ? "true" : "false",
     autocorrect: enabled ? "on" : "off",
-    autocapitalize: "off",
+    // Follows the same preference. A physical keyboard ignores this, but on a
+    // touch keyboard "off" means every sentence starts lowercase — tiresome
+    // for prose. Whoever turned the spell checker off is writing something the
+    // machine should not be guessing about, and keeps the literal behaviour.
+    autocapitalize: enabled ? "sentences" : "off",
   });
 }
 
@@ -147,6 +154,14 @@ export type EditorHandle = {
   getCursorLine: () => number;
   /** Open (or focus) the find panel — wired to the Ctrl+K shortcut. */
   focusSearch: () => void;
+  /**
+   * Step the edit history. Ctrl+Z and Ctrl+Y already do this through
+   * CodeMirror's own keymap; these exist for the on-screen buttons, since a
+   * touch keyboard has no modifier keys and would otherwise leave no way to
+   * undo anything at all.
+   */
+  undo: () => void;
+  redo: () => void;
 };
 
 type Props = {
@@ -303,6 +318,14 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
       // Ctrl+K deterministically lands the cursor in the find input.
       const field = view.dom.querySelector<HTMLInputElement>(".cm-textfield");
       field?.focus();
+    },
+    undo() {
+      const view = viewRef.current;
+      if (view) undo(view);
+    },
+    redo() {
+      const view = viewRef.current;
+      if (view) redo(view);
     },
   }));
 

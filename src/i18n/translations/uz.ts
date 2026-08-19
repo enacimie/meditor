@@ -92,6 +92,8 @@ export const uz = {
   "pane.resizeHint": "O'lchamlash uchun sudrang",
   // Editor
   "editor.loading": "Muharrir yuklanmoqda...",
+  "editor.undo": "Bekor qilish",
+  "editor.redo": "Qaytarish",
   // Preview
   "preview.unavailable": "Ko'rib chiqish mavjud emas",
   "preview.retry": "Qayta urinish",

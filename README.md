@@ -32,6 +32,7 @@
 - **104 languages** with a searchable selector in the menu. Full RTL support (Arabic, Urdu, Persian, Pashto, Sindhi, Hebrew, etc.).
 - **4 themes**: System, Light, Dark, and a **High Contrast** colorblind-friendly theme (WCAG AA everywhere).
 - **Layout modes** (Ctrl+1/2/3): editor only, editor and preview, or preview only — reading a document without its source. The choice is remembered.
+- **Touch**: on a touch screen the workspace is one pane at a time (splitting a phone in half helps nobody), controls grow to a 44px target, tapping the preview marks a spot without dragging you into the editor, and on-screen undo/redo appear — a touch keyboard has no Ctrl.
 - **Zen mode** (F11): fullscreen distraction-free writing.
 - **Keyboard shortcuts overlay** (F1) and in-window dialogs for confirm/rename (fully themed and localized).
 - **Preferences** (Ctrl+,): editor font size and family, with a live sample, and the spell checker toggle.

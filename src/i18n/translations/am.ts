@@ -81,6 +81,8 @@ export const am = {
   "pane.resize": "የፓነል መጠን ቀይር",
   "pane.resizeHint": "ለመጠን ለመቀየር ይጎትቱ",
   "editor.loading": "አርታኢ በመጫን ላይ...",
+  "editor.undo": "ቀልብስ",
+  "editor.redo": "እንደገና አድርግ",
   "preview.unavailable": "ቅድመ-እይታ አይገኝም",
   "preview.retry": "እንደገና ሞክር",
   "preview.renderError": "ቅድመ-እይታ ማመንጨት አልተቻለም:",

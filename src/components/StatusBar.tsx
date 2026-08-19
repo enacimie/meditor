@@ -29,10 +29,12 @@ const StatusBar = memo(function StatusBar({ t, content, docName, dirty }: Props)
       <span className="statusbar-stat" title={t("statusbar.wordsTitle")}>
         {t("statusbar.words", words)}
       </span>
-      <span className="statusbar-stat" title={t("statusbar.linesTitle")}>
+      {/* Named so the narrow-screen rule can drop them without counting
+          children: three localised counts do not fit on a phone. */}
+      <span className="statusbar-stat statusbar-secondary" title={t("statusbar.linesTitle")}>
         {t("statusbar.lines", lines)}
       </span>
-      <span className="statusbar-stat" title={t("statusbar.charsTitle")}>
+      <span className="statusbar-stat statusbar-secondary" title={t("statusbar.charsTitle")}>
         {t("statusbar.chars", chars)}
       </span>
     </footer>

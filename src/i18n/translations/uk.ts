@@ -81,6 +81,8 @@ export const uk = {
   "pane.resize": "Змінити розмір панелей",
   "pane.resizeHint": "Перетягніть для зміни розміру",
   "editor.loading": "Завантаження редактора...",
+  "editor.undo": "Скасувати",
+  "editor.redo": "Повторити",
   "preview.unavailable": "Перегляд недоступний",
   "preview.retry": "Повторити",
   "preview.renderError": "Не вдалося створити перегляд:",

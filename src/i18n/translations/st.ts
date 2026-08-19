@@ -82,6 +82,8 @@ export const st = {
   "pane.resize": "Resize phaneles",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "E a laela mohlophisi...",
+  "editor.undo": "Hlakola",
+  "editor.redo": "Etsa hape",
   "preview.unavailable": "Ponelopele ha e fumanehe",
   "preview.retry": "Leka hape",
   "preview.renderError": "Ponelopele ha e a kgona ho etswa:",

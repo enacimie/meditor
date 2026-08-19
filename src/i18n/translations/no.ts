@@ -82,6 +82,8 @@ export const no = {
   "pane.resize": "Endre panelstørrelse",
   "pane.resizeHint": "Dra for å endre størrelse",
   "editor.loading": "Laster editor...",
+  "editor.undo": "Angre",
+  "editor.redo": "Gjør om",
   "preview.unavailable": "Forhåndsvisning ikke tilgjengelig",
   "preview.retry": "Prøv igjen",
   "preview.renderError": "Kunne ikke generere forhåndsvisning:",

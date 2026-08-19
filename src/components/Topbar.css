@@ -178,6 +178,14 @@
   z-index: 1000;
   display: flex;
   flex-direction: column;
+  /* The panel grows with its contents, and opening the language picker inside
+     it makes it taller than a phone — the entries below the fold simply could
+     not be reached. `dvh` rather than `vh` so the browser's own chrome is
+     accounted for as it hides and reappears. This also fixes a short desktop
+     window, where the same thing happened and nobody had noticed. */
+  max-height: calc(100dvh - 56px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .menu-panel button {

@@ -81,6 +81,8 @@ export const pa = {
   "pane.resize": "ਪੈਨਲਾਂ ਦਾ ਆਕਾਰ ਬਦਲੋ",
   "pane.resizeHint": "ਆਕਾਰ ਬਦਲਣ ਲਈ ਖਿੱਚੋ",
   "editor.loading": "ਸੰਪਾਦਕ ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...",
+  "editor.undo": "ਵਾਪਸ ਲਵੋ",
+  "editor.redo": "ਮੁੜ ਕਰੋ",
   "preview.unavailable": "ਝਲਕ ਉਪਲਬਧ ਨਹੀਂ",
   "preview.retry": "ਮੁੜ ਕੋਸ਼ਿਸ਼ ਕਰੋ",
   "preview.renderError": "ਝਲਕ ਨਹੀਂ ਬਣਾ ਸਕਿਆ:",

@@ -82,6 +82,8 @@ export const ca = {
   "pane.resize": "Redimensionar panells",
   "pane.resizeHint": "Arrossegueu per redimensionar",
   "editor.loading": "Carregant l'editor...",
+  "editor.undo": "Desfés",
+  "editor.redo": "Refés",
   "preview.unavailable": "Vista prèvia no disponible",
   "preview.retry": "Tornar a intentar",
   "preview.renderError": "No s'ha pogut generar la vista prèvia:",

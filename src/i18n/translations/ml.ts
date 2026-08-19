@@ -81,6 +81,8 @@ export const ml = {
   "pane.resize": "പാനലുകളുടെ വലുപ്പം മാറ്റുക",
   "pane.resizeHint": "വലുപ്പം മാറ്റാൻ വലിക്കുക",
   "editor.loading": "എഡിറ്റർ ലോഡുചെയ്യുന്നു...",
+  "editor.undo": "പഴയപടിയാക്കുക",
+  "editor.redo": "വീണ്ടും ചെയ്യുക",
   "preview.unavailable": "പ്രിവ്യൂ ലഭ്യമല്ല",
   "preview.retry": "വീണ്ടും ശ്രമിക്കുക",
   "preview.renderError": "പ്രിവ്യൂ സൃഷ്ടിക്കാനായില്ല:",

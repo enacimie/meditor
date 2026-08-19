@@ -82,6 +82,8 @@ export const lo = {
   "pane.resize": "ປັບຂະໜາດກະດານ",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "ກຳລັງໂຫຼດ ໂຕແກ້ໄຂ...",
+  "editor.undo": "ຍົກເລີກ",
+  "editor.redo": "ເຮັດຄືນ",
   "preview.unavailable": "ສະແດງຕົວຢ່າງ ບໍ່ມີ",
   "preview.retry": "ລອງໃໝ່",
   "preview.renderError": "ບໍ່ສາມາດສ້າງການສະແດງຕົວຢ່າງໄດ້:",

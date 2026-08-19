@@ -82,6 +82,8 @@ export const lt = {
   "pane.resize": "Resize skydeliss",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Įkeliama redaktorius...",
+  "editor.undo": "Anuliuoti",
+  "editor.redo": "Grąžinti",
   "preview.unavailable": "Peržiūra nepasiekiama",
   "preview.retry": "Bandyti dar kartą",
   "preview.renderError": "Nepavyko sukurti peržiūros:",

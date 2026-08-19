@@ -82,6 +82,8 @@ export const sq = {
   "pane.resize": "Resize panels",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Ngarkim redaktues...",
+  "editor.undo": "Zhbëj",
+  "editor.redo": "Ribëj",
   "preview.unavailable": "Parapamje i padisponueshëm",
   "preview.retry": "Provo përsëri",
   "preview.renderError": "Parapamja nuk u krijua dot:",

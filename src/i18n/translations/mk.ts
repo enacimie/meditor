@@ -82,6 +82,8 @@ export const mk = {
   "pane.resize": "Промени ја големината на панелите",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Вчитување уредувач...",
+  "editor.undo": "Врати",
+  "editor.redo": "Повтори",
   "preview.unavailable": "Преглед недостапно",
   "preview.retry": "Обиди се повторно",
   "preview.renderError": "Не може да се создаде прегледот:",

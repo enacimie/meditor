@@ -82,6 +82,8 @@ export const el = {
   "pane.resize": "Αλλαγή μεγέθους πάνελ",
   "pane.resizeHint": "Σύρετε για αλλαγή μεγέθους",
   "editor.loading": "Φόρτωση επεξεργαστή...",
+  "editor.undo": "Αναίρεση",
+  "editor.redo": "Επανάληψη",
   "preview.unavailable": "Η προεπισκόπηση δεν είναι διαθέσιμη",
   "preview.retry": "Δοκιμάστε ξανά",
   "preview.renderError": "Δεν ήταν δυνατή η δημιουργία προεπισκόπησης:",

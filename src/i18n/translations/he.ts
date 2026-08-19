@@ -81,6 +81,8 @@ export const he = {
   "pane.resize": "שנה גודל לוחות",
   "pane.resizeHint": "גרור לשינוי גודל",
   "editor.loading": "טוען עורך...",
+  "editor.undo": "בטל",
+  "editor.redo": "בצע שוב",
   "preview.unavailable": "תצוגה מקדימה אינה זמינה",
   "preview.retry": "נסה שוב",
   "preview.renderError": "לא ניתן ליצור תצוגה מקדימה:",

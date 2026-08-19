@@ -92,6 +92,8 @@ export const az = {
   "pane.resizeHint": "Ölçüləndirmək üçün sürüşdürün",
   // Editor
   "editor.loading": "Redaktor yüklənir...",
+  "editor.undo": "Geri al",
+  "editor.redo": "Təkrarla",
   // Preview
   "preview.unavailable": "Ön baxış əlçatan deyil",
   "preview.retry": "Yenidən cəhd et",

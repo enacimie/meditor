@@ -82,6 +82,8 @@ export const mt = {
   "pane.resize": "Resize panels",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Jitgħabba editur...",
+  "editor.undo": "Ħassar",
+  "editor.redo": "Erġa' agħmel",
   "preview.unavailable": "Preview mhux disponibbli",
   "preview.retry": "Erġa' pprova",
   "preview.renderError": "Could not generate preview:",

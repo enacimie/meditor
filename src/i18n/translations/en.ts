@@ -101,6 +101,8 @@ export const en = {
   "pane.resizeHint": "Drag to resize",
   // Editor
   "editor.loading": "Loading editor...",
+  "editor.undo": "Undo",
+  "editor.redo": "Redo",
   // Preview
   "preview.unavailable": "Preview unavailable",
   "preview.retry": "Retry",

@@ -82,6 +82,8 @@ export const ee = {
   "pane.resize": "Resize nugogos",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Le nu dam nugɔmeɖeɖi...",
+  "editor.undo": "Gbugbɔ ɖe ɖa",
+  "editor.redo": "Gawɔe",
   "preview.unavailable": "Dzeƒe mele asiwò o",
   "preview.retry": "Dze agbagba",
   "preview.renderError": "Mete ŋu wɔ ŋgɔdokpɔ o:",

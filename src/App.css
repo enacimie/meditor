@@ -357,8 +357,11 @@ body,
 
 .zen-exit {
   position: fixed;
-  top: 12px;
-  right: 12px;
+  /* The only way out of zen mode besides Esc, so it must not end up under a
+     notch or a rounded corner — on a phone that would leave no way out at
+     all. `max()` keeps the desktop inset unchanged, where the insets are 0. */
+  top: max(12px, env(safe-area-inset-top, 0px));
+  right: max(12px, env(safe-area-inset-right, 0px));
   z-index: 1200;
   display: inline-flex;
   align-items: center;
@@ -432,9 +435,17 @@ body,
     padding-inline: 6px;
   }
 
+  /* Narrow enough that the labels have to go; the icons carry the meaning. */
   .sync-btn:not(.on) {
     font-size: 0;
     gap: 0;
+  }
+
+  /* Except this one, which has no icon — it *is* its label. Left to the rule
+     above it rendered as an empty box whenever the preview was in web mode,
+     and only reappeared in document mode, where `.on` spared it. */
+  .sync-btn .pane-view-label {
+    font-size: 12px;
   }
 
   .app-notice {
@@ -480,6 +491,81 @@ body,
 }
 
 /* ---- Accessibility ---- */
+/* ---- Touch ----
+ *
+ * Asked as `(pointer: coarse)` rather than as a width, because width is the
+ * wrong question: a narrow desktop window is still driven by a mouse and
+ * wants the compact controls, while a tablet in landscape is 1024px wide and
+ * still wants fingers. The same query drives the behaviour in JS
+ * (hooks/useCoarsePointer.ts), so the two cannot drift apart.
+ *
+ * 44px is the figure both Apple and Google give for the smallest thing a
+ * finger can reliably hit. Almost nothing here reached it: the topbar buttons
+ * were 30px tall and the segmented control was three 30px targets welded
+ * together with no gap between them.
+ */
+@media (pointer: coarse) {
+  /* Width matters as much as height, and it is the one that goes wrong: below
+     760px these buttons drop their labels and shrink to an icon, so height
+     alone would leave 42px-wide targets — and the menu toggle, whose padding
+     is !important, 34px. */
+  .actions button,
+  .zen-exit {
+    min-width: 44px;
+    min-height: 44px;
+    padding-inline: 12px;
+  }
+
+  .layout-switch button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .sync-btn {
+    min-height: 44px;
+    min-width: 44px;
+    justify-content: center;
+    padding-inline: 12px;
+  }
+
+  .pane-header {
+    min-height: 52px;
+  }
+
+  .menu-panel button {
+    min-height: 44px;
+  }
+
+  .outline-link {
+    min-height: 44px;
+    align-items: center;
+  }
+
+  .tab-close {
+    width: 44px;
+    min-height: 44px;
+  }
+
+  .tab-add {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .lang-picker .lang-search-clear {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* A finger has nothing to hover with, and a tap leaves the state stuck on
+     the last thing touched. The colour changes are tolerable; the lifts are
+     not — a button that stays raised reads as pressed. */
+  .actions button:hover,
+  .sync-btn:hover,
+  .zen-exit:hover {
+    transform: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

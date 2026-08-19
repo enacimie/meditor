@@ -82,6 +82,8 @@ export const bs = {
   "pane.resize": "Resize panels",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Učitavanje uređivač...",
+  "editor.undo": "Poništi",
+  "editor.redo": "Ponovi",
   "preview.unavailable": "Pregled nedostupno",
   "preview.retry": "Pokušaj ponovo",
   "preview.renderError": "Nije moguće napraviti pregled:",

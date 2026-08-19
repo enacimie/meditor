@@ -35,3 +35,22 @@
   white-space: nowrap;
   cursor: default;
 }
+
+/* Below this the bar has to choose what to show. A document name plus three
+   counts, each of them a translated phrase rather than a bare number, runs off
+   a 360px screen — and the word count is the one anyone actually watches. */
+@media (max-width: 400px) {
+  .statusbar {
+    gap: 8px;
+    padding-inline: 10px;
+  }
+
+  .statusbar-doc {
+    max-width: none;
+    min-width: 0;
+  }
+
+  .statusbar-secondary {
+    display: none;
+  }
+}

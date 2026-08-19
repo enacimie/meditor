@@ -92,6 +92,8 @@ export const km = {
   "pane.resizeHint": "អូសដើម្បីប្ដូរទំហំ",
   // Editor
   "editor.loading": "កំពុងផ្ទុកកម្មវិធីកែសម្រួល...",
+  "editor.undo": "មិនធ្វើវិញ",
+  "editor.redo": "ធ្វើវិញ",
   // Preview
   "preview.unavailable": "ការមើលជាមុនមិនអាចប្រើបាន",
   "preview.retry": "ព្យាយាមម្ដងទៀត",

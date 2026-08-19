@@ -82,6 +82,8 @@ export const mn = {
   "pane.resize": "Самбарын хэмжээг өөрчлөх",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Ачаалж байна засварлагч...",
+  "editor.undo": "Буцаах",
+  "editor.redo": "Давтах",
   "preview.unavailable": "Урьдчилан харах боломжгүй",
   "preview.retry": "Дахин оролдох",
   "preview.renderError": "Урьдчилан харахыг үүсгэж чадсангүй:",

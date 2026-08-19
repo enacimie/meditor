@@ -93,6 +93,8 @@ export const it = {
   "pane.resizeHint": "Trascina per ridimensionare",
   // Editor
   "editor.loading": "Caricamento editor...",
+  "editor.undo": "Annulla",
+  "editor.redo": "Ripristina",
   // Anteprima
   "preview.unavailable": "Anteprima non disponibile",
   "preview.retry": "Riprova",

@@ -81,6 +81,8 @@ export const vi = {
   "pane.resize": "Đổi kích thước bảng",
   "pane.resizeHint": "Kéo để đổi kích thước",
   "editor.loading": "Đang tải trình soạn thảo...",
+  "editor.undo": "Hoàn tác",
+  "editor.redo": "Làm lại",
   "preview.unavailable": "Xem trước không khả dụng",
   "preview.retry": "Thử lại",
   "preview.renderError": "Không thể tạo xem trước:",

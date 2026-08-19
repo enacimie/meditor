@@ -81,6 +81,8 @@ export const pl = {
   "pane.resize": "Zmień rozmiar paneli",
   "pane.resizeHint": "Przeciągnij, aby zmienić rozmiar",
   "editor.loading": "Ładowanie edytora...",
+  "editor.undo": "Cofnij",
+  "editor.redo": "Ponów",
   "preview.unavailable": "Podgląd niedostępny",
   "preview.retry": "Ponów",
   "preview.renderError": "Nie można wygenerować podglądu:",

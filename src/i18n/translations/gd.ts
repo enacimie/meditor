@@ -82,6 +82,8 @@ export const gd = {
   "pane.resize": "Resize pannals",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "A' luchdadh deasaiche...",
+  "editor.undo": "Neo-dhèan",
+  "editor.redo": "Ath-dhèan",
   "preview.unavailable": "Ro-shealladh nach eil ri fhaighinn",
   "preview.retry": "Feuch a-rithist",
   "preview.renderError": "Cha b' urrainn an ro-shealladh a chruthachadh:",

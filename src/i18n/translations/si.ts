@@ -92,6 +92,8 @@ export const si = {
   "pane.resizeHint": "ප්‍රමාණය වෙනස් කිරීමට අදින්න",
   // Editor
   "editor.loading": "සංස්කාරකය පූරණය වෙමින්...",
+  "editor.undo": "පෙර පරිදි",
+  "editor.redo": "නැවත කරන්න",
   // Preview
   "preview.unavailable": "පෙරදසුන නොලැබේ",
   "preview.retry": "නැවත උත්සාහ කරන්න",

@@ -82,6 +82,8 @@ export const sl = {
   "pane.resize": "Resize ploščas",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Nalaganje urejevalnik...",
+  "editor.undo": "Razveljavi",
+  "editor.redo": "Uveljavi",
   "preview.unavailable": "Predogled ni na voljo",
   "preview.retry": "Poskusi znova",
   "preview.renderError": "Predogleda ni bilo mogoče ustvariti:",

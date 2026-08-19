@@ -82,6 +82,8 @@ export const es = {
   "pane.resize": "Redimensionar paneles",
   "pane.resizeHint": "Arrastra para redimensionar",
   "editor.loading": "Cargando editor...",
+  "editor.undo": "Deshacer",
+  "editor.redo": "Rehacer",
   "preview.unavailable": "Vista previa no disponible",
   "preview.retry": "Reintentar",
   "preview.renderError": "No se pudo generar la vista previa:",

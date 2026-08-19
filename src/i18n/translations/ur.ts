@@ -93,6 +93,8 @@ export const ur = {
   "pane.resizeHint": "سائز تبدیل کرنے کے لیے گھسیٹیں",
   // Editor
   "editor.loading": "ایڈیٹر لوڈ ہو رہا ہے...",
+  "editor.undo": "واپس",
+  "editor.redo": "دوبارہ",
   // Preview
   "preview.unavailable": "پیش نظارہ دستیاب نہیں",
   "preview.retry": "دوبارہ کوشش کریں",

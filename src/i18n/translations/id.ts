@@ -93,6 +93,8 @@ export const id = {
   "pane.resizeHint": "Drag to resize",
   // Editor
   "editor.loading": "Loading editor...",
+  "editor.undo": "Urungkan",
+  "editor.redo": "Ulangi",
   // Pratinjau
   "preview.unavailable": "Pratinjau unavailable",
   "preview.retry": "Retry",

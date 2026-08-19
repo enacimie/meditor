@@ -82,6 +82,8 @@ export const om = {
   "pane.resize": "Resize paaneliis",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Buufata gulaalaa...",
+  "editor.undo": "Deebisi",
+  "editor.redo": "Irra deebi'i",
   "preview.unavailable": "Durargii hin argamu",
   "preview.retry": "Itti deebi'ii yaali",
   "preview.renderError": "Durargii uumuun hin danda'amne:",

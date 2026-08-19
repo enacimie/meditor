@@ -82,6 +82,8 @@ export const xh = {
   "pane.resize": "Resize iphanelis",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Iyalayisha umhleli...",
+  "editor.undo": "Buyisela",
+  "editor.redo": "Yenza kwakhona",
   "preview.unavailable": "Uhlolo lwangaphambili ayifumaneki",
   "preview.retry": "Zama kwakhona",
   "preview.renderError": "Ayiphumelelanga ukwenza uhlolo lwangaphambili:",

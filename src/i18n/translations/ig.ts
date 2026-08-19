@@ -92,6 +92,8 @@ export const ig = {
   "pane.resizeHint": "Dọrọ iji gbanwee nha",
   // Editor
   "editor.loading": "Ndezi na-ebunye...",
+  "editor.undo": "Kagbuo",
+  "editor.redo": "Mezie ọzọ",
   // Preview
   "preview.unavailable": "Nlele adịghị",
   "preview.retry": "Nwaa ọzọ",

@@ -82,6 +82,8 @@ export const rif = {
   "pane.resize": "Beddel tiddi n yigalisen",
   "pane.resizeHint": "Zuɣer bac ad tbeddleḍ tiddi",
   "editor.loading": "Azdam n umaẓrag...",
+  "editor.undo": "Sefsex",
+  "editor.redo": "Ales",
   "preview.unavailable": "Asenɛet ur yelli ara",
   "preview.retry": "Ɛreḍ tikelt nniḍen",
   "preview.renderError": "Ur izmir ara ad yesnulfu asenɛet:",

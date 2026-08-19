@@ -82,6 +82,8 @@ export const ky = {
   "pane.resize": "Панелдердин өлчөмүн өзгөртүү",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Жүктөлүүдө редактор...",
+  "editor.undo": "Кайтаруу",
+  "editor.redo": "Кайталоо",
   "preview.unavailable": "Алдын ала көрүү жеткиликсиз",
   "preview.retry": "Кайра аракет",
   "preview.renderError": "Алдын ала көрүүнү түзүү мүмкүн болгон жок:",

@@ -82,6 +82,8 @@ export const hy = {
   "pane.resize": "Փոխել վահանակների չափը",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Բեռնում խմբագրիչ...",
+  "editor.undo": "Հետարկել",
+  "editor.redo": "Կրկնել",
   "preview.unavailable": "Նախադիտում անհասանելի",
   "preview.retry": "Կրկին փորձել",
   "preview.renderError": "Չհաջողվեց ստեղծել նախադիտումը՝",

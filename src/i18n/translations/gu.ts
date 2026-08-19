@@ -81,6 +81,8 @@ export const gu = {
   "pane.resize": "પેનલનું કદ બદલો",
   "pane.resizeHint": "કદ બદલવા માટે ખેંચો",
   "editor.loading": "સંપાદક લોડ થઈ રહ્યું છે...",
+  "editor.undo": "પૂર્વવત્ કરો",
+  "editor.redo": "ફરીથી કરો",
   "preview.unavailable": "પૂર્વાવલોકન ઉપલબ્ધ નથી",
   "preview.retry": "ફરી પ્રયાસ કરો",
   "preview.renderError": "પૂર્વાવલોકન બનાવી શકાયું નહીં:",

@@ -82,6 +82,8 @@ export const sd = {
   "pane.resize": "پينلن جي ماپ تبديل ڪريو",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "لوڊ ٿي رهيو مدير...",
+  "editor.undo": "واپس",
+  "editor.redo": "ٻيهر",
   "preview.unavailable": "پيش نظارو غير دستياب",
   "preview.retry": "ٻيهر ڪوشش ڪريو",
   "preview.renderError": "پيش نظارو ٺاهي نه سگهيو:",

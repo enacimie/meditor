@@ -92,6 +92,8 @@ export const ht = {
   "pane.resizeHint": "Trennen pou chanje gwosè",
   // Editor
   "editor.loading": "Editè ap chaje...",
+  "editor.undo": "Defè",
+  "editor.redo": "Refè",
   // Preview
   "preview.unavailable": "Apèsi pa disponib",
   "preview.retry": "Reyese",

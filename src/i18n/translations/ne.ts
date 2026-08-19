@@ -92,6 +92,8 @@ export const ne = {
   "pane.resizeHint": "आकार परिवर्तन गर्न तान्नुहोस्",
   // Editor
   "editor.loading": "सम्पादक लोड हुँदैछ...",
+  "editor.undo": "पूर्ववत् गर्नुहोस्",
+  "editor.redo": "फेरि गर्नुहोस्",
   // Preview
   "preview.unavailable": "पूर्वावलोकन उपलब्ध छैन",
   "preview.retry": "पुन: प्रयास गर्नुहोस्",

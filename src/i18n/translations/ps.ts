@@ -82,6 +82,8 @@ export const ps = {
   "pane.resize": "د پینلونو کچه بدلول",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "پورته کېږي سمونګر...",
+  "editor.undo": "بېرته",
+  "editor.redo": "بیا",
   "preview.unavailable": "مخکې کتنه نشته",
   "preview.retry": "بیا هڅه کول",
   "preview.renderError": "مخکې کتنه ونه جوړېده:",

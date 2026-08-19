@@ -82,6 +82,8 @@ export const lb = {
   "pane.resize": "Resize panels",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Lueden editeur...",
+  "editor.undo": "Réckgängeg maachen",
+  "editor.redo": "Widderhuelen",
   "preview.unavailable": "Viraussiicht net verfügbar",
   "preview.retry": "Nach eng Kéier probéieren",
   "preview.renderError": "Viraussiicht konnt net erstallt ginn:",

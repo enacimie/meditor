@@ -81,6 +81,8 @@ export const my = {
   "pane.resize": "ဘောင်အရွယ်အစားပြောင်းမည်",
   "pane.resizeHint": "ဆွဲ၍အရွယ်အစားပြောင်းမည်",
   "editor.loading": "တည်းဖြတ်သူဖွင့်နေသည်...",
+  "editor.undo": "နောက်ပြန်ဆုတ်",
+  "editor.redo": "ပြန်လုပ်",
   "preview.unavailable": "ကြိုတင်ကြည့်ရှုမှုမရနိုင်",
   "preview.retry": "ထပ်ကြိုးစားမည်",
   "preview.renderError": "ကြိုတင်ကြည့်ရှုမှုမဖန်တီးနိုင်:",

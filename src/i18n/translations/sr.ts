@@ -82,6 +82,8 @@ export const sr = {
   "pane.resize": "Промени величину панела",
   "pane.resizeHint": "Drag to resize",
   "editor.loading": "Учитавање уређивач...",
+  "editor.undo": "Опозови",
+  "editor.redo": "Понови",
   "preview.unavailable": "Преглед недоступно",
   "preview.retry": "Покушај поново",
   "preview.renderError": "Није могуће направити преглед:",

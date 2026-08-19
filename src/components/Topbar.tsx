@@ -35,6 +35,14 @@ type Props = {
   onPreferences?: () => void;
   layoutMode: LayoutMode;
   onLayoutModeChange: (mode: LayoutMode) => void;
+  /** Open the editor's find panel — the only route to it without a Ctrl key. */
+  onFind: () => void;
+  /**
+   * The primary pointer is a finger. Drops the split layout from the switch:
+   * two panes side by side on a phone is not a layout anyone wants, and a
+   * third option only makes the two real ones harder to hit.
+   */
+  coarsePointer?: boolean;
 };
 
 /**
@@ -100,6 +108,8 @@ const Topbar = memo(function Topbar({
   onPreferences,
   layoutMode,
   onLayoutModeChange,
+  onFind,
+  coarsePointer = false,
 }: Props) {
   const menuRef = useRef<HTMLDivElement>(null);
   const menuToggleRef = useRef<HTMLButtonElement>(null);
@@ -158,6 +168,20 @@ const Topbar = memo(function Topbar({
     }
   }
 
+  // What the switch actually offers. Everything below indexes into this, not
+  // into LAYOUT_MODES, so the arrow keys walk the buttons that exist.
+  const layoutModes = coarsePointer
+    ? LAYOUT_MODES.filter((mode) => mode.value !== "split")
+    : LAYOUT_MODES;
+
+  // Which button holds the group's single tab stop. Normally the checked one;
+  // if the current mode is not on offer — a stored `split` on a touch screen,
+  // for the frame before it is migrated — the first one takes it, so the
+  // group can never become unreachable by keyboard.
+  const focusedMode = layoutModes.some((mode) => mode.value === layoutMode)
+    ? layoutMode
+    : layoutModes[0].value;
+
   /** Arrow keys move within the group and select as they go (APG radiogroup). */
   const handleLayoutKeys = (e: ReactKeyboardEvent<HTMLDivElement>) => {
     const horizontal = e.key === "ArrowRight" || e.key === "ArrowLeft";
@@ -169,10 +193,10 @@ const Topbar = memo(function Topbar({
       e.key === "ArrowDown" ||
       (e.key === "ArrowRight" && !rtl) ||
       (e.key === "ArrowLeft" && rtl);
-    const current = LAYOUT_MODES.findIndex((m) => m.value === layoutMode);
+    const current = layoutModes.findIndex((m) => m.value === layoutMode);
     const next =
-      (current + (forward ? 1 : -1) + LAYOUT_MODES.length) % LAYOUT_MODES.length;
-    onLayoutModeChange(LAYOUT_MODES[next].value);
+      (current + (forward ? 1 : -1) + layoutModes.length) % layoutModes.length;
+    onLayoutModeChange(layoutModes[next].value);
     const radios =
       layoutGroupRef.current?.querySelectorAll<HTMLButtonElement>('[role="radio"]');
     radios?.[next]?.focus();
@@ -230,14 +254,14 @@ const Topbar = memo(function Topbar({
           ref={layoutGroupRef}
           onKeyDown={handleLayoutKeys}
         >
-          {LAYOUT_MODES.map((mode) => (
+          {layoutModes.map((mode) => (
             <button
               key={mode.value}
               type="button"
               role="radio"
               aria-checked={layoutMode === mode.value}
               // Roving tabindex: the group is one tab stop, arrows move within.
-              tabIndex={layoutMode === mode.value ? 0 : -1}
+              tabIndex={focusedMode === mode.value ? 0 : -1}
               aria-label={t(mode.labelKey)}
               title={`${t(mode.labelKey)} (${mode.shortcut})`}
               onClick={() => onLayoutModeChange(mode.value)}
@@ -270,6 +294,12 @@ const Topbar = memo(function Topbar({
               <button type="button" role="menuitem" disabled={busy} onClick={() => { onExportPdf(); setMenuOpen(false); menuToggleRef.current?.focus(); }}>
                 <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15l3 3 3-3"/></svg>
                 {t("menu.exportPdf")}<span className="shortcut">{t("menu.shortcut.export")}</span>
+              </button>
+              {/* The only way to reach the find panel without a Ctrl key,
+                  which is to say: the only way on a phone. */}
+              <button type="button" role="menuitem" disabled={busy} onClick={() => { onFind(); setMenuOpen(false); }}>
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+                {t("shortcuts.find")}<span className="shortcut">{t("shortcuts.ctrlF")}</span>
               </button>
               {onExportHtml && (
                 <button type="button" role="menuitem" disabled={busy} onClick={() => { onExportHtml(); setMenuOpen(false); menuToggleRef.current?.focus(); }}>
