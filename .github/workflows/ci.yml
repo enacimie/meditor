@@ -143,6 +143,19 @@ jobs:
           workspaces: src-tauri
           key: android
       - run: pnpm install --frozen-lockfile
+      # Gradle's rust plugin does not build the library itself: it shells back
+      # out to `cargo tauri android android-studio-script`, with the executable
+      # name hardcoded in the generated buildSrc. So a `cargo-tauri` has to be
+      # on PATH even when the outer build is driven by the npm CLI — which is
+      # the only one installed here. `cargo install tauri-cli` would compile a
+      # large crate on every run for the sake of a binary we already have under
+      # another name, so this forwards the identical arguments instead.
+      - name: Let Gradle find a Tauri CLI
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          printf '#!/usr/bin/env bash\nexec pnpm "$@"\n' > "$HOME/.local/bin/cargo-tauri"
+          chmod +x "$HOME/.local/bin/cargo-tauri"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       # arm64 only: it covers every phone made this decade, and building the
       # other three would triple the slowest job in the pipeline.
       - run: pnpm tauri android build --ci --debug --apk --target aarch64

@@ -87,6 +87,23 @@ Tauri CLI it uses comes from crates.io (`cargo install tauri-cli`), not from
 CI has no such split — everything there is Linux — so the workflow uses the
 ordinary `pnpm tauri android build`.
 
+### Why a `cargo-tauri` is needed either way
+
+Worth knowing before the error is met head-on. Gradle's `rust` plugin does not
+build the library itself: it shells back out to `cargo tauri android
+android-studio-script`, and the executable name is hardcoded in the generated
+`buildSrc`. So `cargo-tauri` has to be on `PATH` even when the outer build is
+driven by `pnpm tauri`, or the build dies mid-Gradle with
+
+```
+error: no such command: `tauri`
+> Process 'command 'cargo'' finished with non-zero exit value 101
+```
+
+`scripts/android-env.sh` installs it. CI, which has only the npm CLI, puts a
+one-line `cargo-tauri` on `PATH` that forwards to it rather than compiling a
+second copy on every run.
+
 ### Without a local toolchain
 
 Every CI run builds a debug APK and attaches it to the run as the
