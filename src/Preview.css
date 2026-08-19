@@ -766,6 +766,12 @@
   flex-shrink: 0;
 }
 
+.latex-notice-text {
+  margin: 4px 0 0;
+  font-size: 13px;
+  opacity: 0.85;
+}
+
 .latex-source {
   margin: 16px;
   padding: 16px 20px;

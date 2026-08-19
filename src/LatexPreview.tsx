@@ -203,6 +203,7 @@ const LatexPreview = forwardRef<LatexPreviewHandle, Props>(
         {error && (
           <div className="preview-error" role="alert" aria-live="assertive">
             <strong>{t("preview.unavailable")}</strong>
+            <p className="latex-notice-text">{t("preview.latexNotice")}</p>
             {log && <pre className="latex-log">{log}</pre>}
             <pre className="latex-log">{error}</pre>
             <button type="button" onClick={() => setRetryToken((t) => t + 1)}>
