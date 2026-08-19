@@ -198,6 +198,8 @@ export const en = {
   "shortcuts.nextTab": "Next tab",
   "shortcuts.prevTab": "Previous tab",
   "shortcuts.closeTab": "Close tab",
+  "shortcuts.reopenTab": "Reopen closed tab",
+  "shortcuts.quit": "Quit",
   "shortcuts.esc": "Close / Exit",
   // Go to line
   "goto.linePrompt": (max: number) => `Go to line (1-${max}):`,

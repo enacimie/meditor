@@ -7,12 +7,16 @@ export type ShortcutHandlers = {
   saveAs: () => void;
   /** Ctrl+O / Cmd+O */
   openFiles: () => void;
-  /** Ctrl+N / Cmd+N */
+  /** Ctrl+N / Cmd+N (and Ctrl+T / Cmd+T) */
   newTab: () => void;
   /** Ctrl+Shift+N / Cmd+Shift+N */
   newTypst: () => void;
   /** Ctrl+Shift+L / Cmd+Shift+L */
   newLatex: () => void;
+  /** Ctrl+Shift+T / Cmd+Shift+T — reopen the most recently closed tab. */
+  reopenTab: () => void;
+  /** Ctrl+Q / Cmd+Q — quit the app (same flow as closing the window). */
+  quit: () => void;
   /** Ctrl+E / Cmd+E */
   exportPdf: () => void;
   /** Ctrl+W / Cmd+W */
@@ -112,6 +116,13 @@ export function useKeyboardShortcuts(
         e.preventDefault();
         if (e.shiftKey) h.newTypst();
         else h.newTab();
+      } else if (k === "t") {
+        e.preventDefault();
+        if (e.shiftKey) h.reopenTab();
+        else h.newTab();
+      } else if (k === "q") {
+        e.preventDefault();
+        h.quit();
       } else if (k === "l" && e.shiftKey) {
         e.preventDefault();
         h.newLatex();

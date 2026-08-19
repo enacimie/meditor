@@ -277,6 +277,11 @@ export default function App() {
   // double-mount must not leave duplicate listeners that re-swallow closes).
   // The resolved value is never used; the promise only acts as a guard.
   const closeGuardRef = useRef<Promise<unknown> | null>(null);
+  // Latest quit routine, so the once-registered close guard and Ctrl+Q both
+  // run the same flow without capturing a stale render.
+  const requestQuitRef = useRef<() => Promise<void>>(async () => {});
+  // Most recently closed tabs, so Ctrl+Shift+T can bring them back.
+  const closedTabsRef = useRef<Doc[]>([]);
   const active = docs.find((d) => d.id === activeId) ?? docs[0];
   activeIdRef.current = activeId;
   // Parsing runs over the whole document, so keep it off the keystroke path:
@@ -428,50 +433,7 @@ export default function App() {
       closeGuardRef.current = win
         .onCloseRequested(async (e) => {
           e.preventDefault();
-          if (closingRef.current) return;
-          closingRef.current = true;
-          try {
-            const hasDirtyDocuments = docsRef.current.some((d) => d.dirty);
-            if (hasDirtyDocuments) {
-              const ok = await confirmDialog(
-                closeTRef.current("confirm.unsavedClose"),
-              );
-              if (!ok) return;
-            }
-            if (sessionTimerRef.current !== undefined) {
-              window.clearTimeout(sessionTimerRef.current);
-              sessionTimerRef.current = undefined;
-            }
-            const finalSession = writeSessionOrdered(
-              docsRef.current,
-              activeIdRef.current,
-              splitRatioRef.current,
-            );
-            const closeTasksCompleted = await waitForCloseTasks([
-              saveQueueRef.current,
-              finalSession,
-              sessionSaveQueueRef.current,
-            ]);
-            if (!closeTasksCompleted) {
-              await showNativeAlert(
-                closeTRef.current("session.saveError"),
-                closeLangRef.current,
-              );
-              return;
-            }
-            await invoke("exit_app");
-          } catch (error) {
-            console.error("Could not close application", error);
-            // Last resort: try a plain destroy. It is unreliable on
-            // WebKitGTK, but works on other platforms and sometimes here.
-            try {
-              await win.destroy();
-            } catch {
-              // The window stays open; the user can retry the close.
-            }
-          } finally {
-            closingRef.current = false;
-          }
+          await requestQuitRef.current();
         })
         .catch(() => {
           // Registration failed (IPC error): allow a future render to retry.
@@ -485,7 +447,6 @@ export default function App() {
       // cleanup) previously left zero or duplicate listeners that swallowed
       // the first close request or skipped the final session save.
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -664,6 +625,59 @@ export default function App() {
     return next;
   }
 
+  /**
+   * Quit the app, running the same cleanup as a window close: confirm unsaved
+   * changes, flush the final session, then exit through Rust. Shared by the
+   * close guard and the Ctrl+Q shortcut, so both behave identically.
+   */
+  async function requestQuit() {
+    if (!isTauri() || closingRef.current) return;
+    closingRef.current = true;
+    try {
+      const hasDirtyDocuments = docsRef.current.some((d) => d.dirty);
+      if (hasDirtyDocuments) {
+        const ok = await confirmDialog(
+          closeTRef.current("confirm.unsavedClose"),
+        );
+        if (!ok) return;
+      }
+      if (sessionTimerRef.current !== undefined) {
+        window.clearTimeout(sessionTimerRef.current);
+        sessionTimerRef.current = undefined;
+      }
+      const finalSession = writeSessionOrdered(
+        docsRef.current,
+        activeIdRef.current,
+        splitRatioRef.current,
+      );
+      const closeTasksCompleted = await waitForCloseTasks([
+        saveQueueRef.current,
+        finalSession,
+        sessionSaveQueueRef.current,
+      ]);
+      if (!closeTasksCompleted) {
+        await showNativeAlert(
+          closeTRef.current("session.saveError"),
+          closeLangRef.current,
+        );
+        return;
+      }
+      await invoke("exit_app");
+    } catch (error) {
+      console.error("Could not close application", error);
+      // Last resort: try a plain destroy. It is unreliable on WebKitGTK, but
+      // works on other platforms and sometimes here.
+      try {
+        await getCurrentWindow().destroy();
+      } catch {
+        // The window stays open; the user can retry the close.
+      }
+    } finally {
+      closingRef.current = false;
+    }
+  }
+  requestQuitRef.current = requestQuit;
+
   async function saveAs() {
     if (!active || !isTauri() || !beginOperation("saveAs")) return;
     const documentId = active.id;
@@ -817,7 +831,9 @@ export default function App() {
     const current = docsRef.current;
     const idx = current.findIndex((d) => d.id === id);
     if (idx < 0) return;
+    const removed = current[idx];
     const next = current.filter((d) => d.id !== id);
+    closedTabsRef.current = [...closedTabsRef.current, removed];
     if (next.length === 0) {
       const fresh = makeDoc("", []);
       docsRef.current = [fresh];
@@ -839,6 +855,10 @@ export default function App() {
       const ok = await confirmDialog(t("confirm.unsavedClose"));
       if (!ok) return;
     }
+    const removed = docsRef.current;
+    if (removed.length) {
+      closedTabsRef.current = [...closedTabsRef.current, ...removed];
+    }
     const fresh = makeDoc("", []);
     docsRef.current = [fresh];
     setDocs([fresh]);
@@ -856,6 +876,10 @@ export default function App() {
       if (!ok) return;
     }
     const kept = current.filter((d) => d.id === activeIdRef.current);
+    const removed = current.filter((d) => d.id !== activeIdRef.current);
+    if (removed.length) {
+      closedTabsRef.current = [...closedTabsRef.current, ...removed];
+    }
     if (kept.length === 0) {
       const fresh = makeDoc("", []);
       docsRef.current = [fresh];
@@ -865,6 +889,25 @@ export default function App() {
     }
     docsRef.current = kept;
     setDocs(kept);
+  }
+
+  function reopenTab() {
+    const stack = closedTabsRef.current;
+    if (stack.length === 0) return;
+    const doc = stack[stack.length - 1];
+    closedTabsRef.current = stack.slice(0, -1);
+    const current = docsRef.current;
+    // Replace the empty untitled tab that closeTab/closeAllTabs leave behind
+    // when nothing else is open, instead of piling a duplicate next to it.
+    const placeholder =
+      current.length === 1 &&
+      current[0].path === null &&
+      current[0].content === "" &&
+      !current[0].dirty;
+    const next = placeholder ? [doc] : [...current, doc];
+    docsRef.current = next;
+    setDocs(next);
+    setActiveId(doc.id);
   }
 
   async function renameTab(id: string) {
@@ -936,6 +979,8 @@ export default function App() {
     newLatex: newLatexTab,
     exportPdf,
     closeTab: () => closeTab(activeId),
+    reopenTab,
+    quit: requestQuit,
     toggleZen,
     rename: () => renameTab(activeId),
     // Open-only on purpose: closing always routes through the overlay's

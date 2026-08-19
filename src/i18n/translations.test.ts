@@ -69,7 +69,11 @@ describe("translations", () => {
    * Adding a key to English without translating it must fail the build; the
    * only way to silence that is to add it here on purpose.
    */
-  const KNOWN_PARTIAL_KEYS = new Set<string>([]);
+  const KNOWN_PARTIAL_KEYS = new Set<string>([
+    // Added with the Ctrl+Q / Ctrl+Shift+T shortcuts; pending translation.
+    "shortcuts.reopenTab",
+    "shortcuts.quit",
+  ]);
 
   it("every English key is defined in every language", () => {
     const missing: string[] = [];
