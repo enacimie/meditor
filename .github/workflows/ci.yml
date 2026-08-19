@@ -2,7 +2,11 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    # `unstable` is where work is integrated before it reaches main, and
+    # commits land on it directly as well as through pull requests. Without it
+    # here, anything rebased straight onto the branch — as #30 and #31 were —
+    # is merged having never run a single check.
+    branches: [main, unstable]
   # No branch filter: a pull request targeting any branch (for example a stacked
   # PR based on another PR's branch) must still be validated. With
   # `branches: [main]` those PRs silently ran no checks at all.

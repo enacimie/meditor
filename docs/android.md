@@ -102,6 +102,31 @@ error: no such command: `tauri`
 one-line `cargo-tauri` on `PATH` that forwards to it rather than compiling a
 second copy on every run.
 
+### When the application id changes
+
+Renaming the identifier moves the Java package, and two build scripts write
+generated sources into it: wry's produces nine files, tauri's produces
+`TauriActivity.kt`. Only wry declares `rerun-if-env-changed` for the variable
+carrying the package name, so cargo reruns wry and leaves tauri cached. The new
+package ends up with nine of the ten files, `MainActivity` is left extending a
+`TauriActivity` nobody wrote, and Kotlin fails with
+
+```
+e: MainActivity.kt:6:22 Unresolved reference: TauriActivity
+```
+
+which points nowhere near the cause. A fresh clone is unaffected; only a
+checkout that has already built the old id runs into it.
+
+`android-build.sh` detects it — a `generated` directory outside the current
+package is the tell — clears the stale tree and cleans the two crates so both
+build scripts run again. By hand it is:
+
+```bash
+rm -rf src-tauri/gen/android/app/src/main/java/<old>/*/generated
+cargo clean -p tauri -p wry --target aarch64-linux-android --manifest-path src-tauri/Cargo.toml
+```
+
 ### Without a local toolchain
 
 Every CI run builds a debug APK and attaches it to the run as the

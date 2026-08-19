@@ -51,6 +51,46 @@ if [ ! -d "src-tauri/gen/android" ]; then
   cargo tauri android init
 fi
 
+# ── Did the application id change since the last build? ──────────────
+#
+# The identifier decides the Java package, and two build scripts generate
+# sources into it: wry's writes nine files, tauri's writes TauriActivity.kt.
+# Only wry declares `rerun-if-env-changed` for the variable that carries the
+# package, so after a rename cargo reruns wry and leaves tauri cached. The new
+# package gets nine of the ten files, MainActivity is left extending a
+# TauriActivity nobody wrote, and Kotlin fails with
+#
+#   Unresolved reference: TauriActivity
+#
+# which points nowhere near the cause. A `generated` directory sitting outside
+# the current package is the tell; clearing it and the two crates' build
+# scripts puts everything back in one step.
+java_root="src-tauri/gen/android/app/src/main/java"
+identifier="$(sed -n 's/.*"identifier"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
+  src-tauri/tauri.conf.json | head -1)"
+if [ -n "$identifier" ] && [ -d "$java_root" ]; then
+  current="$java_root/$(echo "$identifier" | tr '.' '/')"
+  stale="$(find "$java_root" -type d -name generated 2>/dev/null \
+    | grep -v "^$current/" || true)"
+  if [ -n "$stale" ]; then
+    echo "android-build: the application id is now $identifier; clearing what the old one left behind"
+    echo "$stale" | while read -r dir; do
+      [ -n "$dir" ] && rm -rf "$dir"
+    done
+    case "$target" in
+      aarch64) triple=aarch64-linux-android ;;
+      armv7)   triple=armv7-linux-androideabi ;;
+      i686)    triple=i686-linux-android ;;
+      x86_64)  triple=x86_64-linux-android ;;
+      *)       triple="" ;;
+    esac
+    if [ -n "$triple" ]; then
+      cargo clean -p tauri -p wry --target "$triple" \
+        --manifest-path src-tauri/Cargo.toml >/dev/null
+    fi
+  fi
+fi
+
 # An empty beforeBuildCommand turns the hook off: the bundle in dist/ is the
 # one we want, and the configured `pnpm build` would run the Windows binaries.
 cargo tauri android build \
@@ -60,9 +100,14 @@ cargo tauri android build \
   --config '{"build":{"beforeBuildCommand":""}}' \
   "${extra[@]}"
 
-apk="$(find src-tauri/gen/android -name '*-debug.apk' -newermt '-10 minutes' 2>/dev/null | head -1)"
+# A failed build has already stopped the script by now — the CLI returns a
+# non-zero status and `set -e` is on. This is about the output path: the APK
+# lands under a flavour directory the CLI chooses, and if that ever moves, the
+# useful thing is to say so rather than to print a path that is not there.
+apk="$(find src-tauri/gen/android -name '*-debug.apk' 2>/dev/null | head -1)"
 if [ -z "$apk" ]; then
-  echo "android-build: the build reported success but no fresh APK was found" >&2
+  echo "android-build: the build succeeded but no APK was found under" >&2
+  echo "               src-tauri/gen/android — has the output path changed?" >&2
   exit 1
 fi
 
