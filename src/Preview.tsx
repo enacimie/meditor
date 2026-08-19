@@ -121,6 +121,8 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
   const tokenRef = useRef(0);
   /** A pagination was skipped or interrupted because the pane was hidden. */
   const pendingRef = useRef(false);
+  /** Line a sync asked for while the pane had nothing rendered in it. */
+  const pendingScrollRef = useRef<number | null>(null);
   const flashTimerRef = useRef<number | undefined>(undefined);
   const activePreviewerRef = useRef<Previewer | undefined>(undefined);
   const [renderError, setRenderError] = useState<string | null>(null);
@@ -163,34 +165,48 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
     return docViewRef.current ? pagedRef.current : webRef.current;
   }
 
+  /**
+   * Scroll to the block covering `line`. Returns false when there is nothing
+   * to scroll to yet, which happens while the pane is hidden: rendering into
+   * it is deferred, so it holds no [data-line] nodes at all.
+   */
+  const scrollToLineNow = useCallback((line: number): boolean => {
+    // Reads refs only, so this stays stable and the effects below can depend
+    // on it without re-running every render.
+    const container = docViewRef.current ? pagedRef.current : webRef.current;
+    if (!container) return false;
+    const nodes = Array.from(container.querySelectorAll<HTMLElement>("[data-line]"));
+    let target: HTMLElement | null = null;
+    for (const n of nodes) {
+      const l = parseInt(n.getAttribute("data-line") || "0", 10);
+      if (l <= line) target = n;
+      else break;
+    }
+    if (!target && nodes.length) target = nodes[0];
+    if (!target) return false;
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    target.classList.remove("sync-flash");
+    void target.offsetWidth;
+    target.classList.add("sync-flash");
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    flashTimerRef.current = window.setTimeout(() => {
+      flashTimerRef.current = undefined;
+      target?.classList.remove("sync-flash");
+    }, 1300);
+    return true;
+  }, []);
+
   useImperativeHandle(ref, () => ({
     scrollToLine(line: number) {
       if (childHandleRef.current) {
         childHandleRef.current.scrollToLine(line);
         return;
       }
-      const container = activeContainer();
-      if (!container) return;
-      const nodes = Array.from(
-        container.querySelectorAll<HTMLElement>("[data-line]"),
-      );
-      let target: HTMLElement | null = null;
-      for (const n of nodes) {
-        const l = parseInt(n.getAttribute("data-line") || "0", 10);
-        if (l <= line) target = n;
-        else break;
-      }
-      if (!target && nodes.length) target = nodes[0];
-      if (!target) return;
-      target.scrollIntoView({ behavior: "smooth", block: "center" });
-      target.classList.remove("sync-flash");
-      void target.offsetWidth;
-      target.classList.add("sync-flash");
-      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
-      flashTimerRef.current = window.setTimeout(() => {
-        flashTimerRef.current = undefined;
-        target?.classList.remove("sync-flash");
-      }, 1300);
+      // Coming from an editor-only layout the pane has just been revealed and
+      // pagination has not run yet, so there is no target to scroll to. Hold
+      // the request and let the render apply it, instead of doing nothing and
+      // looking like a dead button.
+      if (!scrollToLineNow(line)) pendingScrollRef.current = line;
     },
     getTargetLine() {
       if (childHandleRef.current) return childHandleRef.current.getTargetLine();
@@ -217,7 +233,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
       clearMark();
     },
   }),
-  []);
+  [scrollToLineNow]);
 
   function clearMark() {
     if (markedElRef.current) markedElRef.current.classList.remove("sync-marked");
@@ -345,6 +361,21 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
         }
         await renderContent(web, deferredValue, seqRef, isStale, t);
       }
+      flushPendingScroll();
+    };
+
+    /**
+     * Apply a scroll that was asked for while the pane was empty. Called after
+     * a render so the nodes it needs exist by now.
+     */
+    const flushPendingScroll = () => {
+      const line = pendingScrollRef.current;
+      if (line === null) return;
+      pendingScrollRef.current = null;
+      // One frame so the browser has laid the new content out.
+      requestAnimationFrame(() => {
+        if (!scrollToLineNow(line)) pendingScrollRef.current = line;
+      });
     };
 
     const schedule = () => {
@@ -365,7 +396,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
       cancelled = true;
       if (debounceTimer) clearTimeout(debounceTimer);
     };
-  }, [deferredValue, docView, retryToken, t, kind]);
+  }, [deferredValue, docView, retryToken, t, kind, scrollToLineNow]);
 
   // Re-run whatever render was skipped while the pane was hidden, as soon as
   // it has a box again — leaving zen mode, switching the layout back, or the

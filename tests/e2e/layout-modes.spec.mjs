@@ -155,6 +155,26 @@ try {
   assert(restored.hasHeading, "the preview should show what was typed while it was hidden");
   assert(restored.error === null, `no error banner expected, got: ${restored.error}`);
 
+  /*
+   * ── The mirror of "go to code": from editor-only, reach the preview ──
+   *
+   * Worth an end-to-end check rather than a unit test, because the hard part
+   * only exists in a real browser: while its pane is hidden the preview defers
+   * rendering, so at the moment of the click there is nothing to scroll to.
+   * The jump has to survive until pagination has run.
+   */
+  await press(page, "1", "ctrlKey: true");
+  await page.waitFor("document.querySelector('.app').classList.contains('layout-editor')");
+  await page.click(".pane:first-child .pane-header .sync-btn");
+  await page.waitFor("!document.querySelector('.app').className.includes('layout-')", {
+    message: "going to the preview should restore the split view",
+  });
+  await page.waitFor("!!document.querySelector('.preview-scroll .sync-flash')", {
+    timeout: 25000,
+    interval: 200,
+    message: "the preview should land on the cursor once it has rendered",
+  });
+
   // ── Ctrl+3: preview only, and the way back to the source ─────────
   await press(page, "3", "ctrlKey: true");
   await page.waitFor("document.querySelector('.app').classList.contains('layout-preview')");
