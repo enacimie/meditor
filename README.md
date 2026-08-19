@@ -144,10 +144,14 @@ To run the AppImage on distros without FUSE: `./meditor_*.AppImage --appimage-ex
 
 ### Android
 
-There is an Android build. It compiles, installs and runs, but the touch layout
-and file access are still being worked on — see
-[docs/android.md](docs/android.md) for what works, how to build a debug APK, and
-where to download one from CI without a local toolchain.
+meditor runs on Android: editing, the live preview, session restore, a layout
+built for a finger rather than a mouse, and opening and saving real files
+through the Storage Access Framework. PDF export works for Typst and LaTeX,
+which compile in the frontend's WASM, but not for Markdown, which needs the
+webview's native printing — that menu entry is hidden there rather than left to
+fail. See [docs/android.md](docs/android.md) for the two limits worth knowing
+about, how to build a debug APK, and where to download one from CI without a
+local toolchain.
 
 ```bash
 source scripts/android-env.sh   # SDK, NDK, JDK, Rust targets, Tauri CLI

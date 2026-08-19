@@ -119,5 +119,18 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           apk="$(find src-tauri/gen/android/app/build/outputs/apk -name '*.apk' | head -1)"
-          gh release upload "${{ github.ref_name }}" "$apk" \
+          if [ -z "$apk" ]; then
+            echo "the Android build produced no APK" >&2
+            exit 1
+          fi
+          # Gradle names it app-universal-debug.apk, which says nothing about
+          # which app or which version once it is sitting on a releases page
+          # next to the AppImage and the .deb. The name it goes out under says
+          # both — and keeps "debug" visible, because that is what it is: built
+          # with Android's throwaway debug key, since signing for release needs
+          # a keystore this project does not have.
+          version="${{ github.ref_name }}"
+          asset="meditor_${version#v}_arm64-debug.apk"
+          cp "$apk" "$asset"
+          gh release upload "${{ github.ref_name }}" "$asset" \
             --repo "${{ github.repository }}" --clobber
