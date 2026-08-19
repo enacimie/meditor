@@ -150,9 +150,9 @@ than guessing from the user agent, which on Android says "Linux".
 
 ## The application id
 
-`tauri.conf.json` still carries the placeholder identifier `com.x.meditor`, and
-on Android that string becomes the **application id**: the package name, the
-JNI symbol names, and the Java source tree under `src-tauri/gen/android`.
+The identifier is `com.enacimie.meditor`, and on Android that string becomes
+the **application id**: the package name, the JNI symbol names, and the Java
+source tree under `src-tauri/gen/android`.
 
 Two things follow.
 
@@ -162,8 +162,8 @@ Two things follow.
   deliberately rather than as a side effect.
 - After a first publish to a store it cannot be changed at all.
 
-Nothing is published, so there is still room to choose. Until someone does, the
-placeholder stands.
+Nothing is published yet, and `com.enacimie.meditor` is now the chosen id, so
+this is settled as long as it happens before the first store publish.
 
 ## Regenerating the Android project
 

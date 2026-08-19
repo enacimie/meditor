@@ -1,4 +1,4 @@
-package com.x.meditor
+package com.enacimie.meditor
 
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
