@@ -163,6 +163,7 @@ export const es = {
   "shortcuts.closeTab": "Cerrar pestaña",
   "shortcuts.reopenTab": "Reabrir pestaña cerrada",
   "shortcuts.quit": "Salir",
+  "shortcuts.print": "Imprimir",
   "shortcuts.esc": "Cerrar / Salir",
   "goto.linePrompt": (max: number) => `Ir a línea (1-${max}):`,
   "statusbar.words": (n: number) => `${n} palabra${n === 1 ? "" : "s"}`,

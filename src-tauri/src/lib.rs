@@ -53,7 +53,10 @@ use std::os::windows::ffi::OsStrExt;
 use std::ptr;
 
 #[cfg(target_os = "windows")]
-use webview2_com::Microsoft::Web::WebView2::Win32::{ICoreWebView2Environment6, ICoreWebView2_7};
+use webview2_com::Microsoft::Web::WebView2::Win32::{
+    ICoreWebView2Environment6, ICoreWebView2_16, ICoreWebView2_7,
+    COREWEBVIEW2_PRINT_DIALOG_KIND_BROWSER,
+};
 #[cfg(target_os = "windows")]
 use webview2_com::PrintToPdfCompletedHandler;
 #[cfg(target_os = "windows")]
@@ -743,6 +746,94 @@ fn alert(message: String, locale: Option<String>) {
     }
 }
 
+/// Open the native print dialog for the live webview.
+///
+/// Unlike `export_pdf`, nothing is saved to a file: the document is handed to
+/// the OS print dialog so the user can pick a printer (or "Save as PDF").
+#[tauri::command]
+async fn print_document(
+    window: tauri::WebviewWindow,
+    locale: Option<String>,
+) -> Result<(), String> {
+    #[cfg(not(any(
+        target_os = "linux",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "windows"
+    )))]
+    {
+        let _ = &window;
+        return Err(t(parse_locale(locale), "pdf.notSupported"));
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        let _ = &locale;
+        let (tx, rx) = mpsc::channel::<Result<(), String>>();
+        window
+            .with_webview(move |webview| {
+                let result = (|| -> Result<(), String> {
+                    let core = unsafe { webview.controller().CoreWebView2() }
+                        .map_err(|e| e.to_string())?;
+                    let printer: ICoreWebView2_16 = core.cast().map_err(|e| e.to_string())?;
+                    unsafe { printer.ShowPrintUI(COREWEBVIEW2_PRINT_DIALOG_KIND_BROWSER) }
+                        .map_err(|e| e.to_string())
+                })();
+                let _ = tx.send(result);
+            })
+            .map_err(|e| e.to_string())?;
+        rx.recv().unwrap_or(Ok(()))?;
+        Ok(())
+    }
+
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))]
+    {
+        let _ = &locale;
+        window
+            .with_webview(move |webview| {
+                use webkit2gtk::{PrintOperationExt, SettingsExt, WebViewExt};
+                let wv = webview.inner();
+                if let Some(settings) = wv.settings() {
+                    settings.set_print_backgrounds(true);
+                }
+                let print_settings = gtk::PrintSettings::new();
+                let page_setup = gtk::PageSetup::new();
+                let paper = gtk::PaperSize::new(Some("iso_a4"));
+                page_setup.set_paper_size_and_default_margins(&paper);
+                page_setup.set_top_margin(25.0, gtk::Unit::Mm);
+                page_setup.set_bottom_margin(25.0, gtk::Unit::Mm);
+                page_setup.set_left_margin(25.0, gtk::Unit::Mm);
+                page_setup.set_right_margin(25.0, gtk::Unit::Mm);
+                let operation = webkit2gtk::PrintOperation::new(&wv);
+                operation.set_print_settings(&print_settings);
+                operation.set_page_setup(&page_setup);
+
+                // `print()` is asynchronous: hold the operation until WebKitGTK
+                // emits `finished` or `failed`, then drop it to avoid cycles.
+                let keepalive = std::rc::Rc::new(std::cell::RefCell::new(Some(operation.clone())));
+                let keepalive_failed = std::rc::Rc::clone(&keepalive);
+                let keepalive_finished = std::rc::Rc::clone(&keepalive);
+                operation.connect_failed(move |_, _| {
+                    keepalive_failed.borrow_mut().take();
+                });
+                operation.connect_finished(move |_| {
+                    keepalive_finished.borrow_mut().take();
+                });
+                operation.print();
+            })
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+}
+
 /// Print the live webview to a PDF the user picks.
 ///
 /// `paged` is true when the preview is the paginated document view, which lays
@@ -1036,6 +1127,7 @@ pub fn run() {
             save_session,
             cli_files,
             export_pdf,
+            print_document,
             write_pdf_bytes,
             write_html_file,
             alert,

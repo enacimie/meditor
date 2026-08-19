@@ -19,6 +19,8 @@ export type ShortcutHandlers = {
   quit: () => void;
   /** Ctrl+E / Cmd+E */
   exportPdf: () => void;
+  /** Ctrl+P / Cmd+P — open the native print dialog. */
+  print: () => void;
   /** Ctrl+W / Cmd+W */
   closeTab: () => void;
   /** F11 */
@@ -129,6 +131,9 @@ export function useKeyboardShortcuts(
       } else if (k === "e") {
         e.preventDefault();
         h.exportPdf();
+      } else if (k === "p") {
+        e.preventDefault();
+        h.print();
       } else if (k === "w") {
         e.preventDefault();
         h.closeTab();

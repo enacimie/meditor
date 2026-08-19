@@ -789,6 +789,15 @@ export default function App() {
     }
   }
 
+  async function printDocument() {
+    if (!isTauri()) return;
+    try {
+      await invoke("print_document", { locale: lang });
+    } catch (e) {
+      await showNativeAlert(String(e), lang);
+    }
+  }
+
   async function exportHtml() {
     // Markdown only: Typst and LaTeX render through their own engines, which
     // produce PDF rather than the HTML the preview builds.
@@ -978,6 +987,7 @@ export default function App() {
     newTypst: newTypstTab,
     newLatex: newLatexTab,
     exportPdf,
+    print: printDocument,
     closeTab: () => closeTab(activeId),
     reopenTab,
     quit: requestQuit,

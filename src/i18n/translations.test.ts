@@ -70,9 +70,10 @@ describe("translations", () => {
    * only way to silence that is to add it here on purpose.
    */
   const KNOWN_PARTIAL_KEYS = new Set<string>([
-    // Added with the Ctrl+Q / Ctrl+Shift+T shortcuts; pending translation.
+    // Added with the Ctrl+Q / Ctrl+Shift+T / Ctrl+P shortcuts; pending translation.
     "shortcuts.reopenTab",
     "shortcuts.quit",
+    "shortcuts.print",
   ]);
 
   it("every English key is defined in every language", () => {

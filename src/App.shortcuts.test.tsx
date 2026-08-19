@@ -296,4 +296,18 @@ describe("tab and quit shortcuts", () => {
     fireEvent.keyDown(window, { key: "q", ctrlKey: true });
     await waitFor(() => expect(invokeMock).toHaveBeenCalledWith("exit_app"));
   });
+
+  it("Ctrl+P opens the native print dialog", async () => {
+    render(
+      <I18nProvider>
+        <App />
+      </I18nProvider>,
+    );
+    await waitFor(() => expect(document.querySelector(".cm-editor")).toBeTruthy(), {
+      timeout: 8000,
+    });
+
+    fireEvent.keyDown(window, { key: "p", ctrlKey: true });
+    await waitFor(() => expect(invokeMock).toHaveBeenCalledWith("print_document", expect.anything()));
+  });
 });
