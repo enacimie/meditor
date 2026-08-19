@@ -1,0 +1,166 @@
+name: iOS probe
+
+# How far does iOS get?
+#
+# Manual on purpose. Nobody on this project has a Mac, an iPhone or an Apple
+# developer account, so this is not a gate — it is an experiment whose first
+# run is the answer. It never blocks a pull request and costs nothing until
+# someone presses the button.
+#
+# Every risky step continues on error and the job ends by writing what
+# happened to the run summary, so one run says exactly where the wall is
+# rather than leaving a red X and a log to dig through.
+#
+# The target is the **simulator**, with code signing switched off. A build for
+# a real device needs a development team and a provisioning profile, which are
+# an account decision rather than a technical one.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  simulator-build:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          # The simulator on Apple silicon, plus the Intel one in case the
+          # runner image is still x86.
+          targets: aarch64-apple-ios-sim, x86_64-apple-ios
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: ios
+      - run: pnpm install --frozen-lockfile
+
+      # Same trick as the Android job: the generated Xcode project has a build
+      # phase that shells out to `cargo tauri ios xcode-script`, and the
+      # runner has the npm CLI rather than the cargo one.
+      - name: Let Xcode find a Tauri CLI
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          printf '#!/usr/bin/env bash\nexec pnpm "$@"\n' > "$HOME/.local/bin/cargo-tauri"
+          chmod +x "$HOME/.local/bin/cargo-tauri"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Record the toolchain
+        run: |
+          {
+            echo "## Environment"
+            echo ""
+            echo '```'
+            xcodebuild -version
+            echo ""
+            xcrun simctl list runtimes | head -20
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - run: pnpm build
+
+      - name: Generate the Xcode project
+        id: init
+        continue-on-error: true
+        run: pnpm tauri ios init --ci 2>&1 | tee /tmp/ios-init.log
+
+      - name: Find the scheme
+        id: scheme
+        continue-on-error: true
+        run: |
+          project="$(ls -d src-tauri/gen/apple/*.xcodeproj 2>/dev/null | head -1)"
+          if [ -z "$project" ]; then
+            echo "no Xcode project was generated" >&2
+            exit 1
+          fi
+          echo "project=$project" >> "$GITHUB_OUTPUT"
+          # Tauri names it "<product>_iOS"; discovered rather than hardcoded,
+          # so a template change shows up as a wrong name instead of a
+          # baffling build failure.
+          name="$(xcodebuild -list -project "$project" 2>/dev/null \
+            | awk '/Schemes:/{flag=1; next} flag && NF {print $1}' | head -1)"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "project=$project scheme=$name"
+
+      - name: Build for the simulator, unsigned
+        id: build
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project "${{ steps.scheme.outputs.project }}" \
+            -scheme "${{ steps.scheme.outputs.name }}" \
+            -configuration debug \
+            -sdk iphonesimulator \
+            -derivedDataPath /tmp/ios-build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build 2>&1 | tail -400 | tee /tmp/ios-build.log
+
+      - name: Collect the app bundle
+        id: collect
+        continue-on-error: true
+        run: |
+          app="$(find /tmp/ios-build -name '*.app' -maxdepth 6 | head -1)"
+          if [ -z "$app" ]; then
+            echo "no .app bundle was produced" >&2
+            exit 1
+          fi
+          mkdir -p /tmp/ios-artifact
+          cp -R "$app" /tmp/ios-artifact/
+          echo "app=$app" >> "$GITHUB_OUTPUT"
+          du -sh "$app"
+
+      - uses: actions/upload-artifact@v4
+        if: steps.collect.outcome == 'success'
+        with:
+          name: meditor-ios-simulator-app
+          path: /tmp/ios-artifact
+          if-no-files-found: warn
+
+      - name: Say how far it got
+        if: always()
+        run: |
+          {
+            echo ""
+            echo "## Result"
+            echo ""
+            echo "| Step | Outcome |"
+            echo "| --- | --- |"
+            echo "| Generate the Xcode project | ${{ steps.init.outcome }} |"
+            echo "| Find the scheme | ${{ steps.scheme.outcome }} |"
+            echo "| Build for the simulator | ${{ steps.build.outcome }} |"
+            echo "| Produce an .app bundle | ${{ steps.collect.outcome }} |"
+            echo ""
+            if [ "${{ steps.collect.outcome }}" = "success" ]; then
+              echo "meditor builds and packages for the iOS simulator without signing."
+              echo "The bundle is attached to this run. Running it on a real device"
+              echo "still needs a development team and a provisioning profile."
+            else
+              echo "It did not get all the way. The last of the build log:"
+              echo ""
+              echo '```'
+              tail -60 /tmp/ios-build.log 2>/dev/null || tail -40 /tmp/ios-init.log 2>/dev/null || echo "(no log)"
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-probe-logs
+          path: |
+            /tmp/ios-init.log
+            /tmp/ios-build.log
+          if-no-files-found: ignore
