@@ -113,6 +113,7 @@ export const en = {
   "preview.typstError": "Typst:",
   "preview.pages": "pages",
   "preview.latexNotice": "LaTeX preview needs TeX Live packages from the configured endpoint.",
+  "preview.latexDisabled": "LaTeX support is temporarily disabled while the engine is replaced.",
   "preview.latexCompiling": "Compiling LaTeX...",
   "preview.latexError": "LaTeX:",
   "preview.latexEmpty": "Empty LaTeX document.",

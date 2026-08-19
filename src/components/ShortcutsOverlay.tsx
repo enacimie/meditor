@@ -1,5 +1,6 @@
 import { memo, useEffect, useRef, useState } from "react";
 import type { TranslationFn } from "../i18n/translations";
+import { LATEX_ENABLED } from "../latexSupport";
 import "./ShortcutsOverlay.css";
 
 type Props = {
@@ -20,7 +21,9 @@ const ShortcutsOverlay = memo(function ShortcutsOverlay({ t, onClose }: Props) {
     [t("shortcuts.ctrlN"), t("menu.newTab")],
     ["Ctrl+T", t("menu.newTab")],
     ["Ctrl+Shift+N", t("topbar.newTypst")],
-    ["Ctrl+Shift+L", t("topbar.newLatex")],
+    ...(LATEX_ENABLED
+      ? ([["Ctrl+Shift+L", t("topbar.newLatex")]] as [string, string][])
+      : []),
     ["Ctrl+Shift+T", t("shortcuts.reopenTab")],
     [t("shortcuts.ctrlO"), t("topbar.open")],
     [t("shortcuts.ctrlS"), t("topbar.save")],

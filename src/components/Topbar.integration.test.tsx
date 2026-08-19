@@ -97,7 +97,7 @@ describe("Topbar integration", () => {
   });
 
   it("keeps specialized document creation inside the more-options menu", () => {
-    const { newTypstSpy, newLatexSpy } = renderTopbar();
+    const { newTypstSpy } = renderTopbar();
 
     expect(screen.queryByLabelText("New Typst tab")).toBeNull();
     expect(screen.queryByLabelText("New LaTeX tab")).toBeNull();
@@ -105,17 +105,13 @@ describe("Topbar integration", () => {
     fireEvent.click(getMenuToggle());
     const menu = screen.getByRole("menu");
     const typstItem = screen.getByRole("menuitem", { name: /New \.typ/ });
-    const latexItem = screen.getByRole("menuitem", { name: /New \.tex/ });
     expect(menu.contains(typstItem)).toBe(true);
-    expect(menu.contains(latexItem)).toBe(true);
+    // LaTeX is temporarily disabled (LATEX_ENABLED = false): no .tex entry.
+    expect(screen.queryByRole("menuitem", { name: /New \.tex/ })).toBeNull();
 
     fireEvent.click(typstItem);
     expect(newTypstSpy).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("menu")).toBeNull();
-
-    fireEvent.click(getMenuToggle());
-    fireEvent.click(screen.getByRole("menuitem", { name: /New \.tex/ }));
-    expect(newLatexSpy).toHaveBeenCalledTimes(1);
   });
 
   it("opens the menu when hamburger is clicked", () => {

@@ -3,6 +3,7 @@ import type { Language, TranslationFn } from "../i18n/translations";
 import { LANGUAGES, isRtl } from "../i18n/translations";
 import type { Theme, Notice, LayoutMode } from "./types";
 import brandIcon from "../assets/meditor-icon.png";
+import { LATEX_ENABLED } from "../latexSupport";
 import "./Topbar.css";
 
 /** Lazy-loaded — only fetched when the user opens the language picker. */
@@ -314,10 +315,12 @@ const Topbar = memo(function Topbar({
                 <svg className="format-icon format-icon-typst" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 5h14"/><path d="M12 5v14"/><path d="M8 19h8"/></svg>
                 {t("topbar.newTypst")}<span className="shortcut">{t("menu.shortcut.newTypst")}</span>
               </button>
-              <button type="button" role="menuitem" disabled={busy} onClick={() => { onNewLatex(); setMenuOpen(false); menuToggleRef.current?.focus(); }}>
-                <svg className="format-icon format-icon-latex" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 5h12"/><path d="M9 5l3 14"/><path d="M15 5l-3 14"/><path d="M5 19h14"/></svg>
-                {t("topbar.newLatex")}<span className="shortcut">{t("menu.shortcut.newLatex")}</span>
-              </button>
+              {LATEX_ENABLED && (
+                <button type="button" role="menuitem" disabled={busy} onClick={() => { onNewLatex(); setMenuOpen(false); menuToggleRef.current?.focus(); }}>
+                  <svg className="format-icon format-icon-latex" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 5h12"/><path d="M9 5l3 14"/><path d="M15 5l-3 14"/><path d="M5 19h14"/></svg>
+                  {t("topbar.newLatex")}<span className="shortcut">{t("menu.shortcut.newLatex")}</span>
+                </button>
+              )}
               <div className="menu-sep" />
               <div className="menu-replacedby-section">
                 <div className="menu-section-label" aria-hidden="true">{t("menu.theme")}</div>

@@ -74,6 +74,8 @@ describe("translations", () => {
     "shortcuts.reopenTab",
     "shortcuts.quit",
     "shortcuts.print",
+    // LaTeX is temporarily disabled; the notice ships in en/es only for now.
+    "preview.latexDisabled",
   ]);
 
   it("every English key is defined in every language", () => {

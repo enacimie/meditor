@@ -199,6 +199,7 @@ export const es = {
   "preview.typstError": "Typst:",
   "preview.pages": "páginas",
   "preview.latexNotice": "La vista previa LaTeX necesita paquetes TeX Live del endpoint configurado.",
+  "preview.latexDisabled": "El soporte de LaTeX está desactivado temporalmente mientras se sustituye el motor.",
   "preview.latexCompiling": "Compilando LaTeX…",
   "preview.latexError": "LaTeX:",
   "preview.latexEmpty": "Documento LaTeX vacío.",

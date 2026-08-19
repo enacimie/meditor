@@ -19,6 +19,7 @@ import latexHighlightCss from "./latex-highlight.css?inline";
 import { clearMermaidResources, renderContent, splitLongFencedBlocks } from "./previewRenderer";
 import { isPaginatable } from "./pagedLifecycle";
 import { keepHeadingsWithContent } from "./previewRenderer";
+import { LATEX_ENABLED } from "./latexSupport";
 
 import type { DocKind } from "./types";
 import "./Preview.css";
@@ -434,6 +435,14 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
   }
 
   if (kind === "latex") {
+    if (!LATEX_ENABLED) {
+      return (
+        <div className="latex-notice">
+          <span className="latex-notice-icon" aria-hidden="true">📄</span>
+          <span>{t("preview.latexDisabled")}</span>
+        </div>
+      );
+    }
     return (
       <Suspense fallback={<div className="typst-loading" role="status"><span className="typst-spinner" aria-hidden="true" />{t("app.loading")}</div>}>
         <LatexPreview ref={setChildHandle} value={value} t={t} onReverseSync={onReverseSync} />

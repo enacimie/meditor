@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { LATEX_ENABLED } from "../latexSupport";
 
 export type ShortcutHandlers = {
   /** Ctrl+S / Cmd+S */
@@ -127,7 +128,7 @@ export function useKeyboardShortcuts(
         h.quit();
       } else if (k === "l" && e.shiftKey) {
         e.preventDefault();
-        h.newLatex();
+        if (LATEX_ENABLED) h.newLatex();
       } else if (k === "e") {
         e.preventDefault();
         h.exportPdf();
