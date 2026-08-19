@@ -6,6 +6,15 @@ endpoint público histórico (`texlive2.swiftlatex.com`) no ofrece una
 disponibilidad garantizada, por lo que el desarrollo reproducible usa el
 servicio autoalojado de SwiftLaTeX.
 
+## Estado del upstream
+
+SwiftLaTeX está sin mantener (último commit en 2024, última release en 2022) y
+su endpoint público ha estado caído de forma prolongada. Con el endpoint por
+defecto, la vista previa LaTeX es **experimental y best-effort**; para un uso
+fiable, arranca el servicio autoalojado (arriba) o configura otro endpoint en
+Preferencias. A medio plazo el motor se sustituirá por un compilador LaTeX
+propio en Rust con salida WASM, que elimina la dependencia de este servicio.
+
 ## Arranque local
 
 La verificación completa está automatizada en el workflow manual `LaTeX
