@@ -765,7 +765,7 @@ async fn print_document(
     )))]
     {
         let _ = &window;
-        return Err(t(parse_locale(locale), "pdf.notSupported"));
+        Err(t(parse_locale(locale), "pdf.notSupported"))
     }
 
     #[cfg(target_os = "windows")]
