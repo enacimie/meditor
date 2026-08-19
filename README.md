@@ -153,6 +153,10 @@ fail. See [docs/android.md](docs/android.md) for the two limits worth knowing
 about, how to build a debug APK, and where to download one from CI without a
 local toolchain.
 
+![meditor editor on Android](screenshots/android-editor.jpg)
+
+![meditor reading view on Android](screenshots/android-preview.jpg)
+
 ```bash
 source scripts/android-env.sh   # SDK, NDK, JDK, Rust targets, Tauri CLI
 pnpm build                      # the frontend bundle
