@@ -118,6 +118,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "${{ github.ref_name }}" \
-            src-tauri/gen/android/app/build/outputs/apk/**/*.apk \
+          apk="$(find src-tauri/gen/android/app/build/outputs/apk -name '*.apk' | head -1)"
+          gh release upload "${{ github.ref_name }}" "$apk" \
             --repo "${{ github.repository }}" --clobber
