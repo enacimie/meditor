@@ -1,0 +1,11 @@
+meditor is a Markdown, Typst and LaTeX editor with a live preview, PDF export,
+tabs, session restore and a layout built for a finger rather than a mouse.
+
+* Markdown, Typst and LaTeX with syntax highlighting and live preview.
+* Paginated, print-faithful preview with PDF export.
+* Open and save real files through the system document picker.
+* Sessions are restored after the app is closed or killed.
+* Documents stay on the device; there is no account and no telemetry.
+
+The LaTeX preview downloads the TeX compiler from a configurable TeX Live
+endpoint the first time it is used; all other features work offline.

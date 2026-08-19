@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.enacimie.meditor</id>
+  <name>meditor</name>
+  <summary>Markdown, Typst and LaTeX editor with live preview</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>AGPL-3.0-or-later</project_license>
+  <developer_name>meditor contributors</developer_name>
+  <description>
+    <p>meditor is a desktop and mobile editor for Markdown, Typst and LaTeX
+    with a live, paginated preview, PDF export, tabs, session restore and a
+    touch-first layout.</p>
+    <p>Documents stay on the device; files are opened and saved through the
+    system dialogs. The LaTeX preview compiles through a configurable TeX
+    Live endpoint.</p>
+  </description>
+  <launchable type="desktop-id">meditor.desktop</launchable>
+  <url type="homepage">https://github.com/enacimie/meditor</url>
+  <url type="bugtracker">https://github.com/enacimie/meditor/issues</url>
+  <provides>
+    <binary>meditor</binary>
+  </provides>
+  <releases>
+    <release version="0.1.2" date="2026-08-19" />
+  </releases>
+  <content_rating type="oars-1.1" />
+</component>

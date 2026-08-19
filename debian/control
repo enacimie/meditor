@@ -1,0 +1,33 @@
+Source: meditor
+Section: editors
+Priority: optional
+Maintainer: meditor contributors <enacimie@users.noreply.github.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ cargo,
+ rustc,
+ libgtk-3-dev,
+ libwebkit2gtk-4.1-dev,
+ libssl-dev,
+ pkg-config,
+ nodejs,
+ pnpm,
+Standards-Version: 4.7.0
+Homepage: https://github.com/enacimie/meditor
+Vcs-Browser: https://github.com/enacimie/meditor
+Vcs-Git: https://github.com/enacimie/meditor.git
+
+Package: meditor
+Architecture: any
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+ libgtk-3-0t64 | libgtk-3-0,
+ libwebkit2gtk-4.1-0,
+Description: Markdown, Typst and LaTeX editor with live preview
+ meditor is a desktop and mobile editor for Markdown, Typst and LaTeX with a
+ live, paginated preview, PDF export, tabs, session restore and a touch-first
+ layout.
+ .
+ Documents stay on the device; files are opened and saved through the system
+ dialogs. The LaTeX preview compiles through a configurable TeX Live endpoint.

@@ -244,6 +244,11 @@ meditor/
 ├── docs/android.md           # Building and installing the Android app
 ├── docs/ios.md               # The iOS probe workflow
 ├── docs/testing.md           # Who tests which platform, and what is unreviewed
+├── docs/distribution.md      # F-Droid, Debian/Ubuntu and AppImage paths
+├── debian/                   # Debian source-package skeleton (dist branch)
+├── fdroid/                   # F-Droid recipe draft (dist branch)
+├── fastlane/                 # Store metadata + screenshots (dist branch)
+├── packaging/                # AppStream metainfo (dist branch)
 ├── tests/e2e/                # CDP-driven E2E harness (cdp.mjs, run.mjs, specs)
 └── setup.sh                  # Install system dependencies (Linux)
 ```

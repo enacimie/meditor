@@ -1,0 +1,33 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: meditor
+Source: https://github.com/enacimie/meditor
+
+Files: *
+Copyright: 2026 meditor contributors
+License: AGPL-3.0-or-later
+
+Files: src/assets/fonts/*.otf
+Copyright: 2003-2009 B. Jackowski, J. M. Nowacki (GUST)
+License: LPPL-1.3c+
+ The GUST Font License permits distribution and modification under the
+ conditions of the LaTeX Project Public License, version 1.3c or later.
+ On Debian systems the full text of the LPPL is available at
+ /usr/share/common-licenses/LPPL-1.3c.
+
+Files: debian/*
+Copyright: 2026 meditor contributors
+License: AGPL-3.0-or-later
+
+License: AGPL-3.0-or-later
+ This program is free software: you can redistribute it and/or modify it
+ under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or (at your
+ option) any later version.
+ .
+ This program is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License
+ for more details.
+ .
+ On Debian systems the complete text of the GNU Affero General Public
+ License can be found in /usr/share/common-licenses/AGPL-3.

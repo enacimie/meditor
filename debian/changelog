@@ -1,0 +1,7 @@
+meditor (0.1.2-1) UNRELEASED; urgency=medium
+
+  * Initial Debian packaging draft for the 0.1.2 release.
+    Builds a usable .deb on a normal machine with system cargo and node;
+    see docs/distribution.md for the path into the official archive.
+
+ -- meditor contributors <enacimie@users.noreply.github.com>  Wed, 19 Aug 2026 22:30:00 +0000

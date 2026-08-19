@@ -1,0 +1,10 @@
+[Desktop Entry]
+Categories=Office;TextEditor;Utility;
+Comment=Markdown, Typst and LaTeX editor with live preview
+Exec=meditor %F
+Icon=meditor
+Name=meditor
+Terminal=false
+Type=Application
+MimeType=text/markdown;text/x-markdown;
+StartupWMClass=meditor

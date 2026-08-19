@@ -1,0 +1,24 @@
+#!/usr/bin/make -f
+
+include /usr/share/dpkg/default.mk
+
+export CARGO_HOME = $(CURDIR)/.cargo-home
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	pnpm install --frozen-lockfile
+	pnpm build
+	cargo build --release --locked --manifest-path src-tauri/Cargo.toml
+
+# Upstream tests run in CI with a browser/display; a Debian build must not
+# need either, so the test step is a no-op here.
+override_dh_auto_test:
+
+override_dh_auto_install:
+	install -Dm755 src-tauri/target/release/meditor debian/meditor/usr/bin/meditor
+	install -Dm644 debian/meditor.desktop debian/meditor/usr/share/applications/meditor.desktop
+	install -Dm644 src-tauri/icons/128x128.png debian/meditor/usr/share/icons/hicolor/128x128/apps/meditor.png
+	install -Dm644 src-tauri/icons/128x128@2x.png debian/meditor/usr/share/icons/hicolor/256x256/apps/meditor.png
+	install -Dm644 packaging/com.enacimie.meditor.metainfo.xml debian/meditor/usr/share/metainfo/com.enacimie.meditor.metainfo.xml

@@ -1,0 +1,56 @@
+Categories:
+  - Office
+  - Writing
+License: AGPL-3.0-or-later
+AuthorName: meditor contributors
+SourceCode: https://github.com/enacimie/meditor
+IssueTracker: https://github.com/enacimie/meditor/issues
+Changelog: https://github.com/enacimie/meditor/releases
+
+Name: meditor
+AutoName: meditor
+Summary: Markdown, Typst and LaTeX editor with live preview
+Description: |
+  meditor is a Markdown, Typst and LaTeX editor with a live preview, PDF
+  export, tabs, session restore and a layout built for a finger. Documents
+  stay on the device; files are opened and saved through the system document
+  picker.
+
+  The LaTeX preview downloads the TeX compiler from a configurable TeX Live
+  endpoint the first time it is used and therefore needs a network connection
+  for that feature; everything else works offline.
+
+RepoType: git
+Repo: https://github.com/enacimie/meditor.git
+
+Builds:
+  - versionName: 0.1.2
+    versionCode: 1002
+    commit: v0.1.2
+    subdir: src-tauri/gen/android
+    sudo:
+      - apt-get update
+      - apt-get install -y curl gcc g++ make pkg-config libssl-dev openjdk-17-jdk-headless
+        nodejs npm
+    init:
+      - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        --profile minimal --default-toolchain stable
+      - . $HOME/.cargo/env
+      - rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android
+        x86_64-linux-android
+      - npm install -g pnpm
+      - cargo install tauri-cli --version ^2 --locked
+    build:
+      - . $HOME/.cargo/env
+      - cd ../../../..
+      - pnpm install --frozen-lockfile
+      - pnpm build
+      - cd src-tauri/gen/android
+    gradle:
+      - universal
+    ndk: r27b
+
+AutoUpdateMode: None
+UpdateCheckMode: Tags
+CurrentVersion: 0.1.2
+CurrentVersionCode: 1002
