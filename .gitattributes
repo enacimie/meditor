@@ -1,0 +1,5 @@
+# Shell scripts must keep LF endings. With core.autocrlf=true — the default on
+# Windows — a checkout rewrites them as CRLF, and bash then reads the trailing
+# carriage return as part of the last word on the line: `set -euo pipefail`
+# fails with "pipefail: invalid option name" and the script dies on line one.
+*.sh text eol=lf
