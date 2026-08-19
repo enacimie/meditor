@@ -33,8 +33,23 @@ jobs:
       - name: Install Linux system dependencies
         if: matrix.platform == 'ubuntu-22.04'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
+          # Same mirror stall as ci.yml, and it matters more here: a release
+          # that dies on apt leaves the tag without its Linux bundles.
+          APT_OPTS="-o Acquire::Retries=3 -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15"
+          updated=false
+          for attempt in 1 2 3; do
+            if sudo apt-get $APT_OPTS update; then
+              updated=true
+              break
+            fi
+            echo "::warning::apt-get update failed (attempt $attempt of 3); retrying"
+            sleep 5
+          done
+          if [ "$updated" != true ]; then
+            echo "::error::apt-get update failed three times; the Ubuntu mirrors are unreachable"
+            exit 1
+          fi
+          sudo apt-get $APT_OPTS install -y \
             libwebkit2gtk-4.1-dev \
             libsoup-3.0-dev \
             libjavascriptcoregtk-4.1-dev \

@@ -94,8 +94,30 @@ jobs:
         if: runner.os == 'Linux'
         timeout-minutes: 20
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
+          # The runner's default mirror, azure.archive.ubuntu.com, goes quiet
+          # often enough to be a pattern rather than bad luck: every line comes
+          # back Ign:, apt falls through to archive.ubuntu.com, and then stalls
+          # with no timeout of its own until this step is killed at 20 minutes.
+          # That has taken out runs on main as well as on pull requests.
+          #
+          # Bounded timeouts turn a twenty-minute hang into a few quick
+          # failures, and retrying the whole update gives the mirror a chance
+          # to answer rather than failing the build over one bad minute.
+          APT_OPTS="-o Acquire::Retries=3 -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15"
+          updated=false
+          for attempt in 1 2 3; do
+            if sudo apt-get $APT_OPTS update; then
+              updated=true
+              break
+            fi
+            echo "::warning::apt-get update failed (attempt $attempt of 3); retrying"
+            sleep 5
+          done
+          if [ "$updated" != true ]; then
+            echo "::error::apt-get update failed three times; the Ubuntu mirrors are unreachable"
+            exit 1
+          fi
+          sudo apt-get $APT_OPTS install -y \
             libwebkit2gtk-4.1-dev \
             libsoup-3.0-dev \
             libjavascriptcoregtk-4.1-dev \
