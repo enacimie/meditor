@@ -9,8 +9,10 @@ export type DocKind = "markdown" | "typst" | "latex";
  * - `path`: OS filesystem path (null for unsaved documents).
  * - `content`: Full source text of the document.
  * - `dirty`: Whether the document has unsaved changes.
- * - `handle`: Opaque registry handle assigned by the Rust backend for
- *   fast path resolution during save operations.
+ * - `handle`: Opaque registry handle assigned by the native or web backend
+ *   for fast path resolution during save operations. Null/absent when the
+ *   document is not backed by writable storage yet (untitled, downloaded,
+ *   or a restored session whose access was not re-granted).
  * - `kind`: Document language ("markdown", "typst" or "latex"). Defaults
  *   to a path-derived value for legacy sessions and Markdown otherwise.
  */
@@ -20,6 +22,6 @@ export type Doc = {
   path: string | null;
   content: string;
   dirty: boolean;
-  handle?: string;
+  handle?: string | null;
   kind: DocKind;
 };

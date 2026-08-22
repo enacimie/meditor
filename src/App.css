@@ -877,3 +877,57 @@ body,
     max-width: 100%;
   }
 }
+
+/* ── Printing ──
+   The browser print dialog is the web build's PDF export, so the output is
+   the document preview alone: workbench chrome is dropped, the preview
+   column takes over the page, and ink-on-paper colors replace the theme. */
+@media print {
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  body {
+    --bg: #fff;
+    --bg-alt: #fff;
+    --fg: #000;
+    --border: #ccc;
+    --accent: #000;
+  }
+
+  .topbar,
+  .tabbar,
+  .statusbar,
+  .zen-exit,
+  .split-divider,
+  #document-outline,
+  #workspace-panels > .pane:not(:last-child) {
+    display: none !important;
+  }
+
+  .app {
+    display: block !important;
+    height: auto !important;
+  }
+
+  #workspace-panels {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .pane {
+    flex: none !important;
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .preview-scroll {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 0 !important;
+  }
+}

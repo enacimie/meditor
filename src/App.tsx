@@ -9,7 +9,7 @@ import {
   useState,
   type MutableRefObject,
 } from "react";
-import { invoke, isTauri } from "@tauri-apps/api/core";
+import { isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { listen } from "@tauri-apps/api/event";
 import type { EditorHandle } from "./Editor";
@@ -53,6 +53,7 @@ import { getTypst } from "./typstEngine";
 import { compileLatexToPdf } from "./latexEngine";
 import { LATEX_ENABLED } from "./latexSupport";
 import { classifyExternalChange, type DocumentStat } from "./externalChange";
+import { backend } from "./backend";
 import "./App.css";
 
 type FileOperation = "open" | "save" | "saveAs" | "export" | "exportHtml";
@@ -141,11 +142,7 @@ function savePreferences(preferences: Preferences): void {
 }
 
 async function showNativeAlert(message: string, locale: string): Promise<void> {
-  try {
-    await invoke("alert", { message, locale });
-  } catch (error) {
-    console.error("Could not show native alert", error);
-  }
+  await backend.alert(message, locale);
 }
 
 function isOperationBusy(ref: MutableRefObject<FileOperation | null>): boolean {
@@ -382,27 +379,23 @@ export default function App() {
       let base: Doc[] = [];
       let startActive = "";
       let cliDocs: Doc[] = [];
-      if (isTauri()) {
-        try {
-          cliDocs = (await invoke<Doc[]>("cli_files", { locale: lang })).map(normalizeDoc);
-        } catch {
-          cliDocs = [];
+      // Both backends answer these: Rust reads its session file, the web
+      // backend localStorage; an empty result means "start with the sample".
+      try {
+        cliDocs = (await backend.cliFiles(lang)).map(normalizeDoc);
+      } catch {
+        cliDocs = [];
+      }
+      try {
+        const restored = await backend.loadSession(lang);
+        if (restored) {
+          base = restored.docs.map(normalizeDoc);
+          startActive = restored.activeId;
+          splitRatioRef.current = restored.split;
         }
-        try {
-          const restored = await invoke<{
-            docs: Doc[];
-            activeId: string;
-            split: number;
-          } | null>("load_session", { locale: lang });
-          if (restored) {
-            base = restored.docs.map(normalizeDoc);
-            startActive = restored.activeId;
-            splitRatioRef.current = restored.split;
-          }
-        } catch (error) {
-          console.warn("Could not restore session", error);
-          base = [];
-        }
+      } catch (error) {
+        console.warn("Could not restore session", error);
+        base = [];
       }
       if (!base.length) {
         const d = makeDoc(SAMPLE, base);
@@ -519,7 +512,7 @@ export default function App() {
    * session instead of leaving it to the timer.
    */
   useEffect(() => {
-    if (!ready || !isTauri()) return;
+    if (!ready) return;
     const flush = () => {
       if (sessionTimerRef.current !== undefined) {
         window.clearTimeout(sessionTimerRef.current);
@@ -579,7 +572,7 @@ export default function App() {
    * read when its fingerprint moved.
    */
   useEffect(() => {
-    if (!isTauri() || !ready) return;
+    if (!ready) return;
     const timer = window.setInterval(() => {
       void checkExternalChangesRef.current();
     }, 3000);
@@ -681,9 +674,9 @@ export default function App() {
   );
 
   async function openFiles() {
-    if (!isTauri() || !beginOperation("open")) return;
+    if (!beginOperation("open")) return;
     try {
-      const opened = (await invoke<Doc[]>("open_files", { locale: lang })).map(normalizeDoc);
+      const opened = (await backend.openFiles(lang)).map(normalizeDoc);
       if (opened.length) {
         await openPaths(opened);
         showNotice(
@@ -703,7 +696,7 @@ export default function App() {
 
   function writeFileOrdered(handle: string, content: string): Promise<void> {
     const next = saveQueueRef.current.then(() =>
-      invoke<void>("save_document", { handle, content, locale: lang }),
+      backend.saveDocument(handle, content, lang),
     );
     saveQueueRef.current = next.catch(() => undefined);
     return next;
@@ -715,22 +708,22 @@ export default function App() {
     ratio: number,
   ): Promise<void> {
     const next = sessionSaveQueueRef.current.then(() =>
-      invoke<void>("save_session", {
-        input: {
+      backend.saveSession(
+        {
           docs: documents.map(({ id, name, path, content, dirty, handle, kind }) => ({
             id,
             name,
             path,
             content,
             dirty,
-            handle,
+            handle: handle ?? null,
             kind,
           })),
           activeId: currentActiveId,
           split: ratio,
         },
-        locale: lang,
-      }),
+        lang,
+      ),
     );
     sessionSaveQueueRef.current = next.catch(() => undefined);
     return next;
@@ -773,7 +766,7 @@ export default function App() {
         );
         return;
       }
-      await invoke("exit_app");
+      await backend.exitApp();
     } catch (error) {
       console.error("Could not close application", error);
       // Last resort: try a plain destroy. It is unreliable on WebKitGTK, but
@@ -794,7 +787,7 @@ export default function App() {
     // resolved by id when given; the menu and Ctrl+Shift+S keep saving the
     // active document.
     const target = targetId ? docsRef.current.find((d) => d.id === targetId) : active;
-    if (!target || !isTauri() || !beginOperation("saveAs")) return;
+    if (!target || !beginOperation("saveAs")) return;
     const documentId = target.id;
     const savedContent = target.content;
     const ext =
@@ -802,11 +795,7 @@ export default function App() {
     const base = target.name.replace(/\.(md|markdown|txt|typ|typst|tex|latex|ltx)$/i, "");
     const defaultName = `${base}${ext}`;
     try {
-      const savedPayload = await invoke<Doc | null>("save_as", {
-        content: savedContent,
-        defaultName,
-        locale: lang,
-      });
+      const savedPayload = await backend.saveAs(savedContent, defaultName, lang);
       if (!savedPayload) {
         showNotice(t("op.cancelled"), "info");
         return;
@@ -836,7 +825,7 @@ export default function App() {
   }
 
   async function save() {
-    if (!active || !isTauri()) return;
+    if (!active) return;
     if (!active.handle) {
       await saveAs();
       return;
@@ -884,10 +873,7 @@ export default function App() {
         let stat: DocumentStat = null;
         let diskContent = "";
         try {
-          stat = await invoke<DocumentStat | null>("document_stat", {
-            handle,
-            locale: lang,
-          });
+          stat = await backend.documentStat(handle, lang);
           const seen = statsRef.current.get(handle);
           if (
             !stat ||
@@ -897,10 +883,7 @@ export default function App() {
           ) {
             continue;
           }
-          diskContent = await invoke<string>("read_document", {
-            handle,
-            locale: lang,
-          });
+          diskContent = await backend.readDocument(handle, lang);
         } catch {
           // Unwatchable right now (deleted, provider gone). Deletion surfaces
           // on the next save, where it can be explained properly.
@@ -1001,11 +984,7 @@ export default function App() {
         const pdfBytes = await $typst.pdf({ mainContent: active.content });
         if (!pdfBytes) throw new Error("Typst compilation produced no output");
         const defaultName = `${base}.pdf`;
-        await invoke("write_pdf_bytes", {
-          pdfBytes: Array.from(pdfBytes),
-          defaultName,
-          locale: lang,
-        });
+        await backend.writePdfBytes(pdfBytes, defaultName, lang);
       } else if (active.kind === "latex") {
         // Hiding the menu entry is not enough: Ctrl+E reaches this directly,
         // without passing through the menu. Without this guard the shortcut
@@ -1016,20 +995,13 @@ export default function App() {
         const pdfBytes = await compileLatexToPdf(active.content);
         if (!pdfBytes) throw new Error("LaTeX compilation produced no output");
         const defaultName = `${base}.pdf`;
-        await invoke("write_pdf_bytes", {
-          pdfBytes: Array.from(pdfBytes),
-          defaultName,
-          locale: lang,
-        });
+        await backend.writePdfBytes(pdfBytes, defaultName, lang);
       } else {
-        await invoke("export_pdf", {
-          defaultName: `${base}.pdf`,
-          locale: lang,
+        await backend.exportPdf(`${base}.pdf`, lang,
           // The paginated preview already draws A4 pages with their own
           // margins; asking the printer for margins too would inset every
           // page a second time and split it across two sheets.
-          paged: docView,
-        });
+          docView);
       }
       showNotice(operationNoticeDone(t, "export"), "success");
     } catch (e) {
@@ -1041,9 +1013,8 @@ export default function App() {
   }
 
   async function printDocument() {
-    if (!isTauri()) return;
     try {
-      await invoke("print_document", { locale: lang });
+      await backend.printDocument(lang);
     } catch (e) {
       await showNativeAlert(String(e), lang);
     }
@@ -1052,7 +1023,7 @@ export default function App() {
   async function exportHtml() {
     // Markdown only: Typst and LaTeX render through their own engines, which
     // produce PDF rather than the HTML the preview builds.
-    if (!active || active.kind !== "markdown" || !isTauri()) return;
+    if (!active || active.kind !== "markdown") return;
     if (!beginOperation("exportHtml")) return;
     try {
       const base =
@@ -1064,11 +1035,7 @@ export default function App() {
         rtl: isRtl(lang),
         t,
       });
-      const saved = await invoke<boolean>("write_html_file", {
-        html,
-        defaultName: `${base}.html`,
-        locale: lang,
-      });
+      const saved = await backend.writeHtmlFile(html, `${base}.html`, lang);
       // Cancelling the save dialog is not a failure, but it is not a success
       // either: announcing "HTML exported" with no file is worse than silence.
       if (saved) showNotice(operationNoticeDone(t, "exportHtml"), "success");

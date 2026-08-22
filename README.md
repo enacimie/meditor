@@ -110,7 +110,13 @@ See [docs/texlive-ondemand.md](docs/texlive-ondemand.md) for endpoint checks
 and shutdown instructions. Without this service, the bundled LaTeX WASM still
 loads, but package resolution depends on the historical public endpoint.
 
-> To test only the frontend in the browser: `pnpm dev` (desktop features — open/save, PDF, and session — require the native app).
+> To test only the frontend in the browser: `pnpm dev`. The same codebase also
+> ships as a **static web build** (`pnpm build` → `dist/`, serve anywhere):
+> editing, Markdown/Typst previews, session persistence (localStorage) and
+> PDF export via the browser print dialog work without a native runtime.
+> File access uses the File System Access API where available (Chromium);
+> other browsers fall back to open-by-upload and save-as-download, and the
+> external-change watcher only covers documents opened with live handles.
 
 ### Running Tests
 

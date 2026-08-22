@@ -1,25 +1,25 @@
 import { useEffect, useState } from "react";
-import { invoke, isTauri } from "@tauri-apps/api/core";
+import { backend } from "../backend";
 
-/** What `std::env::consts::OS` reports, plus null until the answer arrives. */
+/** What the backend reports ("linux", "android", "web"), or null until it answers. */
 export type Platform = string | null;
 
 /**
- * Which operating system the backend is running on.
+ * Which platform the backend is running on.
  *
- * Asked of Rust rather than inferred from the user agent, which on Android
- * says "Linux" and would send the interface down the wrong branch. Null while
- * the answer is in flight, and in a plain browser where there is no backend
- * to ask — callers should treat that as "assume the feature exists" so a
- * desktop never flickers a menu entry in and out on startup.
+ * Asked of the backend rather than inferred from the user agent, which on
+ * Android says "Linux" and would send the interface down the wrong branch.
+ * Null while the answer is in flight; callers should treat that as "assume
+ * the feature exists" so a desktop never flickers a menu entry in and out on
+ * startup. The web backend answers "web", which no menu treats as mobile.
  */
 export function usePlatform(): Platform {
   const [platform, setPlatform] = useState<Platform>(null);
 
   useEffect(() => {
-    if (!isTauri()) return;
     let cancelled = false;
-    invoke<string>("platform")
+    backend
+      .platform()
       .then((value) => {
         if (!cancelled) setPlatform(value);
       })
