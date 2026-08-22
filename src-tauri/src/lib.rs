@@ -1003,13 +1003,16 @@ fn alert(app: tauri::AppHandle, message: String, locale: Option<String>) {
     #[cfg(target_os = "macos")]
     {
         use std::process::Command;
+        // Backslashes first: escaping quotes alone leaves a literal \" pair
+        // producing a stray quote once the backslash is interpreted.
+        let message = message.replace('\\', "\\\\").replace('"', "\\\"");
+        let title = title.replace('\\', "\\\\").replace('"', "\\\"");
         let _ = Command::new("osascript")
             .args([
                 "-e",
                 &format!(
                     "display dialog \"{}\" with title \"{}\" buttons {{\"OK\"}} default button \"OK\" with icon stop",
-                    message.replace('\"', "\\\""),
-                    title.replace('\"', "\\\""),
+                    message, title,
                 ),
             ])
             .output();
