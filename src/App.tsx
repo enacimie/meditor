@@ -50,6 +50,7 @@ import {
 } from "./editorPreferences";
 import { getTypst } from "./typstEngine";
 import { compileLatexToPdf } from "./latexEngine";
+import { LATEX_ENABLED } from "./latexSupport";
 import "./App.css";
 
 type FileOperation = "open" | "save" | "saveAs" | "export" | "exportHtml";
@@ -839,6 +840,11 @@ export default function App() {
           locale: lang,
         });
       } else if (active.kind === "latex") {
+        // Hiding the menu entry is not enough: Ctrl+E reaches this directly,
+        // without passing through the menu. Without this guard the shortcut
+        // would still hand the document to the very engine that was switched
+        // off — and that engine's package endpoint is the reason it was.
+        if (!LATEX_ENABLED) throw new Error(t("preview.latexDisabled"));
         // LaTeX: compile to PDF via SwiftLaTeX WASM, then save via Tauri dialog.
         const pdfBytes = await compileLatexToPdf(active.content);
         if (!pdfBytes) throw new Error("LaTeX compilation produced no output");
@@ -1186,9 +1192,17 @@ export default function App() {
    *
    * `platform` is null until Rust answers, and in a browser where there is
    * nothing to ask; that counts as available so the menu does not flicker.
+   *
+   * LaTeX is a third case: while LATEX_ENABLED is false the preview says so,
+   * but a .tex file can still be opened — the picker still accepts one, and a
+   * restored session still brings one back — so the entry has to go too.
+   * Otherwise the document reads "LaTeX is disabled" and the menu still
+   * offers to compile it with the engine that was disabled.
    */
+  const activeKind = active?.kind ?? "markdown";
   const pdfExportAvailable =
-    !isMobilePlatform(platform) || (active?.kind ?? "markdown") !== "markdown";
+    (LATEX_ENABLED || activeKind !== "latex") &&
+    (!isMobilePlatform(platform) || activeKind !== "markdown");
 
   const sharingTheWorkspace = layoutMode === "split" && !zenMode;
   const paneFlex = (percent: number) =>
