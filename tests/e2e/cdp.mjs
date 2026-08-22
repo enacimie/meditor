@@ -181,17 +181,50 @@ async function startWith(bin, cdpPort, url) {
  * @returns {Promise<CdpSession>}
  */
 export async function connect(port) {
+  // Always create a brand-new page target instead of attaching to whatever
+  // is lying around: Page.addScriptToEvaluateOnNewDocument registrations
+  // (the Tauri shim some specs install) live on the *target* and would
+  // silently leak into every later spec reusing it.
+  let created = null;
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/json/new?about:blank`, {
+      method: "PUT",
+    });
+    if (res.ok) created = await res.json();
+  } catch {
+    // Fall through to discovery below.
+  }
+
   let target = null;
   for (let i = 0; i < 60 && !target; i++) {
     try {
       const targets = await (await fetch(`http://127.0.0.1:${port}/json`)).json();
-      target = targets.find((t) => t.type === "page") ?? null;
+      const pages = targets.filter((t) => t.type === "page");
+      target =
+        (created && pages.find((t) => t.id === created.id)) ??
+        pages.find((t) => t.url === "about:blank") ??
+        null;
     } catch {
       // Endpoint not ready yet.
     }
     if (!target) await sleep(250);
   }
-  if (!target) throw new Error(`No page target found on CDP port ${port}`);
+  if (!target) throw new Error("No page target found on CDP port");
+
+  // Exclusive access: any *other* live page of this browser is a leftover
+  // from an earlier spec that never closed it — a live React instance whose
+  // debounced session writer keeps mutating the shared localStorage and
+  // poisons whatever this spec tries to observe. Sweep them.
+  try {
+    const all = await (await fetch(`http://127.0.0.1:${port}/json`)).json();
+    for (const t of all) {
+      if (t.type === "page" && t.id !== target.id) {
+        await fetch(`http://127.0.0.1:${port}/json/close/${t.id}`).catch(() => {});
+      }
+    }
+  } catch {
+    // Listing failed; proceed — the sweep is best-effort hygiene.
+  }
 
   const ws = new WebSocket(target.webSocketDebuggerUrl);
   await new Promise((resolve, reject) => {
@@ -200,6 +233,7 @@ export async function connect(port) {
   });
 
   const session = new CdpSession(ws);
+  session.targetId = target.id;
   session.onMessage((msg) => {
     if (msg.method === "Runtime.exceptionThrown") {
       const detail = msg.params?.exceptionDetails;
@@ -366,10 +400,16 @@ export class CdpSession {
    * Navigate to `url`, wait for the document to be fully loaded, then wipe
    * storage and reload (fresh app state). Waiting for readyState avoids
    * evaluating against a destroyed execution context mid-navigation.
+   *
+   * The wipe runs twice on purpose: the boot this interrupts schedules its
+   * own debounced session write (~500 ms), which would otherwise land after
+   * the first clear and re-seed storage before the reload commits.
    */
   async freshPage(url) {
     await this.navigate(url);
     await this.waitFor("document.readyState === 'complete'", { timeout: 15000 });
+    await this.evaluate("localStorage.clear(); true");
+    await sleep(700);
     await this.evaluate("localStorage.clear(); true");
     await this.reload();
   }
@@ -423,11 +463,44 @@ export class CdpSession {
     return this.evaluate(`!!document.querySelector(${JSON.stringify(selector)})`);
   }
 
+  /**
+   * Close the page target, not just this socket.
+   *
+   * Closing the WebSocket alone left every previous spec's page alive in the
+   * shared browser: live React instances kept writing the shared localStorage
+   * and later specs read their leftovers. Closing the target makes each spec
+   * leave nothing behind; `connect` recreates a blank page on demand.
+   */
   close() {
+    if (this._closed) return;
+    this._closed = true;
+    const finish = () => {
+      try {
+        this.ws.close();
+      } catch {
+        // Already closed.
+      }
+    };
     try {
-      this.ws.close();
+      const id = ++this._id;
+      const onAck = (msg) => {
+        if (msg.id === id) {
+          this._listeners = this._listeners.filter((l) => l !== onAck);
+          finish();
+        }
+      };
+      this.onMessage(onAck);
+      this.ws.send(
+        JSON.stringify({
+          id,
+          method: "Target.closeTarget",
+          params: { targetId: this.targetId },
+        }),
+      );
+      // The ack must never be what keeps the process hanging.
+      setTimeout(finish, 500);
     } catch {
-      // Already closed.
+      finish();
     }
   }
 }
