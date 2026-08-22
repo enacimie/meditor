@@ -1,0 +1,78 @@
+/* ── External-change conflict dialog ──
+   Shares the .confirm-btn styles from ConfirmDialog.css; only the layout
+   differences live here (wider body for three buttons, danger emphasis). */
+
+.conflict-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: grid;
+  place-items: center;
+  z-index: 2100;
+  animation: conflict-overlay-in 0.18s ease;
+  transition: opacity 0.14s ease;
+}
+
+@keyframes conflict-overlay-in {
+  from { opacity: 0; }
+}
+
+.conflict-overlay.closing {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.conflict-dialog {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 24px;
+  width: min(480px, calc(100vw - 48px));
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  animation: conflict-dialog-in 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    opacity 0.14s ease,
+    transform 0.14s ease;
+}
+
+@keyframes conflict-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+}
+
+.conflict-overlay.closing .conflict-dialog {
+  opacity: 0;
+  transform: translateY(4px) scale(0.98);
+}
+
+.conflict-title {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--fg);
+}
+
+.conflict-message {
+  margin: 0 0 20px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--fg);
+  opacity: 0.85;
+  overflow-wrap: break-word;
+}
+
+.conflict-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* "Reload from disk" throws away the buffer's unsaved edits, so it wears the
+   destructive look rather than the primary one. */
+.conflict-btn--danger {
+  color: var(--danger, #c0392b);
+  font-weight: 600;
+}

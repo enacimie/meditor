@@ -59,6 +59,16 @@ export const en = {
   "confirm.title": "Confirm",
   "confirm.yes": "Yes",
   "confirm.no": "No",
+  // External-change conflict dialog; pending translation to the other
+  // languages, English is the fallback meanwhile.
+  "conflict.externalTitle": "File changed on disk",
+  "conflict.externalMessage": (name: string) =>
+    `"${name}" was changed by another program while it was open, and this copy has unsaved changes.`,
+  "conflict.reload": "Reload from disk",
+  "conflict.keepMine": "Keep mine",
+  "conflict.saveAsAction": "Save as…",
+  "conflict.reloadedNotice": (name: string) =>
+    `"${name}" changed on disk — reloaded.`,
 
   // Alerts
   "alert.error": "Error",

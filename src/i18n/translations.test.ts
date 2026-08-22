@@ -76,6 +76,13 @@ describe("translations", () => {
     "shortcuts.print",
     // LaTeX is temporarily disabled; the notice ships in en/es only for now.
     "preview.latexDisabled",
+    // External-change conflict dialog; en/es for now like the LaTeX notice.
+    "conflict.externalTitle",
+    "conflict.externalMessage",
+    "conflict.reload",
+    "conflict.keepMine",
+    "conflict.saveAsAction",
+    "conflict.reloadedNotice",
   ]);
 
   it("every English key is defined in every language", () => {

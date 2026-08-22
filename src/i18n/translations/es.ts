@@ -47,6 +47,14 @@ export const es = {
   "confirm.title": "Confirmar",
   "confirm.yes": "Sí",
   "confirm.no": "No",
+  "conflict.externalTitle": "El fichero cambió en el disco",
+  "conflict.externalMessage": (name: string) =>
+    `"${name}" fue modificado por otro programa mientras estaba abierto, y esta copia tiene cambios sin guardar.`,
+  "conflict.reload": "Recargar del disco",
+  "conflict.keepMine": "Conservar el mío",
+  "conflict.saveAsAction": "Guardar como…",
+  "conflict.reloadedNotice": (name: string) =>
+    `"${name}" cambió en el disco — recargado.`,
 
   "alert.error": "Error",
   "error.title": "Algo salió mal",

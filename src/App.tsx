@@ -21,6 +21,7 @@ import Topbar from "./components/Topbar";
 import TabBar from "./components/TabBar";
 import StatusBar from "./components/StatusBar";
 import ConfirmDialog from "./components/ConfirmDialog";
+import ConflictDialog from "./components/ConflictDialog";
 import RenameDialog from "./components/RenameDialog";
 import ShortcutsOverlay from "./components/ShortcutsOverlay";
 import AboutDialog from "./components/AboutDialog";
@@ -51,6 +52,7 @@ import {
 import { getTypst } from "./typstEngine";
 import { compileLatexToPdf } from "./latexEngine";
 import { LATEX_ENABLED } from "./latexSupport";
+import { classifyExternalChange, type DocumentStat } from "./externalChange";
 import "./App.css";
 
 type FileOperation = "open" | "save" | "saveAs" | "export" | "exportHtml";
@@ -276,6 +278,11 @@ export default function App() {
     name: string;
     resolve: (name: string | null) => void;
   } | null>(null);
+  const [conflictRequest, setConflictRequest] = useState<{
+    id: string;
+    name: string;
+    diskContent: string;
+  } | null>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [outlineOpen, setOutlineOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
@@ -319,6 +326,14 @@ export default function App() {
   const requestQuitRef = useRef<() => Promise<void>>(async () => {});
   // Most recently closed tabs, so Ctrl+Shift+T can bring them back.
   const closedTabsRef = useRef<Doc[]>([]);
+  // External-change watch: last seen fingerprint per registry handle, a poll
+  // guard, and a flag for "the conflict modal is up" (cleared on resolution).
+  const statsRef = useRef<Map<string, DocumentStat>>(new Map());
+  const watchInflightRef = useRef(false);
+  const conflictBusyRef = useRef(false);
+  // Latest poll routine, so the once-scheduled interval always calls the
+  // current render's version (fresh docs/lang) without re-registering.
+  const checkExternalChangesRef = useRef<() => Promise<void>>(async () => {});
   const active = docs.find((d) => d.id === activeId) ?? docs[0];
   activeIdRef.current = activeId;
   // Parsing runs over the whole document, so keep it off the keystroke path:
@@ -554,6 +569,23 @@ export default function App() {
     document.title = active?.name ?? "meditor";
   }, [active?.name]);
 
+  /*
+   * Watch open files for edits made behind our back.
+   *
+   * Polling rather than fs events on purpose: desktop has watchers, but
+   * Android's content URIs have nothing to watch — no path, no inotify — and
+   * this way both worlds run exactly the same code. A tick fingerprints every
+   * file-backed document (mtime + size, cheap); the file is only actually
+   * read when its fingerprint moved.
+   */
+  useEffect(() => {
+    if (!isTauri() || !ready) return;
+    const timer = window.setInterval(() => {
+      void checkExternalChangesRef.current();
+    }, 3000);
+    return () => window.clearInterval(timer);
+  }, [ready]);
+
 
 
   useEffect(() => {
@@ -757,12 +789,17 @@ export default function App() {
   }
   requestQuitRef.current = requestQuit;
 
-  async function saveAs() {
-    if (!active || !isTauri() || !beginOperation("saveAs")) return;
-    const documentId = active.id;
-    const savedContent = active.content;
-    const ext = active.kind === "typst" ? ".typ" : active.kind === "latex" ? ".tex" : ".md";
-    const base = active.name.replace(/\.(md|markdown|txt|typ|typst|tex|latex|ltx)$/i, "");
+  async function saveAs(targetId?: string) {
+    // The conflict dialog routes a background tab here, so the target is
+    // resolved by id when given; the menu and Ctrl+Shift+S keep saving the
+    // active document.
+    const target = targetId ? docsRef.current.find((d) => d.id === targetId) : active;
+    if (!target || !isTauri() || !beginOperation("saveAs")) return;
+    const documentId = target.id;
+    const savedContent = target.content;
+    const ext =
+      target.kind === "typst" ? ".typ" : target.kind === "latex" ? ".tex" : ".md";
+    const base = target.name.replace(/\.(md|markdown|txt|typ|typst|tex|latex|ltx)$/i, "");
     const defaultName = `${base}${ext}`;
     try {
       const savedPayload = await invoke<Doc | null>("save_as", {
@@ -821,6 +858,136 @@ export default function App() {
     } finally {
       endOperation("save");
     }
+  }
+
+  /**
+   * One poll tick over every file-backed document. Serialized against
+   * itself, skipped while a native dialog owns the UI or a conflict modal is
+   * up, and stopped at the first conflict so documents resolve one at a time.
+   */
+  async function checkExternalChanges() {
+    if (
+      watchInflightRef.current ||
+      busyOperationRef.current !== null ||
+      conflictBusyRef.current
+    ) {
+      return;
+    }
+    const handled = docsRef.current.filter((d) => d.handle);
+    if (!handled.length) return;
+    watchInflightRef.current = true;
+    try {
+      for (const doc of handled) {
+        const live = docsRef.current.find((d) => d.id === doc.id);
+        const handle = live?.handle;
+        if (!live || !handle) continue;
+        let stat: DocumentStat = null;
+        let diskContent = "";
+        try {
+          stat = await invoke<DocumentStat | null>("document_stat", {
+            handle,
+            locale: lang,
+          });
+          const seen = statsRef.current.get(handle);
+          if (
+            !stat ||
+            (seen &&
+              seen.modifiedMs === stat.modifiedMs &&
+              seen.size === stat.size)
+          ) {
+            continue;
+          }
+          diskContent = await invoke<string>("read_document", {
+            handle,
+            locale: lang,
+          });
+        } catch {
+          // Unwatchable right now (deleted, provider gone). Deletion surfaces
+          // on the next save, where it can be explained properly.
+          continue;
+        }
+        const verdict = classifyExternalChange({
+          baseline: statsRef.current.get(handle) ?? null,
+          current: stat,
+          diskContent,
+          bufferContent: live.content,
+          dirty: live.dirty,
+        });
+        if (verdict.action === "refresh-baseline") {
+          statsRef.current.set(handle, stat);
+        } else if (verdict.action === "reload") {
+          applyExternalReload(live, handle, stat, verdict.diskContent);
+        } else if (verdict.action === "conflict") {
+          // Adopted up front so this tick stays single-shot; whichever way
+          // the dialog resolves, the baseline is already correct.
+          statsRef.current.set(handle, stat);
+          conflictBusyRef.current = true;
+          setConflictRequest({
+            id: live.id,
+            name: live.name,
+            diskContent: verdict.diskContent,
+          });
+          return;
+        }
+      }
+    } finally {
+      watchInflightRef.current = false;
+    }
+  }
+  checkExternalChangesRef.current = checkExternalChanges;
+
+  /**
+   * Silent reload of a clean document whose file moved underneath it.
+   *
+   * The snapshot inside the updater guards a race: if the user typed between
+   * reading the disk and applying, the buffer is no longer what was judged
+   * clean — drop the just-adopted fingerprint (idempotent under StrictMode's
+   * double-invoke) so the next tick re-classifies against the now-dirty
+   * buffer instead of clobbering the fresh keystrokes.
+   */
+  function applyExternalReload(
+    doc: Doc,
+    handle: string,
+    stat: DocumentStat,
+    diskContent: string,
+  ) {
+    statsRef.current.set(handle, stat);
+    const snapshot = doc.content;
+    setDocs((prev) => {
+      const current = prev.find((d) => d.id === doc.id);
+      if (!current || current.content !== snapshot || current.dirty) {
+        statsRef.current.delete(handle);
+        return prev;
+      }
+      return prev.map((d) =>
+        d.id === doc.id ? { ...d, content: diskContent, dirty: false } : d,
+      );
+    });
+    showNotice(t("conflict.reloadedNotice", doc.name), "info");
+  }
+
+  function resolveConflictReload() {
+    if (!conflictRequest) return;
+    // The modal blocked editing while it was up, so the buffer still matches
+    // what the user chose to throw away.
+    const { id, diskContent } = conflictRequest;
+    setDocs((prev) =>
+      prev.map((d) => (d.id === id ? { ...d, content: diskContent, dirty: false } : d)),
+    );
+    conflictBusyRef.current = false;
+    setConflictRequest(null);
+  }
+
+  function resolveConflictKeep() {
+    conflictBusyRef.current = false;
+    setConflictRequest(null);
+  }
+
+  function resolveConflictSaveAs() {
+    const req = conflictRequest;
+    conflictBusyRef.current = false;
+    setConflictRequest(null);
+    if (req) void saveAs(req.id);
   }
 
   async function exportPdf() {
@@ -1493,6 +1660,18 @@ export default function App() {
             confirmRequest.resolve(false);
             setConfirmRequest(null);
           }}
+        />
+      )}
+      {conflictRequest && (
+        <ConflictDialog
+          title={t("conflict.externalTitle")}
+          message={t("conflict.externalMessage", conflictRequest.name)}
+          reloadLabel={t("conflict.reload")}
+          keepLabel={t("conflict.keepMine")}
+          saveAsLabel={t("conflict.saveAsAction")}
+          onReload={resolveConflictReload}
+          onKeep={resolveConflictKeep}
+          onSaveAs={resolveConflictSaveAs}
         />
       )}
       {renameRequest && (

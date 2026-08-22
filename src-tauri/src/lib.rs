@@ -603,6 +603,90 @@ fn save_document(
     write_location(&app, loc, &location, content.as_bytes())
 }
 
+/// A cheap fingerprint of the file behind an open document.
+///
+/// Both fields are optional because not every filesystem answers every
+/// question: some Android content providers report a size but a zeroed
+/// timestamp, and either alone still detects the edits this exists for.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DocumentStat {
+    modified_ms: Option<u64>,
+    size: Option<u64>,
+}
+
+fn system_time_ms(time: std::time::SystemTime) -> Option<u64> {
+    time.duration_since(std::time::UNIX_EPOCH)
+        .ok()
+        .map(|d| d.as_millis() as u64)
+}
+
+fn metadata_stat(metadata: &std::fs::Metadata) -> DocumentStat {
+    DocumentStat {
+        modified_ms: metadata.modified().ok().and_then(system_time_ms),
+        size: Some(metadata.len()),
+    }
+}
+
+/// Stat a location, whatever kind it is.
+///
+/// Desktop paths go through plain metadata. A content URI has none — the fs
+/// plugin's own stat command refuses them — but its open hands back a real
+/// file descriptor over the Storage Access Framework, and an fstat on that
+/// descriptor answers the same questions.
+fn location_stat(app: &tauri::AppHandle, location: &Location) -> Option<DocumentStat> {
+    match as_path(location) {
+        Some(path) => std::fs::metadata(path).ok().map(|m| metadata_stat(&m)),
+        None => {
+            let mut options = OpenOptions::new();
+            options.read(true);
+            let file = app.fs().open(location.clone(), options).ok()?;
+            file.metadata().ok().map(|m| metadata_stat(&m))
+        }
+    }
+}
+
+/// Fingerprint of one open document, or `null` when it cannot be watched
+/// (deleted, provider gone). The frontend treats `null` as "skip": deletion
+/// surfaces on the next save, where it can be explained.
+#[tauri::command]
+fn document_stat(
+    app: tauri::AppHandle,
+    registry: tauri::State<'_, DocumentRegistry>,
+    handle: String,
+    locale: Option<String>,
+) -> Result<Option<DocumentStat>, String> {
+    let loc = parse_locale(locale);
+    let location = registry
+        .0
+        .lock()
+        .map_err(|_| t(loc, "file.registryLock"))?
+        .get(&handle)
+        .cloned()
+        .ok_or_else(|| t(loc, "file.documentUnavailable"))?;
+    Ok(location_stat(&app, &location))
+}
+
+/// Read the current bytes of one open document, for reloading after an
+/// external edit. Size-checked like any other read path.
+#[tauri::command]
+fn read_document(
+    app: tauri::AppHandle,
+    registry: tauri::State<'_, DocumentRegistry>,
+    handle: String,
+    locale: Option<String>,
+) -> Result<String, String> {
+    let loc = parse_locale(locale);
+    let location = registry
+        .0
+        .lock()
+        .map_err(|_| t(loc, "file.registryLock"))?
+        .get(&handle)
+        .cloned()
+        .ok_or_else(|| t(loc, "file.documentUnavailable"))?;
+    read_location(&app, loc, &location)
+}
+
 #[tauri::command]
 fn load_session(
     app: tauri::AppHandle,
@@ -1321,6 +1405,8 @@ pub fn run() {
             open_files,
             save_as,
             save_document,
+            document_stat,
+            read_document,
             load_session,
             save_session,
             cli_files,
