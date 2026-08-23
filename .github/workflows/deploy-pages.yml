@@ -39,7 +39,11 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+      # enablement flips the repository's Pages source to "GitHub Actions"
+      # on first run, so there is no manual settings step.
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
