@@ -6,6 +6,8 @@
 
 **Markdown/Typst/LaTeX editor for desktop and mobile** with live WASM preview, PDF export, and bidirectional editor↔preview sync. Built with [Tauri](https://tauri.app) (Rust) and React. Supports **104 languages** and 3 document formats.
 
+**[Try it in the browser →](https://enacimie.github.io/meditor/)** — the same codebase as a static web build (Chromium recommended: open/save real files needs the File System Access API; elsewhere files go through upload/download).
+
 ![meditor screenshot](screenshots/screenshot1.png)
 
 ## Features
