@@ -1,0 +1,47 @@
+name: Deploy web
+
+# meditor's web build is fully static — the editor, both WASM preview
+# engines and every worker ship as plain files under dist/ — so GitHub
+# Pages hosts it with no server of our own. Deploys track main, the
+# branch releases are cut from; unstable pushes stay deploy-free until
+# they are actually merged.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  # A queued redeploy of an older commit adds nothing once a newer one is
+  # already going out.
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deployment
+        uses: actions/deploy-pages@v4
