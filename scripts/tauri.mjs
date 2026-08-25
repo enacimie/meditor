@@ -4,6 +4,7 @@
 // gate in src/latexSupport.ts. The release pipeline does not go through
 // this script (tauri-apps/tauri-action invokes the CLI directly), so it
 // applies the same overlay itself — keep both in sync.
+import { createRequire } from "node:module";
 import { spawnSync } from "node:child_process";
 import process from "node:process";
 
@@ -13,7 +14,12 @@ const extra =
     ? ["--config", "src-tauri/conf/latex-enabled.json"]
     : [];
 
-const result = spawnSync("pnpm", ["exec", "tauri", ...args, ...extra], {
+// The CLI ships as a JS entry that launches a platform binary, so node runs
+// it everywhere. Spawning pnpm instead would break on Windows, where pnpm is
+// a .cmd shim that spawnSync refuses to execute without a shell.
+const require = createRequire(import.meta.url);
+const cli = require.resolve("@tauri-apps/cli/tauri.js");
+const result = spawnSync(process.execPath, [cli, ...args, ...extra], {
   stdio: "inherit",
 });
 process.exit(result.status ?? 1);
