@@ -6,5 +6,5 @@ Icon={{icon}}
 Name={{name}}
 Terminal=false
 Type=Application
-MimeType=text/markdown;text/x-markdown;
+MimeType=text/markdown;text/x-markdown;text/x-typst;
 StartupWMClass={{name}}

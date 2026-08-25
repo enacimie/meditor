@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Shared MIME database entries for formats upstream shared-mime-info
+     does not ship yet. text/markdown needs no entry of our own: it has
+     been registered for years, which is why .md associations worked on
+     Linux from day one. Typst is new enough that nothing declares it,
+     and without a declaration no file manager can offer meditor for
+     *.typ regardless of what the desktop file claims. -->
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="text/x-typst">
+    <comment>Typst document</comment>
+    <comment xml:lang="es">Documento Typst</comment>
+    <sub-class-of type="text/plain"/>
+    <glob pattern="*.typ"/>
+    <glob pattern="*.typst"/>
+  </mime-type>
+</mime-info>

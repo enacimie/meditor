@@ -9,6 +9,13 @@ on:
 permissions:
   contents: write
 
+env:
+  # Mirrors src/latexSupport.ts: LaTeX stays off until the in-house engine
+  # replaces the unmaintained SwiftLaTeX endpoint. Flip both to true at the
+  # same time. When true, the desktop bundles below also register meditor
+  # for .tex/.latex/.ltx via conf/latex-enabled.json.
+  LATEX_ENABLED: "false"
+
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: true
@@ -99,7 +106,9 @@ jobs:
           releaseBody: "Release automático generado por GitHub Actions."
           releaseDraft: true
           prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
-          args: ${{ matrix.args }}
+          # tauri-action drives the CLI directly, bypassing scripts/tauri.mjs,
+          # so the LaTeX overlay is layered here instead of in the npm script.
+          args: ${{ matrix.args }} ${{ env.LATEX_ENABLED == 'true' && '--config src-tauri/conf/latex-enabled.json' || '' }}
 
   android:
     needs: build

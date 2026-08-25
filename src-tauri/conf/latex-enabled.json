@@ -1,0 +1,28 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "bundle": {
+    "fileAssociations": [
+      {
+        "ext": ["md", "markdown"],
+        "name": "Markdown",
+        "description": "Markdown document",
+        "role": "Editor",
+        "mimeType": "text/markdown"
+      },
+      {
+        "ext": ["typ", "typst"],
+        "name": "Typst",
+        "description": "Typst document",
+        "role": "Editor",
+        "mimeType": "text/x-typst"
+      },
+      {
+        "ext": ["tex", "latex", "ltx"],
+        "name": "LaTeX",
+        "description": "LaTeX document",
+        "role": "Editor",
+        "mimeType": "text/x-tex"
+      }
+    ]
+  }
+}

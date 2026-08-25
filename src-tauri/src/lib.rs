@@ -7,7 +7,7 @@ use std::{
     path::{Path, PathBuf},
     sync::{
         atomic::{AtomicU64, Ordering},
-        Mutex,
+        Mutex, OnceLock,
     },
 };
 
@@ -817,6 +817,56 @@ fn save_session(
     write_atomic(loc, &path, &content)
 }
 
+/// Files the operating system asked us to open, parked until the frontend
+/// comes to collect them.
+///
+/// Windows and Linux hand the path over as a process argument, so the
+/// frontend's single startup pull through `cli_files` sees it. macOS instead
+/// delivers an Apple event surfaced as `RunEvent::Opened`, which can fire
+/// before the webview has registered its `open-documents` listener — and an
+/// emitted event nobody hears is gone. Every batch is therefore queued here
+/// too and drained by `cli_files`; on the happy path the document is already
+/// open by then and the registry hands back the same handle, so nothing
+/// duplicates. The one cost: a file opened live and closed again reappears
+/// on the next launch — acceptable next to losing the open request outright.
+static PENDING_OPEN_PATHS: OnceLock<Mutex<Vec<PathBuf>>> = OnceLock::new();
+
+/// Only Apple platforms produce open requests outside argv; the function
+/// stays compiled everywhere so the parking-lot test can exercise it.
+#[cfg_attr(
+    not(target_os = "macos"),
+    allow(dead_code, reason = "exercised by tests off macOS")
+)]
+fn queue_open_paths<I: IntoIterator<Item = PathBuf>>(paths: I) {
+    PENDING_OPEN_PATHS
+        .get_or_init(|| Mutex::new(Vec::new()))
+        .lock()
+        .expect("pending open paths mutex poisoned")
+        .extend(paths);
+}
+
+fn drain_pending_paths() -> Vec<PathBuf> {
+    match PENDING_OPEN_PATHS.get() {
+        Some(pending) => pending
+            .lock()
+            .expect("pending open paths mutex poisoned")
+            .drain(..)
+            .collect(),
+        None => Vec::new(),
+    }
+}
+
+/// Hand documents to the webview and bring the window forward.
+#[cfg(desktop)]
+fn present_documents(app: &tauri::AppHandle, documents: Vec<NativeDocument>) {
+    if !documents.is_empty() {
+        let _ = app.emit("open-documents", documents);
+    }
+    if let Some(win) = app.get_webview_window("main") {
+        let _ = win.set_focus();
+    }
+}
+
 #[tauri::command]
 fn cli_files(
     app: tauri::AppHandle,
@@ -825,7 +875,9 @@ fn cli_files(
 ) -> Vec<NativeDocument> {
     let loc = parse_locale(locale);
     let args: Vec<String> = std::env::args().collect();
-    let locations = files_from_args(&args).into_iter().map(FilePath::Path);
+    let mut paths = files_from_args(&args);
+    paths.extend(drain_pending_paths());
+    let locations = paths.into_iter().map(FilePath::Path);
     documents_from_locations(&app, loc, locations, &registry)
 }
 
@@ -1388,12 +1440,7 @@ pub fn run() {
         let registry = app.state::<DocumentRegistry>();
         let locations = files_from_args(&args).into_iter().map(FilePath::Path);
         let documents = documents_from_locations(app, Locale::En, locations, &registry);
-        if !documents.is_empty() {
-            let _ = app.emit("open-documents", documents);
-        }
-        if let Some(win) = app.get_webview_window("main") {
-            let _ = win.set_focus();
-        }
+        present_documents(app, documents);
     }));
 
     builder
@@ -1421,8 +1468,33 @@ pub fn run() {
             platform,
             exit_app
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app_handle, event| {
+            // Finder and the "Open With" menu reach us through Apple events,
+            // not argv. The variant only exists on Apple platforms; elsewhere
+            // there is nothing to do.
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Opened { urls } = &event {
+                let paths: Vec<PathBuf> = urls
+                    .iter()
+                    .filter_map(|url| url.to_file_path().ok())
+                    .collect();
+                if paths.is_empty() {
+                    return;
+                }
+                let registry = app_handle.state::<DocumentRegistry>();
+                let locations = paths.iter().cloned().map(FilePath::Path);
+                let documents =
+                    documents_from_locations(app_handle, Locale::En, locations, &registry);
+                queue_open_paths(paths);
+                present_documents(app_handle, documents);
+            }
+            #[cfg(not(target_os = "macos"))]
+            {
+                let _ = (&app_handle, &event);
+            }
+        });
 }
 
 #[cfg(test)]
@@ -1550,5 +1622,17 @@ mod tests {
             restore_session_path(Locale::En, &registry, path.to_str(), "same");
         assert!(changed_handle.is_none());
         let _ = std::fs::remove_dir_all(root);
+    }
+
+    /// The macOS parking lot: everything queued before the webview listens
+    /// must come out of the next drain exactly once, in order.
+    #[test]
+    fn parks_and_drains_open_paths() {
+        let first = PathBuf::from("/tmp/first.md");
+        let second = PathBuf::from("/tmp/second.typ");
+        queue_open_paths([first.clone()]);
+        queue_open_paths([second.clone()]);
+        assert_eq!(drain_pending_paths(), vec![first, second]);
+        assert!(drain_pending_paths().is_empty());
     }
 }

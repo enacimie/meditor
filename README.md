@@ -59,6 +59,10 @@
 - **Export to HTML**: a single self-contained file (styles embedded, Mermaid diagrams as inline SVG, KaTeX already expanded) that opens in any browser with no network access. Markdown documents only.
 - Packaged as **AppImage**, **deb**, and **rpm** via `tauri build`.
 
+### File associations
+
+Installers register meditor for `.md`/`.markdown` and `.typ`/`.typst` on all desktop platforms — NSIS associations on Windows, `CFBundleDocumentTypes` on macOS (files opened from Finder are queued until the UI is ready), and on Linux the deb/rpm ship a shared-mime-info entry declaring `text/x-typst`, which upstream does not provide yet. The previous handler is backed up and restored on uninstall. `.tex`/`.latex`/`.ltx` stay unregistered while LaTeX support is disabled; build with `LATEX_ENABLED=true` to include them.
+
 ## Tech Stack
 
 | Layer            | Technology                                                                                              |
