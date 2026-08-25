@@ -1,7 +1,7 @@
 {
   "name": "meditor",
   "private": true,
-  "version": "0.1.5",
+  "version": "0.1.6",
   "license": "AGPL-3.0-or-later",
   "type": "module",
   "scripts": {
@@ -14,7 +14,7 @@
     "test:e2e": "node tests/e2e/run.mjs",
     "test:e2e:latex": "node tests/e2e/run.mjs --latex",
     "test:all": "vitest run && node tests/e2e/run.mjs",
-    "tauri": "tauri",
+    "tauri": "node scripts/tauri.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "verify": "pnpm lint && pnpm typecheck && pnpm audit --audit-level=high && pnpm test:run && pnpm test:e2e && cd src-tauri && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo check && cargo test --lib",
