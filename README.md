@@ -154,6 +154,17 @@ Produces (in `src-tauri/target/release/bundle/`):
 
 To run the AppImage on distros without FUSE: `./meditor_*.AppImage --appimage-extract-and-run` (or install `libfuse2`).
 
+### Windows
+
+> **Smart App Control blocks the downloaded installer.** The installers are not
+> code signed, and Windows 11 refuses to run an unsigned executable that came
+> from the internet. An installer you build yourself carries no mark of the web
+> and runs normally. **Do not switch Smart App Control off to get around it** —
+> on Windows 11 that cannot be undone without reinstalling.
+>
+> [docs/windows.md](docs/windows.md) has the full picture, the workarounds, and
+> what signing would take.
+
 ### Android
 
 meditor runs on Android: editing, the live preview, session restore, a layout
