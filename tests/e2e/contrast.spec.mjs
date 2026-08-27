@@ -183,6 +183,51 @@ try {
     `body fg/bg contrast ${bodyRatio.toFixed(2)}:1 must be ≥ 4.5:1`,
   );
 
+  /*
+   * ── Tables on paper ───────────────────────────────────────────────
+   *
+   * This spec already runs in the document view, which is the one place the
+   * two halves of a table's colour come from different worlds: the paged
+   * stylesheet forces black ink on white paper, while the zebra stripe on
+   * every second row is a theme variable. Where that variable is dark — the
+   * dark theme, and this one, where it is #0a0a0a — the result is black text
+   * on a black band.
+   *
+   * Checked here rather than in a spec of its own because the setup is
+   * already exactly right, and because the contrast theme is where it hurts
+   * most: the readable theme is the one that ends up unreadable.
+   */
+  await page.waitFor("!!document.querySelector('.paged-view table tbody tr td')", {
+    timeout: 25000,
+    message: "the sample table should reach the paged view",
+  });
+  const tableCells = await page.evaluate(`(() => {
+    // The stripe sits on the row and the cells are transparent, so the colour
+    // that actually shows has to be looked for up the tree.
+    const shown = (el) => {
+      for (let node = el; node; node = node.parentElement) {
+        const bg = getComputedStyle(node).backgroundColor;
+        if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') return bg;
+      }
+      return 'rgb(255, 255, 255)';
+    };
+    return [...document.querySelectorAll('.paged-view table tbody tr')]
+      .map((tr, row) => {
+        const cell = tr.querySelector('td');
+        return cell && { row, color: getComputedStyle(cell).color, background: shown(cell) };
+      })
+      .filter(Boolean);
+  })()`);
+  assert(tableCells.length > 0, "expected table rows in the paged view");
+  const worstCell = tableCells
+    .map((cell) => ({ ...cell, ratio: contrast(cell.color, cell.background) }))
+    .sort((a, b) => a.ratio - b.ratio)[0];
+  assert(
+    worstCell.ratio >= 4.5,
+    `every table row on paper must stay readable: row ${worstCell.row} is ` +
+      `${worstCell.ratio.toFixed(2)}:1 (${worstCell.color} on ${worstCell.background})`,
+  );
+
   // ── Confirm dialog in contrast mode ────────────────────────────────
   await page.click(".tab-add");
   await page.waitFor("document.querySelectorAll('.tab').length > 1");

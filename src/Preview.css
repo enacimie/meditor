@@ -224,7 +224,18 @@
   padding: 6px 12px;
 }
 
-.markdown-body tr:nth-child(2n) {
+/*
+ * Zebra striping is an on-screen idea, and it only works while the stripe and
+ * the text come from the same place. In the document view they do not: that
+ * view is paper, so paged.css pins the cells to black ink, while this stripe
+ * is `--bg-alt` — #252526 in the dark theme and #0a0a0a in the contrast one.
+ * Black text on a near-black band, at 1.06:1.
+ *
+ * Scoped rather than recoloured, because striping is not part of what the
+ * document view is imitating either: its tables are booktabs — a top rule, a
+ * header rule, a bottom rule, and no shading anywhere.
+ */
+.markdown-body:not(.doc) tr:nth-child(2n) {
   background: var(--bg-alt);
 }
 
