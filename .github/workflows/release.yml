@@ -103,7 +103,29 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "meditor ${{ github.ref_name }}"
-          releaseBody: "Release automático generado por GitHub Actions."
+          # Whoever downloads from this page on Windows 11 meets Smart App
+          # Control, so the explanation belongs here rather than only in the
+          # docs they have not opened yet.
+          releaseBody: |
+            ### Windows: Smart App Control will block this installer
+
+            The installers are not code signed, and Windows 11 refuses to run an
+            unsigned executable that came from the internet. Nothing is wrong
+            with the download.
+
+            **Do not switch Smart App Control off to get around it** — on
+            Windows 11 that cannot be undone without reinstalling. Build the
+            installer yourself instead (`pnpm tauri build --bundles nsis`); one
+            you built carries no mark of the web and installs normally.
+
+            [docs/windows.md](https://github.com/enacimie/meditor/blob/main/docs/windows.md)
+            explains the whole thing, including what signing would take.
+
+            ### Android
+
+            `meditor_<version>_arm64-debug.apk` is a debug build signed with
+            Android's throwaway key — enough to sideload, nowhere near enough to
+            publish.
           releaseDraft: true
           prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
           # tauri-action drives the CLI directly, bypassing scripts/tauri.mjs,
