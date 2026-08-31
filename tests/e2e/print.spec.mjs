@@ -179,6 +179,132 @@ try {
       JSON.stringify(unexplained),
   );
 
+  /*
+   * A table wider than the page runs off the sheet, and paged.js clips there
+   * (`.pagedjs_sheet { overflow: hidden }`) in print as much as on screen — so
+   * the columns past the edge are simply absent from the exported PDF, with
+   * nothing to say so. Wrapping the text is not enough on its own: a table
+   * cannot be laid out below its intrinsic minimum, and past about fourteen
+   * columns the cell padding alone outgrows the page. previewRenderer measures
+   * each table and steps the type and padding down until it fits.
+   *
+   * The sample document's only table has three columns, so the wide case has
+   * to be typed in.
+   */
+  const COLUMNS = 17;
+  const head = Array.from({ length: COLUMNS }, (_, i) => `C${i + 1}`).join(" | ");
+  const rule = Array.from({ length: COLUMNS }, () => "---").join(" | ");
+  const filler = "lorem ipsum dolor sit amet consectetur adipiscing elit ".repeat(8);
+  const body = Array.from({ length: 6 }, (_, r) =>
+    Array.from({ length: COLUMNS }, (_, c) =>
+      c === COLUMNS - 1 ? filler.slice(0, 900) : `v${r}.${c}`,
+    ).join(" | "),
+  );
+  const doc = [
+    "",
+    "## Tables",
+    "",
+    "| A | B |",
+    "| --- | --- |",
+    "| 1 | 2 |",
+    "",
+    `| ${head} |`,
+    `| ${rule} |`,
+    ...body.map((r) => `| ${r} |`),
+    "",
+  ].join("\n");
+
+  /*
+   * Appended, not typed over the top: the app flushes the session as the page
+   * unloads, which lands after `freshPage` has cleared storage — so a spec
+   * that replaces the whole document hands it to every spec that follows, and
+   * the next one searches the sample document for text that is no longer in
+   * it.
+   */
+  await page.evaluate(`(() => {
+    const cm = document.querySelector('.cm-content');
+    cm.focus();
+    const range = document.createRange();
+    range.selectNodeContents(cm);
+    range.collapse(false);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    document.execCommand('insertText', false, ${JSON.stringify(doc)});
+    return true;
+  })()`);
+
+  await page.waitFor("document.querySelectorAll('.paged-view table').length > 1", {
+    timeout: 40000,
+    interval: 500,
+    message: "the typed tables should reach the paginated view",
+  });
+  await page.waitFor(
+    `(() => {
+      const n = document.querySelectorAll('.pagedjs_page').length;
+      const previous = window.__tablePages ?? -1;
+      window.__tablePages = n;
+      return n > 0 && n === previous;
+    })()`,
+    { timeout: 40000, interval: 600, message: "pagination should settle around the tables" },
+  );
+
+  const tables = await page.evaluate(`(() => {
+    const out = [];
+    for (const table of document.querySelectorAll('.paged-view table')) {
+      // Measure against the page this fragment is actually on: paged.js places
+      // the pages with transforms, so comparing rectangles across pages means
+      // nothing.
+      const area = table.closest('.pagedjs_page_content');
+      if (!area) continue;
+      const style = getComputedStyle(table);
+      out.push({
+        columns: table.querySelectorAll('th').length ||
+          table.querySelectorAll('tr:first-child td').length,
+        printable: area.clientWidth,
+        width: table.offsetWidth,
+        overflow: table.offsetWidth - area.clientWidth,
+        step: [...table.classList].filter((c) => c.startsWith('table-fit')).join(',') || null,
+        marginLeft: style.marginLeft,
+      });
+    }
+    return out;
+  })()`);
+
+  assert(tables.length > 0, "the paginated view should hold tables to measure");
+
+  const overflowing = tables.filter((t) => t.overflow > 1);
+  assert(
+    overflowing.length === 0,
+    "tables running off the sheet lose their last columns from the PDF: " +
+      JSON.stringify(overflowing),
+  );
+
+  const wide = tables.filter((t) => t.columns === COLUMNS);
+  assert(wide.length > 0, `no ${COLUMNS}-column table reached the page: ` + JSON.stringify(tables));
+  assert(
+    wide.every((t) => t.step),
+    "a table this wide cannot fit on its own and should have been stepped down: " +
+      JSON.stringify(wide),
+  );
+
+  /*
+   * The other half of the contract, and the easier one to break: `max-width`
+   * rather than `width: 100%`, so a small table keeps its natural width and
+   * stays centred — which is most tables.
+   */
+  const narrow = tables.filter((t) => t.columns === 2);
+  assert(narrow.length > 0, "the two-column table should have reached the page");
+  assert(
+    narrow.every((t) => t.width < t.printable / 2 && !t.step),
+    "a narrow table should keep its natural width and be left alone: " + JSON.stringify(narrow),
+  );
+  assert(
+    narrow.every((t) => parseFloat(t.marginLeft) > 1),
+    "a narrow table should stay centred on the page: " + JSON.stringify(narrow),
+  );
+
+
   assert(page.consoleErrors.length === 0, "console errors: " + page.consoleErrors.join(" | "));
   console.log("PASS: print.spec — the preview reaches the printed page, from zen too");
 } finally {

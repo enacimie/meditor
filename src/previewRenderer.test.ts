@@ -1,6 +1,10 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from "vitest";
-import { splitLongFencedBlocks, keepHeadingsWithContent } from "./previewRenderer";
+import {
+  splitLongFencedBlocks,
+  keepHeadingsWithContent,
+  fitWideTables,
+} from "./previewRenderer";
 
 /* ---- splitLongFencedBlocks ---- */
 describe("splitLongFencedBlocks", () => {
@@ -209,5 +213,111 @@ describe("keepHeadingsWithContent", () => {
     // Reverse sync walks up from the click target, so nesting must not hide it.
     const nested = root.querySelector(".keep-with-next h2");
     expect(nested!.closest("[data-line]")).toBe(nested);
+  });
+});
+
+/* ---- fitWideTables ---- */
+describe("fitWideTables", () => {
+  const STEPS = ["table-fit-1", "table-fit-2", "table-fit-3"];
+
+  function build(html: string): HTMLElement {
+    const root = document.createElement("div");
+    root.innerHTML = html;
+    return root;
+  }
+
+  const table = (cols: number) =>
+    `<table><thead><tr>${"<th>h</th>".repeat(cols)}</tr></thead></table>`;
+
+  /** jsdom lays nothing out, so widths come from here instead of offsetWidth. */
+  const fixed = (px: number) => () => px;
+
+  const stepOf = (root: HTMLElement) =>
+    STEPS.find((s) => root.querySelector("table")!.classList.contains(s)) ?? null;
+
+  /**
+   * Stands in for the stylesheet the real measure reads through: each step
+   * buys `saving` px, so a table that starts far enough out needs several.
+   */
+  const shrinking = (natural: number, saving: number) => (el: HTMLElement) =>
+    natural - (STEPS.findIndex((s) => el.classList.contains(s)) + 1) * saving;
+
+  it("leaves a table that already fits alone", () => {
+    const root = build(table(3));
+    fitWideTables(root, fixed(400));
+    expect(stepOf(root)).toBeNull();
+  });
+
+  it("leaves a table that fills the page exactly alone", () => {
+    const root = build(table(8));
+    fitWideTables(root, fixed(605));
+    expect(stepOf(root)).toBeNull();
+  });
+
+  it("escalates only as far as it has to", () => {
+    const root = build(table(17));
+    fitWideTables(root, shrinking(700, 200));
+    expect(stepOf(root)).toBe("table-fit-1");
+  });
+
+  it("keeps going while the table is still too wide", () => {
+    const root = build(table(17));
+    fitWideTables(root, shrinking(1000, 200));
+    expect(stepOf(root)).toBe("table-fit-2");
+  });
+
+  it("settles on the smallest step when nothing is enough", () => {
+    const root = build(table(40));
+    fitWideTables(root, shrinking(4000, 200));
+    expect(stepOf(root)).toBe("table-fit-3");
+  });
+
+  it("squeezes when there is no layout to measure", () => {
+    // The opposite call to the one keepHeadingsWithContent makes, on purpose.
+    // There, skipping an unmeasurable case switched a nicety off in silence;
+    // here it would let a table run off the paper, and paged.js clips at the
+    // sheet edge in print too — the lost columns are simply absent from the
+    // PDF with nothing to say so. Squeezing a narrow table that never needed
+    // it is only ugly, so an unmeasurable one gets the smallest type.
+    const root = build(table(3));
+    fitWideTables(root, fixed(0));
+    expect(stepOf(root)).toBe("table-fit-3");
+  });
+
+  it("re-decides from scratch when the document changes", () => {
+    // The pass runs on every render, so a table that was wide and has since
+    // been edited down must lose the class it was given rather than keep
+    // being rendered small for the rest of the session.
+    const root = build(table(17));
+    fitWideTables(root, fixed(4000));
+    expect(stepOf(root)).toBe("table-fit-3");
+
+    fitWideTables(root, fixed(400));
+    expect(stepOf(root)).toBeNull();
+  });
+
+  it("judges each table on its own", () => {
+    const root = build(`${table(2)}${table(17)}`);
+    const wide = (el: HTMLElement) => (el.querySelectorAll("th").length > 2 ? 900 : 90);
+    fitWideTables(root, wide);
+
+    const [narrow, big] = [...root.querySelectorAll("table")];
+    expect(STEPS.some((s) => narrow.classList.contains(s))).toBe(false);
+    expect(big.classList.contains("table-fit-3")).toBe(true);
+  });
+
+  it("adds nothing to the tree but a class", () => {
+    // Reverse sync walks up from the click target to the nearest [data-line],
+    // which markdown-it puts on the table and its rows. A wrapper here would
+    // be harmless; moving or replacing anything would not.
+    const html = `<table data-line="4"><tbody><tr data-line="5"><td>a</td></tr></tbody></table>`;
+    const root = build(html);
+    const before = root.querySelector("table");
+
+    fitWideTables(root, fixed(900));
+
+    expect(root.querySelector("table")).toBe(before);
+    expect(root.querySelector("tr")!.getAttribute("data-line")).toBe("5");
+    expect(root.children.length).toBe(1);
   });
 });

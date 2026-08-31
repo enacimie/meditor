@@ -782,21 +782,30 @@ body,
     background: none;
   }
 
+  /* The web view can be printed too — `exportPdf` is handed `docView`, so
+     whoever exports from it lands here rather than in paged.css. Paper does
+     not scroll, so the same cap applies. */
   .markdown-body table {
     display: table;
     width: auto;
+    max-width: 100%;
     margin: 1em auto;
     border-collapse: collapse;
     font-size: 10pt;
     break-inside: avoid;
   }
 
+  /* `anywhere`, not `break-word`: only the former counts towards the
+     intrinsic minimum a table cannot be squeezed below. See paged.css. */
   .markdown-body th,
   .markdown-body td {
     border: none;
     padding: 3.5pt 12pt;
     text-align: left;
     background: none;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+    -webkit-hyphens: auto;
   }
 
   .markdown-body th {
