@@ -82,6 +82,17 @@ describe("translations", () => {
     "conflict.reload",
     "conflict.keepMine",
     "conflict.saveAsAction",
+    // Update check; en/es for now, like the two above. Every other language
+    // falls back to English at runtime rather than showing a blank.
+    "menu.checkUpdates",
+    "update.checking",
+    "update.upToDate",
+    "update.title",
+    "update.available",
+    "update.install",
+    "update.later",
+    "update.downloading",
+    "update.failed",
     "conflict.reloadedNotice",
   ]);
 

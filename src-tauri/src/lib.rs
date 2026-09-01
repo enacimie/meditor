@@ -1443,6 +1443,15 @@ pub fn run() {
         present_documents(app, documents);
     }));
 
+    // Bound to the target for the same reason: neither crate exists on a
+    // phone. The updater is also inert until `plugins.updater` is configured —
+    // it ships switched off behind conf/updater-enabled.json, so registering it
+    // here changes nothing about a build until enacimie turns it on.
+    #[cfg(desktop)]
+    let builder = builder
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init());
+
     builder
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())

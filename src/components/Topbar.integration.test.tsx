@@ -28,11 +28,13 @@ function renderTopbar(overrides: {
   onSetThemeSpy?: ReturnType<typeof vi.fn>;
   onNewTypstSpy?: ReturnType<typeof vi.fn>;
   onNewLatexSpy?: ReturnType<typeof vi.fn>;
+  onCheckUpdatesSpy?: ReturnType<typeof vi.fn>;
 } = {}) {
   const langSpy = (overrides.onSetLanguageSpy ?? vi.fn()) as (code: Language) => void;
   const themeSpy = (overrides.onSetThemeSpy ?? vi.fn()) as (t: string) => void;
   const newTypstSpy = overrides.onNewTypstSpy ?? vi.fn();
   const newLatexSpy = overrides.onNewLatexSpy ?? vi.fn();
+  const checkUpdatesSpy = overrides.onCheckUpdatesSpy as (() => void) | undefined;
 
   function Inner() {
     const { t, lang, setLanguage } = useTranslation();
@@ -69,6 +71,7 @@ function renderTopbar(overrides: {
         onCloseAll={vi.fn()}
         onCloseOthers={vi.fn()}
         onAbout={vi.fn()}
+        onCheckUpdates={checkUpdatesSpy}
       />
     );
   }
@@ -279,4 +282,23 @@ describe("Topbar integration", () => {
     expect(screen.queryByRole("menuitemradio")).toBeNull();
     expect(screen.getByText("System").closest("button")).toBeDefined();
   });
+  it("offers the update check only where updates can happen", () => {
+    // The prop is absent in the browser build and on mobile, where the plugin
+    // is not compiled in. Hiding the entry beats letting it fail when pressed.
+    renderTopbar();
+    fireEvent.click(getMenuToggle());
+    expect(screen.queryByRole("menuitem", { name: /Check for updates/i })).toBeNull();
+  });
+
+  it("runs the update check from the menu and closes it", () => {
+    const checkSpy = vi.fn();
+    renderTopbar({ onCheckUpdatesSpy: checkSpy });
+
+    fireEvent.click(getMenuToggle());
+    fireEvent.click(screen.getByRole("menuitem", { name: /Check for updates/i }));
+
+    expect(checkSpy).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
+
 });

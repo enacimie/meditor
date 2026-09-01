@@ -16,6 +16,18 @@ env:
   # for .tex/.latex/.ltx via conf/latex-enabled.json.
   LATEX_ENABLED: "false"
 
+  # The in-app updater ships switched off, because turning it on needs a
+  # signing key that only the release owner can hold. With
+  # createUpdaterArtifacts set and no TAURI_SIGNING_PRIVATE_KEY the build
+  # fails, so flipping this without the two secrets below breaks the release.
+  #
+  # To turn it on: run `pnpm tauri signer generate`, paste the public key into
+  # conf/updater-enabled.json, put the private key and its password in the
+  # repository secrets TAURI_SIGNING_PRIVATE_KEY and
+  # TAURI_SIGNING_PRIVATE_KEY_PASSWORD, and set this to "true". Until then the
+  # menu entry is there and reports that it could not check, which is honest.
+  UPDATER_ENABLED: "false"
+
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: true
@@ -100,6 +112,10 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Empty unless the secrets exist, which is exactly when
+          # UPDATER_ENABLED is false and no updater artifact is produced.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "meditor ${{ github.ref_name }}"
@@ -130,7 +146,7 @@ jobs:
           prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
           # tauri-action drives the CLI directly, bypassing scripts/tauri.mjs,
           # so the LaTeX overlay is layered here instead of in the npm script.
-          args: ${{ matrix.args }} ${{ env.LATEX_ENABLED == 'true' && '--config src-tauri/conf/latex-enabled.json' || '' }}
+          args: ${{ matrix.args }} ${{ env.LATEX_ENABLED == 'true' && '--config src-tauri/conf/latex-enabled.json' || '' }} ${{ env.UPDATER_ENABLED == 'true' && '--config src-tauri/conf/updater-enabled.json' || '' }}
 
   android:
     needs: build

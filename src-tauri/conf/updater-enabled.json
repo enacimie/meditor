@@ -1,0 +1,14 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "bundle": {
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "REPLACE_WITH_THE_PUBLIC_KEY_FROM_TAURI_SIGNER_GENERATE",
+      "endpoints": [
+        "https://github.com/enacimie/meditor/releases/latest/download/latest.json"
+      ]
+    }
+  }
+}
