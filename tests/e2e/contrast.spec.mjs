@@ -347,11 +347,18 @@ try {
       { message: "the editor never took focus" },
     );
     // A DOM Range does not reach CodeMirror — drawSelection keeps its own
-    // selection — so this is a real Ctrl+A through its keymap.
+    // selection — so this is a real select-all through its keymap.
+    //
+    // CodeMirror binds that to Mod-a, and Mod is Cmd on macOS and Ctrl
+    // everywhere else. CDP takes a bitmask — 1 Alt, 2 Ctrl, 4 Meta, 8 Shift
+    // — so sending Ctrl unconditionally selects nothing on a Mac, and the
+    // check then reports that rather than passing over what it should be
+    // measuring.
+    const selectAllModifier = process.platform === "darwin" ? 4 : 2;
     for (const type of ["keyDown", "keyUp"]) {
       await page.send("Input.dispatchKeyEvent", {
         type,
-        modifiers: 2,
+        modifiers: selectAllModifier,
         key: "a",
         code: "KeyA",
         windowsVirtualKeyCode: 65,
