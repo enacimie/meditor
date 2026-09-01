@@ -310,9 +310,24 @@
 }
 
 /* ---- Mermaid ---- */
+/*
+ * Mermaid renders with its own light theme, whose lines and edge labels are
+ * #333. On the dark page that is 1.32:1, and 1.66:1 on the pure black of the
+ * contrast theme: the boxes survive because they carry their own pale fill,
+ * but the arrows between them simply are not there.
+ *
+ * Giving the diagram the surface it was drawn for is the small half of the
+ * fix. Making Mermaid itself follow the theme is the right one, and a change
+ * of its own: the theme has to reach a Web Worker, the diagram cache is keyed
+ * on the source text alone so switching themes regenerates nothing, and the
+ * Document view and the HTML export both want paper regardless.
+ */
 .markdown-body .mermaid {
   text-align: center;
   margin: 1em 0;
+  background: var(--diagram-surface);
+  border-radius: 6px;
+  padding: 8px;
 }
 
 .mermaid-loading {
