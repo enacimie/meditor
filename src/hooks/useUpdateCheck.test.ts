@@ -150,4 +150,22 @@ describe("useUpdateCheck", () => {
 
     expect(check).toHaveBeenCalledTimes(1);
   });
+  it("checks again the next time it is asked", async () => {
+    // The guard above has to let go as well as engage, and one test cannot say
+    // both: "the second call did nothing" reads the same whether the guard is
+    // working or stuck. This is the half that was missing, and the half that
+    // matters — a menu entry that works once and then goes quiet.
+    const check = vi.fn().mockResolvedValue(null);
+    const { result } = mount(check);
+
+    await act(async () => {
+      await result.current.checkForUpdates();
+    });
+    await act(async () => {
+      await result.current.checkForUpdates();
+    });
+
+    expect(check).toHaveBeenCalledTimes(2);
+  });
+
 });

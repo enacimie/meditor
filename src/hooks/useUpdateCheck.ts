@@ -72,6 +72,10 @@ export function useUpdateCheck(
    * The guard reads a ref, not the state beside it. Two clicks in the same
    * tick share one closure, so a state flag would still be false on the second
    * and both checks would run — which is the case the guard exists for.
+   *
+   * Both paths that raise it lower it again in a `finally`. Getting that wrong
+   * does not fail loudly: the menu entry works once and then goes quiet for
+   * the rest of the session, which is how it shipped in the first draft.
    */
   const busyRef = useRef(false);
 
@@ -98,6 +102,8 @@ export function useUpdateCheck(
         version: update.version,
         current: update.currentVersion,
         install: async () => {
+          if (busyRef.current) return;
+          busyRef.current = true;
           setBusy(true);
           showNotice(t("update.downloading"), "info", 0);
           try {
@@ -108,6 +114,7 @@ export function useUpdateCheck(
             console.error("The update could not be installed", error);
             showNotice(t("update.failed"), "error");
           } finally {
+            busyRef.current = false;
             setBusy(false);
             setOffer(null);
           }
@@ -120,6 +127,7 @@ export function useUpdateCheck(
       console.error("The update check failed", error);
       showNotice(t("update.failed"), "error");
     } finally {
+      busyRef.current = false;
       setBusy(false);
     }
   }, [t, showNotice, dismissNotice, loadUpdater, loadProcess, getVersion]);
