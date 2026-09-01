@@ -472,11 +472,6 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
           color: "var(--fg)",
           border: "1px solid var(--border)",
         },
-        "&.cm-editor .cm-tooltip": {
-          backgroundColor: "var(--bg-alt)",
-          color: "var(--fg)",
-          border: "1px solid var(--border)",
-        },
         // The light wash reads well enough on a dark page, but it is the wrong
         // colour: it comes from the same light default as the rest.
         "&.cm-editor .cm-activeLine": {

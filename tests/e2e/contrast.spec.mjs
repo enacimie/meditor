@@ -328,7 +328,7 @@ try {
   // select while typing — would never be exercised.
   await page.send("Emulation.setFocusEmulationEnabled", { enabled: true });
 
-  for (const themeName of ["contrast", "dark"]) {
+  for (const themeName of ["dark", "contrast"]) {
     // The web view, not the document one: on paper the diagram already sits on
     // white, so the surface below is only wrong on screen.
     await page.evaluate(
@@ -448,6 +448,19 @@ try {
       `${themeName}: Mermaid's #333 lines sit at ${diagramRatio.toFixed(2)}:1 on ${diagramBg} — the arrows are invisible`,
     );
   }
+
+  /*
+   * Put the preferences back the way this spec found them. It runs first in
+   * the suite, and the loop above leaves docView false and the theme dark —
+   * four of the specs that follow read the document view. Nothing fails today,
+   * but leaving that behind is the same trap that made the search spec fail
+   * earlier when another spec typed over the document.
+   */
+  await page.evaluate(
+    "localStorage.setItem('meditor.preferences.v1', JSON.stringify({ docView: true, wrap: true, theme: 'contrast' })); true",
+  );
+  await page.reload();
+  await page.waitFor("!!document.querySelector('.cm-content')");
 
   // Leave the browser as the specs that follow expect to find it.
   await page.send("Emulation.setFocusEmulationEnabled", { enabled: false });
