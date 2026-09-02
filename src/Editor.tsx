@@ -419,6 +419,64 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
           backgroundColor: "color-mix(in srgb, var(--accent) 55%, transparent)",
           color: "inherit",
         },
+        /*
+         * Everything below exists because this theme never declares itself
+         * dark. CodeMirror ships a `&light` and a `&dark` value for each of
+         * these and chooses by that flag, so all four of the app's themes get
+         * the light one: a near-white selection behind light text, and a black
+         * caret on a black page.
+         *
+         * Passing `{ dark: true }` would fix the flag and bring the wrong
+         * palette — CodeMirror's generic dark is not this app's, and its
+         * high-contrast theme is pure black, white and yellow. These rules
+         * name the app's own variables instead, which resolve at paint time,
+         * so one set covers every theme and follows the OS under `system`
+         * without rebuilding the editor.
+         *
+         * The `&.cm-editor` prefix is load-bearing, not decoration. `&light`
+         * compounds two classes on the same element, so a rule written as
+         * `.cm-selectionBackground` weighs one class less than the base rule
+         * and silently loses. Matching the weight and coming later in the
+         * cascade is what makes these apply at all.
+         */
+        "&.cm-editor .cm-selectionLayer .cm-selectionBackground": {
+          background: "var(--selection-bg)",
+        },
+        // The focused selection is the one you actually look at, and its base
+        // rule is the most specific of the lot; this mirrors its full path.
+        "&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground": {
+          background: "var(--selection-bg)",
+        },
+        // `caretColor` on .cm-content only reaches the native caret, and
+        // drawSelection replaces it with a drawn one whose base colour is
+        // black — invisible on #1e1e1e, and exactly nothing on the pure black
+        // of the contrast theme.
+        "&.cm-editor .cm-cursor": { borderLeftColor: "var(--fg)" },
+        "&.cm-editor .cm-dropCursor": { borderLeftColor: "var(--fg)" },
+        // The find and replace panel is part of the app, not a light window
+        // sitting inside a dark one.
+        "&.cm-editor .cm-panels": {
+          backgroundColor: "var(--bg-alt)",
+          color: "var(--fg)",
+        },
+        "&.cm-editor .cm-panels-top": { borderBottom: "1px solid var(--border)" },
+        "&.cm-editor .cm-panels-bottom": { borderTop: "1px solid var(--border)" },
+        "&.cm-editor .cm-textfield": {
+          backgroundColor: "var(--bg)",
+          color: "var(--fg)",
+          border: "1px solid var(--border)",
+        },
+        "&.cm-editor .cm-button": {
+          backgroundImage: "none",
+          backgroundColor: "var(--bg)",
+          color: "var(--fg)",
+          border: "1px solid var(--border)",
+        },
+        // The light wash reads well enough on a dark page, but it is the wrong
+        // colour: it comes from the same light default as the rest.
+        "&.cm-editor .cm-activeLine": {
+          backgroundColor: "color-mix(in srgb, var(--accent) 12%, transparent)",
+        },
       }),
     ];
     extRef.current = extensions;
