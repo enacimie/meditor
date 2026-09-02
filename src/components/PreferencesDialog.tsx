@@ -177,6 +177,26 @@ const PreferencesDialog = memo(function PreferencesDialog({
             </div>
           </div>
 
+          <div className="prefs-row">
+            <label className="prefs-label" htmlFor="prefs-landscape">
+              {t("prefs.landscapeTables")}
+            </label>
+            <div className="prefs-control">
+              <input
+                id="prefs-landscape"
+                type="checkbox"
+                checked={value.landscapeTables}
+                aria-describedby="prefs-landscape-hint"
+                onChange={(e) =>
+                  onChange({ ...value, landscapeTables: e.target.checked })
+                }
+              />
+              <span className="prefs-hint" id="prefs-landscape-hint">
+                {t("prefs.landscapeTablesHint")}
+              </span>
+            </div>
+          </div>
+
           <p className="prefs-preview" style={{
             fontSize: `${value.editorFontSize}px`,
             fontFamily: EDITOR_FONT_FAMILIES.find((f) => f.id === value.editorFontFamily)?.stack,

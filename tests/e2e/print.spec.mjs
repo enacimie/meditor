@@ -305,6 +305,133 @@ try {
   );
 
 
+  /*
+   * A table past every portrait step can still fit a sheet turned sideways —
+   * 933 px of content instead of 605. That rotation is the reader's cost, so
+   * it only happens when the user asked for it in Preferences.
+   *
+   * Sizing the fixture took measuring: a portrait page gives 605 px and the
+   * smallest step spends about 11 px per single-digit column (7 pt type, 2 pt
+   * padding each side), so 70 columns ask for ~770 px — past every portrait
+   * step, inside the 933 px a landscape sheet offers.
+   *
+   * Two contracts, one flag:
+   *   1. With the flag off, the wide table keeps the smallest portrait step
+   *      and no page turns sideways. (Checked on the 17-column table, which
+   *      still paginates; a wider one can stall paged.js entirely when it
+   *      cannot be placed, which is exactly the failure this option exists to
+   *      avoid.)
+   *   2. With it on, the table is marked before paged.js ever sees it, its
+   *      pages come out landscape, the rest of the document stays portrait,
+   *      and the table carries a note so the reader sees the turn coming.
+   */
+  const LAND_COLUMNS = 70;
+  const landHead = Array.from({ length: LAND_COLUMNS }, (_, i) => `h${i + 1}`).join(" | ");
+  const landRule = Array.from({ length: LAND_COLUMNS }, () => "---").join(" | ");
+  const landRow = Array.from({ length: LAND_COLUMNS }, (_, c) => `${c}`).join(" | ");
+  const landDoc = ["", `| ${landHead} |`, `| ${landRule} |`, `| ${landRow} |`, ""].join("\n");
+
+  // Contract 1: what is already on screen has never claimed a landscape page.
+  const beforeOptIn = await page.evaluate(
+    `(() => ({
+      marked: document.querySelectorAll('.paged-view table.needs-landscape').length,
+      landscapePages: document.querySelectorAll('.pagedjs_page.pagedjs_landscape-table_page').length,
+    }))()`,
+  );
+  assert(
+    beforeOptIn.marked === 0 && beforeOptIn.landscapePages === 0,
+    "landscape must stay off until the user asks: " + JSON.stringify(beforeOptIn),
+  );
+
+  // Turn the preference on the way the dialog does, reload so it applies, then
+  // type the wide table — its first pagination already runs with the flag.
+  await page.evaluate(`(() => {
+    const key = 'meditor.preferences.v1';
+    const stored = JSON.parse(localStorage.getItem(key) ?? '{}');
+    stored.landscapeTables = true;
+    localStorage.setItem(key, JSON.stringify(stored));
+    return true;
+  })()`);
+  await page.reload();
+  await page.waitFor("!!document.querySelector('.cm-content')", { timeout: 20000 });
+  await page.waitFor("document.querySelectorAll('.pagedjs_page').length > 0", {
+    timeout: 40000,
+    interval: 500,
+    message: "the session should repaginate after the reload",
+  });
+
+  await page.evaluate(`(() => {
+    const cm = document.querySelector('.cm-content');
+    cm.focus();
+    const range = document.createRange();
+    range.selectNodeContents(cm);
+    range.collapse(false);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    document.execCommand('insertText', false, ${JSON.stringify(landDoc)});
+    return true;
+  })()`);
+
+  await page.waitFor(
+    `(() => [...document.querySelectorAll('.paged-view table')].some((t) =>
+      (t.querySelectorAll('th').length || t.querySelectorAll('tr:first-child td').length) === ${LAND_COLUMNS})())`,
+    { timeout: 40000, interval: 500, message: "the 70-column table should reach the paginated view" },
+  );
+  await page.waitFor(
+    `(() => {
+      const n = document.querySelectorAll('.pagedjs_page').length;
+      const previous = window.__landPages2 ?? -1;
+      window.__landPages2 = n;
+      return n > 0 && n === previous;
+    })()`,
+    { timeout: 40000, interval: 600, message: "pagination should settle with landscape on" },
+  );
+
+  const afterOptIn = await page.evaluate(`(() => {
+    const tables = [...document.querySelectorAll('.paged-view table')];
+    const wide = tables.filter((t) =>
+      (t.querySelectorAll('th').length || t.querySelectorAll('tr:first-child td').length) === ${LAND_COLUMNS});
+    return {
+      marked: wide.filter((t) => t.classList.contains('needs-landscape')).length,
+      wide: wide.length,
+      // paged.js copies the @page name onto the sheet it generated.
+      landscapePages: document.querySelectorAll('.pagedjs_page.pagedjs_landscape-table_page').length,
+      portraitPages: document.querySelectorAll('.pagedjs_page:not(.pagedjs_landscape-table_page)').length,
+      note: wide[0]?.getAttribute('data-landscape-note') ?? null,
+      fits: wide.every((t) => {
+        const area = t.closest('.pagedjs_page_content');
+        return area && t.offsetWidth <= area.clientWidth + 1;
+      }),
+    };
+  })()`);
+  assert(
+    afterOptIn.marked > 0 && afterOptIn.landscapePages > 0,
+    "with the opt-in, a table too wide for portrait should claim a landscape page: " +
+      JSON.stringify(afterOptIn),
+  );
+  assert(
+    afterOptIn.portraitPages > 0,
+    "the rest of the document must stay portrait: " + JSON.stringify(afterOptIn),
+  );
+  assert(
+    afterOptIn.fits,
+    "the table must fit its landscape sheet rather than run off it: " + JSON.stringify(afterOptIn),
+  );
+  assert(
+    typeof afterOptIn.note === "string" && afterOptIn.note.length > 0,
+    "the reader should see the sideways page coming: " + JSON.stringify(afterOptIn),
+  );
+
+  // Put the preference back so the specs that follow get the stock defaults.
+  await page.evaluate(`(() => {
+    const key = 'meditor.preferences.v1';
+    const stored = JSON.parse(localStorage.getItem(key) ?? '{}');
+    delete stored.landscapeTables;
+    localStorage.setItem(key, JSON.stringify(stored));
+    return true;
+  })()`);
+
   assert(page.consoleErrors.length === 0, "console errors: " + page.consoleErrors.join(" | "));
   console.log("PASS: print.spec — the preview reaches the printed page, from zen too");
 } finally {

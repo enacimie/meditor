@@ -71,6 +71,8 @@ type Props = {
   value: string;
   docView: boolean;
   kind: DocKind;
+  /** Allow tables too wide for portrait to claim a landscape page. */
+  landscapeTables?: boolean;
   onReverseSync: (line: number) => void;
 };
 
@@ -101,7 +103,7 @@ interface ChildPreviewHandle {
 }
 
 const Preview = forwardRef<PreviewHandle, Props>(function Preview(
-  { value, docView, kind, onReverseSync },
+  { value, docView, kind, landscapeTables = false, onReverseSync },
   ref,
 ) {
   const { t } = useTranslation();
@@ -326,7 +328,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
         wrapCodeLines(source);
         keepHeadingsWithContent(source);
         // Last chance to measure: everything below this is a serialised string.
-        fitWideTables(source);
+        fitWideTables(source, undefined, landscapeTables, t("preview.landscapeNote"));
         paged.innerHTML = "";
         let previewer: Previewer;
         try {
@@ -399,7 +401,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
       cancelled = true;
       if (debounceTimer) clearTimeout(debounceTimer);
     };
-  }, [deferredValue, docView, retryToken, t, kind, scrollToLineNow]);
+  }, [deferredValue, docView, landscapeTables, retryToken, t, kind, scrollToLineNow]);
 
   // Re-run whatever render was skipped while the pane was hidden, as soon as
   // it has a box again — leaving zen mode, switching the layout back, or the
