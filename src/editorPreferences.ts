@@ -12,11 +12,20 @@ export const DEFAULT_EDITOR_FONT_FAMILY = "system";
 
 export const DEFAULT_SPELLCHECK = true;
 
+/**
+ * Wide tables in the Document view: shrink first (previewRenderer.ts), and
+ * only if no portrait step fits, offer a sideways page. Off by default — a
+ * page turning landscape on its own is a surprise the reader should ask for.
+ */
+export const DEFAULT_LANDSCAPE_TABLES = false;
+
 export type EditorPreferences = {
   editorFontSize: number;
   editorFontFamily: string;
   /** Hand the text to the platform's own spell checker. */
   spellcheck: boolean;
+  /** Let a table too wide for any portrait page use a landscape one. */
+  landscapeTables: boolean;
 };
 
 /**
@@ -79,6 +88,11 @@ export function clampFontSize(value: unknown): number {
 /** Read a stored boolean, falling back to the default. */
 export function normalizeSpellcheck(value: unknown): boolean {
   return typeof value === "boolean" ? value : DEFAULT_SPELLCHECK;
+}
+
+/** Read a stored boolean, falling back to the default. */
+export function normalizeLandscapeTables(value: unknown): boolean {
+  return typeof value === "boolean" ? value : DEFAULT_LANDSCAPE_TABLES;
 }
 
 /** Accept a stored family id only if it is still offered. */

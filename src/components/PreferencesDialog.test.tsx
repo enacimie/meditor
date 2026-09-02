@@ -7,10 +7,12 @@ import {
   DEFAULT_EDITOR_FONT_FAMILY,
   DEFAULT_EDITOR_FONT_SIZE,
   DEFAULT_SPELLCHECK,
+  DEFAULT_LANDSCAPE_TABLES,
   clampFontSize,
   fontStackFor,
   normalizeFontFamily,
   normalizeSpellcheck,
+  normalizeLandscapeTables,
   MAX_EDITOR_FONT_SIZE,
   MIN_EDITOR_FONT_SIZE,
 } from "../editorPreferences";
@@ -26,6 +28,7 @@ const value = {
   editorFontSize: DEFAULT_EDITOR_FONT_SIZE,
   editorFontFamily: DEFAULT_EDITOR_FONT_FAMILY,
   spellcheck: DEFAULT_SPELLCHECK,
+  landscapeTables: DEFAULT_LANDSCAPE_TABLES,
 };
 
 beforeEach(() => {
@@ -75,11 +78,21 @@ describe("PreferencesDialog", () => {
     expect(onChange).toHaveBeenCalledWith({ ...value, editorFontFamily: "serif" });
   });
 
+  it("reports the landscape-tables flag the user picks", () => {
+    const onChange = vi.fn();
+    render(<PreferencesDialog t={t} value={value} onChange={onChange} onClose={vi.fn()} />);
+    const checkbox = document.querySelector<HTMLInputElement>("#prefs-landscape")!;
+    // The preference defaults off — a sideways page is opt-in, never a surprise.
+    expect(checkbox.checked).toBe(false);
+    fireEvent.click(checkbox);
+    expect(onChange).toHaveBeenCalledWith({ ...value, landscapeTables: true });
+  });
+
   it("previews the current choice", () => {
     render(
       <PreferencesDialog
         t={t}
-        value={{ editorFontSize: 20, editorFontFamily: "serif", spellcheck: true }}
+        value={{ editorFontSize: 20, editorFontFamily: "serif", spellcheck: true, landscapeTables: false }}
         onChange={vi.fn()}
         onClose={vi.fn()}
       />,
@@ -164,6 +177,14 @@ describe("editorPreferences", () => {
     expect(normalizeSpellcheck(true)).toBe(true);
     expect(normalizeSpellcheck("yes")).toBe(DEFAULT_SPELLCHECK);
     expect(normalizeSpellcheck(undefined)).toBe(DEFAULT_SPELLCHECK);
+  });
+
+  it("reads the stored landscape-tables flag defensively", () => {
+    expect(normalizeLandscapeTables(false)).toBe(false);
+    expect(normalizeLandscapeTables(true)).toBe(true);
+    // A stale or hand-edited value must fall back to off, never on.
+    expect(normalizeLandscapeTables("yes")).toBe(DEFAULT_LANDSCAPE_TABLES);
+    expect(normalizeLandscapeTables(undefined)).toBe(DEFAULT_LANDSCAPE_TABLES);
   });
 
   it("only accepts font families that are still offered", () => {

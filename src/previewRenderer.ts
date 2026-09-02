@@ -107,11 +107,17 @@ export function keepHeadingsWithContent(
 /** A4's content box is 160 mm wide, which is about 605 px at 96 dpi. */
 const PAGE_CONTENT_WIDTH_PX = 605;
 
+/** A4 landscape content box: 297 mm - 2×2.5 cm margins = 247 mm ≈ 933 px. */
+const LANDSCAPE_CONTENT_WIDTH_PX = 933;
+
 /**
  * The steps `paged.css` defines, smallest sacrifice first. Each one trades
  * type size and cell padding for room; the pass stops at the first that fits.
  */
 const TABLE_FIT_STEPS = ["table-fit-1", "table-fit-2", "table-fit-3"] as const;
+
+/** Marks a table whose only fitting page is a landscape one. */
+const NEEDS_LANDSCAPE_CLASS = "needs-landscape";
 
 /**
  * Shrink tables that are wider than the page until they fit on it.
@@ -136,13 +142,20 @@ const TABLE_FIT_STEPS = ["table-fit-1", "table-fit-2", "table-fit-3"] as const;
  * @param root - container whose descendants may include tables.
  * @param measure - min-content width of an element; injectable because jsdom
  * lays nothing out and reports 0.
+ * @param allowLandscape - when true, a table that fits on no portrait step but
+ * would fit on an A4 landscape page is marked for one rather than left clipped.
+ * paged.css assigns it `@page landscape-table` (933 px of content width).
+ * @param landscapeNote - label the table carries so the reader sees the page
+ * turned sideways coming (`paged.css ::before` reads it from a data attribute).
  */
 export function fitWideTables(
   root: HTMLElement,
   measure: (el: HTMLElement) => number = minContentWidth,
+  allowLandscape = false,
+  landscapeNote = "",
 ): void {
   for (const table of Array.from(root.querySelectorAll("table"))) {
-    table.classList.remove(...TABLE_FIT_STEPS);
+    table.classList.remove(...TABLE_FIT_STEPS, NEEDS_LANDSCAPE_CLASS);
 
     const natural = measure(table);
     /*
@@ -154,14 +167,42 @@ export function fitWideTables(
      */
     if (natural === 0) {
       table.classList.add(TABLE_FIT_STEPS[TABLE_FIT_STEPS.length - 1]);
+      /*
+       * The same fail-closed call applies to the orientation: an unmeasurable
+       * table cannot be trusted to fit portrait either, so with the opt-in it
+       * claims the wider sheet too. If it turns out to fit, the next render
+       * re-decides and the mark goes away — the pass starts clean every time.
+       */
+      if (allowLandscape) {
+        table.classList.add(NEEDS_LANDSCAPE_CLASS);
+        if (landscapeNote) table.setAttribute("data-landscape-note", landscapeNote);
+      }
       continue;
     }
     if (natural <= PAGE_CONTENT_WIDTH_PX) continue;
 
+    let fits = false;
     for (const step of TABLE_FIT_STEPS) {
       table.classList.remove(...TABLE_FIT_STEPS);
       table.classList.add(step);
-      if (measure(table) <= PAGE_CONTENT_WIDTH_PX) break;
+      if (measure(table) <= PAGE_CONTENT_WIDTH_PX) {
+        fits = true;
+        break;
+      }
+    }
+    /*
+     * Nothing fits on a portrait page. If landscape is allowed and the table
+     * at its smallest step would fit the wider sheet, mark it so paged.css
+     * moves just its pages to `@page landscape-table`. A table too wide even
+     * for that stays at the smallest step, clipped as before — splitting it is
+     * an authoring decision, not an editor's.
+     */
+    if (!fits && allowLandscape) {
+      const w = measure(table);
+      if (w <= LANDSCAPE_CONTENT_WIDTH_PX) {
+        table.classList.add(NEEDS_LANDSCAPE_CLASS);
+        if (landscapeNote) table.setAttribute("data-landscape-note", landscapeNote);
+      }
     }
   }
 }
