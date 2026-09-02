@@ -18,7 +18,7 @@ import pagedCss from "./paged.css?inline";
 import latexHighlightCss from "./latex-highlight.css?inline";
 import { clearMermaidResources, renderContent, splitLongFencedBlocks } from "./previewRenderer";
 import { isPaginatable } from "./pagedLifecycle";
-import { keepHeadingsWithContent } from "./previewRenderer";
+import { fitWideTables, keepHeadingsWithContent } from "./previewRenderer";
 import { LATEX_ENABLED } from "./latexSupport";
 
 import type { DocKind } from "./types";
@@ -325,6 +325,8 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
         if (cancelled || myToken !== tokenRef.current) return;
         wrapCodeLines(source);
         keepHeadingsWithContent(source);
+        // Last chance to measure: everything below this is a serialised string.
+        fitWideTables(source);
         paged.innerHTML = "";
         let previewer: Previewer;
         try {

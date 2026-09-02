@@ -156,15 +156,33 @@
   background: none;
 }
 
+/*
+ * A table wider than the page used to run off the sheet, and paged.js clips
+ * there (`.pagedjs_sheet { overflow: hidden }`) in print as much as on screen
+ * — so the columns past the edge simply were not in the exported PDF, with
+ * nothing to say so.
+ *
+ * `max-width` rather than `width: 100%`: a small table keeps its natural
+ * width and its centring, which is most of them.
+ */
 .markdown-body.doc table {
   display: table;
   width: auto;
+  max-width: 100%;
   margin: 1em auto;
   border-collapse: collapse;
   font-size: 10pt;
   break-inside: avoid;
 }
 
+/*
+ * `anywhere`, not `break-word`. They look interchangeable and are not: only
+ * `anywhere` counts towards the intrinsic minimum, and a table cannot be
+ * squeezed below that minimum however small its max-width. Measured in a real
+ * browser at 605 px of page: with `break-word` a 12-column table still asked
+ * for 902 px, exactly as if nothing had been set; with `anywhere` it asks for
+ * 490 px and fits.
+ */
 .markdown-body.doc th,
 .markdown-body.doc td {
   border: none;
@@ -172,6 +190,44 @@
   text-align: left;
   background: none;
   color: #000000;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+}
+
+/*
+ * Past about fourteen columns the padding alone outgrows the page — seventeen
+ * columns spend 544 px of the 605 px available before a single letter — so
+ * wrapping cannot save them and the cells have to give up some room. The step
+ * is chosen by measurement in previewRenderer.ts, which escalates only as far
+ * as it needs to; most tables never get a class at all.
+ */
+.markdown-body.doc table.table-fit-1 {
+  font-size: 9pt;
+}
+
+.markdown-body.doc table.table-fit-1 th,
+.markdown-body.doc table.table-fit-1 td {
+  padding: 3pt 6pt;
+}
+
+.markdown-body.doc table.table-fit-2 {
+  font-size: 8pt;
+}
+
+.markdown-body.doc table.table-fit-2 th,
+.markdown-body.doc table.table-fit-2 td {
+  padding: 2.5pt 4pt;
+}
+
+/* The floor: below 7pt nothing on paper is worth reading. */
+.markdown-body.doc table.table-fit-3 {
+  font-size: 7pt;
+}
+
+.markdown-body.doc table.table-fit-3 th,
+.markdown-body.doc table.table-fit-3 td {
+  padding: 2pt 2pt;
 }
 
 .markdown-body.doc th {
