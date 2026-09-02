@@ -1,7 +1,7 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { getVersion } from "@tauri-apps/api/app";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { openExternal } from "../externalLinks";
 import type { TranslationFn } from "../i18n/translations";
 import "./AboutDialog.css";
 
@@ -16,28 +16,6 @@ const EXIT_MS = 140;
 const REPO_URL = "https://github.com/enacimie/meditor";
 const LICENSE_NAME = "GNU Affero General Public License v3.0";
 const FALLBACK_VERSION = __APP_VERSION__;
-
-function isSafeExternalUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
-async function openExternal(url: string): Promise<void> {
-  if (!isSafeExternalUrl(url)) return;
-  if (isTauri()) {
-    try {
-      await openUrl(url);
-    } catch (error) {
-      console.error("Could not open link", error);
-    }
-  } else {
-    window.open(url, "_blank", "noopener");
-  }
-}
 
 const AboutDialog = memo(function AboutDialog({ t, onClose }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
