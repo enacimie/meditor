@@ -1,0 +1,133 @@
+/*
+ * The pane itself: its box, the scroll area, the sync flash and the view toggle.
+ *
+ * Split out of Preview.css, which had grown to 996 lines. It is still the
+ * entry point and imports these in their original order, so the cascade is
+ * exactly what it was.
+ */
+
+/* ---- Preview pane ---- */
+.preview-scroll {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  padding: 16px 24px;
+}
+
+.pane-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 5px 12px;
+  background: var(--bg-alt);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.pane-header > .pane-title {
+  margin-right: auto;
+}
+
+.pane-header > .sync-btn {
+  margin-left: 0;
+}
+
+.pane-title {
+  color: var(--fg);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  opacity: 0.78;
+}
+
+.sync-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  border-radius: 6px;
+  padding: 3px 9px;
+  font-size: 12px;
+  cursor: pointer;
+  opacity: 0.75;
+  transition:
+    opacity 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.sync-btn:hover {
+  opacity: 1;
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.sync-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* ---- Sync flash ---- */
+.sync-flash {
+  animation: syncFlash 1.3s ease;
+  border-radius: 3px;
+}
+
+.sync-marked {
+  outline: 2px solid rgba(9, 105, 218, 0.45);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+@keyframes syncFlash {
+  0%,
+  25% {
+    box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 0 3px rgba(9, 105, 218, 0);
+  }
+}
+
+/* ---- View toggle ---- */
+.view-toggle {
+  display: flex;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.view-toggle button {
+  border: none;
+  background: transparent;
+  color: var(--fg);
+  padding: 4px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.view-toggle button:hover {
+  opacity: 1;
+}
+
+.view-toggle button.on {
+  background: var(--accent);
+  color: #ffffff;
+  opacity: 1;
+  font-weight: 600;
+}

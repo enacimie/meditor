@@ -1,0 +1,115 @@
+/*
+ * The paginated Document view, and the offscreen container its measuring pass reads.
+ *
+ * Split out of Preview.css, which had grown to 996 lines. It is still the
+ * entry point and imports these in their original order, so the cascade is
+ * exactly what it was.
+ */
+
+/* ---- Document / Paged view ---- */
+.preview-scroll.doc-bg {
+  background: var(--bg-alt);
+  padding: 28px 20px 60px;
+}
+
+.preview-source {
+  position: absolute;
+  left: -10000px;
+  top: 0;
+  width: 21cm;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/*
+ * The offscreen container is a measuring instrument, not decoration:
+ * `fitWideTables` reads the tables in it to decide which cannot fit the page.
+ * So it has to be styled like the paper — and by default it is not.
+ *
+ * `paged.css` never reaches the document (paged.js parses it and injects its
+ * own copy only while it paginates), so at measuring time these tables fall
+ * back to the screen rules above: `display: block` with a scrollbar, 12 px of
+ * cell padding and a 1 px border per cell. Against the page that reads far
+ * narrower than the truth — a 17-column table reported 603 px, just inside the
+ * 605 px page, was therefore left alone, and was then laid out at 732 px and
+ * clipped at the sheet edge with its last columns missing from the PDF.
+ *
+ * Only the metrics that differ are repeated here; they mirror the table block
+ * of `paged.css`, and `tableFitMetrics.test.ts` fails if they drift apart.
+ * The doubled class beats `.markdown-body` on specificity rather than on
+ * source order, which is 200 lines away and easy to disturb.
+ */
+.preview-source.markdown-body table {
+  display: table;
+  overflow: visible;
+  width: auto;
+  max-width: 100%;
+  border-collapse: collapse;
+  font-size: 10pt;
+}
+
+.preview-source.markdown-body th,
+.preview-source.markdown-body td {
+  border: none;
+  padding: 3.5pt 12pt;
+}
+
+.preview-source.markdown-body table.table-fit-1 {
+  font-size: 9pt;
+}
+
+.preview-source.markdown-body table.table-fit-1 th,
+.preview-source.markdown-body table.table-fit-1 td {
+  padding: 3pt 6pt;
+}
+
+.preview-source.markdown-body table.table-fit-2 {
+  font-size: 8pt;
+}
+
+.preview-source.markdown-body table.table-fit-2 th,
+.preview-source.markdown-body table.table-fit-2 td {
+  padding: 2.5pt 4pt;
+}
+
+.preview-source.markdown-body table.table-fit-3 {
+  font-size: 7pt;
+}
+
+.preview-source.markdown-body table.table-fit-3 th,
+.preview-source.markdown-body table.table-fit-3 td {
+  padding: 2pt 2pt;
+}
+
+.paged-view .pagedjs_pages {
+  display: block;
+}
+
+.paged-view .pagedjs_page {
+  margin: 0 auto 24px;
+  background: #ffffff;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.22),
+    0 8px 28px rgba(0, 0, 0, 0.18);
+}
+
+/* Contrast theme overrides */
+:root[data-theme="contrast"] .markdown-body a {
+  text-decoration: underline;
+}
+
+:root[data-theme="contrast"] .markdown-body .mermaid-error,
+:root[data-theme="contrast"] .preview-error {
+  border-color: #ffff00;
+  background: #000000;
+  color: #ffffff;
+}
+
+/* White-on-yellow is ~1:1 contrast — unreadable. Use black text. */
+:root[data-theme="contrast"] .view-toggle button.on {
+  color: #000000;
+}
+
+:root[data-theme="contrast"] .sync-btn:hover {
+  color: #ffff00;
+}

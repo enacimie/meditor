@@ -21,7 +21,9 @@ import { readFileSync } from "node:fs";
 // below would pass against nothing.
 const read = (name: string) => readFileSync(new URL(name, import.meta.url), "utf8");
 const pagedCss = read("./paged.css");
-const previewCss = read("./Preview.css");
+// The measuring container is styled in the Document-view stylesheet, split
+// out of Preview.css when that file passed 600 lines.
+const previewCss = read("./preview/document-view.css");
 
 /** Selector (whitespace-normalised) to declaration body. */
 function rules(css: string): Map<string, string> {
