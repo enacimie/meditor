@@ -116,6 +116,12 @@
   --border: #d0d7de;
   --accent: #0969da;
   --accent-fg: #ffffff;
+  /* The editor draws its selection as a layer BEHIND the text, which keeps
+     --fg, so this is what has to contrast with it. CodeMirror only ships a
+     light and a dark value and picks between them by a flag the theme never
+     sets; naming the colour here lets all four themes pick their own. */
+  --selection-bg: #d7d4f0;
+  --diagram-surface: transparent;
   --code-bg: #f6f8fa;
   /* System window insets — the status bar and the gesture bar on a phone, a
      notch or a rounded corner on either. The WebView reports them through
@@ -147,6 +153,8 @@
     --border: #3c3c3c;
     --accent: #4493f8;
     --accent-fg: #ffffff;
+    --selection-bg: #264f78;
+    --diagram-surface: #ffffff;
     --code-bg: #2d2d2d;
     --code-fg: #c9d1d9;
     --code-keyword: #ff7b72;
@@ -176,6 +184,8 @@
   --border: #3c3c3c;
   --accent: #4493f8;
   --accent-fg: #ffffff;
+  --selection-bg: #264f78;
+  --diagram-surface: #ffffff;
   --code-bg: #0d1117;
   --code-fg: #c9d1d9;
   --code-keyword: #ff7b72;
@@ -193,6 +203,8 @@
   --border: #ffffff;
   --accent: #ffff00;
   --accent-fg: #000000;
+  --selection-bg: #0000ff;
+  --diagram-surface: #ffffff;
   --code-bg: #000000;
   --code-fg: #ffffff;
   --code-keyword: #ffff00;
@@ -782,21 +794,30 @@ body,
     background: none;
   }
 
+  /* The web view can be printed too — `exportPdf` is handed `docView`, so
+     whoever exports from it lands here rather than in paged.css. Paper does
+     not scroll, so the same cap applies. */
   .markdown-body table {
     display: table;
     width: auto;
+    max-width: 100%;
     margin: 1em auto;
     border-collapse: collapse;
     font-size: 10pt;
     break-inside: avoid;
   }
 
+  /* `anywhere`, not `break-word`: only the former counts towards the
+     intrinsic minimum a table cannot be squeezed below. See paged.css. */
   .markdown-body th,
   .markdown-body td {
     border: none;
     padding: 3.5pt 12pt;
     text-align: left;
     background: none;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+    -webkit-hyphens: auto;
   }
 
   .markdown-body th {

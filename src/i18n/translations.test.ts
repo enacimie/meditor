@@ -94,6 +94,10 @@ describe("translations", () => {
     "update.downloading",
     "update.failed",
     "conflict.reloadedNotice",
+    // Landscape tables preference; en/es for now like the strings above.
+    "prefs.landscapeTables",
+    "prefs.landscapeTablesHint",
+    "preview.landscapeNote",
   ]);
 
   it("every English key is defined in every language", () => {

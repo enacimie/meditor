@@ -54,7 +54,6 @@ export const ne = {
   "confirm.yes": "हो",
   "confirm.no": "होइन",
   // Alerts
-  "alert.error": "त्रुटि",
   "error.title": "केही गडबड भयो",
   "error.retry": "पुन: प्रयास गर्नुहोस्",
   // Tabs
@@ -66,7 +65,6 @@ export const ne = {
   "tab.rename": "नाम परिवर्तन गर्नुहोस्",
   "tab.renameCancel": "रद्द गर्नुहोस्",
   "tab.documentsOpen": "खुला कागजातहरू",
-  "tab.activeDoc": "सक्रिय कागजात",
   // Document names
   "doc.untitled": (n: number) => `कागजात ${n}`,
   "doc.defaultExport": "कागजात",
@@ -75,7 +73,6 @@ export const ne = {
   "pane.preview": "पूर्वावलोकन",
   "pane.scrollToPreview": "कर्सरको स्थानमा पूर्वावलोकनमा जानुहोस्",
   "pane.scrollToCode": "चिह्नित स्थानमा कोडमा जानुहोस्",
-  "pane.scrollToCodeHint": "चिह्नित स्थानमा कोडमा जानुहोस् (चिह्न हाल्न पूर्वावलोकनमा क्लिक गर्नुहोस्)",
   "pane.goToPreview": "पूर्वावलोकनमा जानुहोस्",
   "pane.goToCode": "कोडमा जानुहोस्",
   "pane.wrapOn": "शब्द र्याप बन्द गर्नुहोस्",
@@ -89,7 +86,6 @@ export const ne = {
   "layout.split": "सम्पादक र पूर्वावलोकन",
   "layout.previewOnly": "पूर्वावलोकन मात्र",
   "pane.resize": "प्यानलहरूको आकार परिवर्तन गर्नुहोस्",
-  "pane.resizeHint": "आकार परिवर्तन गर्न तान्नुहोस्",
   // Editor
   "editor.loading": "सम्पादक लोड हुँदैछ...",
   "editor.undo": "पूर्ववत् गर्नुहोस्",
@@ -101,16 +97,12 @@ export const ne = {
   "preview.pagedError": "कागजात दृश्य उत्पन्न गर्न सकिएन:",
   "preview.mermaidError": "मरमेड:",
   // Session
-  "session.restoreError": "सत्र पुनर्स्थापित गर्न सकिएन",
   "session.saveError": "सत्र सुरक्षित गर्न सकिएन",
   // Native
-  "native.dialogError": "स्थानीय चेतावनी देखाउन सकिएन",
   // PDF
-  "pdf.exportError": "PDF निर्यातमा त्रुटि: ",
   "pdf.emptyFile": "PDF निर्यातले खाली फाइल उत्पादन गर्यो",
   "pdf.invalidPdf": "निर्यातले मान्य PDF फाइल उत्पादन गरेन",
   "pdf.timeout": "PDF निर्यातको समय सकियो",
-  "pdf.cancelled": "निर्यात रद्द गरियो",
   "pdf.notSupported": "PDF निर्यात हाल Linux का लागि मात्र समर्थित छ",
   // File operations (Rust)
   "file.emptyPath": "खाली वा अमान्य फाइल पथ",
@@ -147,9 +139,6 @@ export const ne = {
   "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
-  "menu.shortcut.newTab": "Ctrl+N",
-  "menu.shortcut.nextTab": "Ctrl+Tab",
-  "menu.shortcut.prevTab": "Ctrl+Shift+Tab",
   // Zen mode
   "menu.zenEnter": "Zen मोडमा प्रवेश गर्नुहोस्",
   "menu.zenExit": "Zen मोडबाट बाहिरिनुहोस्",
@@ -183,7 +172,6 @@ export const ne = {
   "shortcuts.closeTab": "ट्याब बन्द गर्नुहोस्",
   "shortcuts.esc": "बन्द गर्नुहोस् / बाहिरिनुहोस्",
   // Go to line
-  "goto.linePrompt": (max: number) => `लाइनमा जानुहोस् (1-${max}):`,
   // Status bar
   "statusbar.words": (n: number) => `${n} शब्द${n === 1 ? "" : "हरू"}`,
   "statusbar.lines": (n: number) => `${n} लाइन${n === 1 ? "" : "हरू"}`,
@@ -198,15 +186,8 @@ export const ne = {
   "lang.clearSearch": "खोजी सफा गर्नुहोस्",
   "lang.noResults": "कुनै भाषा फेला परेन",
   // Misc
-  "misc.title": "meditor",
   "topbar.newTypst": "New .typ",
-  "topbar.newTypstTitle": "New Typst document",
-  "topbar.newTypstAria": "New Typst tab",
   "topbar.newLatex": "New .tex",
-  "topbar.newLatexTitle": "New LaTeX document",
-  "topbar.newLatexAria": "New LaTeX tab",
-  "doc.typstSample": "typst-sample",
-  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "Compiling Typst...",
   "preview.typstError": "Typst:",
   "preview.pages": "pages",

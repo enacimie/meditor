@@ -54,7 +54,6 @@ export const ig = {
   "confirm.yes": "Ee",
   "confirm.no": "Mba",
   // Alerts
-  "alert.error": "Njehie",
   "error.title": "Ọ dị ihe mebiri",
   "error.retry": "Nwaa ọzọ",
   // Tabs
@@ -66,7 +65,6 @@ export const ig = {
   "tab.rename": "Nyegharịa aha",
   "tab.renameCancel": "Kagbuo",
   "tab.documentsOpen": "Akwụkwọ ndị emepere",
-  "tab.activeDoc": "Akwụkwọ na-arụ ọrụ",
   // Document names
   "doc.untitled": (n: number) => `Akwụkwọ ${n}`,
   "doc.defaultExport": "akwụkwọ",
@@ -75,7 +73,6 @@ export const ig = {
   "pane.preview": "Nlele",
   "pane.scrollToPreview": "Gaa na ọnọdụ kọsọ na nlele",
   "pane.scrollToCode": "Gaa na koodu n'ọnọdụ akara",
-  "pane.scrollToCodeHint": "Gaa na koodu n'ọnọdụ akara (pịa na nlele iji kaa akara)",
   "pane.goToPreview": "Gaa na nlele",
   "pane.goToCode": "Gaa na koodu",
   "pane.wrapOn": "Gbanyụọ mkpọchi okwu",
@@ -89,7 +86,6 @@ export const ig = {
   "layout.split": "Ndezi na nlele",
   "layout.previewOnly": "Naanị nlele",
   "pane.resize": "Gbanwee nha panelụ",
-  "pane.resizeHint": "Dọrọ iji gbanwee nha",
   // Editor
   "editor.loading": "Ndezi na-ebunye...",
   "editor.undo": "Kagbuo",
@@ -101,16 +97,12 @@ export const ig = {
   "preview.pagedError": "Enweghị ike imepụta ụdị Akwụkwọ:",
   "preview.mermaidError": "Mermaid:",
   // Session
-  "session.restoreError": "Enweghị ike iweghachi seshọn",
   "session.saveError": "Enweghị ike ichekwa seshọn",
   // Native
-  "native.dialogError": "Enweghị ike igosi mkpu obodo",
   // PDF
-  "pdf.exportError": "Njehie ibupụ PDF: ",
   "pdf.emptyFile": "Ibupụ PDF mepụtara faịlụ efu",
   "pdf.invalidPdf": "Ibupụ emepụtaghị faịlụ PDF ziri ezi",
   "pdf.timeout": "Oge ibupụ PDF agwụla",
-  "pdf.cancelled": "A kagbuola ibupụ",
   "pdf.notSupported": "Ibupụ PDF na-akwado naanị na Linux ugbu a",
   // File operations (Rust)
   "file.emptyPath": "Ụzọ faịlụ efu ma ọ bụ na-ezighị ezi",
@@ -147,9 +139,6 @@ export const ig = {
   "menu.closeOthers": "Mechie taabụ ndị ọzọ",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
-  "menu.shortcut.newTab": "Ctrl+N",
-  "menu.shortcut.nextTab": "Ctrl+Tab",
-  "menu.shortcut.prevTab": "Ctrl+Shift+Tab",
   // Zen mode
   "menu.zenEnter": "Banye ụdị Zen",
   "menu.zenExit": "Pụọ ụdị Zen",
@@ -183,7 +172,6 @@ export const ig = {
   "shortcuts.closeTab": "Mechie taabụ",
   "shortcuts.esc": "Mechie / Pụọ",
   // Go to line
-  "goto.linePrompt": (max: number) => `Gaa n'ahịrị (1-${max}):`,
   // Status bar
   "statusbar.words": (n: number) => `Mkpụrụokwu ${n}`,
   "statusbar.lines": (n: number) => `Ahịrị ${n}`,
@@ -198,15 +186,8 @@ export const ig = {
   "lang.clearSearch": "Hichaa nchọ",
   "lang.noResults": "Ọ dịghị asụsụ achọtara",
   // Misc
-  "misc.title": "meditor",
   "topbar.newTypst": "New .typ",
-  "topbar.newTypstTitle": "New Typst document",
-  "topbar.newTypstAria": "New Typst tab",
   "topbar.newLatex": "New .tex",
-  "topbar.newLatexTitle": "New LaTeX document",
-  "topbar.newLatexAria": "New LaTeX tab",
-  "doc.typstSample": "typst-sample",
-  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "Compiling Typst...",
   "preview.typstError": "Typst:",
   "preview.pages": "pages",

@@ -11,14 +11,13 @@ import {
   type MouseEvent,
 } from "react";
 import type { Previewer } from "pagedjs";
-import { isTauri } from "@tauri-apps/api/core";
-import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "./i18n/I18nProvider";
 import pagedCss from "./paged.css?inline";
 import latexHighlightCss from "./latex-highlight.css?inline";
 import { clearMermaidResources, renderContent, splitLongFencedBlocks } from "./previewRenderer";
 import { isPaginatable } from "./pagedLifecycle";
-import { keepHeadingsWithContent } from "./previewRenderer";
+import { openExternal } from "./externalLinks";
+import { fitWideTables, keepHeadingsWithContent } from "./previewRenderer";
 import { LATEX_ENABLED } from "./latexSupport";
 
 import type { DocKind } from "./types";
@@ -36,30 +35,6 @@ function collectStyles(): Array<Record<string, string>> {
   return PAGED_STYLES;
 }
 
-function isSafeExternalUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:" || url.protocol === "mailto:";
-  } catch {
-    return false;
-  }
-}
-
-async function openExternal(url: string) {
-  if (!isSafeExternalUrl(url)) {
-    console.warn("Blocked external link:", url);
-    return;
-  }
-  if (isTauri()) {
-    try {
-      await openUrl(url);
-    } catch (e) {
-      console.error("Could not open link:", e);
-    }
-  } else {
-    window.open(url, "_blank", "noopener");
-  }
-}
 
 export type PreviewHandle = {
   scrollToLine: (line: number) => void;
@@ -71,6 +46,8 @@ type Props = {
   value: string;
   docView: boolean;
   kind: DocKind;
+  /** Allow tables too wide for portrait to claim a landscape page. */
+  landscapeTables?: boolean;
   onReverseSync: (line: number) => void;
 };
 
@@ -101,7 +78,7 @@ interface ChildPreviewHandle {
 }
 
 const Preview = forwardRef<PreviewHandle, Props>(function Preview(
-  { value, docView, kind, onReverseSync },
+  { value, docView, kind, landscapeTables = false, onReverseSync },
   ref,
 ) {
   const { t } = useTranslation();
@@ -323,8 +300,19 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
         const docValue = splitLongFencedBlocks(deferredValue);
         await renderContent(source, docValue, seqRef, isStale, t);
         if (cancelled || myToken !== tokenRef.current) return;
+        /*
+         * Measuring tables against a fallback font picks the wrong fit step —
+         * or the wrong page orientation — once the real one arrives wider or
+         * narrower. The document fonts are declared with @font-face, so this
+         * settles as soon as they load and resolves instantly when they are
+         * already in.
+         */
+        await document.fonts.ready;
+        if (cancelled || myToken !== tokenRef.current) return;
         wrapCodeLines(source);
         keepHeadingsWithContent(source);
+        // Last chance to measure: everything below this is a serialised string.
+        fitWideTables(source, undefined, landscapeTables, t("preview.landscapeNote"));
         paged.innerHTML = "";
         let previewer: Previewer;
         try {
@@ -397,7 +385,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
       cancelled = true;
       if (debounceTimer) clearTimeout(debounceTimer);
     };
-  }, [deferredValue, docView, retryToken, t, kind, scrollToLineNow]);
+  }, [deferredValue, docView, landscapeTables, retryToken, t, kind, scrollToLineNow]);
 
   // Re-run whatever render was skipped while the pane was hidden, as soon as
   // it has a box again — leaving zen mode, switching the layout back, or the

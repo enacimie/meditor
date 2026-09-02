@@ -55,7 +55,6 @@ export const ur = {
   "confirm.no": "نہیں",
 
   // Alerts
-  "alert.error": "خرابی",
   "error.title": "کچھ غلط ہو گیا",
   "error.retry": "دوبارہ کوشش کریں",
   // Tabs
@@ -67,7 +66,6 @@ export const ur = {
   "tab.rename": "نام تبدیل کریں",
   "tab.renameCancel": "منسوخ",
   "tab.documentsOpen": "کھلی دستاویزات",
-  "tab.activeDoc": "فعال دستاویز",
   // Document names
   "doc.untitled": (n: number) => `دستاویز ${n}`,
   "doc.defaultExport": "دستاویز",
@@ -76,7 +74,6 @@ export const ur = {
   "pane.preview": "پیش نظارہ",
   "pane.scrollToPreview": "پیش نظارہ میں کرسر کی پوزیشن پر جائیں",
   "pane.scrollToCode": "نشان زدہ پوزیشن پر کوڈ پر جائیں",
-  "pane.scrollToCodeHint": "نشان زدہ پوزیشن پر کوڈ پر جائیں (نشان لگانے کے لیے پیش نظارہ میں کلک کریں)",
   "pane.goToPreview": "پیش نظارہ پر جائیں",
   "pane.goToCode": "کوڈ پر جائیں",
   "pane.wrapOn": "ورڈ ریپ غیر فعال کریں",
@@ -90,7 +87,6 @@ export const ur = {
   "layout.split": "ایڈیٹر اور پیش نظارہ",
   "layout.previewOnly": "صرف پیش نظارہ",
   "pane.resize": "پینل کا سائز تبدیل کریں",
-  "pane.resizeHint": "سائز تبدیل کرنے کے لیے گھسیٹیں",
   // Editor
   "editor.loading": "ایڈیٹر لوڈ ہو رہا ہے...",
   "editor.undo": "واپس",
@@ -102,16 +98,12 @@ export const ur = {
   "preview.pagedError": "دستاویز کا منظر نہیں بنا سکا:",
   "preview.mermaidError": "مرمیڈ:",
   // Session
-  "session.restoreError": "سیشن بحال نہیں ہو سکا",
   "session.saveError": "سیشن محفوظ نہیں ہو سکا",
   // Native
-  "native.dialogError": "نیٹو الرٹ نہیں دکھا سکا",
   // PDF
-  "pdf.exportError": "PDF برآمد کرنے میں خرابی: ",
   "pdf.emptyFile": "PDF برآمد نے خالی فائل بنائی",
   "pdf.invalidPdf": "برآمد نے درست PDF فائل نہیں بنائی",
   "pdf.timeout": "PDF برآمد کا وقت ختم ہو گیا",
-  "pdf.cancelled": "برآمد منسوخ کر دی گئی",
   "pdf.notSupported": "PDF برآمد فی الحال صرف Linux پر تعاون یافتہ ہے",
   // File operations (Rust)
   "file.emptyPath": "خالی یا غلط فائل پاتھ",
@@ -148,9 +140,6 @@ export const ur = {
   "menu.closeOthers": "دیگر ٹیبز بند کریں",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
-  "menu.shortcut.newTab": "Ctrl+N",
-  "menu.shortcut.nextTab": "Ctrl+Tab",
-  "menu.shortcut.prevTab": "Ctrl+Shift+Tab",
   // Zen mode
   "menu.zenEnter": "زین موڈ میں داخل ہوں",
   "menu.zenExit": "زین موڈ سے باہر نکلیں",
@@ -184,7 +173,6 @@ export const ur = {
   "shortcuts.closeTab": "ٹیب بند کریں",
   "shortcuts.esc": "بند کریں / باہر نکلیں",
   // Go to line
-  "goto.linePrompt": (max: number) => `لائن پر جائیں (1-${max}):`,
   // Status bar
   "statusbar.words": (n: number) => `${n} لفظ`,
   "statusbar.lines": (n: number) => `${n} لائن${n === 1 ? "" : "یں"}`,
@@ -199,15 +187,8 @@ export const ur = {
   "lang.clearSearch": "تلاش صاف کریں",
   "lang.noResults": "کوئی زبان نہیں ملی",
   // Misc
-  "misc.title": "meditor",
   "topbar.newTypst": ".typ نیا",
-  "topbar.newTypstTitle": "نیا Typst دستاویز",
-  "topbar.newTypstAria": "نیا Typst ٹیب",
   "topbar.newLatex": "New .tex",
-  "topbar.newLatexTitle": "New LaTeX document",
-  "topbar.newLatexAria": "New LaTeX tab",
-  "doc.typstSample": "typst-sample",
-  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "…Typst مرتب ہو رہا ہے",
   "preview.typstError": ":Typst",
   "preview.pages": "pages",

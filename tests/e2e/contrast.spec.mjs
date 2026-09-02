@@ -308,6 +308,163 @@ try {
   await page.click(".confirm-btn");
   await page.waitFor("document.querySelector('[role=alertdialog]') === null");
 
+
+  /*
+   * ── The editor in the dark themes ─────────────────────────────────
+   *
+   * CodeMirror ships a light and a dark value for its selection, its drawn
+   * caret and its panels, and picks between them by a flag the app's theme
+   * never set. Every theme therefore got the light one: a near-white
+   * selection behind light text (1.03:1 in dark, 1.44:1 here) and a caret
+   * painted black — on this theme's pure black page, 1.00:1 exactly.
+   *
+   * Read from a real browser rather than from the stylesheet, because the
+   * base rules are more specific than they look: `&light` compounds two
+   * classes on one element, so a plainly-written override silently loses and
+   * the fix would appear to be in place while changing nothing.
+   */
+  // Headless Chrome hands the page no real focus, so `.cm-focused` never
+  // appears and the focused-selection rules — the ones that matter, since you
+  // select while typing — would never be exercised.
+  await page.send("Emulation.setFocusEmulationEnabled", { enabled: true });
+
+  for (const themeName of ["dark", "contrast"]) {
+    // The web view, not the document one: on paper the diagram already sits on
+    // white, so the surface below is only wrong on screen.
+    await page.evaluate(
+      `localStorage.setItem('meditor.preferences.v1', JSON.stringify({ docView: false, wrap: true, theme: ${JSON.stringify(themeName)} })); true`,
+    );
+    await page.reload();
+    await page.waitFor("!!document.querySelector('.cm-content')");
+    await page.waitFor(
+      `document.documentElement.dataset.theme === ${JSON.stringify(themeName)}`,
+      { message: `the ${themeName} theme never reached :root` },
+    );
+
+    await page.evaluate("document.querySelector('.cm-content').focus(); true");
+    await page.waitFor(
+      "document.querySelector('.cm-editor').classList.contains('cm-focused')",
+      { message: "the editor never took focus" },
+    );
+    // A DOM Range does not reach CodeMirror — drawSelection keeps its own
+    // selection — so this is a real select-all through its keymap.
+    //
+    // CodeMirror binds that to Mod-a, and Mod is Cmd on macOS and Ctrl
+    // everywhere else. CDP takes a bitmask — 1 Alt, 2 Ctrl, 4 Meta, 8 Shift
+    // — so sending Ctrl unconditionally selects nothing on a Mac, and the
+    // check then reports that rather than passing over what it should be
+    // measuring.
+    const selectAllModifier = process.platform === "darwin" ? 4 : 2;
+    for (const type of ["keyDown", "keyUp"]) {
+      await page.send("Input.dispatchKeyEvent", {
+        type,
+        modifiers: selectAllModifier,
+        key: "a",
+        code: "KeyA",
+        windowsVirtualKeyCode: 65,
+        nativeVirtualKeyCode: 65,
+      });
+    }
+    await page.waitFor("!!document.querySelector('.cm-selectionBackground')", {
+      message: "Ctrl+A should have drawn a selection",
+    });
+
+    const editorColors = await page.evaluate(`(() => {
+      const editor = document.querySelector('.cm-editor');
+      const line = document.querySelector('.cm-line');
+      const cursor = document.querySelector('.cm-cursor');
+      const selection = document.querySelector('.cm-selectionBackground');
+      return {
+        editorBg: getComputedStyle(editor).backgroundColor,
+        text: getComputedStyle(line).color,
+        selectionBg: getComputedStyle(selection).backgroundColor,
+        caret: cursor ? getComputedStyle(cursor).borderLeftColor : null,
+      };
+    })()`);
+
+    // The selection is a layer behind the text, so what the reader sees is it
+    // composited over the editor's own background.
+    const selectionBg = composite(editorColors.selectionBg, editorColors.editorBg);
+    const selectionRatio = contrast(editorColors.text, `rgb(${selectionBg.join(", ")})`);
+    assert(
+      selectionRatio >= 4.5,
+      `${themeName}: selected text sits at ${selectionRatio.toFixed(2)}:1 against its highlight, must be ≥ 4.5:1`,
+    );
+
+    // A caret is a user-interface component, so 3:1 is the bar it has to clear
+    // (WCAG 1.4.11), not the 4.5:1 asked of text.
+    assert(editorColors.caret !== null, `${themeName}: the editor should draw a caret`);
+    const caretRatio = contrast(editorColors.caret, editorColors.editorBg);
+    assert(
+      caretRatio >= 3,
+      `${themeName}: the caret sits at ${caretRatio.toFixed(2)}:1 against the page, must be ≥ 3:1 — you cannot see where you are typing`,
+    );
+
+    // The find panel: a ratio would not catch this one, because black on
+    // #f5f5f5 reads perfectly well. The defect is that it is a white window
+    // inside a dark editor.
+    await page.evaluate(
+      "window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true })); true",
+    );
+    await page.waitFor("!!document.querySelector('.cm-panels')", {
+      message: "Ctrl+K should open the find panel",
+    });
+    const panel = await page.evaluate(`(() => {
+      const el = document.querySelector('.cm-panels');
+      const style = getComputedStyle(el);
+      return { bg: style.backgroundColor, fg: style.color };
+    })()`);
+    assert(
+      luminance(panel.bg) < luminance(editorColors.editorBg) + 0.2,
+      `${themeName}: the find panel (${panel.bg}) is far lighter than the editor it lives in (${editorColors.editorBg})`,
+    );
+    const panelRatio = contrast(panel.fg, panel.bg);
+    assert(
+      panelRatio >= 4.5,
+      `${themeName}: find panel text contrast ${panelRatio.toFixed(2)}:1 must be ≥ 4.5:1`,
+    );
+
+    // Mermaid draws its lines and edge labels in #333 whatever the app theme
+    // is, so the surface underneath has to be one they show up on.
+    // Measured on an element made for the purpose, the way the error notice
+    // above is: by this point the document has been typed over and holds no
+    // diagram, and rendering one would mean waiting on the Mermaid worker for
+    // a value that comes from a stylesheet. #333 is Mermaid's own lineColor
+    // and textColor, read from its default theme.
+    const diagramBg = await page.evaluate(`(() => {
+      const host = document.createElement('div');
+      host.className = 'markdown-body';
+      const diagram = document.createElement('div');
+      diagram.className = 'mermaid';
+      host.appendChild(diagram);
+      document.body.appendChild(host);
+      const background = getComputedStyle(diagram).backgroundColor;
+      host.remove();
+      return background;
+    })()`);
+    const diagramRatio = contrast("#333333", diagramBg);
+    assert(
+      diagramRatio >= 3,
+      `${themeName}: Mermaid's #333 lines sit at ${diagramRatio.toFixed(2)}:1 on ${diagramBg} — the arrows are invisible`,
+    );
+  }
+
+  /*
+   * Put the preferences back the way this spec found them. It runs first in
+   * the suite, and the loop above leaves docView false and the theme dark —
+   * four of the specs that follow read the document view. Nothing fails today,
+   * but leaving that behind is the same trap that made the search spec fail
+   * earlier when another spec typed over the document.
+   */
+  await page.evaluate(
+    "localStorage.setItem('meditor.preferences.v1', JSON.stringify({ docView: true, wrap: true, theme: 'contrast' })); true",
+  );
+  await page.reload();
+  await page.waitFor("!!document.querySelector('.cm-content')");
+
+  // Leave the browser as the specs that follow expect to find it.
+  await page.send("Emulation.setFocusEmulationEnabled", { enabled: false });
+
   // ── Console health ────────────────────────────────────────────────
   assert(
     page.consoleErrors.length === 0,

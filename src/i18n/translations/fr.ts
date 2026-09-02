@@ -55,7 +55,6 @@ export const fr = {
   "confirm.no": "Non",
 
   // Alerts
-  "alert.error": "Erreur",
   "error.title": "Une erreur est survenue",
   "error.retry": "Réessayer",
   // Tabs
@@ -67,7 +66,6 @@ export const fr = {
   "tab.rename": "Renommer",
   "tab.renameCancel": "Annuler",
   "tab.documentsOpen": "Documents ouverts",
-  "tab.activeDoc": "Document actif",
   // Nom du documents
   "doc.untitled": (n: number) => `Document ${n}`,
   "doc.defaultExport": "document",
@@ -76,7 +74,6 @@ export const fr = {
   "pane.preview": "Aperçu",
   "pane.scrollToPreview": "Aller à la position du curseur dans l'aperçu",
   "pane.scrollToCode": "Aller au code à la position marquée",
-  "pane.scrollToCodeHint": "Aller au code à la position marquée (cliquer dans l'aperçu pour marquer)",
   "pane.goToPreview": "Aller à l'aperçu",
   "pane.goToCode": "Aller au code",
   "pane.wrapOn": "Désactiver le retour à la ligne",
@@ -90,7 +87,6 @@ export const fr = {
   "layout.split": "Éditeur et aperçu",
   "layout.previewOnly": "Aperçu seul",
   "pane.resize": "Redimensionner les panneaux",
-  "pane.resizeHint": "Glisser pour redimensionner",
   // Éditeur
   "editor.loading": "Chargement de l'éditeur...",
   "editor.undo": "Annuler",
@@ -102,16 +98,12 @@ export const fr = {
   "preview.pagedError": "Impossible de générer la vue Document :",
   "preview.mermaidError": "Mermaid :",
   // Session
-  "session.restoreError": "Impossible de restaurer la session",
   "session.saveError": "Impossible d'enregistrer la session",
   // Native
-  "native.dialogError": "Impossible d'afficher l'alerte native",
   // PDF
-  "pdf.exportError": "Erreur lors de l'export PDF : ",
   "pdf.emptyFile": "L'export PDF a produit un fichier vide",
   "pdf.invalidPdf": "L'export n'a pas produit un fichier PDF valide",
   "pdf.timeout": "L'export PDF a expiré",
-  "pdf.cancelled": "Export annulé",
   "pdf.notSupported": "L'export PDF n'est supporté que sur Linux pour l'instant",
   // File operations (Rust)
   "file.emptyPath": "Chemin de fichier vide ou invalide",
@@ -148,9 +140,6 @@ export const fr = {
   "menu.closeOthers": "Fermer les autres onglets",
   "menu.shortcut.saveAs": "Ctrl+Maj+S",
   "menu.shortcut.export": "Ctrl+E",
-  "menu.shortcut.newTab": "Ctrl+N",
-  "menu.shortcut.nextTab": "Ctrl+Tab",
-  "menu.shortcut.prevTab": "Ctrl+Maj+Tab",
   // Zen mode
   "menu.zenEnter": "Activer le mode Zen",
   "menu.zenExit": "Quitter le mode Zen",
@@ -184,7 +173,6 @@ export const fr = {
   "shortcuts.closeTab": "Fermer l'onglet",
   "shortcuts.esc": "Fermer / Quitter",
   // Aller à la ligne
-  "goto.linePrompt": (max: number) => `Aller à la ligne (1-${max}):`,
   // Status bar
   "statusbar.words": (n: number) => `${n} mot${n === 1 ? "" : "s"}`,
   "statusbar.lines": (n: number) => `${n} ligne${n === 1 ? "" : "s"}`,
@@ -199,15 +187,8 @@ export const fr = {
   "lang.clearSearch": "Effacer la recherche",
   "lang.noResults": "Aucune langue trouvée",
   // Misc
-  "misc.title": "meditor",
   "topbar.newTypst": "Nouveau .typ",
-  "topbar.newTypstTitle": "Nouveau document Typst",
-  "topbar.newTypstAria": "Nouvel onglet Typst",
   "topbar.newLatex": "Nouveau .tex",
-  "topbar.newLatexTitle": "Nouveau document LaTeX",
-  "topbar.newLatexAria": "Nouvel onglet LaTeX",
-  "doc.typstSample": "typst-sample",
-  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "Compilation de Typst…",
   "preview.typstError": "Typst :",
   "preview.pages": "pages",

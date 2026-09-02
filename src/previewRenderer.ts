@@ -104,6 +104,131 @@ export function keepHeadingsWithContent(
   }
 }
 
+/** A4's content box is 160 mm wide, which is about 605 px at 96 dpi. */
+const PAGE_CONTENT_WIDTH_PX = 605;
+
+/** A4 landscape content box: 297 mm - 2×2.5 cm margins = 247 mm ≈ 933 px. */
+const LANDSCAPE_CONTENT_WIDTH_PX = 933;
+
+/**
+ * The steps `paged.css` defines, smallest sacrifice first. Each one trades
+ * type size and cell padding for room; the pass stops at the first that fits.
+ */
+const TABLE_FIT_STEPS = ["table-fit-1", "table-fit-2", "table-fit-3"] as const;
+
+/** Marks a table whose only fitting page is a landscape one. */
+const NEEDS_LANDSCAPE_CLASS = "needs-landscape";
+
+/**
+ * Shrink tables that are wider than the page until they fit on it.
+ *
+ * A table cannot be laid out narrower than its intrinsic minimum, and
+ * `max-width` cannot push it below that, so past about fourteen columns the
+ * cell padding alone outgrows the sheet — seventeen columns spend 544 px of
+ * the 605 px available before any text. paged.js then clips at the sheet edge,
+ * in print as much as on screen, and the columns past it are missing from the
+ * exported PDF with nothing to say so.
+ *
+ * `paged.css` handles the ordinary case on its own (`max-width` plus
+ * `overflow-wrap: anywhere`); this is only for the tables that stay too wide
+ * even so. Each table is measured at `min-content` — the width it cannot go
+ * below — and given the first step that brings it under the page.
+ *
+ * Only ever called on the offscreen container that feeds the paginated view,
+ * so the web preview and the HTML export keep the markup they expect. The
+ * class survives `innerHTML` serialisation, which is how the result reaches
+ * paged.js.
+ *
+ * @param root - container whose descendants may include tables.
+ * @param measure - min-content width of an element; injectable because jsdom
+ * lays nothing out and reports 0.
+ * @param allowLandscape - when true, a table that fits on no portrait step but
+ * would fit on an A4 landscape page is marked for one rather than left clipped.
+ * paged.css assigns it `@page landscape-table` (933 px of content width).
+ * @param landscapeNote - label the table carries so the reader sees the page
+ * turned sideways coming (`paged.css ::before` reads it from a data attribute).
+ */
+export function fitWideTables(
+  root: HTMLElement,
+  measure: (el: HTMLElement) => number = minContentWidth,
+  allowLandscape = false,
+  landscapeNote = "",
+): void {
+  for (const table of Array.from(root.querySelectorAll("table"))) {
+    table.classList.remove(...TABLE_FIT_STEPS, NEEDS_LANDSCAPE_CLASS);
+
+    const natural = measure(table);
+    /*
+     * Fail closed, unlike keepHeadingsWithContent. There, skipping when the
+     * container had no layout turned a nicety off in silence; here it would
+     * let a table run off the paper and lose columns from the PDF. Squeezing
+     * a narrow table that never needed it is only ugly, so an unmeasurable
+     * table gets the smallest type rather than the benefit of the doubt.
+     */
+    if (natural === 0) {
+      table.classList.add(TABLE_FIT_STEPS[TABLE_FIT_STEPS.length - 1]);
+      /*
+       * The same fail-closed call applies to the orientation: an unmeasurable
+       * table cannot be trusted to fit portrait either, so with the opt-in it
+       * claims the wider sheet too. If it turns out to fit, the next render
+       * re-decides and the mark goes away — the pass starts clean every time.
+       */
+      if (allowLandscape) {
+        table.classList.add(NEEDS_LANDSCAPE_CLASS);
+        if (landscapeNote) table.setAttribute("data-landscape-note", landscapeNote);
+      }
+      continue;
+    }
+    if (natural <= PAGE_CONTENT_WIDTH_PX) continue;
+
+    let fits = false;
+    for (const step of TABLE_FIT_STEPS) {
+      table.classList.remove(...TABLE_FIT_STEPS);
+      table.classList.add(step);
+      if (measure(table) <= PAGE_CONTENT_WIDTH_PX) {
+        fits = true;
+        break;
+      }
+    }
+    /*
+     * Nothing fits on a portrait page. If landscape is allowed and the table
+     * at its smallest step would fit the wider sheet, mark it so paged.css
+     * moves just its pages to `@page landscape-table`. A table too wide even
+     * for that stays at the smallest step, clipped as before — splitting it is
+     * an authoring decision, not an editor's.
+     */
+    if (!fits && allowLandscape) {
+      const w = measure(table);
+      if (w <= LANDSCAPE_CONTENT_WIDTH_PX) {
+        table.classList.add(NEEDS_LANDSCAPE_CLASS);
+        if (landscapeNote) table.setAttribute("data-landscape-note", landscapeNote);
+      }
+    }
+  }
+}
+
+/**
+ * The narrowest a table can be laid out. Read by asking for it directly
+ * rather than by arithmetic on columns and padding, so the answer accounts for
+ * the actual font, the actual content and whatever the stylesheet says.
+ */
+function minContentWidth(el: HTMLElement): number {
+  const width = el.style.width;
+  const maxWidth = el.style.maxWidth;
+  /*
+   * `max-width: 100%` would cap the answer at the container's 21 cm instead of
+   * reporting the table's own floor. It cannot hide an overflow — 21 cm is
+   * wider than the page — but it can understate one, and the step is picked
+   * from how far past the page the table reaches.
+   */
+  el.style.width = "min-content";
+  el.style.maxWidth = "none";
+  const measured = el.offsetWidth;
+  el.style.width = width;
+  el.style.maxWidth = maxWidth;
+  return measured;
+}
+
 let markdownPromise: Promise<typeof import("./markdown")> | undefined;
 let markdownStylesPromise: Promise<unknown[]> | undefined;
 let mermaidPromise: Promise<typeof import("./mermaidPool")> | undefined;

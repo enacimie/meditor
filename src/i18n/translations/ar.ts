@@ -55,7 +55,6 @@ export const ar = {
   "confirm.no": "لا",
 
   // Alerts
-  "alert.error": "خطأ",
   "error.title": "حدث خطأ ما",
   "error.retry": "إعادة المحاولة",
   // Tabs
@@ -67,7 +66,6 @@ export const ar = {
   "tab.rename": "إعادة تسمية",
   "tab.renameCancel": "إلغاء",
   "tab.documentsOpen": "المستندات المفتوحة",
-  "tab.activeDoc": "المستند النشط",
   // Document names
   "doc.untitled": (n: number) => `مستند ${n}`,
   "doc.defaultExport": "مستند",
@@ -76,7 +74,6 @@ export const ar = {
   "pane.preview": "معاينة",
   "pane.scrollToPreview": "الانتقال إلى موضع المؤشر في المعاينة",
   "pane.scrollToCode": "الانتقال إلى الكود في الموضع المحدد",
-  "pane.scrollToCodeHint": "الانتقال إلى الكود في الموضع المحدد (انقر في المعاينة للتحديد)",
   "pane.goToPreview": "الانتقال إلى المعاينة",
   "pane.goToCode": "الانتقال إلى الكود",
   "pane.wrapOn": "تعطيل التفاف الكلمات",
@@ -90,7 +87,6 @@ export const ar = {
   "layout.split": "المحرر والمعاينة",
   "layout.previewOnly": "المعاينة فقط",
   "pane.resize": "تغيير حجم اللوحات",
-  "pane.resizeHint": "اسحب لتغيير الحجم",
   // Editor
   "editor.loading": "جار تحميل المحرر...",
   "editor.undo": "تراجع",
@@ -102,16 +98,12 @@ export const ar = {
   "preview.pagedError": "تعذر إنشاء عرض المستند:",
   "preview.mermaidError": "ميرميد:",
   // Session
-  "session.restoreError": "تعذر استعادة الجلسة",
   "session.saveError": "تعذر حفظ الجلسة",
   // Native
-  "native.dialogError": "تعذر عرض التنبيه الأصلي",
   // PDF
-  "pdf.exportError": "خطأ في تصدير PDF: ",
   "pdf.emptyFile": "أنتج تصدير PDF ملفاً فارغاً",
   "pdf.invalidPdf": "لم ينتج التصدير ملف PDF صالحاً",
   "pdf.timeout": "انتهت مهلة تصدير PDF",
-  "pdf.cancelled": "تم إلغاء التصدير",
   "pdf.notSupported": "تصدير PDF مدعوم فقط على Linux حالياً",
   // File operations (Rust)
   "file.emptyPath": "مسار الملف فارغ أو غير صالح",
@@ -148,9 +140,6 @@ export const ar = {
   "menu.closeOthers": "إغلاق علامات التبويب الأخرى",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
-  "menu.shortcut.newTab": "Ctrl+N",
-  "menu.shortcut.nextTab": "Ctrl+Tab",
-  "menu.shortcut.prevTab": "Ctrl+Shift+Tab",
   // Zen mode
   "menu.zenEnter": "الدخول إلى وضع زِن",
   "menu.zenExit": "الخروج من وضع زِن",
@@ -184,7 +173,6 @@ export const ar = {
   "shortcuts.closeTab": "إغلاق التبويب",
   "shortcuts.esc": "إغلاق / خروج",
   // Go to line
-  "goto.linePrompt": (max: number) => `انتقل إلى سطر (1-${max}):`,
   // Status bar
   "statusbar.words": (n: number) => `${n} كلمة${n === 1 ? "" : "ات"}`,
   "statusbar.lines": (n: number) => `${n} سطر${n === 1 ? "" : "أسطر"}`,
@@ -199,15 +187,8 @@ export const ar = {
   "lang.clearSearch": "مسح البحث",
   "lang.noResults": "لم يتم العثور على لغات",
   // Misc
-  "misc.title": "meditor",
   "topbar.newTypst": ".typ جديد",
-  "topbar.newTypstTitle": "مستند Typst جديد",
-  "topbar.newTypstAria": "علامة تبويب Typst جديدة",
   "topbar.newLatex": ".tex جديد",
-  "topbar.newLatexTitle": "مستند LaTeX جديد",
-  "topbar.newLatexAria": "علامة تبويب LaTeX جديدة",
-  "doc.typstSample": "typst-sample",
-  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "…جاري تجميع Typst",
   "preview.typstError": ":Typst",
   "preview.pages": "صفحات",

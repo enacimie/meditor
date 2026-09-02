@@ -55,7 +55,6 @@ export const ja = {
   "confirm.no": "いいえ",
 
   // Alerts
-  "alert.error": "エラー",
   "error.title": "エラーが発生しました",
   "error.retry": "再試行",
   // Tabs
@@ -67,7 +66,6 @@ export const ja = {
   "tab.rename": "変更",
   "tab.renameCancel": "キャンセル",
   "tab.documentsOpen": "開いているドキュメント",
-  "tab.activeDoc": "アクティブなドキュメント",
   // ドキュメント名s
   "doc.untitled": (n: number) => `ドキュメント ${n}`,
   "doc.defaultExport": "ドキュメント",
@@ -76,7 +74,6 @@ export const ja = {
   "pane.preview": "プレビュー",
   "pane.scrollToPreview": "プレビューでカーソル位置に移動",
   "pane.scrollToCode": "マークされた位置のコードに移動",
-  "pane.scrollToCodeHint": "マークされた位置のコードに移動（プレビューをクリックしてマーク）",
   "pane.goToPreview": "プレビューに移動",
   "pane.goToCode": "コードに移動",
   "pane.wrapOn": "折り返しを無効にする",
@@ -90,7 +87,6 @@ export const ja = {
   "layout.split": "エディタとプレビュー",
   "layout.previewOnly": "プレビューのみ",
   "pane.resize": "パネルのサイズ変更",
-  "pane.resizeHint": "ドラッグしてサイズ変更",
   // エディタ
   "editor.loading": "エディタを読み込み中...",
   "editor.undo": "元に戻す",
@@ -102,16 +98,12 @@ export const ja = {
   "preview.pagedError": "ドキュメントビューを生成できませんでした:",
   "preview.mermaidError": "Mermaid:",
   // Session
-  "session.restoreError": "セッションを復元できませんでした",
   "session.saveError": "セッションを保存できませんでした",
   // Native
-  "native.dialogError": "ネイティブアラートを表示できませんでした",
   // PDF
-  "pdf.exportError": "PDFエクスポートエラー: ",
   "pdf.emptyFile": "PDFエクスポートが空のファイルを生成しました",
   "pdf.invalidPdf": "エクスポートが有効なPDFファイルを生成しませんでした",
   "pdf.timeout": "PDFエクスポートがタイムアウトしました",
-  "pdf.cancelled": "エクスポートがキャンセルされました",
   "pdf.notSupported": "PDFエクスポートは現在Linuxのみ対応です",
   // File operations (Rust)
   "file.emptyPath": "ファイルパスが空または無効です",
@@ -148,9 +140,6 @@ export const ja = {
   "menu.closeOthers": "他のタブを閉じる",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
-  "menu.shortcut.newTab": "Ctrl+N",
-  "menu.shortcut.nextTab": "Ctrl+Tab",
-  "menu.shortcut.prevTab": "Ctrl+Shift+Tab",
   // Zen mode
   "menu.zenEnter": "Zenモードに入る",
   "menu.zenExit": "Zenモードを終了",
@@ -184,7 +173,6 @@ export const ja = {
   "shortcuts.closeTab": "タブを閉じる",
   "shortcuts.esc": "閉じる / 終了",
   // 行に移動
-  "goto.linePrompt": (max: number) => `行に移動 (1-${max}):`,
   // Status bar
   "statusbar.words": (n: number) => `${n}語`,
   "statusbar.lines": (n: number) => `${n}行`,
@@ -199,15 +187,8 @@ export const ja = {
   "lang.clearSearch": "検索をクリア",
   "lang.noResults": "言語が見つかりません",
   // Misc
-  "misc.title": "meditor",
   "topbar.newTypst": "新規 .typ",
-  "topbar.newTypstTitle": "新しいTypst文書",
-  "topbar.newTypstAria": "新しいTypstタブ",
   "topbar.newLatex": "新規 .tex",
-  "topbar.newLatexTitle": "新しいLaTeX文書",
-  "topbar.newLatexAria": "新しいLaTeXタブ",
-  "doc.typstSample": "typst-sample",
-  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "Typstをコンパイル中…",
   "preview.typstError": "Typst：",
   "preview.pages": "ページ",

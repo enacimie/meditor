@@ -55,7 +55,6 @@ export const sw = {
   "confirm.no": "Hapana",
 
   // Alerts
-  "alert.error": "Hitilafu",
   "error.title": "Hitajitokea tatizo",
   "error.retry": "Jaribu tena",
   // Tabs
@@ -67,7 +66,6 @@ export const sw = {
   "tab.rename": "Badilisha jina",
   "tab.renameCancel": "Ghairi",
   "tab.documentsOpen": "Hati zilizo wazi",
-  "tab.activeDoc": "Hati inayotumika",
   // Document names
   "doc.untitled": (n: number) => `Hati ${n}`,
   "doc.defaultExport": "hati",
@@ -76,7 +74,6 @@ export const sw = {
   "pane.preview": "Onyesho la awali",
   "pane.scrollToPreview": "Nenda kwenye nafasi ya kishale katika onyesho la awali",
   "pane.scrollToCode": "Nenda kwenye msimbo katika nafasi iliyowekwa alama",
-  "pane.scrollToCodeHint": "Nenda kwenye msimbo katika nafasi iliyowekwa alama (bonyeza kwenye onyesho la awali kuweka alama)",
   "pane.goToPreview": "Nenda kwenye onyesho la awali",
   "pane.goToCode": "Nenda kwenye msimbo",
   "pane.wrapOn": "Zima kukunja maneno",
@@ -90,7 +87,6 @@ export const sw = {
   "layout.split": "Kihariri na onyesho la awali",
   "layout.previewOnly": "Onyesho la awali pekee",
   "pane.resize": "Badilisha ukubwa wa paneli",
-  "pane.resizeHint": "Vuta kubadilisha ukubwa",
   // Editor
   "editor.loading": "Inapakia kihariri...",
   "editor.undo": "Tendua",
@@ -102,16 +98,12 @@ export const sw = {
   "preview.pagedError": "Haikuweza kutengeneza mwonekano wa hati:",
   "preview.mermaidError": "Mermaid:",
   // Session
-  "session.restoreError": "Haikuweza kurejesha kikao",
   "session.saveError": "Haikuweza kuhifadhi kikao",
   // Native
-  "native.dialogError": "Haikuweza kuonyesha arifa asili",
   // PDF
-  "pdf.exportError": "Hitilafu kuhamisha PDF: ",
   "pdf.emptyFile": "Uhamishaji wa PDF ulitengeneza faili tupu",
   "pdf.invalidPdf": "Uhamishaji haukutengeneza faili sahihi ya PDF",
   "pdf.timeout": "Muda wa uhamishaji PDF umeisha",
-  "pdf.cancelled": "Uhamishaji umeghairiwa",
   "pdf.notSupported": "Uhamishaji wa PDF unatumika kwenye Linux tu kwa sasa",
   // File operations (Rust)
   "file.emptyPath": "Njia ya faili tupu au batili",
@@ -148,9 +140,6 @@ export const sw = {
   "menu.closeOthers": "Funga vichupo vingine",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
-  "menu.shortcut.newTab": "Ctrl+N",
-  "menu.shortcut.nextTab": "Ctrl+Tab",
-  "menu.shortcut.prevTab": "Ctrl+Shift+Tab",
   // Zen mode
   "menu.zenEnter": "Ingia hali ya Zen",
   "menu.zenExit": "Toka hali ya Zen",
@@ -184,7 +173,6 @@ export const sw = {
   "shortcuts.closeTab": "Funga kichupo",
   "shortcuts.esc": "Funga / Toka",
   // Go to line
-  "goto.linePrompt": (max: number) => `Nenda kwenye mstari (1-${max}):`,
   // Status bar
   "statusbar.words": (n: number) => `Maneno ${n}`,
   "statusbar.lines": (n: number) => `Mistari ${n}`,
@@ -199,15 +187,8 @@ export const sw = {
   "lang.clearSearch": "Futa utafutaji",
   "lang.noResults": "Hakuna lugha zilizopatikana",
   // Misc
-  "misc.title": "meditor",
   "topbar.newTypst": "Mpya .typ",
-  "topbar.newTypstTitle": "Hati mpya ya Typst",
-  "topbar.newTypstAria": "Kichupo kipya cha Typst",
   "topbar.newLatex": "New .tex",
-  "topbar.newLatexTitle": "New LaTeX document",
-  "topbar.newLatexAria": "New LaTeX tab",
-  "doc.typstSample": "typst-sample",
-  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "Inakusanya Typst…",
   "preview.typstError": "Typst:",
   "preview.pages": "pages",

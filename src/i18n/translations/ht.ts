@@ -54,7 +54,6 @@ export const ht = {
   "confirm.yes": "Wi",
   "confirm.no": "Non",
   // Alerts
-  "alert.error": "Erè",
   "error.title": "Yon bagay mal pase",
   "error.retry": "Reyese",
   // Tabs
@@ -66,7 +65,6 @@ export const ht = {
   "tab.rename": "Chanje non",
   "tab.renameCancel": "Anile",
   "tab.documentsOpen": "Dokiman ki louvri",
-  "tab.activeDoc": "Dokiman aktif",
   // Document names
   "doc.untitled": (n: number) => `Dokiman ${n}`,
   "doc.defaultExport": "dokiman",
@@ -75,7 +73,6 @@ export const ht = {
   "pane.preview": "Apèsi",
   "pane.scrollToPreview": "Ale nan pozisyon kòsrè nan apèsi a",
   "pane.scrollToCode": "Ale nan pozisyon ki make nan kòd la",
-  "pane.scrollToCodeHint": "Ale nan pozisyon ki make nan kòd la (klike nan apèsi pou make)",
   "pane.goToPreview": "Ale nan apèsi",
   "pane.goToCode": "Ale nan kòd",
   "pane.wrapOn": "Deaktive vlope mo yo",
@@ -89,7 +86,6 @@ export const ht = {
   "layout.split": "Editè ak apèsi",
   "layout.previewOnly": "Apèsi sèlman",
   "pane.resize": "Chanje gwosè pano yo",
-  "pane.resizeHint": "Trennen pou chanje gwosè",
   // Editor
   "editor.loading": "Editè ap chaje...",
   "editor.undo": "Defè",
@@ -101,16 +97,12 @@ export const ht = {
   "preview.pagedError": "Pa ka jenere vi Dokiman:",
   "preview.mermaidError": "Mermaid:",
   // Session
-  "session.restoreError": "Pa ka restore sesyon",
   "session.saveError": "Pa ka anrejistre sesyon",
   // Native
-  "native.dialogError": "Pa ka montre alèt natif",
   // PDF
-  "pdf.exportError": "Erè ekspòtasyon PDF: ",
   "pdf.emptyFile": "Ekspòtasyon PDF te pwodui yon fichye vid",
   "pdf.invalidPdf": "Ekspòtasyon pa te pwodui yon fichye PDF ki valab",
   "pdf.timeout": "Tan ekspòtasyon PDF ekspire",
-  "pdf.cancelled": "Ekspòtasyon anile",
   "pdf.notSupported": "Ekspòtasyon PDF sèlman sipòte sou Linux pou kounye a",
   // File operations (Rust)
   "file.emptyPath": "Chemen fichye vid oswa ki pa valab",
@@ -147,9 +139,6 @@ export const ht = {
   "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
-  "menu.shortcut.newTab": "Ctrl+N",
-  "menu.shortcut.nextTab": "Ctrl+Tab",
-  "menu.shortcut.prevTab": "Ctrl+Shift+Tab",
   // Zen mode
   "menu.zenEnter": "Antre nan mòd Zen",
   "menu.zenExit": "Soti nan mòd Zen",
@@ -183,7 +172,6 @@ export const ht = {
   "shortcuts.closeTab": "Fèmen onglè",
   "shortcuts.esc": "Fèmen / Sòti",
   // Go to line
-  "goto.linePrompt": (max: number) => `Ale nan liy (1-${max}):`,
   // Status bar
   "statusbar.words": (n: number) => `${n} mo`,
   "statusbar.lines": (n: number) => `${n} liy`,
@@ -198,15 +186,8 @@ export const ht = {
   "lang.clearSearch": "Efase rechèch",
   "lang.noResults": "Pa gen lang yo jwenn",
   // Misc
-  "misc.title": "meditor",
   "topbar.newTypst": "New .typ",
-  "topbar.newTypstTitle": "New Typst document",
-  "topbar.newTypstAria": "New Typst tab",
   "topbar.newLatex": "New .tex",
-  "topbar.newLatexTitle": "New LaTeX document",
-  "topbar.newLatexAria": "New LaTeX tab",
-  "doc.typstSample": "typst-sample",
-  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "Compiling Typst...",
   "preview.typstError": "Typst:",
   "preview.pages": "pages",

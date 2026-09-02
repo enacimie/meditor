@@ -218,10 +218,30 @@
   overflow: auto;
 }
 
+/*
+ * The web view keeps its horizontal scroll — on a screen you can scroll, and
+ * seeing a wide table at full size beats seeing it squeezed. But a single
+ * enormous cell should not be what decides how far you have to scroll, so the
+ * text breaks here too.
+ */
 .markdown-body th,
 .markdown-body td {
   border: 1px solid var(--border);
   padding: 6px 12px;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+}
+
+/*
+ * A phone has about 312 px to work with, and eight columns of the padding
+ * above would eat 256 px of it before any text.
+ */
+@media (pointer: coarse) {
+  .markdown-body th,
+  .markdown-body td {
+    padding: 5px 6px;
+  }
 }
 
 /*
@@ -310,9 +330,24 @@
 }
 
 /* ---- Mermaid ---- */
+/*
+ * Mermaid renders with its own light theme, whose lines and edge labels are
+ * #333. On the dark page that is 1.32:1, and 1.66:1 on the pure black of the
+ * contrast theme: the boxes survive because they carry their own pale fill,
+ * but the arrows between them simply are not there.
+ *
+ * Giving the diagram the surface it was drawn for is the small half of the
+ * fix. Making Mermaid itself follow the theme is the right one, and a change
+ * of its own: the theme has to reach a Web Worker, the diagram cache is keyed
+ * on the source text alone so switching themes regenerates nothing, and the
+ * Document view and the HTML export both want paper regardless.
+ */
 .markdown-body .mermaid {
   text-align: center;
   margin: 1em 0;
+  background: var(--diagram-surface);
+  border-radius: 6px;
+  padding: 8px;
 }
 
 .mermaid-loading {
@@ -412,6 +447,66 @@
   width: 21cm;
   visibility: hidden;
   pointer-events: none;
+}
+
+/*
+ * The offscreen container is a measuring instrument, not decoration:
+ * `fitWideTables` reads the tables in it to decide which cannot fit the page.
+ * So it has to be styled like the paper — and by default it is not.
+ *
+ * `paged.css` never reaches the document (paged.js parses it and injects its
+ * own copy only while it paginates), so at measuring time these tables fall
+ * back to the screen rules above: `display: block` with a scrollbar, 12 px of
+ * cell padding and a 1 px border per cell. Against the page that reads far
+ * narrower than the truth — a 17-column table reported 603 px, just inside the
+ * 605 px page, was therefore left alone, and was then laid out at 732 px and
+ * clipped at the sheet edge with its last columns missing from the PDF.
+ *
+ * Only the metrics that differ are repeated here; they mirror the table block
+ * of `paged.css`, and `tableFitMetrics.test.ts` fails if they drift apart.
+ * The doubled class beats `.markdown-body` on specificity rather than on
+ * source order, which is 200 lines away and easy to disturb.
+ */
+.preview-source.markdown-body table {
+  display: table;
+  overflow: visible;
+  width: auto;
+  max-width: 100%;
+  border-collapse: collapse;
+  font-size: 10pt;
+}
+
+.preview-source.markdown-body th,
+.preview-source.markdown-body td {
+  border: none;
+  padding: 3.5pt 12pt;
+}
+
+.preview-source.markdown-body table.table-fit-1 {
+  font-size: 9pt;
+}
+
+.preview-source.markdown-body table.table-fit-1 th,
+.preview-source.markdown-body table.table-fit-1 td {
+  padding: 3pt 6pt;
+}
+
+.preview-source.markdown-body table.table-fit-2 {
+  font-size: 8pt;
+}
+
+.preview-source.markdown-body table.table-fit-2 th,
+.preview-source.markdown-body table.table-fit-2 td {
+  padding: 2.5pt 4pt;
+}
+
+.preview-source.markdown-body table.table-fit-3 {
+  font-size: 7pt;
+}
+
+.preview-source.markdown-body table.table-fit-3 th,
+.preview-source.markdown-body table.table-fit-3 td {
+  padding: 2pt 2pt;
 }
 
 .paged-view .pagedjs_pages {

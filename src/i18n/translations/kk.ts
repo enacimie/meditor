@@ -54,7 +54,6 @@ export const kk = {
   "confirm.yes": "Иә",
   "confirm.no": "Жоқ",
   // Alerts
-  "alert.error": "Қате",
   "error.title": "Бірдеңе дұрыс болмады",
   "error.retry": "Қайталау",
   // Tabs
@@ -66,7 +65,6 @@ export const kk = {
   "tab.rename": "Атауын өзгерту",
   "tab.renameCancel": "Бас тарту",
   "tab.documentsOpen": "Ашық құжаттар",
-  "tab.activeDoc": "Белсенді құжат",
   // Document names
   "doc.untitled": (n: number) => `Құжат ${n}`,
   "doc.defaultExport": "құжат",
@@ -75,7 +73,6 @@ export const kk = {
   "pane.preview": "Алдын ала қарау",
   "pane.scrollToPreview": "Курсор орнына алдын ала қарауда өту",
   "pane.scrollToCode": "Белгіленген орынға кодта өту",
-  "pane.scrollToCodeHint": "Белгіленген орынға кодта өту (белгілеу үшін алдын ала қарауда басыңыз)",
   "pane.goToPreview": "Алдын ала қарауға өту",
   "pane.goToCode": "Кодқа өту",
   "pane.wrapOn": "Сөз тасымалын өшіру",
@@ -89,7 +86,6 @@ export const kk = {
   "layout.split": "Редактор және алдын ала қарау",
   "layout.previewOnly": "Тек алдын ала қарау",
   "pane.resize": "Панель өлшемін өзгерту",
-  "pane.resizeHint": "Өлшемін өзгерту үшін сүйреңіз",
   // Editor
   "editor.loading": "Редактор жүктелуде...",
   "editor.undo": "Болдырмау",
@@ -101,16 +97,12 @@ export const kk = {
   "preview.pagedError": "Құжат көрінісін жасау мүмкін емес:",
   "preview.mermaidError": "Mermaid:",
   // Session
-  "session.restoreError": "Сессияны қалпына келтіру мүмкін емес",
   "session.saveError": "Сессияны сақтау мүмкін емес",
   // Native
-  "native.dialogError": "Жергілікті ескертуді көрсету мүмкін емес",
   // PDF
-  "pdf.exportError": "PDF экспорттау қатесі: ",
   "pdf.emptyFile": "PDF экспорт бос файл жасады",
   "pdf.invalidPdf": "Экспорт жарамды PDF файлын жасамады",
   "pdf.timeout": "PDF экспорт уақыты аяқталды",
-  "pdf.cancelled": "Экспорт бас тартылды",
   "pdf.notSupported": "PDF экспорт әзірге тек Linux-та қолдау көрсетіледі",
   // File operations (Rust)
   "file.emptyPath": "Бос немесе жарамсыз файл жолы",
@@ -147,9 +139,6 @@ export const kk = {
   "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
-  "menu.shortcut.newTab": "Ctrl+N",
-  "menu.shortcut.nextTab": "Ctrl+Tab",
-  "menu.shortcut.prevTab": "Ctrl+Shift+Tab",
   // Zen mode
   "menu.zenEnter": "Zen режиміне кіру",
   "menu.zenExit": "Zen режимінен шығу",
@@ -183,7 +172,6 @@ export const kk = {
   "shortcuts.closeTab": "Бетті жабу",
   "shortcuts.esc": "Жабу / Шығу",
   // Go to line
-  "goto.linePrompt": (max: number) => `Жолға өту (1-${max}):`,
   // Status bar
   "statusbar.words": (n: number) => `${n} сөз`,
   "statusbar.lines": (n: number) => `${n} жол`,
@@ -198,15 +186,8 @@ export const kk = {
   "lang.clearSearch": "Іздеуді тазалау",
   "lang.noResults": "Тілдер табылмады",
   // Misc
-  "misc.title": "meditor",
   "topbar.newTypst": "New .typ",
-  "topbar.newTypstTitle": "New Typst document",
-  "topbar.newTypstAria": "New Typst tab",
   "topbar.newLatex": "New .tex",
-  "topbar.newLatexTitle": "New LaTeX document",
-  "topbar.newLatexAria": "New LaTeX tab",
-  "doc.typstSample": "typst-sample",
-  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "Compiling Typst...",
   "preview.typstError": "Typst:",
   "preview.pages": "pages",

@@ -55,7 +55,6 @@ export const tr = {
   "confirm.no": "Hayır",
 
   // Alerts
-  "alert.error": "Hata",
   "error.title": "Bir şeyler ters gitti",
   "error.retry": "Tekrar dene",
   // Tabs
@@ -67,7 +66,6 @@ export const tr = {
   "tab.rename": "Yeniden adlandır",
   "tab.renameCancel": "İptal",
   "tab.documentsOpen": "Açık belgeler",
-  "tab.activeDoc": "Etkin belge",
   // Belge adıs
   "doc.untitled": (n: number) => `Belge ${n}`,
   "doc.defaultExport": "belge",
@@ -76,7 +74,6 @@ export const tr = {
   "pane.preview": "Önizleme",
   "pane.scrollToPreview": "Önizlemede imleç konumuna git",
   "pane.scrollToCode": "İşaretli konumdaki koda git",
-  "pane.scrollToCodeHint": "İşaretli konumdaki koda git (işaretlemek için önizlemeye tıkla)",
   "pane.goToPreview": "Önizlemeye git",
   "pane.goToCode": "Koda git",
   "pane.wrapOn": "Sözcük kaydırmayı kapat",
@@ -90,7 +87,6 @@ export const tr = {
   "layout.split": "Düzenleyici ve önizleme",
   "layout.previewOnly": "Yalnızca önizleme",
   "pane.resize": "Panelleri yeniden boyutlandır",
-  "pane.resizeHint": "Yeniden boyutlandırmak için sürükle",
   // Düzenleyici
   "editor.loading": "Düzenleyici yükleniyor...",
   "editor.undo": "Geri al",
@@ -102,16 +98,12 @@ export const tr = {
   "preview.pagedError": "Belge görünümü oluşturulamadı:",
   "preview.mermaidError": "Mermaid:",
   // Session
-  "session.restoreError": "Oturum geri yüklenemedi",
   "session.saveError": "Oturum kaydedilemedi",
   // Native
-  "native.dialogError": "Yerel uyarı gösterilemedi",
   // PDF
-  "pdf.exportError": "PDF dışa aktarma hatası: ",
   "pdf.emptyFile": "PDF dışa aktarma boş bir dosya oluşturdu",
   "pdf.invalidPdf": "Dışa aktarma geçerli bir PDF dosyası oluşturmadı",
   "pdf.timeout": "PDF dışa aktarma zaman aşımına uğradı",
-  "pdf.cancelled": "Dışa aktarma iptal edildi",
   "pdf.notSupported": "PDF dışa aktarma şimdilik sadece Linux'ta destekleniyor",
   // File operations (Rust)
   "file.emptyPath": "Empty or invalid file path",
@@ -148,9 +140,6 @@ export const tr = {
   "menu.closeOthers": "Diğer sekmeleri kapat",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
-  "menu.shortcut.newTab": "Ctrl+N",
-  "menu.shortcut.nextTab": "Ctrl+Tab",
-  "menu.shortcut.prevTab": "Ctrl+Shift+Tab",
   // Zen mode
   "menu.zenEnter": "Zen moduna gir",
   "menu.zenExit": "Zen modundan çık",
@@ -184,7 +173,6 @@ export const tr = {
   "shortcuts.closeTab": "Sekmeyi kapat",
   "shortcuts.esc": "Kapat / Çık",
   // Satıra git
-  "goto.linePrompt": (max: number) => `Satıra git (1-${max}):`,
   // Status bar
   "statusbar.words": (n: number) => `${n} kelime`,
   "statusbar.lines": (n: number) => `${n} satır`,
@@ -199,15 +187,8 @@ export const tr = {
   "lang.clearSearch": "Aramayı temizle",
   "lang.noResults": "Dil bulunamadı",
   // Misc
-  "misc.title": "meditor",
   "topbar.newTypst": "New .typ",
-  "topbar.newTypstTitle": "New Typst document",
-  "topbar.newTypstAria": "New Typst tab",
   "topbar.newLatex": "New .tex",
-  "topbar.newLatexTitle": "New LaTeX document",
-  "topbar.newLatexAria": "New LaTeX tab",
-  "doc.typstSample": "typst-sample",
-  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "Compiling Typst...",
   "preview.typstError": "Typst:",
   "preview.pages": "pages",

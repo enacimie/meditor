@@ -54,7 +54,6 @@ export const km = {
   "confirm.yes": "បាទ/ចាស",
   "confirm.no": "ទេ",
   // Alerts
-  "alert.error": "កំហុស",
   "error.title": "មានអ្វីមួយខុសប្រក្រតី",
   "error.retry": "ព្យាយាមម្ដងទៀត",
   // Tabs
@@ -66,7 +65,6 @@ export const km = {
   "tab.rename": "ប្ដូរឈ្មោះ",
   "tab.renameCancel": "បោះបង់",
   "tab.documentsOpen": "ឯកសារដែលបើក",
-  "tab.activeDoc": "ឯកសារសកម្ម",
   // Document names
   "doc.untitled": (n: number) => `ឯកសារ ${n}`,
   "doc.defaultExport": "ឯកសារ",
@@ -75,7 +73,6 @@ export const km = {
   "pane.preview": "មើលជាមុន",
   "pane.scrollToPreview": "ទៅកាន់ទីតាំងទស្សន៍ទ្រនិចក្នុងការមើលជាមុន",
   "pane.scrollToCode": "ទៅកាន់កូដនៅទីតាំងដែលបានសម្គាល់",
-  "pane.scrollToCodeHint": "ទៅកាន់កូដនៅទីតាំងដែលបានសម្គាល់ (ចុចក្នុងការមើលជាមុនដើម្បីសម្គាល់)",
   "pane.goToPreview": "ទៅកាន់ការមើលជាមុន",
   "pane.goToCode": "ទៅកាន់កូដ",
   "pane.wrapOn": "បិទការតម្រៀបពាក្យ",
@@ -89,7 +86,6 @@ export const km = {
   "layout.split": "កម្មវិធីកែសម្រួល និងមើលជាមុន",
   "layout.previewOnly": "មើលជាមុនតែប៉ុណ្ណោះ",
   "pane.resize": "ប្ដូរទំហំផ្ទាំង",
-  "pane.resizeHint": "អូសដើម្បីប្ដូរទំហំ",
   // Editor
   "editor.loading": "កំពុងផ្ទុកកម្មវិធីកែសម្រួល...",
   "editor.undo": "មិនធ្វើវិញ",
@@ -101,16 +97,12 @@ export const km = {
   "preview.pagedError": "មិនអាចបង្កើតទិដ្ឋភាពឯកសារបាន៖",
   "preview.mermaidError": "Mermaid៖",
   // Session
-  "session.restoreError": "មិនអាចស្ដារសម័យបាន",
   "session.saveError": "មិនអាចរក្សាទុកសម័យបាន",
   // Native
-  "native.dialogError": "មិនអាចបង្ហាញការជូនដំណឹងដើមបាន",
   // PDF
-  "pdf.exportError": "កំហុសក្នុងការនាំចេញ PDF៖ ",
   "pdf.emptyFile": "ការនាំចេញ PDF បង្កើតឯកសារទទេ",
   "pdf.invalidPdf": "ការនាំចេញមិនបានបង្កើតឯកសារ PDF ត្រឹមត្រូវ",
   "pdf.timeout": "ការនាំចេញ PDF អស់ពេល",
-  "pdf.cancelled": "ការនាំចេញត្រូវបានបោះបង់",
   "pdf.notSupported": "ការនាំចេញ PDF បច្ចុប្បន្នគាំទ្រតែលើ Linux ប៉ុណ្ណោះ",
   // File operations (Rust)
   "file.emptyPath": "ផ្លូវឯកសារទទេ ឬមិនត្រឹមត្រូវ",
@@ -147,9 +139,6 @@ export const km = {
   "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
-  "menu.shortcut.newTab": "Ctrl+N",
-  "menu.shortcut.nextTab": "Ctrl+Tab",
-  "menu.shortcut.prevTab": "Ctrl+Shift+Tab",
   // Zen mode
   "menu.zenEnter": "ចូលរបៀប Zen",
   "menu.zenExit": "ចាកចេញពីរបៀប Zen",
@@ -183,7 +172,6 @@ export const km = {
   "shortcuts.closeTab": "បិទផ្ទាំង",
   "shortcuts.esc": "បិទ / ចាកចេញ",
   // Go to line
-  "goto.linePrompt": (max: number) => `ទៅបន្ទាត់ (1-${max}):`,
   // Status bar
   "statusbar.words": (n: number) => `${n} ពាក្យ`,
   "statusbar.lines": (n: number) => `${n} បន្ទាត់`,
@@ -198,15 +186,8 @@ export const km = {
   "lang.clearSearch": "សម្អាតការស្វែងរក",
   "lang.noResults": "រកមិនឃើញភាសា",
   // Misc
-  "misc.title": "meditor",
   "topbar.newTypst": "New .typ",
-  "topbar.newTypstTitle": "New Typst document",
-  "topbar.newTypstAria": "New Typst tab",
   "topbar.newLatex": "New .tex",
-  "topbar.newLatexTitle": "New LaTeX document",
-  "topbar.newLatexAria": "New LaTeX tab",
-  "doc.typstSample": "typst-sample",
-  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "Compiling Typst...",
   "preview.typstError": "Typst:",
   "preview.pages": "pages",

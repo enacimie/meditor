@@ -37,7 +37,7 @@
 - **Touch**: on a touch screen the workspace is one pane at a time (splitting a phone in half helps nobody), controls grow to a 44px target, tapping the preview marks a spot without dragging you into the editor, and on-screen undo/redo appear — a touch keyboard has no Ctrl.
 - **Zen mode** (F11): fullscreen distraction-free writing.
 - **Keyboard shortcuts overlay** (F1) and in-window dialogs for confirm/rename (fully themed and localized).
-- **Preferences** (Ctrl+,): editor font size and family, with a live sample, and the spell checker toggle.
+- **Preferences** (Ctrl+,): editor font size and family, with a live sample, and the spell checker toggle. Wide tables that fit no portrait page can be allowed to claim a landscape one (off by default — a sideways page is opt-in, and the table says so on the sheet).
 - **Spell checking** provided by the platform (Windows and macOS webviews; on Linux it also needs WebKitGTK's own setting), in the interface language.
 - **Status bar** with word/line/character counts and unsaved indicator.
 - **Outline** (table of contents) from headings for quick navigation.

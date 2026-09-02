@@ -1,7 +1,7 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { getVersion } from "@tauri-apps/api/app";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { openExternal } from "../externalLinks";
 import type { TranslationFn } from "../i18n/translations";
 import "./AboutDialog.css";
 
@@ -15,29 +15,7 @@ const EXIT_MS = 140;
 
 const REPO_URL = "https://github.com/enacimie/meditor";
 const LICENSE_NAME = "GNU Affero General Public License v3.0";
-const FALLBACK_VERSION = "0.1.7";
-
-function isSafeExternalUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
-async function openExternal(url: string): Promise<void> {
-  if (!isSafeExternalUrl(url)) return;
-  if (isTauri()) {
-    try {
-      await openUrl(url);
-    } catch (error) {
-      console.error("Could not open link", error);
-    }
-  } else {
-    window.open(url, "_blank", "noopener");
-  }
-}
+const FALLBACK_VERSION = __APP_VERSION__;
 
 const AboutDialog = memo(function AboutDialog({ t, onClose }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -46,8 +24,9 @@ const AboutDialog = memo(function AboutDialog({ t, onClose }: Props) {
   const [closing, setClosing] = useState(false);
   const [version, setVersion] = useState<string | null>(null);
 
-  // Read the app version from Tauri; fall back to a static value in plain web
-  // contexts (dev server, tests) where the IPC command is unavailable.
+  // Read the app version from Tauri; fall back to the one baked in at build
+  // time in plain web contexts (dev server, tests, the deployed web app)
+  // where the IPC command is unavailable.
   useEffect(() => {
     let cancelled = false;
     if (!isTauri()) {

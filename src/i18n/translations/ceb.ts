@@ -54,7 +54,6 @@ export const ceb = {
   "confirm.yes": "Oo",
   "confirm.no": "Dili",
   // Alerts
-  "alert.error": "Sayop",
   "error.title": "Adunay nasayop",
   "error.retry": "Sulayi pag-usab",
   // Tabs
@@ -66,7 +65,6 @@ export const ceb = {
   "tab.rename": "Ilisi ang ngalan",
   "tab.renameCancel": "Kansela",
   "tab.documentsOpen": "Mga naablihang dokumento",
-  "tab.activeDoc": "Aktibong dokumento",
   // Document names
   "doc.untitled": (n: number) => `Dokumento ${n}`,
   "doc.defaultExport": "dokumento",
@@ -75,7 +73,6 @@ export const ceb = {
   "pane.preview": "Preview",
   "pane.scrollToPreview": "Adto sa posisyon sa cursor sa preview",
   "pane.scrollToCode": "Adto sa gimarkahan nga posisyon sa code",
-  "pane.scrollToCodeHint": "Adto sa gimarkahan nga posisyon sa code (i-klik ang preview aron markahan)",
   "pane.goToPreview": "Adto sa preview",
   "pane.goToCode": "Adto sa code",
   "pane.wrapOn": "I-disable ang word wrap",
@@ -89,7 +86,6 @@ export const ceb = {
   "layout.split": "Editor ug preview",
   "layout.previewOnly": "Preview lang",
   "pane.resize": "Usba ang gidak-on sa mga panel",
-  "pane.resizeHint": "I-drag aron usbon ang gidak-on",
   // Editor
   "editor.loading": "Nagkarga ang editor...",
   "editor.undo": "Bawion",
@@ -101,16 +97,12 @@ export const ceb = {
   "preview.pagedError": "Dili makamugna sa panglantaw nga Dokumento:",
   "preview.mermaidError": "Mermaid:",
   // Session
-  "session.restoreError": "Dili ma-restore ang sesyon",
   "session.saveError": "Dili ma-save ang sesyon",
   // Native
-  "native.dialogError": "Dili makapakita og lumad nga alert",
   // PDF
-  "pdf.exportError": "Sayop sa pag-export sa PDF: ",
   "pdf.emptyFile": "Ang pag-export sa PDF nakahimo og walay sulod nga file",
   "pdf.invalidPdf": "Ang pag-export wala makahimo og balido nga PDF file",
   "pdf.timeout": "Nahurot ang oras sa pag-export sa PDF",
-  "pdf.cancelled": "Gikansela ang pag-export",
   "pdf.notSupported": "Ang pag-export sa PDF gisuportahan ra sa Linux sa pagkakaron",
   // File operations (Rust)
   "file.emptyPath": "Walay sulod o dili balido nga file path",
@@ -147,9 +139,6 @@ export const ceb = {
   "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
-  "menu.shortcut.newTab": "Ctrl+N",
-  "menu.shortcut.nextTab": "Ctrl+Tab",
-  "menu.shortcut.prevTab": "Ctrl+Shift+Tab",
   // Zen mode
   "menu.zenEnter": "Sulod sa Zen mode",
   "menu.zenExit": "Gawas sa Zen mode",
@@ -183,7 +172,6 @@ export const ceb = {
   "shortcuts.closeTab": "Isira ang tab",
   "shortcuts.esc": "Isira / Gawas",
   // Go to line
-  "goto.linePrompt": (max: number) => `Adto sa linya (1-${max}):`,
   // Status bar
   "statusbar.words": (n: number) => `${n} ka pulong`,
   "statusbar.lines": (n: number) => `${n} ka linya`,
@@ -198,15 +186,8 @@ export const ceb = {
   "lang.clearSearch": "Hawani ang pagpangita",
   "lang.noResults": "Wala'y nakitang mga pinulongan",
   // Misc
-  "misc.title": "meditor",
   "topbar.newTypst": "New .typ",
-  "topbar.newTypstTitle": "New Typst document",
-  "topbar.newTypstAria": "New Typst tab",
   "topbar.newLatex": "New .tex",
-  "topbar.newLatexTitle": "New LaTeX document",
-  "topbar.newLatexAria": "New LaTeX tab",
-  "doc.typstSample": "typst-sample",
-  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "Compiling Typst...",
   "preview.typstError": "Typst:",
   "preview.pages": "pages",

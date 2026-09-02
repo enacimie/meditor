@@ -55,7 +55,6 @@ export const ko = {
   "confirm.no": "아니요",
 
   // Alerts
-  "alert.error": "오류",
   "error.title": "문제가 발생했습니다",
   "error.retry": "다시 시도",
   // Tabs
@@ -67,7 +66,6 @@ export const ko = {
   "tab.rename": "이름 바꾸기",
   "tab.renameCancel": "취소",
   "tab.documentsOpen": "열린 문서",
-  "tab.activeDoc": "활성 문서",
   // 문서 이름s
   "doc.untitled": (n: number) => `문서 ${n}`,
   "doc.defaultExport": "문서",
@@ -76,7 +74,6 @@ export const ko = {
   "pane.preview": "미리보기",
   "pane.scrollToPreview": "미리보기에서 커서 위치로 이동",
   "pane.scrollToCode": "표시된 위치의 코드로 이동",
-  "pane.scrollToCodeHint": "표시된 위치의 코드로 이동 (미리보기 클릭으로 표시)",
   "pane.goToPreview": "미리보기로 이동",
   "pane.goToCode": "코드로 이동",
   "pane.wrapOn": "자동 줄바꿈 비활성화",
@@ -90,7 +87,6 @@ export const ko = {
   "layout.split": "편집기와 미리보기",
   "layout.previewOnly": "미리보기만",
   "pane.resize": "패널 크기 조정",
-  "pane.resizeHint": "드래그하여 크기 조정",
   // 편집기
   "editor.loading": "편집기 로딩 중...",
   "editor.undo": "실행 취소",
@@ -102,16 +98,12 @@ export const ko = {
   "preview.pagedError": "문서 보기를 생성할 수 없습니다:",
   "preview.mermaidError": "Mermaid:",
   // Session
-  "session.restoreError": "세션을 복원할 수 없습니다",
   "session.saveError": "세션을 저장할 수 없습니다",
   // Native
-  "native.dialogError": "네이티브 알림을 표시할 수 없습니다",
   // PDF
-  "pdf.exportError": "PDF 내보내기 오류: ",
   "pdf.emptyFile": "PDF 내보내기가 빈 파일을 생성했습니다",
   "pdf.invalidPdf": "내보내기가 유효한 PDF 파일을 생성하지 않았습니다",
   "pdf.timeout": "PDF 내보내기 시간이 초과되었습니다",
-  "pdf.cancelled": "내보내기가 취소되었습니다",
   "pdf.notSupported": "PDF 내보내기는 현재 Linux만 지원합니다",
   // File operations (Rust)
   "file.emptyPath": "파일 경로가 비어 있거나 잘못되었습니다",
@@ -148,9 +140,6 @@ export const ko = {
   "menu.closeOthers": "다른 탭 닫기",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
-  "menu.shortcut.newTab": "Ctrl+N",
-  "menu.shortcut.nextTab": "Ctrl+Tab",
-  "menu.shortcut.prevTab": "Ctrl+Shift+Tab",
   // Zen mode
   "menu.zenEnter": "Zen 모드 시작",
   "menu.zenExit": "Zen 모드 종료",
@@ -184,7 +173,6 @@ export const ko = {
   "shortcuts.closeTab": "탭 닫기",
   "shortcuts.esc": "닫기 / 종료",
   // 줄로 이동
-  "goto.linePrompt": (max: number) => `줄로 이동 (1-${max}):`,
   // Status bar
   "statusbar.words": (n: number) => `${n}단어`,
   "statusbar.lines": (n: number) => `${n}줄`,
@@ -199,15 +187,8 @@ export const ko = {
   "lang.clearSearch": "검색 지우기",
   "lang.noResults": "언어를 찾을 수 없습니다",
   // Misc
-  "misc.title": "meditor",
   "topbar.newTypst": "새 .typ",
-  "topbar.newTypstTitle": "새 Typst 문서",
-  "topbar.newTypstAria": "새 Typst 탭",
   "topbar.newLatex": "새 .tex",
-  "topbar.newLatexTitle": "새 LaTeX 문서",
-  "topbar.newLatexAria": "새 LaTeX 탭",
-  "doc.typstSample": "typst-sample",
-  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "Typst 컴파일 중…",
   "preview.typstError": "Typst:",
   "preview.pages": "페이지",

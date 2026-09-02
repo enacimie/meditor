@@ -45,8 +45,10 @@ import {
   clampFontSize,
   normalizeFontFamily,
   normalizeSpellcheck,
+  normalizeLandscapeTables,
   DEFAULT_EDITOR_FONT_FAMILY,
   DEFAULT_SPELLCHECK,
+  DEFAULT_LANDSCAPE_TABLES,
   DEFAULT_EDITOR_FONT_SIZE,
   type EditorPreferences,
 } from "./editorPreferences";
@@ -78,6 +80,7 @@ const DEFAULT_PREFERENCES: Preferences = {
   editorFontSize: DEFAULT_EDITOR_FONT_SIZE,
   editorFontFamily: DEFAULT_EDITOR_FONT_FAMILY,
   spellcheck: DEFAULT_SPELLCHECK,
+  landscapeTables: DEFAULT_LANDSCAPE_TABLES,
 };
 /**
  * Whether a first run should open in the paginated A4 view.
@@ -127,6 +130,7 @@ function loadPreferences(): Preferences {
       editorFontSize: clampFontSize(stored.editorFontSize),
       editorFontFamily: normalizeFontFamily(stored.editorFontFamily),
       spellcheck: normalizeSpellcheck(stored.spellcheck),
+      landscapeTables: normalizeLandscapeTables(stored.landscapeTables),
     };
   } catch {
     return DEFAULT_PREFERENCES;
@@ -289,6 +293,7 @@ export default function App() {
     editorFontSize: INITIAL_PREFERENCES.editorFontSize,
     editorFontFamily: INITIAL_PREFERENCES.editorFontFamily,
     spellcheck: INITIAL_PREFERENCES.spellcheck,
+    landscapeTables: INITIAL_PREFERENCES.landscapeTables,
   });
   const [cursorLine, setCursorLine] = useState(0);
 
@@ -1614,6 +1619,7 @@ export default function App() {
               value={active?.content ?? ""}
               docView={docView}
               kind={active?.kind ?? "markdown"}
+              landscapeTables={editorPrefs.landscapeTables}
               onReverseSync={handleReverseSync}
             />
           </div>

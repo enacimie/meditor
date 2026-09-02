@@ -55,7 +55,6 @@ export const mr = {
   "confirm.no": "नाही",
 
   // Alerts
-  "alert.error": "त्रुटी",
   "error.title": "काहीतरी चुकले",
   "error.retry": "पुन्हा प्रयत्न करा",
   // Tabs
@@ -67,7 +66,6 @@ export const mr = {
   "tab.rename": "नाव बदला",
   "tab.renameCancel": "रद्द करा",
   "tab.documentsOpen": "उघडे दस्तऐवज",
-  "tab.activeDoc": "सक्रिय दस्तऐवज",
   // Document names
   "doc.untitled": (n: number) => `दस्तऐवज ${n}`,
   "doc.defaultExport": "दस्तऐवज",
@@ -76,7 +74,6 @@ export const mr = {
   "pane.preview": "पूर्वावलोकन",
   "pane.scrollToPreview": "पूर्वावलोकनात कर्सर स्थानावर जा",
   "pane.scrollToCode": "चिन्हांकित स्थानावरील कोडवर जा",
-  "pane.scrollToCodeHint": "चिन्हांकित स्थानावरील कोडवर जा (चिन्हांकित करण्यासाठी पूर्वावलोकनात क्लिक करा)",
   "pane.goToPreview": "पूर्वावलोकनाकडे जा",
   "pane.goToCode": "कोडकडे जा",
   "pane.wrapOn": "वर्ड रॅप अक्षम करा",
@@ -90,7 +87,6 @@ export const mr = {
   "layout.split": "संपादक आणि पूर्वावलोकन",
   "layout.previewOnly": "फक्त पूर्वावलोकन",
   "pane.resize": "पॅनेलचा आकार बदला",
-  "pane.resizeHint": "आकार बदलण्यासाठी ड्रॅग करा",
   // Editor
   "editor.loading": "संपादक लोड होत आहे...",
   "editor.undo": "पूर्ववत करा",
@@ -102,16 +98,12 @@ export const mr = {
   "preview.pagedError": "दस्तऐवज दृश्य तयार करू शकलो नाही:",
   "preview.mermaidError": "मरमेड:",
   // Session
-  "session.restoreError": "सत्र पुनर्संचयित करू शकलो नाही",
   "session.saveError": "सत्र जतन करू शकलो नाही",
   // Native
-  "native.dialogError": "नेटिव्ह अलर्ट दाखवू शकलो नाही",
   // PDF
-  "pdf.exportError": "PDF निर्यात करताना त्रुटी: ",
   "pdf.emptyFile": "PDF निर्यातीने रिकामी फाइल तयार केली",
   "pdf.invalidPdf": "निर्यातीने वैध PDF फाइल तयार केली नाही",
   "pdf.timeout": "PDF निर्यातीची वेळ संपली",
-  "pdf.cancelled": "निर्यात रद्द केली",
   "pdf.notSupported": "PDF निर्यात सध्या फक्त Linux वर समर्थित आहे",
   // File operations (Rust)
   "file.emptyPath": "रिकामा किंवा अवैध फाइल पथ",
@@ -148,9 +140,6 @@ export const mr = {
   "menu.closeOthers": "इतर टॅब बंद करा",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
-  "menu.shortcut.newTab": "Ctrl+N",
-  "menu.shortcut.nextTab": "Ctrl+Tab",
-  "menu.shortcut.prevTab": "Ctrl+Shift+Tab",
   // Zen mode
   "menu.zenEnter": "झेन मोडमध्ये प्रवेश करा",
   "menu.zenExit": "झेन मोडमधून बाहेर पडा",
@@ -184,7 +173,6 @@ export const mr = {
   "shortcuts.closeTab": "टॅब बंद करा",
   "shortcuts.esc": "बंद करा / बाहेर पडा",
   // Go to line
-  "goto.linePrompt": (max: number) => `ओळीवर जा (1-${max}):`,
   // Status bar
   "statusbar.words": (n: number) => `${n} शब्द`,
   "statusbar.lines": (n: number) => `${n} ओळ${n === 1 ? "" : "ी"}`,
@@ -199,15 +187,8 @@ export const mr = {
   "lang.clearSearch": "शोध साफ करा",
   "lang.noResults": "कोणतीही भाषा सापडली नाही",
   // Misc
-  "misc.title": "meditor",
   "topbar.newTypst": "New .typ",
-  "topbar.newTypstTitle": "New Typst document",
-  "topbar.newTypstAria": "New Typst tab",
   "topbar.newLatex": "New .tex",
-  "topbar.newLatexTitle": "New LaTeX document",
-  "topbar.newLatexAria": "New LaTeX tab",
-  "doc.typstSample": "typst-sample",
-  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "Compiling Typst...",
   "preview.typstError": "Typst:",
   "preview.pages": "pages",
