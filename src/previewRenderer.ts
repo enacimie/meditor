@@ -197,9 +197,16 @@ export function fitWideTables(
      * for that stays at the smallest step, clipped as before — splitting it is
      * an authoring decision, not an editor's.
      */
-    if (!fits && allowLandscape && measure(table) <= LANDSCAPE_CONTENT_WIDTH_PX) {
-      table.classList.add(NEEDS_LANDSCAPE_CLASS);
-      if (landscapeNote) table.setAttribute("data-landscape-note", landscapeNote);
+    if (!fits && allowLandscape) {
+      const w = measure(table);
+      if (w <= LANDSCAPE_CONTENT_WIDTH_PX) {
+        table.classList.add(NEEDS_LANDSCAPE_CLASS);
+        if (landscapeNote) table.setAttribute("data-landscape-note", landscapeNote);
+      }
+      // DEBUG: log to console so CI shows it
+      if (typeof window !== "undefined") {
+        console.log("[fitWideTables] landscape check:", { fits, allowLandscape, w, limit: LANDSCAPE_CONTENT_WIDTH_PX, added: w <= LANDSCAPE_CONTENT_WIDTH_PX });
+      }
     }
   }
 }
