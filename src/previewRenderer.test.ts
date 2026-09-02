@@ -282,6 +282,20 @@ describe("fitWideTables", () => {
     const root = build(table(3));
     fitWideTables(root, fixed(0));
     expect(stepOf(root)).toBe("table-fit-3");
+    expect(root.querySelector("table")!.classList.contains("needs-landscape")).toBe(false);
+  });
+
+  it("claims the wider sheet too when it cannot be measured and the user opted in", () => {
+    // Zero means "no layout to measure", not "narrow" — and a table that
+    // cannot be measured cannot be trusted to fit a portrait page either.
+    // The next render re-decides from scratch, so a table that turns out to
+    // fit is unmarked as soon as there is something to measure.
+    const root = build(table(17));
+    fitWideTables(root, fixed(0), true, "Landscape page");
+    const el = root.querySelector("table")!;
+    expect(stepOf(root)).toBe("table-fit-3");
+    expect(el.classList.contains("needs-landscape")).toBe(true);
+    expect(el.getAttribute("data-landscape-note")).toBe("Landscape page");
   });
 
   it("re-decides from scratch when the document changes", () => {

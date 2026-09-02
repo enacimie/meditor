@@ -167,6 +167,16 @@ export function fitWideTables(
      */
     if (natural === 0) {
       table.classList.add(TABLE_FIT_STEPS[TABLE_FIT_STEPS.length - 1]);
+      /*
+       * The same fail-closed call applies to the orientation: an unmeasurable
+       * table cannot be trusted to fit portrait either, so with the opt-in it
+       * claims the wider sheet too. If it turns out to fit, the next render
+       * re-decides and the mark goes away — the pass starts clean every time.
+       */
+      if (allowLandscape) {
+        table.classList.add(NEEDS_LANDSCAPE_CLASS);
+        if (landscapeNote) table.setAttribute("data-landscape-note", landscapeNote);
+      }
       continue;
     }
     if (natural <= PAGE_CONTENT_WIDTH_PX) continue;
