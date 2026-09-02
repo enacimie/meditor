@@ -1,5 +1,6 @@
 import type { TranslationFn } from "./i18n/translations";
 import { sanitizeSvg } from "./sanitizeSvg";
+import { normalizeLandscapeTables } from "./editorPreferences";
 
 /**
  * Fenced-code-block pattern: ```lang\n...\n```
@@ -154,6 +155,17 @@ export function fitWideTables(
   allowLandscape = false,
   landscapeNote = "",
 ): void {
+  // Fallback: if the prop wasn't passed correctly, read from localStorage
+  // (the same key the Preferences dialog uses). This handles render-timing
+  // races where the component hasn't picked up the preference yet.
+  if (!allowLandscape && typeof window !== "undefined") {
+    try {
+      const stored = JSON.parse(localStorage.getItem("meditor.preferences.v1") ?? "{}");
+      allowLandscape = normalizeLandscapeTables(stored.landscapeTables);
+    } catch {
+      // ignore
+    }
+  }
   for (const table of Array.from(root.querySelectorAll("table"))) {
     table.classList.remove(...TABLE_FIT_STEPS, NEEDS_LANDSCAPE_CLASS);
 
