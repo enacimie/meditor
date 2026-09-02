@@ -168,10 +168,6 @@ export function fitWideTables(
     } catch {
       // ignore
     }
-    // Test-only override: e2e can set this to force landscape on
-    if (!allowLandscape && (window as any).__FORCE_LANDSCAPE_TABLES__) {
-      allowLandscape = true;
-    }
   }
   for (const table of Array.from(root.querySelectorAll("table"))) {
     table.classList.remove(...TABLE_FIT_STEPS, NEEDS_LANDSCAPE_CLASS);
@@ -221,9 +217,6 @@ export function fitWideTables(
       if (w <= LANDSCAPE_CONTENT_WIDTH_PX) {
         table.classList.add(NEEDS_LANDSCAPE_CLASS);
         if (landscapeNote) table.setAttribute("data-landscape-note", landscapeNote);
-      }
-      if (typeof window !== "undefined") {
-        console.log("[fitWideTables] landscape check:", { fits, allowLandscape, w, limit: LANDSCAPE_CONTENT_WIDTH_PX, added: w <= LANDSCAPE_CONTENT_WIDTH_PX });
       }
     }
   }

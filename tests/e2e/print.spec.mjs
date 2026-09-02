@@ -345,18 +345,6 @@ try {
   })()`);
 await page.reload();
   await page.waitFor("!!document.querySelector('.cm-content')", { timeout: 20000 });
-  
-  // Test-only: force landscape tables on for this test
-  await page.evaluate(`(() => { window.__FORCE_LANDSCAPE_TABLES__ = true; })()`);
-  
-  // Debug: verify the preference survived the reload
-  const prefCheck = await page.evaluate(`(() => {
-    const key = 'meditor.preferences.v1';
-    const stored = JSON.parse(localStorage.getItem(key) ?? '{}');
-    return { landscapeTables: stored.landscapeTables, hasKey: key in localStorage };
-  })`);
-  // console.log("localStorage pref after reload:", prefCheck);
-
   await page.waitFor("document.querySelectorAll('.pagedjs_page').length > 0", {
     timeout: 40000,
     interval: 500,
@@ -384,10 +372,11 @@ await page.reload();
     probe.remove();
     return width / 10;
   })()`);
-  // Portrait page: 605 px of content; landscape: 933 px. Aim low in the band:
-  // the pass measures the rendered table, which can come out a few percent
-  // wider than the probe once every row and border is in.
-  const LAND_COLUMNS = Math.floor(700 / probe);
+  // Portrait page: 605 px of content; landscape: 933 px. Aim for a table that
+  // fits landscape on all CI runners (fonts differ) but not portrait.
+  // 700 was too aggressive on Windows where the table wouldn't paginate at all.
+  // 650 gives ~55 cols at ~11px, which fits landscape (933) but not portrait.
+  const LAND_COLUMNS = Math.floor(650 / probe);
   assert(
     LAND_COLUMNS > 25 && LAND_COLUMNS < 150,
     `probe column width ${probe}px puts the fixture out of range`,
