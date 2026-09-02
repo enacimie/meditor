@@ -589,6 +589,37 @@ await page.waitFor(
     return {
       steps,
       sheets,
+      matching: (() => {
+        const cell = wide.querySelector('td');
+        const hits = [];
+        for (const sheet of document.styleSheets) {
+          let rules;
+          try { rules = [...sheet.cssRules]; } catch { continue; }
+          for (const rule of rules) {
+            if (!rule.selectorText) continue;
+            for (const sel of rule.selectorText.split(',')) {
+              let matches = false;
+              try { matches = cell.matches(sel.trim()); } catch { continue; }
+              if (!matches) continue;
+              const pad = rule.style.padding || rule.style.paddingLeft;
+              const size = rule.style.fontSize;
+              if (pad || size) {
+                hits.push(sel.trim() + ' => ' + (size ? 'size:' + size + ' ' : '') + (pad ? 'pad:' + pad : ''));
+              }
+            }
+          }
+        }
+        return hits;
+      })(),
+      ancestors: (() => {
+        const out = [];
+        let el = wide.parentElement;
+        while (el && out.length < 5) {
+          out.push(el.tagName.toLowerCase() + (el.className ? '.' + String(el.className).trim().split(/\s+/).join('.') : ''));
+          el = el.parentElement;
+        }
+        return out;
+      })(),
       fontsStatus: document.fonts.status,
       hasLatinModern: document.fonts.check('10pt "Latin Modern Roman"'),
       firstCellText: (wide.querySelector('td') || {}).textContent?.slice(0, 40) ?? null,
