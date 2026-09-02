@@ -161,7 +161,13 @@ export function fitWideTables(
   if (!allowLandscape && typeof window !== "undefined") {
     try {
       const stored = JSON.parse(localStorage.getItem("meditor.preferences.v1") ?? "{}");
-      allowLandscape = normalizeLandscapeTables(stored.landscapeTables);
+      const normalized = normalizeLandscapeTables(stored.landscapeTables);
+      if (normalized) {
+        allowLandscape = true;
+        if (typeof window !== "undefined") {
+          console.log("[fitWideTables] localStorage fallback activated:", { stored: stored.landscapeTables, normalized });
+        }
+      }
     } catch {
       // ignore
     }
@@ -214,6 +220,9 @@ export function fitWideTables(
       if (w <= LANDSCAPE_CONTENT_WIDTH_PX) {
         table.classList.add(NEEDS_LANDSCAPE_CLASS);
         if (landscapeNote) table.setAttribute("data-landscape-note", landscapeNote);
+      }
+      if (typeof window !== "undefined") {
+        console.log("[fitWideTables] landscape check:", { fits, allowLandscape, w, limit: LANDSCAPE_CONTENT_WIDTH_PX, added: w <= LANDSCAPE_CONTENT_WIDTH_PX });
       }
     }
   }
