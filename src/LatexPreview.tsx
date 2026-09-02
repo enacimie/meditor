@@ -7,6 +7,7 @@ import {
 } from "react";
 import type { TranslationFn } from "./i18n/translations";
 import { getLatexEngineClass, type PdfTeXEngineInstance } from "./latexEngine";
+import { isMissingFormatError } from "./latexErrors";
 import "./Preview.css";
 
 // ---- Component ----
@@ -22,13 +23,6 @@ type Props = {
   t: TranslationFn;
   onReverseSync: (line: number) => void;
 };
-
-function isMissingFormatError(status: number, log: string): boolean {
-  return (
-    status !== 0 &&
-    /format file.*(?:can't find|not found)|can't find the format file/i.test(log)
-  );
-}
 
 function revokePdfUrl(
   pdfUrlRef: { current: string | null },

@@ -11,13 +11,12 @@ import {
   type MouseEvent,
 } from "react";
 import type { Previewer } from "pagedjs";
-import { isTauri } from "@tauri-apps/api/core";
-import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "./i18n/I18nProvider";
 import pagedCss from "./paged.css?inline";
 import latexHighlightCss from "./latex-highlight.css?inline";
 import { clearMermaidResources, renderContent, splitLongFencedBlocks } from "./previewRenderer";
 import { isPaginatable } from "./pagedLifecycle";
+import { openExternal } from "./externalLinks";
 import { fitWideTables, keepHeadingsWithContent } from "./previewRenderer";
 import { LATEX_ENABLED } from "./latexSupport";
 
@@ -36,30 +35,6 @@ function collectStyles(): Array<Record<string, string>> {
   return PAGED_STYLES;
 }
 
-function isSafeExternalUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:" || url.protocol === "mailto:";
-  } catch {
-    return false;
-  }
-}
-
-async function openExternal(url: string) {
-  if (!isSafeExternalUrl(url)) {
-    console.warn("Blocked external link:", url);
-    return;
-  }
-  if (isTauri()) {
-    try {
-      await openUrl(url);
-    } catch (e) {
-      console.error("Could not open link:", e);
-    }
-  } else {
-    window.open(url, "_blank", "noopener");
-  }
-}
 
 export type PreviewHandle = {
   scrollToLine: (line: number) => void;

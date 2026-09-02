@@ -1,3 +1,4 @@
+import { isMissingFormatError } from "./latexErrors";
 // SwiftLaTeX WASM engine — lazy loader for PdfTeXEngine.
 //
 // PdfTeXEngine.js is a legacy UMD-style browser script. It is loaded as a
@@ -88,13 +89,6 @@ export function getLatexEngineClass(): Promise<PdfTeXEngineClass> {
   return enginePromise;
 }
 
-function isMissingFormatError(result: CompileResult): boolean {
-  return (
-    result.status !== 0 &&
-    /format file.*(?:can't find|not found)|can't find the format file/i.test(result.log)
-  );
-}
-
 /** One-shot compilation: LaTeX source → PDF Uint8Array. */
 export async function compileLatexToPdf(source: string): Promise<Uint8Array> {
   const cls = await getLatexEngineClass();
@@ -110,7 +104,7 @@ export async function compileLatexToPdf(source: string): Promise<Uint8Array> {
       eng.writeMemFSFile("main.tex", source);
       eng.setEngineMainFile("main.tex");
       let result = await eng.compileLaTeX();
-      if (isMissingFormatError(result)) {
+      if (isMissingFormatError(result.status, result.log)) {
         // Most distributions provide a compatible precompiled format. Only
         // build one dynamically when the worker reports that it is absent.
         await eng.compileFormat();
@@ -121,7 +115,7 @@ export async function compileLatexToPdf(source: string): Promise<Uint8Array> {
       }
       if (result.status === 0 && result.pdf) return result.pdf;
       lastResult = result;
-      if (!isMissingFormatError(result) || attempt === 1) break;
+      if (!isMissingFormatError(result.status, result.log) || attempt === 1) break;
     } finally {
       eng.closeWorker();
     }
