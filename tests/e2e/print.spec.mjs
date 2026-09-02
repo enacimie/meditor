@@ -592,25 +592,34 @@ await page.waitFor(
       matching: (() => {
         const cell = wide.querySelector('td');
         const hits = [];
-        for (const sheet of document.styleSheets) {
-          let rules;
-          try { rules = [...sheet.cssRules]; } catch { continue; }
+        const walk = (rules, where) => {
           for (const rule of rules) {
+            if (rule.cssRules && !rule.selectorText) {
+              walk([...rule.cssRules], where + '@' + (rule.conditionText || rule.media?.mediaText || rule.name || '?') + ' ');
+              continue;
+            }
             if (!rule.selectorText) continue;
             for (const sel of rule.selectorText.split(',')) {
-              let matches = false;
-              try { matches = cell.matches(sel.trim()); } catch { continue; }
-              if (!matches) continue;
+              let ok = false;
+              try { ok = cell.matches(sel.trim()); } catch { continue; }
+              if (!ok) continue;
               const pad = rule.style.padding || rule.style.paddingLeft;
               const size = rule.style.fontSize;
-              if (pad || size) {
-                hits.push(sel.trim() + ' => ' + (size ? 'size:' + size + ' ' : '') + (pad ? 'pad:' + pad : ''));
-              }
+              if (pad || size) hits.push(where + sel.trim() + ' => ' + (size ? 'size:' + size + ' ' : '') + (pad ? 'pad:' + pad : ''));
             }
           }
+        };
+        for (const sheet of document.styleSheets) {
+          try { walk([...sheet.cssRules], ''); } catch { hits.push('(sheet blocked)'); }
         }
         return hits;
       })(),
+      media: {
+        print: window.matchMedia('print').matches,
+        screen: window.matchMedia('screen').matches,
+        coarse: window.matchMedia('(pointer: coarse)').matches,
+      },
+      inlineStyle: wide.querySelector('td').getAttribute('style'),
       ancestors: (() => {
         const out = [];
         let el = wide.parentElement;
