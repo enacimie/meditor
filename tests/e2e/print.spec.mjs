@@ -310,22 +310,35 @@ try {
    * 933 px of content instead of 605. That rotation is the reader's cost, so
    * it only happens when the user asked for it in Preferences.
    *
-   * Sizing the fixture took measuring: a portrait page gives 605 px and the
-   * smallest step spends about 11 px per single-digit column (7 pt type, 2 pt
-   * padding each side), so 70 columns ask for ~770 px — past every portrait
-   * step, inside the 933 px a landscape sheet offers.
+   * The fixture is self-calibrating: cell widths depend on the platform's
+   * fonts, so the spec measures a probe column at runtime and picks a column
+   * count that lands past every portrait step but inside a landscape sheet —
+   * the band the option exists for.
    *
    * Two contracts, one flag:
-   *   1. With the flag off, the wide table keeps the smallest portrait step
-   *      and no page turns sideways. (Checked on the 17-column table, which
-   *      still paginates; a wider one can stall paged.js entirely when it
-   *      cannot be placed, which is exactly the failure this option exists to
-   *      avoid.)
+   *   1. With the flag off, no table ever claims a landscape page. (Checked
+   *      before the wide one exists, on the tables that already paginated.)
    *   2. With it on, the table is marked before paged.js ever sees it, its
    *      pages come out landscape, the rest of the document stays portrait,
    *      and the table carries a note so the reader sees the turn coming.
    */
-  const LAND_COLUMNS = 70;
+  const probe = await page.evaluate(`(() => {
+    const probe = document.createElement('table');
+    probe.className = 'table-fit-3';
+    probe.style.cssText = 'position:absolute;visibility:hidden;width:auto';
+    probe.innerHTML = '<tbody><tr><td>8</td></tr></tbody>';
+    document.querySelector('.preview-source').append(probe);
+    const width = probe.querySelector('td').offsetWidth;
+    probe.remove();
+    return width;
+  })()`);
+  // Portrait page: 605 px of content; landscape: 933 px. Aim for the middle
+  // of the band so font rounding cannot push the fixture out of either side.
+  const LAND_COLUMNS = Math.floor(750 / probe);
+  assert(
+    LAND_COLUMNS > 40 && LAND_COLUMNS < 120,
+    `probe column width ${probe}px puts the fixture out of range`,
+  );
   const landHead = Array.from({ length: LAND_COLUMNS }, (_, i) => `h${i + 1}`).join(" | ");
   const landRule = Array.from({ length: LAND_COLUMNS }, () => "---").join(" | ");
   const landRow = Array.from({ length: LAND_COLUMNS }, (_, c) => `${c}`).join(" | ");
