@@ -25,7 +25,8 @@ env:
   # conf/updater-enabled.json, put the private key and its password in the
   # repository secrets TAURI_SIGNING_PRIVATE_KEY and
   # TAURI_SIGNING_PRIVATE_KEY_PASSWORD, and set this to "true". Until then the
-  # menu entry is there and reports that it could not check, which is honest.
+  # menu entry is hidden: the frontend build reads this same variable, so a
+  # build that cannot check for updates does not offer to.
   UPDATER_ENABLED: "false"
 
 concurrency:

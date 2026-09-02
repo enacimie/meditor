@@ -68,6 +68,21 @@ export default defineConfig(async () => ({
    */
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
+    /*
+     * Whether this build can actually check for updates.
+     *
+     * The updater needs a signing key, so it ships switched off behind
+     * UPDATER_ENABLED and conf/updater-enabled.json. Off, `check()` finds no
+     * endpoints and throws — and the menu entry offered it anyway, so every
+     * user of such a build got a red "could not check" the first time they
+     * tried. A control that can only fail is not an honest one; it should not
+     * be there.
+     *
+     * Read from the same variable the workflow already exports, so the two
+     * cannot disagree.
+     */
+    // @ts-expect-error process is a nodejs global
+    __UPDATER_ENABLED__: JSON.stringify(process.env.UPDATER_ENABLED === "true"),
   },
 
   optimizeDeps: {

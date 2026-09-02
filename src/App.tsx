@@ -1351,8 +1351,15 @@ export default function App() {
    * pressed. `platform` is null until Rust answers; treating that as
    * "not mobile" is what keeps a desktop from flickering the entry in and
    * out on startup, and matches what pdfExportAvailable above does.
+   *
+   * It is also absent when the build has no updater configured, which is
+   * every build until the signing keys exist. Without it `check()` throws on
+   * the missing endpoints, and 0.1.9 shipped an entry that could only ever
+   * answer with a red "could not check". Offering a control that cannot work
+   * is worse than not offering it.
    */
-  const updateCheckAvailable = isTauri() && !isMobilePlatform(platform);
+  const updateCheckAvailable =
+    __UPDATER_ENABLED__ && isTauri() && !isMobilePlatform(platform);
 
   const sharingTheWorkspace = layoutMode === "split" && !zenMode;
   const paneFlex = (percent: number) =>
