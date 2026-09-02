@@ -55,7 +55,6 @@ export const te = {
   "confirm.no": "కాదు",
 
   // Alerts
-  "alert.error": "లోపం",
   "error.title": "ఏదో తప్పు జరిగింది",
   "error.retry": "మళ్లీ ప్రయత్నించండి",
   // Tabs
@@ -67,7 +66,6 @@ export const te = {
   "tab.rename": "పేరు మార్చండి",
   "tab.renameCancel": "రద్దు చేయి",
   "tab.documentsOpen": "తెరిచిన డాక్యుమెంట్లు",
-  "tab.activeDoc": "క్రియాశీల డాక్యుమెంట్",
   // Document names
   "doc.untitled": (n: number) => `డాక్యుమెంట్ ${n}`,
   "doc.defaultExport": "డాక్యుమెంట్",
@@ -76,7 +74,6 @@ export const te = {
   "pane.preview": "ప్రివ్యూ",
   "pane.scrollToPreview": "ప్రివ్యూలో కర్సర్ స్థానానికి వెళ్లు",
   "pane.scrollToCode": "గుర్తించబడిన స్థానంలో కోడ్‌కు వెళ్లు",
-  "pane.scrollToCodeHint": "గుర్తించబడిన స్థానంలో కోడ్‌కు వెళ్లు (గుర్తించడానికి ప్రివ్యూలో క్లిక్ చేయండి)",
   "pane.goToPreview": "ప్రివ్యూకు వెళ్లు",
   "pane.goToCode": "కోడ్‌కు వెళ్లు",
   "pane.wrapOn": "వర్డ్ ర్యాప్ నిలిపివేయి",
@@ -90,7 +87,6 @@ export const te = {
   "layout.split": "ఎడిటర్ మరియు ప్రివ్యూ",
   "layout.previewOnly": "ప్రివ్యూ మాత్రమే",
   "pane.resize": "ప్యానెళ్ల పరిమాణం మార్చు",
-  "pane.resizeHint": "పరిమాణం మార్చడానికి లాగండి",
   // Editor
   "editor.loading": "ఎడిటర్ లోడ్ అవుతోంది...",
   "editor.undo": "రద్దు చేయి",
@@ -102,16 +98,12 @@ export const te = {
   "preview.pagedError": "డాక్యుమెంట్ వ్యూను రూపొందించలేకపోయాము:",
   "preview.mermaidError": "మెర్మెయిడ్:",
   // Session
-  "session.restoreError": "సెషన్‌ను పునరుద్ధరించలేకపోయాము",
   "session.saveError": "సెషన్‌ను సేవ్ చేయలేకపోయాము",
   // Native
-  "native.dialogError": "నేటివ్ అలర్ట్ చూపించలేకపోయాము",
   // PDF
-  "pdf.exportError": "PDF ఎగుమతిలో లోపం: ",
   "pdf.emptyFile": "PDF ఎగుమతి ఖాళీ ఫైల్‌ను ఉత్పత్తి చేసింది",
   "pdf.invalidPdf": "ఎగుమతి చెల్లుబాటు అయ్యే PDF ఫైల్‌ను ఉత్పత్తి చేయలేదు",
   "pdf.timeout": "PDF ఎగుమతి సమయం ముగిసింది",
-  "pdf.cancelled": "ఎగుమతి రద్దు చేయబడింది",
   "pdf.notSupported": "PDF ఎగుమతి ప్రస్తుతం Linuxలో మాత్రమే మద్దతు ఉంది",
   // File operations (Rust)
   "file.emptyPath": "ఖాళీ లేదా చెల్లని ఫైల్ పాత్",
@@ -148,9 +140,6 @@ export const te = {
   "menu.closeOthers": "ఇతర ట్యాబ్‌లను మూసివేయి",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
-  "menu.shortcut.newTab": "Ctrl+N",
-  "menu.shortcut.nextTab": "Ctrl+Tab",
-  "menu.shortcut.prevTab": "Ctrl+Shift+Tab",
   // Zen mode
   "menu.zenEnter": "జెన్ మోడ్‌లోకి ప్రవేశించు",
   "menu.zenExit": "జెన్ మోడ్ నుండి నిష్క్రమించు",
@@ -184,7 +173,6 @@ export const te = {
   "shortcuts.closeTab": "ట్యాబ్ మూసివేయి",
   "shortcuts.esc": "మూసివేయి / నిష్క్రమించు",
   // Go to line
-  "goto.linePrompt": (max: number) => `లైన్‌కు వెళ్లు (1-${max}):`,
   // Status bar
   "statusbar.words": (n: number) => `${n} పదా${n === 1 ? "" : "లు"}`,
   "statusbar.lines": (n: number) => `${n} లైన్${n === 1 ? " " : "లు "}`,
@@ -199,15 +187,8 @@ export const te = {
   "lang.clearSearch": "శోధన తొలగించు",
   "lang.noResults": "భాషలు కనుగొనబడలేదు",
   // Misc
-  "misc.title": "meditor",
   "topbar.newTypst": "New .typ",
-  "topbar.newTypstTitle": "New Typst document",
-  "topbar.newTypstAria": "New Typst tab",
   "topbar.newLatex": "New .tex",
-  "topbar.newLatexTitle": "New LaTeX document",
-  "topbar.newLatexAria": "New LaTeX tab",
-  "doc.typstSample": "typst-sample",
-  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "Compiling Typst...",
   "preview.typstError": "Typst:",
   "preview.pages": "pages",

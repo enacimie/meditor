@@ -55,7 +55,6 @@ export const bn = {
   "confirm.no": "না",
 
   // Alerts
-  "alert.error": "ত্রুটি",
   "error.title": "কিছু ভুল হয়েছে",
   "error.retry": "আবার চেষ্টা করুন",
   // Tabs
@@ -67,7 +66,6 @@ export const bn = {
   "tab.rename": "নাম পরিবর্তন করুন",
   "tab.renameCancel": "বাতিল",
   "tab.documentsOpen": "খোলা ডকুমেন্ট",
-  "tab.activeDoc": "সক্রিয় ডকুমেন্ট",
   // Document names
   "doc.untitled": (n: number) => `ডকুমেন্ট ${n}`,
   "doc.defaultExport": "ডকুমেন্ট",
@@ -76,7 +74,6 @@ export const bn = {
   "pane.preview": "প্রাকদর্শন",
   "pane.scrollToPreview": "প্রাকদর্শনে কার্সার অবস্থানে যান",
   "pane.scrollToCode": "চিহ্নিত অবস্থানে কোডে যান",
-  "pane.scrollToCodeHint": "চিহ্নিত অবস্থানে কোডে যান (চিহ্নিত করতে প্রাকদর্শনে ক্লিক করুন)",
   "pane.goToPreview": "প্রাকদর্শনে যান",
   "pane.goToCode": "কোডে যান",
   "pane.wrapOn": "ওয়ার্ড র‍্যাপ নিষ্ক্রিয় করুন",
@@ -90,7 +87,6 @@ export const bn = {
   "layout.split": "সম্পাদক ও প্রাকদর্শন",
   "layout.previewOnly": "শুধু প্রাকদর্শন",
   "pane.resize": "প্যানেলের আকার পরিবর্তন করুন",
-  "pane.resizeHint": "আকার পরিবর্তন করতে টানুন",
   // Editor
   "editor.loading": "সম্পাদক লোড হচ্ছে...",
   "editor.undo": "পূর্বাবস্থায় ফেরান",
@@ -102,16 +98,12 @@ export const bn = {
   "preview.pagedError": "ডকুমেন্ট ভিউ তৈরি করতে পারেনি:",
   "preview.mermaidError": "মারমেইড:",
   // Session
-  "session.restoreError": "সেশন পুনরুদ্ধার করতে পারেনি",
   "session.saveError": "সেশন সংরক্ষণ করতে পারেনি",
   // Native
-  "native.dialogError": "নেটিভ অ্যালার্ট দেখাতে পারেনি",
   // PDF
-  "pdf.exportError": "PDF রপ্তানিতে ত্রুটি: ",
   "pdf.emptyFile": "PDF রপ্তানি একটি খালি ফাইল তৈরি করেছে",
   "pdf.invalidPdf": "রপ্তানি একটি বৈধ PDF ফাইল তৈরি করেনি",
   "pdf.timeout": "PDF রপ্তানির সময় শেষ হয়েছে",
-  "pdf.cancelled": "রপ্তানি বাতিল করা হয়েছে",
   "pdf.notSupported": "PDF রপ্তানি বর্তমানে শুধুমাত্র Linux-এ সমর্থিত",
   // File operations (Rust)
   "file.emptyPath": "খালি বা অবৈধ ফাইল পাথ",
@@ -148,9 +140,6 @@ export const bn = {
   "menu.closeOthers": "অন্যান্য ট্যাব বন্ধ করুন",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
-  "menu.shortcut.newTab": "Ctrl+N",
-  "menu.shortcut.nextTab": "Ctrl+Tab",
-  "menu.shortcut.prevTab": "Ctrl+Shift+Tab",
   // Zen mode
   "menu.zenEnter": "জেন মোডে প্রবেশ করুন",
   "menu.zenExit": "জেন মোড থেকে প্রস্থান করুন",
@@ -184,7 +173,6 @@ export const bn = {
   "shortcuts.closeTab": "ট্যাব বন্ধ করুন",
   "shortcuts.esc": "বন্ধ / প্রস্থান",
   // Go to line
-  "goto.linePrompt": (max: number) => `লাইনে যান (১-${max}):`,
   // Status bar
   "statusbar.words": (n: number) => `${n}টি শব্দ`,
   "statusbar.lines": (n: number) => `${n}টি লাইন`,
@@ -199,15 +187,8 @@ export const bn = {
   "lang.clearSearch": "অনুসন্ধান মুছুন",
   "lang.noResults": "কোনো ভাষা পাওয়া যায়নি",
   // Misc
-  "misc.title": "meditor",
   "topbar.newTypst": "নতুন .typ",
-  "topbar.newTypstTitle": "নতুন Typst ডকুমেন্ট",
-  "topbar.newTypstAria": "নতুন Typst ট্যাব",
   "topbar.newLatex": "New .tex",
-  "topbar.newLatexTitle": "New LaTeX document",
-  "topbar.newLatexAria": "New LaTeX tab",
-  "doc.typstSample": "typst-sample",
-  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "Typst কম্পাইল হচ্ছে…",
   "preview.typstError": "Typst:",
   "preview.pages": "pages",

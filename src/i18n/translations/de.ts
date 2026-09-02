@@ -55,7 +55,6 @@ export const de = {
   "confirm.no": "Nein",
 
   // Alerts
-  "alert.error": "Fehler",
   "error.title": "Etwas ist schiefgelaufen",
   "error.retry": "Erneut versuchen",
   // Tabs
@@ -67,7 +66,6 @@ export const de = {
   "tab.rename": "Umbenennen",
   "tab.renameCancel": "Abbrechen",
   "tab.documentsOpen": "Geöffnete Dokumente",
-  "tab.activeDoc": "Aktives Dokument",
   // Dokumentnames
   "doc.untitled": (n: number) => `Dokument ${n}`,
   "doc.defaultExport": "Dokument",
@@ -76,7 +74,6 @@ export const de = {
   "pane.preview": "Vorschau",
   "pane.scrollToPreview": "Zur Cursorposition in der Vorschau",
   "pane.scrollToCode": "Zum Code an markierter Position",
-  "pane.scrollToCodeHint": "Zum Code an markierter Position (in Vorschau klicken zum Markieren)",
   "pane.goToPreview": "Zur Vorschau",
   "pane.goToCode": "Zum Code",
   "pane.wrapOn": "Zeilenumbruch deaktivieren",
@@ -90,7 +87,6 @@ export const de = {
   "layout.split": "Editor und Vorschau",
   "layout.previewOnly": "Nur Vorschau",
   "pane.resize": "Panels skalieren",
-  "pane.resizeHint": "Ziehen zum Skalieren",
   // Editor
   "editor.loading": "Editor wird geladen...",
   "editor.undo": "Rückgängig",
@@ -102,16 +98,12 @@ export const de = {
   "preview.pagedError": "Dokumentansicht konnte nicht erstellt werden:",
   "preview.mermaidError": "Mermaid:",
   // Session
-  "session.restoreError": "Sitzung konnte nicht wiederhergestellt werden",
   "session.saveError": "Sitzung konnte nicht gespeichert werden",
   // Native
-  "native.dialogError": "Nativer Alarm konnte nicht angezeigt werden",
   // PDF
-  "pdf.exportError": "Fehler beim PDF-Export: ",
   "pdf.emptyFile": "PDF-Export erzeugte eine leere Datei",
   "pdf.invalidPdf": "Export erzeugte keine gültige PDF-Datei",
   "pdf.timeout": "PDF-Export hat Zeitlimit überschritten",
-  "pdf.cancelled": "Export abgebrochen",
   "pdf.notSupported": "PDF-Export wird derzeit nur unter Linux unterstützt",
   // File operations (Rust)
   "file.emptyPath": "Leerer oder ungültiger Dateipfad",
@@ -148,9 +140,6 @@ export const de = {
   "menu.closeOthers": "Andere Tabs schließen",
   "menu.shortcut.saveAs": "Strg+Umschalt+S",
   "menu.shortcut.export": "Strg+E",
-  "menu.shortcut.newTab": "Strg+N",
-  "menu.shortcut.nextTab": "Strg+Tab",
-  "menu.shortcut.prevTab": "Strg+Umschalt+Tab",
   // Zen mode
   "menu.zenEnter": "Zen-Modus aktivieren",
   "menu.zenExit": "Zen-Modus verlassen",
@@ -184,7 +173,6 @@ export const de = {
   "shortcuts.closeTab": "Tab schließen",
   "shortcuts.esc": "Schließen / Beenden",
   // Gehe zu Zeile
-  "goto.linePrompt": (max: number) => `Gehe zu Zeile (1-${max}):`,
   // Status bar
   "statusbar.words": (n: number) => `${n} Wort${n === 1 ? "" : "e"}`,
   "statusbar.lines": (n: number) => `${n} Zeile${n === 1 ? "" : "n"}`,
@@ -199,15 +187,8 @@ export const de = {
   "lang.clearSearch": "Suche löschen",
   "lang.noResults": "Keine Sprachen gefunden",
   // Misc
-  "misc.title": "meditor",
   "topbar.newTypst": "Neu .typ",
-  "topbar.newTypstTitle": "Neues Typst-Dokument",
-  "topbar.newTypstAria": "Neuer Typst-Tab",
   "topbar.newLatex": "Neu .tex",
-  "topbar.newLatexTitle": "Neues LaTeX-Dokument",
-  "topbar.newLatexAria": "Neuer LaTeX-Tab",
-  "doc.typstSample": "typst-sample",
-  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "Typst wird kompiliert…",
   "preview.typstError": "Typst:",
   "preview.pages": "Seiten",

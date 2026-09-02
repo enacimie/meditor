@@ -55,7 +55,6 @@ export const zh = {
   "confirm.no": "否",
 
   // Alerts
-  "alert.error": "错误",
   "error.title": "出错了",
   "error.retry": "重试",
   // Tabs
@@ -67,7 +66,6 @@ export const zh = {
   "tab.rename": "重命名",
   "tab.renameCancel": "取消",
   "tab.documentsOpen": "已打开的文档",
-  "tab.activeDoc": "活动文档",
   // 文档名称s
   "doc.untitled": (n: number) => `文档 ${n}`,
   "doc.defaultExport": "文档",
@@ -76,7 +74,6 @@ export const zh = {
   "pane.preview": "预览",
   "pane.scrollToPreview": "转到预览中的光标位置",
   "pane.scrollToCode": "转到标记位置的代码",
-  "pane.scrollToCodeHint": "转到标记位置的代码（点击预览标记）",
   "pane.goToPreview": "转到预览",
   "pane.goToCode": "转到代码",
   "pane.wrapOn": "禁用自动换行",
@@ -90,7 +87,6 @@ export const zh = {
   "layout.split": "编辑器和预览",
   "layout.previewOnly": "仅预览",
   "pane.resize": "调整面板大小",
-  "pane.resizeHint": "拖动以调整大小",
   // 编辑器
   "editor.loading": "正在加载编辑器...",
   "editor.undo": "撤销",
@@ -102,16 +98,12 @@ export const zh = {
   "preview.pagedError": "无法生成文档视图:",
   "preview.mermaidError": "Mermaid:",
   // Session
-  "session.restoreError": "无法恢复会话",
   "session.saveError": "无法保存会话",
   // Native
-  "native.dialogError": "无法显示系统提示",
   // PDF
-  "pdf.exportError": "导出 PDF 错误: ",
   "pdf.emptyFile": "PDF 导出产生了空文件",
   "pdf.invalidPdf": "导出未生成有效的 PDF 文件",
   "pdf.timeout": "PDF 导出超时",
-  "pdf.cancelled": "导出已取消",
   "pdf.notSupported": "PDF 导出目前仅支持 Linux",
   // File operations (Rust)
   "file.emptyPath": "文件路径为空或无效",
@@ -148,9 +140,6 @@ export const zh = {
   "menu.closeOthers": "关闭其他标签页",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
-  "menu.shortcut.newTab": "Ctrl+N",
-  "menu.shortcut.nextTab": "Ctrl+Tab",
-  "menu.shortcut.prevTab": "Ctrl+Shift+Tab",
   // Zen mode
   "menu.zenEnter": "进入 Zen 模式",
   "menu.zenExit": "退出 Zen 模式",
@@ -184,7 +173,6 @@ export const zh = {
   "shortcuts.closeTab": "关闭标签页",
   "shortcuts.esc": "关闭 / 退出",
   // 转到行
-  "goto.linePrompt": (max: number) => `转到行 (1-${max}):`,
   // Status bar
   "statusbar.words": (n: number) => `${n} 个字`,
   "statusbar.lines": (n: number) => `${n} 行`,
@@ -199,15 +187,8 @@ export const zh = {
   "lang.clearSearch": "清除搜索",
   "lang.noResults": "未找到语言",
   // Misc
-  "misc.title": "meditor",
   "topbar.newTypst": "新建 .typ",
-  "topbar.newTypstTitle": "新建 Typst 文档",
-  "topbar.newTypstAria": "新建 Typst 标签",
   "topbar.newLatex": "新建 .tex",
-  "topbar.newLatexTitle": "新建 LaTeX 文档",
-  "topbar.newLatexAria": "新建 LaTeX 标签",
-  "doc.typstSample": "typst-sample",
-  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "正在编译 Typst…",
   "preview.typstError": "Typst：",
   "preview.pages": "页",

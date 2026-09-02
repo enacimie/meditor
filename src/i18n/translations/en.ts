@@ -7,11 +7,7 @@ export const en = {
   "topbar.newTitle": "New (Ctrl+N)",
   "topbar.newAria": "New tab (Ctrl+N)",
   "topbar.newTypst": "New .typ",
-  "topbar.newTypstTitle": "New Typst document",
-  "topbar.newTypstAria": "New Typst tab",
   "topbar.newLatex": "New .tex",
-  "topbar.newLatexTitle": "New LaTeX document",
-  "topbar.newLatexAria": "New LaTeX tab",
   "topbar.open": "Open",
   "topbar.openTitle": "Open (Ctrl+O)",
   "topbar.openAria": "Open files (Ctrl+O)",
@@ -71,7 +67,6 @@ export const en = {
     `"${name}" changed on disk — reloaded.`,
 
   // Alerts
-  "alert.error": "Error",
   "error.title": "Something went wrong",
   "error.retry": "Try again",
   // Tabs
@@ -83,18 +78,14 @@ export const en = {
   "tab.rename": "Rename",
   "tab.renameCancel": "Cancel",
   "tab.documentsOpen": "Open documents",
-  "tab.activeDoc": "Active document",
   // Document names
   "doc.untitled": (n: number) => `Document ${n}`,
   "doc.defaultExport": "document",
-  "doc.typstSample": "typst-sample",
-  "doc.latexSample": "latex-sample",
   // Panes
   "pane.editor": "Editor",
   "pane.preview": "Preview",
   "pane.scrollToPreview": "Go to cursor position in preview",
   "pane.scrollToCode": "Go to code at marked position",
-  "pane.scrollToCodeHint": "Go to code at marked position (click in preview to mark)",
   "pane.goToPreview": "Go to preview",
   "pane.goToCode": "Go to code",
   "pane.wrapOn": "Disable word wrap",
@@ -108,7 +99,6 @@ export const en = {
   "layout.split": "Editor and preview",
   "layout.previewOnly": "Preview only",
   "pane.resize": "Resize panels",
-  "pane.resizeHint": "Drag to resize",
   // Editor
   "editor.loading": "Loading editor...",
   "editor.undo": "Undo",
@@ -128,16 +118,12 @@ export const en = {
   "preview.latexError": "LaTeX:",
   "preview.latexEmpty": "Empty LaTeX document.",
   // Session
-  "session.restoreError": "Could not restore session",
   "session.saveError": "Could not save session",
   // Native
-  "native.dialogError": "Could not show native alert",
   // PDF
-  "pdf.exportError": "Error exporting PDF: ",
   "pdf.emptyFile": "PDF export produced an empty file",
   "pdf.invalidPdf": "Export did not produce a valid PDF file",
   "pdf.timeout": "PDF export timed out",
-  "pdf.cancelled": "Export canceled",
   "pdf.notSupported": "PDF export is only supported on Linux for now",
   // File operations (Rust)
   "file.emptyPath": "Empty or invalid file path",
@@ -175,11 +161,8 @@ export const en = {
   "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
-  "menu.shortcut.newTab": "Ctrl+N",
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
-  "menu.shortcut.nextTab": "Ctrl+Tab",
-  "menu.shortcut.prevTab": "Ctrl+Shift+Tab",
   // Zen mode
   "menu.zenEnter": "Enter Zen mode",
   "menu.zenExit": "Exit Zen mode",
@@ -216,7 +199,6 @@ export const en = {
   "shortcuts.print": "Print",
   "shortcuts.esc": "Close / Exit",
   // Go to line
-  "goto.linePrompt": (max: number) => `Go to line (1-${max}):`,
   // Status bar
   "statusbar.words": (n: number) => `${n} word${n === 1 ? "" : "s"}`,
   "statusbar.lines": (n: number) => `${n} line${n === 1 ? "" : "s"}`,
@@ -238,5 +220,4 @@ export const en = {
   "about.source": "Source code",
   "about.close": "Close",
   // Misc
-  "misc.title": "meditor",
 };

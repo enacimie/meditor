@@ -55,7 +55,6 @@ export const ta = {
   "confirm.no": "இல்லை",
 
   // Alerts
-  "alert.error": "பிழை",
   "error.title": "ஏதோ தவறு ஏற்பட்டது",
   "error.retry": "மீண்டும் முயற்சிக்கவும்",
   // Tabs
@@ -67,7 +66,6 @@ export const ta = {
   "tab.rename": "பெயரை மாற்று",
   "tab.renameCancel": "ரத்து",
   "tab.documentsOpen": "திறந்த ஆவணங்கள்",
-  "tab.activeDoc": "செயலில் உள்ள ஆவணம்",
   // Document names
   "doc.untitled": (n: number) => `ஆவணம் ${n}`,
   "doc.defaultExport": "ஆவணம்",
@@ -76,7 +74,6 @@ export const ta = {
   "pane.preview": "முன்னோட்டம்",
   "pane.scrollToPreview": "முன்னோட்டத்தில் கர்சர் நிலைக்குச் செல்",
   "pane.scrollToCode": "குறிக்கப்பட்ட நிலையில் குறியீட்டுக்குச் செல்",
-  "pane.scrollToCodeHint": "குறிக்கப்பட்ட நிலையில் குறியீட்டுக்குச் செல் (குறிக்க முன்னோட்டத்தில் கிளிக் செய்க)",
   "pane.goToPreview": "முன்னோட்டத்திற்குச் செல்",
   "pane.goToCode": "குறியீட்டுக்குச் செல்",
   "pane.wrapOn": "சொல் மடக்கை முடக்கு",
@@ -90,7 +87,6 @@ export const ta = {
   "layout.split": "தொகுப்பான் மற்றும் முன்னோட்டம்",
   "layout.previewOnly": "முன்னோட்டம் மட்டும்",
   "pane.resize": "பலகங்களின் அளவை மாற்று",
-  "pane.resizeHint": "அளவை மாற்ற இழுக்கவும்",
   // Editor
   "editor.loading": "தொகுப்பான் ஏற்றப்படுகிறது...",
   "editor.undo": "செயல்தவிர்",
@@ -102,16 +98,12 @@ export const ta = {
   "preview.pagedError": "ஆவணக் காட்சியை உருவாக்க முடியவில்லை:",
   "preview.mermaidError": "மெர்மெய்ட்:",
   // Session
-  "session.restoreError": "அமர்வை மீட்டெடுக்க முடியவில்லை",
   "session.saveError": "அமர்வைச் சேமிக்க முடியவில்லை",
   // Native
-  "native.dialogError": "நேட்டிவ் எச்சரிக்கையைக் காட்ட முடியவில்லை",
   // PDF
-  "pdf.exportError": "PDF ஏற்றுமதியில் பிழை: ",
   "pdf.emptyFile": "PDF ஏற்றுமதி வெற்றுக் கோப்பை உருவாக்கியது",
   "pdf.invalidPdf": "ஏற்றுமதி செல்லுபடியான PDF கோப்பை உருவாக்கவில்லை",
   "pdf.timeout": "PDF ஏற்றுமதி நேரம் முடிந்தது",
-  "pdf.cancelled": "ஏற்றுமதி ரத்துசெய்யப்பட்டது",
   "pdf.notSupported": "PDF ஏற்றுமதி தற்போது Linux-இல் மட்டுமே ஆதரிக்கப்படுகிறது",
   // File operations (Rust)
   "file.emptyPath": "வெற்று அல்லது செல்லாத கோப்புப் பாதை",
@@ -148,9 +140,6 @@ export const ta = {
   "menu.closeOthers": "மற்ற தாவல்களை மூடு",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
-  "menu.shortcut.newTab": "Ctrl+N",
-  "menu.shortcut.nextTab": "Ctrl+Tab",
-  "menu.shortcut.prevTab": "Ctrl+Shift+Tab",
   // Zen mode
   "menu.zenEnter": "ஜென் பயன்முறையில் நுழை",
   "menu.zenExit": "ஜென் பயன்முறையிலிருந்து வெளியேறு",
@@ -184,7 +173,6 @@ export const ta = {
   "shortcuts.closeTab": "தாவலை மூடு",
   "shortcuts.esc": "மூடு / வெளியேறு",
   // Go to line
-  "goto.linePrompt": (max: number) => `வரிக்குச் செல் (1-${max}):`,
   // Status bar
   "statusbar.words": (n: number) => `${n} சொல்${n === 1 ? " " : "கள் "}`,
   "statusbar.lines": (n: number) => `${n} வரி${n === 1 ? " " : "கள் "}`,
@@ -199,15 +187,8 @@ export const ta = {
   "lang.clearSearch": "தேடலை அழி",
   "lang.noResults": "மொழிகள் எதுவும் இல்லை",
   // Misc
-  "misc.title": "meditor",
   "topbar.newTypst": "New .typ",
-  "topbar.newTypstTitle": "New Typst document",
-  "topbar.newTypstAria": "New Typst tab",
   "topbar.newLatex": "New .tex",
-  "topbar.newLatexTitle": "New LaTeX document",
-  "topbar.newLatexAria": "New LaTeX tab",
-  "doc.typstSample": "typst-sample",
-  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "Compiling Typst...",
   "preview.typstError": "Typst:",
   "preview.pages": "pages",
