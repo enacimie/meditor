@@ -347,7 +347,7 @@ await page.reload();
   await page.waitFor("!!document.querySelector('.cm-content')", { timeout: 20000 });
   
   // Test-only: force landscape tables on for this test
-  await page.evaluate(`(() => { (window as any).__FORCE_LANDSCAPE_TABLES__ = true; })()`);
+  await page.evaluate(`(() => { window.__FORCE_LANDSCAPE_TABLES__ = true; })()`);
   
   // Debug: verify the preference survived the reload
   const prefCheck = await page.evaluate(`(() => {
