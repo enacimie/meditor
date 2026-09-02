@@ -164,12 +164,13 @@ export function fitWideTables(
       const normalized = normalizeLandscapeTables(stored.landscapeTables);
       if (normalized) {
         allowLandscape = true;
-        if (typeof window !== "undefined") {
-          console.log("[fitWideTables] localStorage fallback activated:", { stored: stored.landscapeTables, normalized });
-        }
       }
     } catch {
       // ignore
+    }
+    // Test-only override: e2e can set this to force landscape on
+    if (!allowLandscape && (window as any).__FORCE_LANDSCAPE_TABLES__) {
+      allowLandscape = true;
     }
   }
   for (const table of Array.from(root.querySelectorAll("table"))) {
