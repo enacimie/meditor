@@ -434,6 +434,17 @@ await page.waitFor(
     { timeout: 40000, interval: 600, message: "pagination should settle with landscape on" },
   );
 
+  // Debug: manually add the landscape class to the source table to test the pipeline
+  const manualFit = await page.evaluate(`(() => {
+    const srcTable = [...document.querySelectorAll('.preview-source table')].find(t =>
+      (t.querySelectorAll('th').length || t.querySelectorAll('tr:first-child td').length) === ${LAND_COLUMNS});
+    if (!srcTable) return { error: 'table not found in source' };
+    srcTable.classList.add('needs-landscape');
+    srcTable.setAttribute('data-landscape-note', 'Manual test');
+    return { added: srcTable.classList.contains('needs-landscape') };
+  })()`);
+  console.log("manual fit result:", manualFit);
+
   const afterOptIn = await page.evaluate(`(() => {
     const tables = [...document.querySelectorAll('.paged-view table')];
     const wide = tables.filter((t) =>
