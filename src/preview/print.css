@@ -1,0 +1,88 @@
+/*
+ * What the paginated Markdown and the Typst preview look like on paper.
+ *
+ * Split out of Preview.css, which had grown to 996 lines. It is still the
+ * entry point and imports these in their original order, so the cascade is
+ * exactly what it was.
+ */
+
+/* ---- Print: paginated Markdown ---- */
+@media print {
+  /*
+   * The drop shadow and the gap between pages exist to make the paginated view
+   * look like sheets of paper on screen. On actual paper they are a grey frame
+   * printed around every page.
+   */
+  .paged-view .pagedjs_page {
+    margin: 0;
+    box-shadow: none;
+  }
+}
+
+/* ---- Print: Typst ---- */
+@media print {
+  .typst-preview {
+    background: #ffffff !important;
+    overflow: visible;
+  }
+
+  .typst-output {
+    padding: 0;
+    gap: 0;
+  }
+
+  .typst-output svg {
+    box-shadow: none;
+    border-radius: 0;
+    max-width: 100%;
+    page-break-after: always;
+  }
+
+  .typst-output svg:last-child {
+    page-break-after: avoid;
+  }
+
+  .typst-page-counter {
+    display: none;
+  }
+
+  .typst-loading {
+    display: none;
+  }
+}
+
+/* ---- Responsive: Typst ---- */
+@media (max-width: 760px) {
+  .typst-preview {
+    background: var(--bg);
+  }
+
+  :root[data-theme="dark"] .typst-preview {
+    background: var(--bg);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root[data-theme="system"] .typst-preview {
+      background: var(--bg);
+    }
+  }
+
+  .typst-output {
+    padding: 16px 12px 32px;
+    gap: 16px;
+  }
+
+  .typst-output svg {
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.1),
+      0 4px 12px rgba(0, 0, 0, 0.08);
+    border-radius: 2px;
+  }
+
+  .typst-output svg:hover {
+    transform: none;
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.1),
+      0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+}

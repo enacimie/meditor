@@ -1,0 +1,273 @@
+/*
+ * The rendered Markdown on screen, and the Mermaid diagrams inside it.
+ *
+ * Split out of Preview.css, which had grown to 996 lines. It is still the
+ * entry point and imports these in their original order, so the cascade is
+ * exactly what it was.
+ */
+
+/* ---- Markdown body ---- */
+.markdown-body {
+  max-width: 820px;
+  margin: 0 auto;
+  width: 100%;
+  color: var(--fg);
+}
+
+.markdown-body h1,
+.markdown-body h2 {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.3em;
+}
+
+.markdown-body a {
+  color: var(--accent);
+}
+
+.markdown-body code {
+  background: var(--code-bg);
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 85%;
+}
+
+.markdown-body pre {
+  background: var(--code-bg);
+  padding: 12px;
+  border-radius: 6px;
+  overflow: auto;
+}
+
+.markdown-body pre code {
+  background: transparent;
+  padding: 0;
+  font-size: 90%;
+}
+
+.markdown-body:not(.doc) .hljs {
+  background: var(--code-bg);
+  color: var(--code-fg);
+}
+
+.markdown-body:not(.doc) .hljs-comment,
+.markdown-body:not(.doc) .hljs-quote {
+  color: var(--code-comment);
+}
+
+.markdown-body:not(.doc) .hljs-keyword,
+.markdown-body:not(.doc) .hljs-selector-tag,
+.markdown-body:not(.doc) .hljs-literal,
+.markdown-body:not(.doc) .hljs-name {
+  color: var(--code-keyword);
+}
+
+.markdown-body:not(.doc) .hljs-title,
+.markdown-body:not(.doc) .hljs-title.class_,
+.markdown-body:not(.doc) .hljs-title.function_ {
+  color: var(--code-title);
+}
+
+.markdown-body:not(.doc) .hljs-number,
+.markdown-body:not(.doc) .hljs-attr,
+.markdown-body:not(.doc) .hljs-attribute,
+.markdown-body:not(.doc) .hljs-variable {
+  color: var(--code-number);
+}
+
+.markdown-body:not(.doc) .hljs-string,
+.markdown-body:not(.doc) .hljs-regexp,
+.markdown-body:not(.doc) .hljs-meta .hljs-string {
+  color: var(--code-string);
+}
+
+.markdown-body:not(.doc) .hljs-tag,
+.markdown-body:not(.doc) .hljs-selector-id,
+.markdown-body:not(.doc) .hljs-selector-class {
+  color: var(--code-tag);
+}
+
+.markdown-body blockquote {
+  border-left: 4px solid var(--border);
+  margin: 0;
+  padding: 0 1em;
+  opacity: 0.85;
+}
+
+.markdown-body table {
+  border-collapse: collapse;
+  display: block;
+  overflow: auto;
+}
+
+/*
+ * The web view keeps its horizontal scroll — on a screen you can scroll, and
+ * seeing a wide table at full size beats seeing it squeezed. But a single
+ * enormous cell should not be what decides how far you have to scroll, so the
+ * text breaks here too.
+ */
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+}
+
+/*
+ * A phone has about 312 px to work with, and eight columns of the padding
+ * above would eat 256 px of it before any text.
+ */
+@media (pointer: coarse) {
+  .markdown-body th,
+  .markdown-body td {
+    padding: 5px 6px;
+  }
+}
+
+/*
+ * Zebra striping is an on-screen idea, and it only works while the stripe and
+ * the text come from the same place. In the document view they do not: that
+ * view is paper, so paged.css pins the cells to black ink, while this stripe
+ * is `--bg-alt` — #252526 in the dark theme and #0a0a0a in the contrast one.
+ * Black text on a near-black band, at 1.06:1.
+ *
+ * Scoped rather than recoloured, because striping is not part of what the
+ * document view is imitating either: its tables are booktabs — a top rule, a
+ * header rule, a bottom rule, and no shading anywhere.
+ */
+.markdown-body:not(.doc) tr:nth-child(2n) {
+  background: var(--bg-alt);
+}
+
+.markdown-body img {
+  max-width: 100%;
+}
+
+.markdown-body mark {
+  background: #fff3a3;
+  color: #1f2328;
+}
+
+:root[data-theme="dark"] .markdown-body mark {
+  background: #5a4b00;
+  color: #fff8c5;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"] .markdown-body mark {
+    background: #5a4b00;
+    color: #fff8c5;
+  }
+}
+
+.markdown-body hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1.5em 0;
+}
+
+.markdown-body .task-list-item {
+  list-style: none;
+}
+
+.markdown-body .task-list-item input {
+  margin-right: 0.5em;
+}
+
+.markdown-body .warning {
+  border-left: 4px solid #d29922;
+  background: #fff8c5;
+  padding: 8px 16px;
+  border-radius: 4px;
+  color: #1f2328;
+}
+
+:root[data-theme="dark"] .markdown-body .warning,
+:root[data-theme="dark"] .markdown-body .note {
+  background: #2d2614;
+  color: #f0f6fc;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"] .markdown-body .warning,
+  :root[data-theme="system"] .markdown-body .note {
+    background: #2d2614;
+    color: #f0f6fc;
+  }
+}
+
+.markdown-body .note {
+  border-left: 4px solid var(--accent);
+  background: var(--bg-alt);
+  padding: 8px 16px;
+  border-radius: 4px;
+}
+
+.markdown-body .footnotes {
+  border-top: 1px solid var(--border);
+  margin-top: 2em;
+  font-size: 90%;
+}
+
+/* ---- Mermaid ---- */
+/*
+ * Mermaid renders with its own light theme, whose lines and edge labels are
+ * #333. On the dark page that is 1.32:1, and 1.66:1 on the pure black of the
+ * contrast theme: the boxes survive because they carry their own pale fill,
+ * but the arrows between them simply are not there.
+ *
+ * Giving the diagram the surface it was drawn for is the small half of the
+ * fix. Making Mermaid itself follow the theme is the right one, and a change
+ * of its own: the theme has to reach a Web Worker, the diagram cache is keyed
+ * on the source text alone so switching themes regenerates nothing, and the
+ * Document view and the HTML export both want paper regardless.
+ */
+.markdown-body .mermaid {
+  text-align: center;
+  margin: 1em 0;
+  background: var(--diagram-surface);
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.mermaid-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px 16px;
+  margin: 1em 0;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--fg);
+  font-size: 13px;
+  opacity: 0.72;
+  user-select: none;
+}
+
+.mermaid-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: mermaid-spin 0.7s linear infinite;
+}
+
+@keyframes mermaid-spin {
+  to { transform: rotate(360deg); }
+}
+
+.markdown-body .mermaid-error {
+  color: #a40e26;
+  background: #ffebe9;
+  padding: 8px 12px;
+  border: 1px solid #cf222e;
+  border-radius: 6px;
+  white-space: pre-wrap;
+  font-family: ui-monospace, monospace;
+  font-size: 85%;
+}

@@ -1,0 +1,51 @@
+/*
+ * The notice shown when a preview cannot be produced.
+ *
+ * Split out of Preview.css, which had grown to 996 lines. It is still the
+ * entry point and imports these in their original order, so the cascade is
+ * exactly what it was.
+ */
+
+/* ---- Preview error ---- */
+.preview-error {
+  display: grid;
+  gap: 8px;
+  max-width: 560px;
+  margin: 24px auto;
+  padding: 16px;
+  border: 1px solid #cf222e;
+  border-radius: 8px;
+  background: #ffebe9;
+  color: #a40e26;
+  font-size: 13px;
+}
+
+.preview-error strong {
+  font-size: 14px;
+}
+
+.preview-error button {
+  justify-self: start;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  padding: 5px 10px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+:root[data-theme="dark"] .markdown-body .mermaid-error,
+:root[data-theme="dark"] .preview-error {
+  border-color: #f85149;
+  background: #3a1f22;
+  color: #ff7b72;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"] .markdown-body .mermaid-error,
+  :root[data-theme="system"] .preview-error {
+    border-color: #f85149;
+    background: #3a1f22;
+    color: #ff7b72;
+  }
+}
