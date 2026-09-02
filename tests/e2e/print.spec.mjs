@@ -417,7 +417,29 @@ try {
     const tables = [...document.querySelectorAll('.paged-view table')];
     const wide = tables.filter((t) =>
       (t.querySelectorAll('th').length || t.querySelectorAll('tr:first-child td').length) === ${LAND_COLUMNS});
+    // Re-run the same measurement the pass ran, on the table in the source
+    // container, so a disagreement between platforms is readable.
+    const srcTables = [...document.querySelectorAll('.preview-source table')];
+    const srcWide = srcTables.find((t) =>
+      (t.querySelectorAll('th').length || t.querySelectorAll('tr:first-child td').length) === ${LAND_COLUMNS});
+    const reMeasure = (t) => {
+      if (!t) return null;
+      const out = {};
+      for (const step of [null, 'table-fit-1', 'table-fit-2', 'table-fit-3']) {
+        t.classList.remove('table-fit-1', 'table-fit-2', 'table-fit-3', 'needs-landscape');
+        if (step) t.classList.add(step);
+        const w = t.style.width, mw = t.style.maxWidth;
+        t.style.width = 'min-content';
+        t.style.maxWidth = 'none';
+        out[step ?? 'natural'] = t.offsetWidth;
+        t.style.width = w;
+        t.style.maxWidth = mw;
+      }
+      t.classList.remove('table-fit-1', 'table-fit-2', 'table-fit-3', 'needs-landscape');
+      return out;
+    };
     return {
+      probe: ${probe},
       marked: wide.filter((t) => t.classList.contains('needs-landscape')).length,
       wide: wide.length,
       // paged.js copies the @page name onto the sheet it generated.
@@ -428,6 +450,9 @@ try {
         const area = t.closest('.pagedjs_page_content');
         return area && t.offsetWidth <= area.clientWidth + 1;
       }),
+      srcWide: srcWide
+        ? { cls: srcWide.className, widths: reMeasure(srcWide) }
+        : null,
       // Diagnosis, not an assertion target: what the tables on the page
       // actually carry when the run above disagrees with a platform.
       diag: tables.slice(0, 8).map((t) => ({
