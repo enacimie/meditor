@@ -230,6 +230,34 @@
   padding: 2pt 2pt;
 }
 
+/*
+ * A table that fits on no portrait step can still fit an A4 sheet turned
+ * sideways (933 px of content instead of 605). The user opts in from
+ * Preferences; previewRenderer.ts then marks it `.needs-landscape` and this
+ * named page moves just its pages. paged.js honours `page:` — the sheets
+ * before and after stay portrait.
+ *
+ * A sideways page is a cost the reader should see coming, so the table gets a
+ * small notice pinned to its top rather than the page quietly rotating.
+ */
+@page landscape-table {
+  size: A4 landscape;
+  margin: 2.5cm;
+}
+
+.markdown-body.doc table.needs-landscape {
+  page: landscape-table;
+}
+
+.markdown-body.doc table.needs-landscape::before {
+  content: attr(data-landscape-note);
+  display: block;
+  font-size: 7pt;
+  color: #666666;
+  text-align: right;
+  margin-bottom: 2pt;
+}
+
 .markdown-body.doc th {
   border-top: 1.2pt solid #000000;
   border-bottom: 0.6pt solid #000000;

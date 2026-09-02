@@ -282,6 +282,20 @@ describe("fitWideTables", () => {
     const root = build(table(3));
     fitWideTables(root, fixed(0));
     expect(stepOf(root)).toBe("table-fit-3");
+    expect(root.querySelector("table")!.classList.contains("needs-landscape")).toBe(false);
+  });
+
+  it("claims the wider sheet too when it cannot be measured and the user opted in", () => {
+    // Zero means "no layout to measure", not "narrow" — and a table that
+    // cannot be measured cannot be trusted to fit a portrait page either.
+    // The next render re-decides from scratch, so a table that turns out to
+    // fit is unmarked as soon as there is something to measure.
+    const root = build(table(17));
+    fitWideTables(root, fixed(0), true, "Landscape page");
+    const el = root.querySelector("table")!;
+    expect(stepOf(root)).toBe("table-fit-3");
+    expect(el.classList.contains("needs-landscape")).toBe(true);
+    expect(el.getAttribute("data-landscape-note")).toBe("Landscape page");
   });
 
   it("re-decides from scratch when the document changes", () => {
@@ -319,5 +333,51 @@ describe("fitWideTables", () => {
     expect(root.querySelector("table")).toBe(before);
     expect(root.querySelector("tr")!.getAttribute("data-line")).toBe("5");
     expect(root.children.length).toBe(1);
+  });
+
+  /* ---- landscape opt-in ---- */
+
+  it("never marks a landscape page without the opt-in", () => {
+    // 800 px fits landscape (933) but no portrait step (605): with the flag
+    // off it stays at the smallest step, clipped as before.
+    const root = build(table(17));
+    fitWideTables(root, fixed(800));
+    expect(root.querySelector("table")!.classList.contains("needs-landscape")).toBe(false);
+    expect(stepOf(root)).toBe("table-fit-3");
+  });
+
+  it("marks a table that fits landscape but no portrait step", () => {
+    const root = build(table(17));
+    fitWideTables(root, fixed(800), true, "Landscape page");
+    const el = root.querySelector("table")!;
+    expect(el.classList.contains("needs-landscape")).toBe(true);
+    expect(el.getAttribute("data-landscape-note")).toBe("Landscape page");
+  });
+
+  it("leaves a table too wide even for landscape alone", () => {
+    // 1200 px does not fit the 933 px landscape sheet either — splitting it is
+    // the author's decision, not the editor's.
+    const root = build(table(40));
+    fitWideTables(root, fixed(1200), true, "Landscape page");
+    expect(root.querySelector("table")!.classList.contains("needs-landscape")).toBe(false);
+    expect(stepOf(root)).toBe("table-fit-3");
+  });
+
+  it("prefers a fitting portrait step over landscape", () => {
+    // Rotation costs the reader more than 9pt type; landscape is the last
+    // resort, so a table table-fit-1 can save never gets the page turned.
+    const root = build(table(17));
+    fitWideTables(root, shrinking(700, 200), true, "Landscape page");
+    expect(stepOf(root)).toBe("table-fit-1");
+    expect(root.querySelector("table")!.classList.contains("needs-landscape")).toBe(false);
+  });
+
+  it("clears the landscape mark when the table narrows", () => {
+    const root = build(table(17));
+    fitWideTables(root, fixed(800), true, "Landscape page");
+    expect(root.querySelector("table")!.classList.contains("needs-landscape")).toBe(true);
+
+    fitWideTables(root, fixed(400), true, "Landscape page");
+    expect(root.querySelector("table")!.classList.contains("needs-landscape")).toBe(false);
   });
 });
