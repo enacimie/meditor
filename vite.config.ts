@@ -2,6 +2,7 @@
 import { defineConfig, type OutputChunk, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import wasm from "vite-plugin-wasm";
+import pkg from "./package.json";
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
@@ -52,6 +53,22 @@ export default defineConfig(async () => ({
   // Tauri's webview serves from a local server so relative paths work too.
   base: "./",
   plugins: [wasm(), react(), bundleBudgetPlugin()],
+
+  /*
+   * The version, from the one place that already has to be right.
+   *
+   * The About dialog asks Tauri for it at runtime, but there is no Tauri in a
+   * browser, and meditor also ships as a web app — so it needs a value baked
+   * in for that case. It used to be a hand-written constant, which meant every
+   * `chore(release): bump` had to remember two more files. Nothing has ever
+   * drifted, but only because nobody forgot yet.
+   *
+   * Defined rather than imported from the component, so the bundle carries the
+   * string and not the rest of package.json.
+   */
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
 
   optimizeDeps: {
     // Prevent Vite from pre-bundling @myriaddreamin packages in dev mode.

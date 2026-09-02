@@ -4,6 +4,7 @@ import { render, screen, fireEvent, cleanup, act } from "@testing-library/react"
 import AboutDialog from "./AboutDialog";
 import { translations } from "../i18n/translations";
 import type { TranslationFn } from "../i18n/translations";
+import pkg from "../../package.json";
 
 /** Real English translations so assertions read naturally. */
 const t = ((key: string, ...args: unknown[]) => {
@@ -38,7 +39,11 @@ describe("AboutDialog", () => {
   it("renders the brand, version, license and source link", () => {
     renderDialog();
     expect(screen.getByText("meditor")).toBeTruthy();
-    expect(screen.getByText("Version 0.1.7")).toBeTruthy();
+    // Against package.json, not a literal: the point of the change this
+    // guards is that a release bump no longer edits this file, and an
+    // assertion that had to be edited would defeat it. It also checks the
+    // whole chain — package.json to the define to the rendered text.
+    expect(screen.getByText(`Version ${pkg.version}`)).toBeTruthy();
     expect(screen.getByText("GNU Affero General Public License v3.0")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Source code" })).toBeTruthy();
   });
