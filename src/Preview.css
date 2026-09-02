@@ -473,6 +473,15 @@
   width: auto;
   max-width: 100%;
   border-collapse: collapse;
+  /*
+   * The typeface too, not only its size. The paper is set in Latin Modern
+   * (paged.css, `.markdown-body.doc`); without this line the container
+   * measured in the interface font instead, and glyph widths differ enough
+   * between the two that a table's floor came out different from the page's.
+   * Kept in step with paged.css by tableFitMetrics.test.ts.
+   */
+  font-family: "Latin Modern Roman", "LM Roman 10", "CMU Serif",
+    "EB Garamond", Georgia, "Times New Roman", serif;
   font-size: 10pt;
 }
 

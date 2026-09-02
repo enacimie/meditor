@@ -82,6 +82,18 @@ describe("the measuring container matches the page", () => {
     expect(declaration(preview.get(cells(inContainer)), "padding")).toBe(expected);
   });
 
+  it("agrees on the typeface", () => {
+    // Size and padding were compared from the start; the typeface was not, and
+    // glyph widths decide a table's floor just as much. The container measured
+    // in the interface font while the page was set in Latin Modern, and the
+    // two disagreed about whether a table fitted.
+    const onPage = declaration(paged.get(".markdown-body.doc"), "font-family");
+    expect(onPage).not.toBeNull();
+    expect(
+      declaration(preview.get(".preview-source.markdown-body table"), "font-family"),
+    ).toBe(onPage);
+  });
+
   it("keeps the container laid out as a table rather than a scrolling box", () => {
     // `Preview.css` gives every table `display: block; overflow: auto` so the
     // web view can scroll one sideways. Left in place here it would measure a

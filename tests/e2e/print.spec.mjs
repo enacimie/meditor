@@ -537,6 +537,67 @@ await page.waitFor(
       })),
     };
   })()`);
+
+  // TEMPORARY PROBE — not for merge. Dumps why the four fit steps measure the
+  // same width on the Windows and macOS runners while differing locally.
+  const ciProbe = await page.evaluate(`(() => {
+    const tables = [...document.querySelectorAll('.preview-source table')];
+    const wide = tables.find((t) =>
+      (t.querySelectorAll('th').length || t.querySelectorAll('tr:first-child td').length) === ${LAND_COLUMNS});
+    if (!wide) return { error: 'no wide table in the source', tableCount: tables.length,
+      columnCounts: tables.map((t) => t.querySelectorAll('th').length) };
+
+    const readStep = (step) => {
+      wide.classList.remove('table-fit-1', 'table-fit-2', 'table-fit-3');
+      if (step) wide.classList.add(step);
+      const cell = wide.querySelector('td') || wide.querySelector('th');
+      const tableStyle = getComputedStyle(wide);
+      const cellStyle = getComputedStyle(cell);
+      const w = wide.style.width, mw = wide.style.maxWidth;
+      wide.style.width = 'min-content';
+      wide.style.maxWidth = 'none';
+      const measured = wide.offsetWidth;
+      wide.style.width = w;
+      wide.style.maxWidth = mw;
+      return {
+        step: step ?? 'natural',
+        classes: wide.className,
+        width: measured,
+        tableFont: tableStyle.fontSize + ' / ' + tableStyle.fontFamily.slice(0, 28),
+        cellFont: cellStyle.fontSize,
+        cellPadding: cellStyle.padding,
+        display: tableStyle.display,
+        wrap: cellStyle.overflowWrap,
+      };
+    };
+
+    const steps = [null, 'table-fit-1', 'table-fit-2', 'table-fit-3'].map(readStep);
+    wide.classList.remove('table-fit-1', 'table-fit-2', 'table-fit-3');
+
+    const sheets = [...document.styleSheets].map((sheet) => {
+      try {
+        const rules = [...sheet.cssRules];
+        return {
+          node: sheet.ownerNode ? sheet.ownerNode.tagName : '?',
+          href: sheet.href ? sheet.href.split('/').pop() : 'inline',
+          fitRules: rules.filter((r) => (r.cssText || '').includes('table-fit-')).length,
+          previewSource: rules.filter((r) => (r.cssText || '').includes('preview-source')).length,
+        };
+      } catch { return { node: 'blocked', href: sheet.href, fitRules: -1, previewSource: -1 }; }
+    }).filter((s) => s.fitRules !== 0 || s.previewSource !== 0);
+
+    return {
+      steps,
+      sheets,
+      fontsStatus: document.fonts.status,
+      hasLatinModern: document.fonts.check('10pt "Latin Modern Roman"'),
+      firstCellText: (wide.querySelector('td') || {}).textContent?.slice(0, 40) ?? null,
+      cellCount: wide.querySelectorAll('td').length,
+      ua: navigator.userAgent.slice(0, 90),
+    };
+  })()`);
+  console.log("CIPROBE " + JSON.stringify(ciProbe, null, 1));
+
   assert(
     afterOptIn.marked > 0 && afterOptIn.landscapePages > 0,
     "with the opt-in, a table too wide for portrait should claim a landscape page: " +
