@@ -1443,14 +1443,28 @@ pub fn run() {
         present_documents(app, documents);
     }));
 
-    // Bound to the target for the same reason: neither crate exists on a
-    // phone. The updater is also inert until `plugins.updater` is configured —
-    // it ships switched off behind conf/updater-enabled.json, so registering it
-    // here changes nothing about a build until enacimie turns it on.
+    // Bound to the target for the same reason: neither crate exists on a phone.
+    //
+    // Registered in `setup` rather than on the builder, because the updater
+    // refuses to initialise when `plugins.updater` is absent from the config —
+    // and absent is how it ships, since it stays switched off behind
+    // conf/updater-enabled.json until the signing keys exist. On the builder
+    // that refusal takes the whole application down before it draws anything:
+    // v0.1.9 and v0.2.0 both went out unable to start for exactly this.
+    //
+    // Here the error is a value instead of a panic. Without the config the
+    // updater simply is not there, which is what the menu already assumes:
+    // __UPDATER_ENABLED__ hides the entry in the same builds.
     #[cfg(desktop)]
-    let builder = builder
-        .plugin(tauri_plugin_updater::Builder::new().build())
-        .plugin(tauri_plugin_process::init());
+    let builder = builder.plugin(tauri_plugin_process::init()).setup(|app| {
+        if let Err(error) = app
+            .handle()
+            .plugin(tauri_plugin_updater::Builder::new().build())
+        {
+            eprintln!("the updater is not configured in this build: {error}");
+        }
+        Ok(())
+    });
 
     builder
         .plugin(tauri_plugin_opener::init())

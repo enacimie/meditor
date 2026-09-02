@@ -159,6 +159,34 @@ jobs:
         run: cargo test --lib
       - working-directory: src-tauri
         run: cargo check
+      # Nothing else here starts the application. clippy, cargo test and the
+      # E2E suite all pass on a binary that dies on launch: the E2E specs drive
+      # a browser against the dev server, never the Tauri process. v0.1.9 and
+      # v0.2.0 both shipped unable to start — the updater plugin refuses to
+      # initialise without `plugins.updater`, which is exactly how it ships —
+      # and every check was green.
+      #
+      # Linux only, and deliberately: a display is cheap to fake here, and the
+      # code that broke is behind `#[cfg(desktop)]`, shared by all three. It
+      # would not catch something that only fails on Windows or macOS; it does
+      # catch anything that stops the app coming up at all.
+      - name: The application must start
+        if: runner.os == 'Linux'
+        working-directory: src-tauri
+        run: |
+          sudo apt-get install -y --no-install-recommends xvfb
+          cargo build --bin meditor
+          set +e
+          xvfb-run -a timeout 20 target/debug/meditor > start.log 2>&1
+          status=$?
+          set -e
+          cat start.log
+          # 124 is timeout killing a window that was still up, which is the
+          # healthy outcome. A panic exits 101 and prints; either is a failure.
+          if [ "$status" = "101" ] || grep -q "panicked at" start.log; then
+            echo "::error::the application does not start (exit $status)"
+            exit 1
+          fi
 
   # Android compiles from the same sources, and the ways it can break are ones
   # no desktop job would notice: a plugin that is an empty crate there, an
