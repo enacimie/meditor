@@ -33,6 +33,7 @@ import { isRtl } from "./i18n/translations";
 import { useThemeEffect } from "./hooks/useThemeEffect";
 import { useSplitDivider } from "./hooks/useSplitDivider";
 import { useNotice } from "./hooks/useNotice";
+import { useUpdateCheck } from "./hooks/useUpdateCheck";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useCoarsePointer, prefersCoarsePointer } from "./hooks/useCoarsePointer";
 import { usePlatform, isMobilePlatform } from "./hooks/usePlatform";
@@ -300,7 +301,8 @@ export default function App() {
   useThemeEffect(theme);
   const { split, setSplit, dragging, splitRef, splitRatioRef, onDividerDown, onDividerMove, onDividerUp } =
     useSplitDivider(50);
-  const { notice, showNotice } = useNotice();
+  const { notice, showNotice, dismissNotice } = useNotice();
+  const updates = useUpdateCheck(t, { showNotice, dismissNotice });
 
   const editorRef = useRef<EditorHandle>(null);
   const previewRef = useRef<PreviewHandle>(null);
@@ -1343,6 +1345,15 @@ export default function App() {
     (LATEX_ENABLED || activeKind !== "latex") &&
     (!isMobilePlatform(platform) || activeKind !== "markdown");
 
+  /*
+   * The updater is a desktop plugin and is not compiled into the mobile
+   * build, so the menu entry is absent there rather than failing when
+   * pressed. `platform` is null until Rust answers; treating that as
+   * "not mobile" is what keeps a desktop from flickering the entry in and
+   * out on startup, and matches what pdfExportAvailable above does.
+   */
+  const updateCheckAvailable = isTauri() && !isMobilePlatform(platform);
+
   const sharingTheWorkspace = layoutMode === "split" && !zenMode;
   const paneFlex = (percent: number) =>
     sharingTheWorkspace ? `0 0 ${percent}%` : "1 1 100%";
@@ -1379,6 +1390,7 @@ export default function App() {
         onCloseAll={closeAllTabs}
         onCloseOthers={closeOtherTabs}
         onAbout={() => setAboutOpen(true)}
+        onCheckUpdates={updateCheckAvailable ? updates.checkForUpdates : undefined}
         onPreferences={() => setPreferencesOpen(true)}
         layoutMode={layoutMode}
         onLayoutModeChange={chooseLayout}
@@ -1633,6 +1645,18 @@ export default function App() {
             confirmRequest.resolve(false);
             setConfirmRequest(null);
           }}
+        />
+      )}
+      {updates.offer && (
+        <ConfirmDialog
+          title={t("update.title")}
+          message={t("update.available", updates.offer.version, updates.offer.current)}
+          confirmLabel={t("update.install")}
+          cancelLabel={t("update.later")}
+          onConfirm={() => {
+            void updates.offer?.install();
+          }}
+          onCancel={updates.dismiss}
         />
       )}
       {conflictRequest && (

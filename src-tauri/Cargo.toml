@@ -42,6 +42,11 @@ url = "2"
 # exist. Depending on it unconditionally is what stops an Android build dead.
 [target."cfg(not(any(target_os = \"android\", target_os = \"ios\")))".dependencies]
 tauri-plugin-single-instance = "2"
+# Same reasoning, different reason: neither plugin exists on a phone. The
+# updater has nothing to update — a store or a sideloaded APK installs itself —
+# and relaunching is not a thing an app does to itself there either.
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
 
 [target."cfg(any(target_os = \"linux\", target_os = \"dragonfly\", target_os = \"freebsd\", target_os = \"netbsd\", target_os = \"openbsd\"))".dependencies]
 webkit2gtk = "2.0"

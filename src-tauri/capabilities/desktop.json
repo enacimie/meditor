@@ -1,0 +1,8 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "desktop-updates",
+  "description": "Checking for and installing updates. Separate from the default capability because permissions are resolved per platform: the updater and process plugins are bound to the desktop target in Cargo.toml, so on Android their permissions do not exist and naming them in a shared capability fails the build outright.",
+  "platforms": ["linux", "macOS", "windows"],
+  "windows": ["main"],
+  "permissions": ["updater:default", "process:allow-restart"]
+}

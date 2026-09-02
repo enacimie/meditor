@@ -197,5 +197,15 @@ export const es = {
   "preview.latexEmpty": "Documento LaTeX vacío.",
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
+  "menu.checkUpdates": "Buscar actualizaciones",
+  "update.checking": "Buscando actualizaciones…",
+  "update.upToDate": (v: string) => `meditor ${v} es la última versión`,
+  "update.title": "Hay una actualización",
+  "update.available": (v: string, current: string) =>
+    `Ya está meditor ${v}. Tienes la ${current}. Al instalarla se reiniciará la aplicación.`,
+  "update.install": "Instalar y reiniciar",
+  "update.later": "Ahora no",
+  "update.downloading": "Descargando la actualización…",
+  "update.failed": "No se ha podido comprobar si hay actualizaciones",
 
 };

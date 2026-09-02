@@ -222,5 +222,16 @@ export const en = {
   "about.license": "License",
   "about.source": "Source code",
   "about.close": "Close",
+  // Updates — desktop only, and only when the user asks for them
+  "menu.checkUpdates": "Check for updates",
+  "update.checking": "Checking for updates…",
+  "update.upToDate": (v: string) => `meditor ${v} is the latest version`,
+  "update.title": "Update available",
+  "update.available": (v: string, current: string) =>
+    `meditor ${v} is out. You have ${current}. Installing it will restart the app.`,
+  "update.install": "Install and restart",
+  "update.later": "Not now",
+  "update.downloading": "Downloading the update…",
+  "update.failed": "Could not check for updates",
   // Misc
 };
