@@ -249,6 +249,68 @@ try {
     { timeout: 40000, interval: 600, message: "pagination should settle around the tables" },
   );
 
+  /*
+   * The offscreen container has to be styled like the paper on its own, or
+   * `fitWideTables` measures one thing and the page lays out another.
+   *
+   * `tableFitMetrics.test.ts` compares the two stylesheets' declarations,
+   * which says they agree but not that either one still matches an element:
+   * rename the selector on both sides and it stays green while the rules hit
+   * nothing. That is not hypothetical — it is how the fixture came to be
+   * switched off while every unit test passed.
+   *
+   * Reading it needs one precaution. paged.js injects its own copy of
+   * paged.css into the document, and that copy reaches this container too
+   * because it carries `markdown-body doc` — so once a page has been laid out
+   * a dead fixture still measures correctly. It is switched off for the
+   * reading, which is the state the measuring pass actually runs in.
+   */
+  const fixture = await page.evaluate(`(() => {
+    const source = document.querySelector('.preview-source');
+    const cell = source && source.querySelector('td');
+    if (!cell) return { error: 'no cell in the measuring container' };
+
+    const injected = [...document.styleSheets].filter((sheet) => {
+      try {
+        return [...sheet.cssRules].some((rule) =>
+          (rule.cssText || '').includes('markdown-body.doc'));
+      } catch {
+        return false;
+      }
+    });
+
+    const onPage = document.querySelector('.pagedjs_page td');
+    const page = onPage
+      ? { padding: getComputedStyle(onPage).padding, fontSize: getComputedStyle(onPage).fontSize }
+      : null;
+
+    injected.forEach((sheet) => { sheet.disabled = true; });
+    const alone = {
+      padding: getComputedStyle(cell).padding,
+      fontSize: getComputedStyle(cell).fontSize,
+      display: getComputedStyle(cell.closest('table')).display,
+    };
+    injected.forEach((sheet) => { sheet.disabled = false; });
+
+    return { injectedSheets: injected.length, page, alone };
+  })()`);
+
+  assert(!fixture.error, "the measuring container should hold a table: " + fixture.error);
+  assert(
+    fixture.injectedSheets > 0,
+    "expected paged.js to have injected its stylesheet; the reading below means nothing without it",
+  );
+  assert(
+    fixture.alone.display === "table",
+    `the measuring container lays its tables out as ${fixture.alone.display}, not a table — it would measure a scroll box`,
+  );
+  assert(
+    fixture.alone.padding === fixture.page.padding &&
+      fixture.alone.fontSize === fixture.page.fontSize,
+    "the measuring container is not styled like the page on its own — its rules have stopped matching. " +
+      `container ${fixture.alone.fontSize}/${fixture.alone.padding}, page ${fixture.page.fontSize}/${fixture.page.padding}`,
+  );
+
   const tables = await page.evaluate(`(() => {
     const out = [];
     for (const table of document.querySelectorAll('.paged-view table')) {
