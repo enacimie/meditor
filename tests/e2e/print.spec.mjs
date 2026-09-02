@@ -326,22 +326,24 @@ try {
     const probe = document.createElement('table');
     probe.className = 'table-fit-3';
     probe.style.cssText = 'position:absolute;visibility:hidden;width:auto';
-    probe.innerHTML = '<tbody><tr><td>8</td></tr></tbody>';
+    probe.innerHTML = '<thead><tr><th>x</th></tr></thead><tbody><tr><td>8</td></tr></tbody>';
     document.querySelector('.preview-source').append(probe);
-    const width = probe.querySelector('td').offsetWidth;
+    probe.style.width = 'min-content';
+    probe.style.maxWidth = 'none';
+    const width = probe.offsetWidth;
     probe.remove();
     return width;
   })()`);
   // Portrait page: 605 px of content; landscape: 933 px. Aim for the middle
   // of the band so font rounding cannot push the fixture out of either side.
-  const LAND_COLUMNS = Math.floor(750 / probe);
+  const LAND_COLUMNS = Math.floor(760 / probe);
   assert(
-    LAND_COLUMNS > 40 && LAND_COLUMNS < 120,
+    LAND_COLUMNS > 30 && LAND_COLUMNS < 150,
     `probe column width ${probe}px puts the fixture out of range`,
   );
-  const landHead = Array.from({ length: LAND_COLUMNS }, (_, i) => `h${i + 1}`).join(" | ");
+  const landHead = Array.from({ length: LAND_COLUMNS }, () => "x").join(" | ");
   const landRule = Array.from({ length: LAND_COLUMNS }, () => "---").join(" | ");
-  const landRow = Array.from({ length: LAND_COLUMNS }, (_, c) => `${c}`).join(" | ");
+  const landRow = Array.from({ length: LAND_COLUMNS }, () => "8").join(" | ");
   const landDoc = ["", `| ${landHead} |`, `| ${landRule} |`, `| ${landRow} |`, ""].join("\n");
 
   // Contract 1: what is already on screen has never claimed a landscape page.
