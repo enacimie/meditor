@@ -55,7 +55,6 @@ export const id = {
   "confirm.no": "Tidak",
 
   // Alerts
-  "alert.error": "Error",
   "error.title": "Terjadi kesalahan",
   "error.retry": "Coba lagi",
   // Tabs
@@ -67,7 +66,6 @@ export const id = {
   "tab.rename": "Ubah nama",
   "tab.renameCancel": "Batal",
   "tab.documentsOpen": "Buka documents",
-  "tab.activeDoc": "Active document",
   // Document names
   "doc.untitled": (n: number) => `Dokumen ${n}`,
   "doc.defaultExport": "document",
@@ -76,7 +74,6 @@ export const id = {
   "pane.preview": "Pratinjau",
   "pane.scrollToPreview": "Go to cursor position in preview",
   "pane.scrollToCode": "Go to code at marked position",
-  "pane.scrollToCodeHint": "Go to code at marked position (click in preview to mark)",
   "pane.goToPreview": "Go to preview",
   "pane.goToCode": "Go to code",
   "pane.wrapOn": "Disable word wrap",
@@ -90,7 +87,6 @@ export const id = {
   "layout.split": "Editor dan pratinjau",
   "layout.previewOnly": "Hanya pratinjau",
   "pane.resize": "Resize panels",
-  "pane.resizeHint": "Drag to resize",
   // Editor
   "editor.loading": "Loading editor...",
   "editor.undo": "Urungkan",
@@ -102,16 +98,12 @@ export const id = {
   "preview.pagedError": "Could not generate Document view:",
   "preview.mermaidError": "Mermaid:",
   // Session
-  "session.restoreError": "Could not restore session",
   "session.saveError": "Could not save session",
   // Native
-  "native.dialogError": "Could not show native alert",
   // PDF
-  "pdf.exportError": "Error exporting PDF: ",
   "pdf.emptyFile": "PDF export produced an empty file",
   "pdf.invalidPdf": "Export did not produce a valid PDF file",
   "pdf.timeout": "PDF export timed out",
-  "pdf.cancelled": "Export canceled",
   "pdf.notSupported": "PDF export is only supported on Linux for now",
   // File operations (Rust)
   "file.emptyPath": "Empty or invalid file path",
@@ -148,9 +140,6 @@ export const id = {
   "menu.closeOthers": "Tutup tab lainnya",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
-  "menu.shortcut.newTab": "Ctrl+N",
-  "menu.shortcut.nextTab": "Ctrl+Tab",
-  "menu.shortcut.prevTab": "Ctrl+Shift+Tab",
   // Zen mode
   "menu.zenEnter": "Masuk mode Zen",
   "menu.zenExit": "Keluar mode Zen",
@@ -184,7 +173,6 @@ export const id = {
   "shortcuts.closeTab": "Tutup tab",
   "shortcuts.esc": "Tutup / Exit",
   // Go to line
-  "goto.linePrompt": (max: number) => `Go to line (1-${max}):`,
   // Status bar
   "statusbar.words": (n: number) => `${n} kata`,
   "statusbar.lines": (n: number) => `${n} baris`,
@@ -199,15 +187,8 @@ export const id = {
   "lang.clearSearch": "Hapus pencarian",
   "lang.noResults": "Tidak ada bahasa ditemukan",
   // Misc
-  "misc.title": "meditor",
   "topbar.newTypst": "Baru .typ",
-  "topbar.newTypstTitle": "Dokumen Typst baru",
-  "topbar.newTypstAria": "Tab Typst baru",
   "topbar.newLatex": "New .tex",
-  "topbar.newLatexTitle": "New LaTeX document",
-  "topbar.newLatexAria": "New LaTeX tab",
-  "doc.typstSample": "typst-sample",
-  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "Mengompilasi Typst…",
   "preview.typstError": "Typst:",
   "preview.pages": "pages",

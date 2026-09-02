@@ -54,7 +54,6 @@ export const uz = {
   "confirm.yes": "Ha",
   "confirm.no": "Yo'q",
   // Alerts
-  "alert.error": "Xato",
   "error.title": "Nimadir noto'g'ri ketdi",
   "error.retry": "Qayta urinish",
   // Tabs
@@ -66,7 +65,6 @@ export const uz = {
   "tab.rename": "Nomni o'zgartirish",
   "tab.renameCancel": "Bekor qilish",
   "tab.documentsOpen": "Ochiq hujjatlar",
-  "tab.activeDoc": "Faol hujjat",
   // Document names
   "doc.untitled": (n: number) => `Hujjat ${n}`,
   "doc.defaultExport": "hujjat",
@@ -75,7 +73,6 @@ export const uz = {
   "pane.preview": "Ko'rib chiqish",
   "pane.scrollToPreview": "Kursor pozitsiyasiga ko'rib chiqishda o'tish",
   "pane.scrollToCode": "Belgilangan joyga kodda o'tish",
-  "pane.scrollToCodeHint": "Belgilangan joyga kodda o'tish (belgilash uchun ko'rib chiqishni bosing)",
   "pane.goToPreview": "Ko'rib chiqishga o'tish",
   "pane.goToCode": "Kodga o'tish",
   "pane.wrapOn": "Qator ko'chirishni o'chirish",
@@ -89,7 +86,6 @@ export const uz = {
   "layout.split": "Muharrir va ko'rib chiqish",
   "layout.previewOnly": "Faqat ko'rib chiqish",
   "pane.resize": "Panellarni o'lchamlash",
-  "pane.resizeHint": "O'lchamlash uchun sudrang",
   // Editor
   "editor.loading": "Muharrir yuklanmoqda...",
   "editor.undo": "Bekor qilish",
@@ -101,16 +97,12 @@ export const uz = {
   "preview.pagedError": "Hujjat ko'rinishi yaratib bo'lmadi:",
   "preview.mermaidError": "Mermaid:",
   // Session
-  "session.restoreError": "Sessiyani qayta tiklab bo'lmadi",
   "session.saveError": "Sessiyani saqlab bo'lmadi",
   // Native
-  "native.dialogError": "Mahalliy ogohlantirish ko'rsatib bo'lmadi",
   // PDF
-  "pdf.exportError": "PDF eksportida xato: ",
   "pdf.emptyFile": "PDF eksport bo'sh fayl yaratdi",
   "pdf.invalidPdf": "Eksport haqiqiy PDF fayl yaratmadi",
   "pdf.timeout": "PDF eksport vaqti tugadi",
-  "pdf.cancelled": "Eksport bekor qilindi",
   "pdf.notSupported": "PDF eksport hozircha faqat Linuxda qo'llab-quvvatlanadi",
   // File operations (Rust)
   "file.emptyPath": "Bo'sh yoki noto'g'ri fayl yo'li",
@@ -147,9 +139,6 @@ export const uz = {
   "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
-  "menu.shortcut.newTab": "Ctrl+N",
-  "menu.shortcut.nextTab": "Ctrl+Tab",
-  "menu.shortcut.prevTab": "Ctrl+Shift+Tab",
   // Zen mode
   "menu.zenEnter": "Zen rejimiga kirish",
   "menu.zenExit": "Zen rejimidan chiqish",
@@ -183,7 +172,6 @@ export const uz = {
   "shortcuts.closeTab": "Tabni yopish",
   "shortcuts.esc": "Yopish / Chiqish",
   // Go to line
-  "goto.linePrompt": (max: number) => `Qatorga o'tish (1-${max}):`,
   // Status bar
   "statusbar.words": (n: number) => `${n} ta so'z`,
   "statusbar.lines": (n: number) => `${n} ta qator`,
@@ -198,15 +186,8 @@ export const uz = {
   "lang.clearSearch": "Qidiruvni tozalash",
   "lang.noResults": "Tillar topilmadi",
   // Misc
-  "misc.title": "meditor",
   "topbar.newTypst": "New .typ",
-  "topbar.newTypstTitle": "New Typst document",
-  "topbar.newTypstAria": "New Typst tab",
   "topbar.newLatex": "New .tex",
-  "topbar.newLatexTitle": "New LaTeX document",
-  "topbar.newLatexAria": "New LaTeX tab",
-  "doc.typstSample": "typst-sample",
-  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "Compiling Typst...",
   "preview.typstError": "Typst:",
   "preview.pages": "pages",

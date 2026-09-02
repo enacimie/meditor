@@ -54,7 +54,6 @@ export const si = {
   "confirm.yes": "ඔව්",
   "confirm.no": "නැත",
   // Alerts
-  "alert.error": "දෝෂය",
   "error.title": "යම් දෙයක් වැරදී ඇත",
   "error.retry": "නැවත උත්සාහ කරන්න",
   // Tabs
@@ -66,7 +65,6 @@ export const si = {
   "tab.rename": "නැවත නම් කරන්න",
   "tab.renameCancel": "අවලංගු කරන්න",
   "tab.documentsOpen": "විවෘත ලේඛන",
-  "tab.activeDoc": "සක්‍රීය ලේඛනය",
   // Document names
   "doc.untitled": (n: number) => `ලේඛනය ${n}`,
   "doc.defaultExport": "ලේඛනය",
@@ -75,7 +73,6 @@ export const si = {
   "pane.preview": "පෙරදසුන",
   "pane.scrollToPreview": "කර්සර පිහිටීමට පෙරදසුනේ යන්න",
   "pane.scrollToCode": "සලකුණු කළ ස්ථානයට කේතයේ යන්න",
-  "pane.scrollToCodeHint": "සලකුණු කළ ස්ථානයට කේතයේ යන්න (සලකුණු කිරීමට පෙරදසුනේ ක්ලික් කරන්න)",
   "pane.goToPreview": "පෙරදසුනට යන්න",
   "pane.goToCode": "කේතයට යන්න",
   "pane.wrapOn": "වචන එතුම අක්‍රිය කරන්න",
@@ -89,7 +86,6 @@ export const si = {
   "layout.split": "සංස්කාරක සහ පෙරදසුන",
   "layout.previewOnly": "පෙරදසුන පමණි",
   "pane.resize": "පැනල ප්‍රමාණය වෙනස් කරන්න",
-  "pane.resizeHint": "ප්‍රමාණය වෙනස් කිරීමට අදින්න",
   // Editor
   "editor.loading": "සංස්කාරකය පූරණය වෙමින්...",
   "editor.undo": "පෙර පරිදි",
@@ -101,16 +97,12 @@ export const si = {
   "preview.pagedError": "ලේඛන දර්ශනය ජනනය කළ නොහැක:",
   "preview.mermaidError": "Mermaid:",
   // Session
-  "session.restoreError": "සැසිය ප්‍රතිසාධනය කළ නොහැක",
   "session.saveError": "සැසිය සුරැකිය නොහැක",
   // Native
-  "native.dialogError": "ස්වදේශීය ඇඟවීම පෙන්විය නොහැක",
   // PDF
-  "pdf.exportError": "PDF අපනයන දෝෂය: ",
   "pdf.emptyFile": "PDF අපනයනය හිස් ගොනුවක් නිෂ්පාදනය කළේය",
   "pdf.invalidPdf": "අපනයනය වලංගු PDF ගොනුවක් නිෂ්පාදනය නොකළේය",
   "pdf.timeout": "PDF අපනයන කාලය අවසන්",
-  "pdf.cancelled": "අපනයනය අවලංගු කරන ලදී",
   "pdf.notSupported": "PDF අපනයනය දැනට Linux සඳහා පමණක් සහාය දක්වයි",
   // File operations (Rust)
   "file.emptyPath": "හිස් හෝ අවලංගු ගොනු මාර්ගය",
@@ -147,9 +139,6 @@ export const si = {
   "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
-  "menu.shortcut.newTab": "Ctrl+N",
-  "menu.shortcut.nextTab": "Ctrl+Tab",
-  "menu.shortcut.prevTab": "Ctrl+Shift+Tab",
   // Zen mode
   "menu.zenEnter": "Zen ආකාරයට ඇතුළු වන්න",
   "menu.zenExit": "Zen ආකාරයෙන් පිටවන්න",
@@ -183,7 +172,6 @@ export const si = {
   "shortcuts.closeTab": "ටැබය වසන්න",
   "shortcuts.esc": "වසන්න / පිටවන්න",
   // Go to line
-  "goto.linePrompt": (max: number) => `පේළියට යන්න (1-${max}):`,
   // Status bar
   "statusbar.words": (n: number) => `වචන ${n}ක්`,
   "statusbar.lines": (n: number) => `පේළි ${n}ක්`,
@@ -198,15 +186,8 @@ export const si = {
   "lang.clearSearch": "සෙවුම හිස් කරන්න",
   "lang.noResults": "භාෂා හමු නොවීය",
   // Misc
-  "misc.title": "meditor",
   "topbar.newTypst": "New .typ",
-  "topbar.newTypstTitle": "New Typst document",
-  "topbar.newTypstAria": "New Typst tab",
   "topbar.newLatex": "New .tex",
-  "topbar.newLatexTitle": "New LaTeX document",
-  "topbar.newLatexAria": "New LaTeX tab",
-  "doc.typstSample": "typst-sample",
-  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "Compiling Typst...",
   "preview.typstError": "Typst:",
   "preview.pages": "pages",

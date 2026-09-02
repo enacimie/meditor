@@ -54,7 +54,6 @@ export const az = {
   "confirm.yes": "Bəli",
   "confirm.no": "Xeyr",
   // Alerts
-  "alert.error": "Xəta",
   "error.title": "Nəsə səhv getdi",
   "error.retry": "Yenidən cəhd et",
   // Tabs
@@ -66,7 +65,6 @@ export const az = {
   "tab.rename": "Adını dəyiş",
   "tab.renameCancel": "Ləğv et",
   "tab.documentsOpen": "Açıq sənədlər",
-  "tab.activeDoc": "Aktiv sənəd",
   // Document names
   "doc.untitled": (n: number) => `Sənəd ${n}`,
   "doc.defaultExport": "sənəd",
@@ -75,7 +73,6 @@ export const az = {
   "pane.preview": "Ön baxış",
   "pane.scrollToPreview": "Kursor mövqeyinə ön baxışda keç",
   "pane.scrollToCode": "İşarələnmiş mövqeyə kodda keç",
-  "pane.scrollToCodeHint": "İşarələnmiş mövqeyə kodda keç (işarələmək üçün ön baxışda klikləyin)",
   "pane.goToPreview": "Ön baxışa keç",
   "pane.goToCode": "Koda keç",
   "pane.wrapOn": "Söz sarmağı söndür",
@@ -89,7 +86,6 @@ export const az = {
   "layout.split": "Redaktor və ön baxış",
   "layout.previewOnly": "Yalnız ön baxış",
   "pane.resize": "Panelləri ölçüləndir",
-  "pane.resizeHint": "Ölçüləndirmək üçün sürüşdürün",
   // Editor
   "editor.loading": "Redaktor yüklənir...",
   "editor.undo": "Geri al",
@@ -101,16 +97,12 @@ export const az = {
   "preview.pagedError": "Sənəd görünüşü yaradıla bilmədi:",
   "preview.mermaidError": "Mermaid:",
   // Session
-  "session.restoreError": "Sessiya bərpa edilə bilmədi",
   "session.saveError": "Sessiya saxlanıla bilmədi",
   // Native
-  "native.dialogError": "Doğma xəbərdarlıq göstərilə bilmədi",
   // PDF
-  "pdf.exportError": "PDF ixrac xətası: ",
   "pdf.emptyFile": "PDF ixrac boş fayl yaratdı",
   "pdf.invalidPdf": "İxrac etibarlı PDF faylı yaratmadı",
   "pdf.timeout": "PDF ixrac vaxtı bitdi",
-  "pdf.cancelled": "İxrac ləğv edildi",
   "pdf.notSupported": "PDF ixrac hazırda yalnız Linux-da dəstəklənir",
   // File operations (Rust)
   "file.emptyPath": "Boş və ya etibarsız fayl yolu",
@@ -147,9 +139,6 @@ export const az = {
   "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
-  "menu.shortcut.newTab": "Ctrl+N",
-  "menu.shortcut.nextTab": "Ctrl+Tab",
-  "menu.shortcut.prevTab": "Ctrl+Shift+Tab",
   // Zen mode
   "menu.zenEnter": "Zen rejiminə keç",
   "menu.zenExit": "Zen rejimindən çıx",
@@ -183,7 +172,6 @@ export const az = {
   "shortcuts.closeTab": "Vərəqi bağla",
   "shortcuts.esc": "Bağla / Çıx",
   // Go to line
-  "goto.linePrompt": (max: number) => `Sətirə keç (1-${max}):`,
   // Status bar
   "statusbar.words": (n: number) => `${n} söz`,
   "statusbar.lines": (n: number) => `${n} sətir`,
@@ -198,15 +186,8 @@ export const az = {
   "lang.clearSearch": "Axtarışı təmizlə",
   "lang.noResults": "Dil tapılmadı",
   // Misc
-  "misc.title": "meditor",
   "topbar.newTypst": "New .typ",
-  "topbar.newTypstTitle": "New Typst document",
-  "topbar.newTypstAria": "New Typst tab",
   "topbar.newLatex": "New .tex",
-  "topbar.newLatexTitle": "New LaTeX document",
-  "topbar.newLatexAria": "New LaTeX tab",
-  "doc.typstSample": "typst-sample",
-  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "Compiling Typst...",
   "preview.typstError": "Typst:",
   "preview.pages": "pages",

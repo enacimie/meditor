@@ -55,7 +55,6 @@ export const it = {
   "confirm.no": "No",
 
   // Alerts
-  "alert.error": "Errore",
   "error.title": "Qualcosa è andato storto",
   "error.retry": "Riprova",
   // Tabs
@@ -67,7 +66,6 @@ export const it = {
   "tab.rename": "Rinomina",
   "tab.renameCancel": "Annulla",
   "tab.documentsOpen": "Documenti aperti",
-  "tab.activeDoc": "Documento attivo",
   // Nome documentoos
   "doc.untitled": (n: number) => `Documento ${n}`,
   "doc.defaultExport": "documento",
@@ -76,7 +74,6 @@ export const it = {
   "pane.preview": "Anteprima",
   "pane.scrollToPreview": "Vai alla posizione del cursore nell'anteprima",
   "pane.scrollToCode": "Vai al codice nella posizione segnata",
-  "pane.scrollToCodeHint": "Vai al codice nella posizione segnata (clicca nell'anteprima per segnare)",
   "pane.goToPreview": "Vai all'anteprima",
   "pane.goToCode": "Vai al codice",
   "pane.wrapOn": "Disattiva a capo automatico",
@@ -90,7 +87,6 @@ export const it = {
   "layout.split": "Editor e anteprima",
   "layout.previewOnly": "Solo anteprima",
   "pane.resize": "Ridimensiona pannelli",
-  "pane.resizeHint": "Trascina per ridimensionare",
   // Editor
   "editor.loading": "Caricamento editor...",
   "editor.undo": "Annulla",
@@ -102,16 +98,12 @@ export const it = {
   "preview.pagedError": "Impossibile generare la vista Documento:",
   "preview.mermaidError": "Mermaid:",
   // Session
-  "session.restoreError": "Impossibile ripristinare la sessione",
   "session.saveError": "Impossibile salvare la sessione",
   // Native
-  "native.dialogError": "Impossibile mostrare l'avviso nativo",
   // PDF
-  "pdf.exportError": "Errore nell'esportazione PDF: ",
   "pdf.emptyFile": "L'esportazione PDF ha prodotto un file vuoto",
   "pdf.invalidPdf": "L'esportazione non ha prodotto un file PDF valido",
   "pdf.timeout": "L'esportazione PDF è scaduta",
-  "pdf.cancelled": "Esportazione annullata",
   "pdf.notSupported": "L'esportazione PDF è supportata solo su Linux per ora",
   // File operations (Rust)
   "file.emptyPath": "Percorso file vuoto o non valido",
@@ -148,9 +140,6 @@ export const it = {
   "menu.closeOthers": "Chiudi altre schede",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
-  "menu.shortcut.newTab": "Ctrl+N",
-  "menu.shortcut.nextTab": "Ctrl+Tab",
-  "menu.shortcut.prevTab": "Ctrl+Shift+Tab",
   // Zen mode
   "menu.zenEnter": "Attiva modalità Zen",
   "menu.zenExit": "Esci dalla modalità Zen",
@@ -184,7 +173,6 @@ export const it = {
   "shortcuts.closeTab": "Chiudi scheda",
   "shortcuts.esc": "Chiudi / Esci",
   // Vai alla riga
-  "goto.linePrompt": (max: number) => `Vai alla riga (1-${max}):`,
   // Status bar
   "statusbar.words": (n: number) => `${n} parola${n === 1 ? "" : "e"}`,
   "statusbar.lines": (n: number) => `${n} riga${n === 1 ? "" : "he"}`,
@@ -199,15 +187,8 @@ export const it = {
   "lang.clearSearch": "Cancella ricerca",
   "lang.noResults": "Nessuna lingua trovata",
   // Misc
-  "misc.title": "meditor",
   "topbar.newTypst": "Nuovo .typ",
-  "topbar.newTypstTitle": "Nuovo documento Typst",
-  "topbar.newTypstAria": "Nuova scheda Typst",
   "topbar.newLatex": "Nuovo .tex",
-  "topbar.newLatexTitle": "Nuovo documento LaTeX",
-  "topbar.newLatexAria": "Nuova scheda LaTeX",
-  "doc.typstSample": "typst-sample",
-  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "Compilazione Typst…",
   "preview.typstError": "Typst:",
   "preview.pages": "pagine",

@@ -54,7 +54,6 @@ export const ku = {
   "confirm.yes": "Erê",
   "confirm.no": "Na",
   // Alerts
-  "alert.error": "Çewtî",
   "error.title": "Tiştek çewt çû",
   "error.retry": "Dîsa biceribîne",
   // Tabs
@@ -66,7 +65,6 @@ export const ku = {
   "tab.rename": "Nav biguherîne",
   "tab.renameCancel": "Betal bike",
   "tab.documentsOpen": "Belgeyên vekirî",
-  "tab.activeDoc": "Belgeya çalak",
   // Document names
   "doc.untitled": (n: number) => `Belge ${n}`,
   "doc.defaultExport": "belge",
@@ -75,7 +73,6 @@ export const ku = {
   "pane.preview": "Pêşdîtin",
   "pane.scrollToPreview": "Here cihê kursorê di pêşdîtinê de",
   "pane.scrollToCode": "Here cihê nîşankirî di kodê de",
-  "pane.scrollToCodeHint": "Here cihê nîşankirî di kodê de (di pêşdîtinê de bitikîne ji bo nîşankirinê)",
   "pane.goToPreview": "Here pêşdîtinê",
   "pane.goToCode": "Here kodê",
   "pane.wrapOn": "Pêçana peyvan bide sekinandin",
@@ -89,7 +86,6 @@ export const ku = {
   "layout.split": "Edîtor û pêşdîtin",
   "layout.previewOnly": "Tenê pêşdîtin",
   "pane.resize": "Mezinahiya panelan biguherîne",
-  "pane.resizeHint": "Bikişîne ji bo guherandina mezinahiyê",
   // Editor
   "editor.loading": "Edîtor tê barkirin...",
   "editor.undo": "Vegerîne",
@@ -101,16 +97,12 @@ export const ku = {
   "preview.pagedError": "Dîtina Belgeyê çêne bû:",
   "preview.mermaidError": "Mermaid:",
   // Session
-  "session.restoreError": "Danişîn vegerandin nekir",
   "session.saveError": "Danişîn tomarkirin nekir",
   // Native
-  "native.dialogError": "Hişyariya resen nîşandan nekir",
   // PDF
-  "pdf.exportError": "Çewtiya derxistina PDF: ",
   "pdf.emptyFile": "Derxistina PDF pelekî vala çêkir",
   "pdf.invalidPdf": "Derxistin pelekî PDF ya derbasdar çênekir",
   "pdf.timeout": "Dema derxistina PDF qediya",
-  "pdf.cancelled": "Derxistin hate betalkirin",
   "pdf.notSupported": "Derxistina PDF niha tenê li ser Linux tê piştgirîkirin",
   // File operations (Rust)
   "file.emptyPath": "Rêça pelê vala an nederbasdar",
@@ -147,9 +139,6 @@ export const ku = {
   "menu.closeOthers": "Close other tabs",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
-  "menu.shortcut.newTab": "Ctrl+N",
-  "menu.shortcut.nextTab": "Ctrl+Tab",
-  "menu.shortcut.prevTab": "Ctrl+Shift+Tab",
   // Zen mode
   "menu.zenEnter": "Têkeve moda Zen",
   "menu.zenExit": "Ji moda Zen derkeve",
@@ -183,7 +172,6 @@ export const ku = {
   "shortcuts.closeTab": "Tabê bigire",
   "shortcuts.esc": "Bigire / Derkeve",
   // Go to line
-  "goto.linePrompt": (max: number) => `Here rêzê (1-${max}):`,
   // Status bar
   "statusbar.words": (n: number) => `${n} peyv`,
   "statusbar.lines": (n: number) => `${n} rêz`,
@@ -198,15 +186,8 @@ export const ku = {
   "lang.clearSearch": "Lêgerînê paqij bike",
   "lang.noResults": "Ziman nehatin dîtin",
   // Misc
-  "misc.title": "meditor",
   "topbar.newTypst": "New .typ",
-  "topbar.newTypstTitle": "New Typst document",
-  "topbar.newTypstAria": "New Typst tab",
   "topbar.newLatex": "New .tex",
-  "topbar.newLatexTitle": "New LaTeX document",
-  "topbar.newLatexAria": "New LaTeX tab",
-  "doc.typstSample": "typst-sample",
-  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "Compiling Typst...",
   "preview.typstError": "Typst:",
   "preview.pages": "pages",

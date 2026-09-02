@@ -55,7 +55,6 @@ export const ru = {
   "confirm.no": "Нет",
 
   // Alerts
-  "alert.error": "Ошибка",
   "error.title": "Что-то пошло не так",
   "error.retry": "Повторить",
   // Tabs
@@ -67,7 +66,6 @@ export const ru = {
   "tab.rename": "Переименовать",
   "tab.renameCancel": "Отмена",
   "tab.documentsOpen": "Открытые документы",
-  "tab.activeDoc": "Активный документ",
   // Имя документаs
   "doc.untitled": (n: number) => `Документ ${n}`,
   "doc.defaultExport": "документ",
@@ -76,7 +74,6 @@ export const ru = {
   "pane.preview": "Предпросмотр",
   "pane.scrollToPreview": "К позиции курсора в предпросмотре",
   "pane.scrollToCode": "К коду в отмеченной позиции",
-  "pane.scrollToCodeHint": "К коду в отмеченной позиции (кликните в предпросмотре)",
   "pane.goToPreview": "К предпросмотру",
   "pane.goToCode": "К коду",
   "pane.wrapOn": "Отключить перенос строк",
@@ -90,7 +87,6 @@ export const ru = {
   "layout.split": "Редактор и предпросмотр",
   "layout.previewOnly": "Только предпросмотр",
   "pane.resize": "Изменить размер панелей",
-  "pane.resizeHint": "Перетащите для изменения размера",
   // Редактор
   "editor.loading": "Загрузка редактора...",
   "editor.undo": "Отменить",
@@ -102,16 +98,12 @@ export const ru = {
   "preview.pagedError": "Не удалось создать вид Документа:",
   "preview.mermaidError": "Mermaid:",
   // Session
-  "session.restoreError": "Не удалось восстановить сессию",
   "session.saveError": "Не удалось сохранить сессию",
   // Native
-  "native.dialogError": "Не удалось показать системное уведомление",
   // PDF
-  "pdf.exportError": "Ошибка экспорта PDF: ",
   "pdf.emptyFile": "Экспорт PDF создал пустой файл",
   "pdf.invalidPdf": "Экспорт не создал действительный PDF файл",
   "pdf.timeout": "Время экспорта PDF истекло",
-  "pdf.cancelled": "Экспорт отменён",
   "pdf.notSupported": "Экспорт PDF пока поддерживается только на Linux",
   // File operations (Rust)
   "file.emptyPath": "Пустой или неверный путь к файлу",
@@ -148,9 +140,6 @@ export const ru = {
   "menu.closeOthers": "Закрыть другие вкладки",
   "menu.shortcut.saveAs": "Ctrl+Shift+S",
   "menu.shortcut.export": "Ctrl+E",
-  "menu.shortcut.newTab": "Ctrl+N",
-  "menu.shortcut.nextTab": "Ctrl+Tab",
-  "menu.shortcut.prevTab": "Ctrl+Shift+Tab",
   // Zen mode
   "menu.zenEnter": "Войти в режим Дзен",
   "menu.zenExit": "Выйти из режима Дзен",
@@ -184,7 +173,6 @@ export const ru = {
   "shortcuts.closeTab": "Закрыть вкладку",
   "shortcuts.esc": "Закрыть / Выйти",
   // Перейти к строке
-  "goto.linePrompt": (max: number) => `Перейти к строке (1-${max}):`,
   // Status bar
   "statusbar.words": (n: number) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? "слово" : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? "слова" : "слов"}`,
   "statusbar.lines": (n: number) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? "строка" : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? "строки" : "строк"}`,
@@ -199,15 +187,8 @@ export const ru = {
   "lang.clearSearch": "Очистить поиск",
   "lang.noResults": "Языки не найдены",
   // Misc
-  "misc.title": "meditor",
   "topbar.newTypst": "Новый .typ",
-  "topbar.newTypstTitle": "Новый документ Typst",
-  "topbar.newTypstAria": "Новая вкладка Typst",
   "topbar.newLatex": "Новый .tex",
-  "topbar.newLatexTitle": "Новый документ LaTeX",
-  "topbar.newLatexAria": "Новая вкладка LaTeX",
-  "doc.typstSample": "typst-sample",
-  "doc.latexSample": "latex-sample",
   "preview.typstCompiling": "Компиляция Typst…",
   "preview.typstError": "Typst:",
   "preview.pages": "страниц",
