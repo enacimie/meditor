@@ -345,6 +345,15 @@ try {
   })()`);
   await page.reload();
   await page.waitFor("!!document.querySelector('.cm-content')", { timeout: 20000 });
+  
+  // Debug: verify the preference survived the reload
+  const prefCheck = await page.evaluate(`(() => {
+    const key = 'meditor.preferences.v1';
+    const stored = JSON.parse(localStorage.getItem(key) ?? '{}');
+    return { landscapeTables: stored.landscapeTables, hasKey: key in localStorage };
+  })()`);
+  console.log("localStorage pref after reload:", prefCheck);
+
   await page.waitFor("document.querySelectorAll('.pagedjs_page').length > 0", {
     timeout: 40000,
     interval: 500,
