@@ -322,30 +322,6 @@ try {
    *      pages come out landscape, the rest of the document stays portrait,
    *      and the table carries a note so the reader sees the turn coming.
    */
-  const probe = await page.evaluate(`(() => {
-    const probe = document.createElement('table');
-    probe.className = 'table-fit-3';
-    probe.style.cssText = 'position:absolute;visibility:hidden;width:auto';
-    probe.innerHTML = '<thead><tr><th>x</th></tr></thead><tbody><tr><td>8</td></tr></tbody>';
-    document.querySelector('.preview-source').append(probe);
-    probe.style.width = 'min-content';
-    probe.style.maxWidth = 'none';
-    const width = probe.offsetWidth;
-    probe.remove();
-    return width;
-  })()`);
-  // Portrait page: 605 px of content; landscape: 933 px. Aim for the middle
-  // of the band so font rounding cannot push the fixture out of either side.
-  const LAND_COLUMNS = Math.floor(760 / probe);
-  assert(
-    LAND_COLUMNS > 30 && LAND_COLUMNS < 150,
-    `probe column width ${probe}px puts the fixture out of range`,
-  );
-  const landHead = Array.from({ length: LAND_COLUMNS }, () => "x").join(" | ");
-  const landRule = Array.from({ length: LAND_COLUMNS }, () => "---").join(" | ");
-  const landRow = Array.from({ length: LAND_COLUMNS }, () => "8").join(" | ");
-  const landDoc = ["", `| ${landHead} |`, `| ${landRule} |`, `| ${landRow} |`, ""].join("\n");
-
   // Contract 1: what is already on screen has never claimed a landscape page.
   const beforeOptIn = await page.evaluate(
     `(() => ({
@@ -374,6 +350,40 @@ try {
     interval: 500,
     message: "the session should repaginate after the reload",
   });
+
+  /*
+   * Calibrate after the reload, when the document fonts have settled — probing
+   * earlier can measure a fallback face and then have the real one arrive
+   * wider, which is exactly the mistake this fixture exists to avoid. And the
+   * probe is ten real columns of the same content, not one: per-column width
+   * varies with the digit, and the widest one rules.
+   */
+  const probe = await page.evaluate(`(() => {
+    const probe = document.createElement('table');
+    probe.className = 'table-fit-3';
+    probe.style.cssText = 'position:absolute;visibility:hidden;width:auto';
+    probe.innerHTML =
+      '<thead><tr>${"<th>x</th>".repeat(10)}</tr></thead>' +
+      '<tbody><tr>${"<td>8</td>".repeat(10)}</tr></tbody>';
+    document.querySelector('.preview-source').append(probe);
+    probe.style.width = 'min-content';
+    probe.style.maxWidth = 'none';
+    const width = probe.offsetWidth;
+    probe.remove();
+    return width / 10;
+  })()`);
+  // Portrait page: 605 px of content; landscape: 933 px. Aim low in the band:
+  // the pass measures the rendered table, which can come out a few percent
+  // wider than the probe once every row and border is in.
+  const LAND_COLUMNS = Math.floor(700 / probe);
+  assert(
+    LAND_COLUMNS > 25 && LAND_COLUMNS < 150,
+    `probe column width ${probe}px puts the fixture out of range`,
+  );
+  const landHead = Array.from({ length: LAND_COLUMNS }, () => "x").join(" | ");
+  const landRule = Array.from({ length: LAND_COLUMNS }, () => "---").join(" | ");
+  const landRow = Array.from({ length: LAND_COLUMNS }, () => "8").join(" | ");
+  const landDoc = ["", `| ${landHead} |`, `| ${landRule} |`, `| ${landRow} |`, ""].join("\n");
 
   await page.evaluate(`(() => {
     const cm = document.querySelector('.cm-content');
@@ -418,8 +428,17 @@ try {
         const area = t.closest('.pagedjs_page_content');
         return area && t.offsetWidth <= area.clientWidth + 1;
       }),
+      // Diagnosis, not an assertion target: what the tables on the page
+      // actually carry when the run above disagrees with a platform.
+      diag: tables.slice(0, 8).map((t) => ({
+        cols: t.querySelectorAll('th').length || t.querySelectorAll('tr:first-child td').length,
+        cls: t.className,
+        w: t.offsetWidth,
+        page: t.closest('.pagedjs_page')?.className ?? null,
+      })),
     };
   })()`);
+  console.log("landscape state:", JSON.stringify(afterOptIn));
   assert(
     afterOptIn.marked > 0 && afterOptIn.landscapePages > 0,
     "with the opt-in, a table too wide for portrait should claim a landscape page: " +
