@@ -203,10 +203,6 @@ export function fitWideTables(
         table.classList.add(NEEDS_LANDSCAPE_CLASS);
         if (landscapeNote) table.setAttribute("data-landscape-note", landscapeNote);
       }
-      // DEBUG: log to console so CI shows it
-      if (typeof window !== "undefined") {
-        console.log("[fitWideTables] landscape check:", { fits, allowLandscape, w, limit: LANDSCAPE_CONTENT_WIDTH_PX, added: w <= LANDSCAPE_CONTENT_WIDTH_PX });
-      }
     }
   }
 }

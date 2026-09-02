@@ -55,12 +55,12 @@ describe("the measuring container matches the page", () => {
 
   /** [step, table selector on the page, table selector in the container] */
   const STATES: [string, string, string][] = [
-    ["no step", ".markdown-body.doc table", ".preview-source.markdown-body table"],
+    ["no step", ".markdown-body.doc table", ".preview-source .markdown-body table"],
     ...["table-fit-1", "table-fit-2", "table-fit-3"].map(
       (step): [string, string, string] => [
         step,
         `.markdown-body.doc table.${step}`,
-        `.preview-source.markdown-body table.${step}`,
+        `.preview-source .markdown-body table.${step}`,
       ],
     ),
   ];
@@ -86,7 +86,7 @@ describe("the measuring container matches the page", () => {
     // `Preview.css` gives every table `display: block; overflow: auto` so the
     // web view can scroll one sideways. Left in place here it would measure a
     // scroll box, not a table, and the answer would mean nothing.
-    const container = preview.get(".preview-source.markdown-body table");
+    const container = preview.get(".preview-source .markdown-body table");
     expect(declaration(container, "display")).toBe("table");
     expect(declaration(container, "overflow")).toBe("visible");
     expect(declaration(container, "border-collapse")).toBe(
@@ -98,7 +98,7 @@ describe("the measuring container matches the page", () => {
     // Seventeen collapsed 1 px borders are 18 px of width the page never
     // spends — small, but it is spent in the direction that hides an overflow.
     expect(
-      declaration(preview.get(".preview-source.markdown-body th, .preview-source.markdown-body td"), "border"),
+      declaration(preview.get(".preview-source .markdown-body th, .preview-source .markdown-body td"), "border"),
     ).toBe("none");
   });
 });

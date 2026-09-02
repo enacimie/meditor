@@ -347,12 +347,11 @@ try {
   await page.waitFor("!!document.querySelector('.cm-content')", { timeout: 20000 });
   
   // Debug: verify the preference survived the reload
-  const prefCheck = await page.evaluate(`(() => {
+const prefCheck = await page.evaluate(`(() => {
     const key = 'meditor.preferences.v1';
     const stored = JSON.parse(localStorage.getItem(key) ?? '{}');
     return { landscapeTables: stored.landscapeTables, hasKey: key in localStorage };
   })()`);
-  console.log("localStorage pref after reload:", prefCheck);
 
   await page.waitFor("document.querySelectorAll('.pagedjs_page').length > 0", {
     timeout: 40000,
@@ -422,7 +421,6 @@ await page.waitFor(
     // But we can check if the Preferences dialog would show the checkbox
     return { doc: document.title };
   })()`);
-  console.log("prefs debug:", prefsDebug);
 
   await page.waitFor(
     `(() => {
@@ -433,17 +431,6 @@ await page.waitFor(
     })()`,
     { timeout: 40000, interval: 600, message: "pagination should settle with landscape on" },
   );
-
-  // Debug: manually add the landscape class to the source table to test the pipeline
-  const manualFit = await page.evaluate(`(() => {
-    const srcTable = [...document.querySelectorAll('.preview-source table')].find(t =>
-      (t.querySelectorAll('th').length || t.querySelectorAll('tr:first-child td').length) === ${LAND_COLUMNS});
-    if (!srcTable) return { error: 'table not found in source' };
-    srcTable.classList.add('needs-landscape');
-    srcTable.setAttribute('data-landscape-note', 'Manual test');
-    return { added: srcTable.classList.contains('needs-landscape') };
-  })()`);
-  console.log("manual fit result:", manualFit);
 
   const afterOptIn = await page.evaluate(`(() => {
     const tables = [...document.querySelectorAll('.paged-view table')];
@@ -495,7 +482,6 @@ await page.waitFor(
       })),
     };
   })()`);
-  console.log("landscape state:", JSON.stringify(afterOptIn));
   assert(
     afterOptIn.marked > 0 && afterOptIn.landscapePages > 0,
     "with the opt-in, a table too wide for portrait should claim a landscape page: " +

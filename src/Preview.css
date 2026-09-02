@@ -467,7 +467,7 @@
  * The doubled class beats `.markdown-body` on specificity rather than on
  * source order, which is 200 lines away and easy to disturb.
  */
-.preview-source.markdown-body table {
+.preview-source .markdown-body table {
   display: table;
   overflow: visible;
   width: auto;
@@ -476,36 +476,36 @@
   font-size: 10pt;
 }
 
-.preview-source.markdown-body th,
-.preview-source.markdown-body td {
+.preview-source .markdown-body th,
+.preview-source .markdown-body td {
   border: none;
   padding: 3.5pt 12pt;
 }
 
-.preview-source.markdown-body table.table-fit-1 {
+.preview-source .markdown-body table.table-fit-1 {
   font-size: 9pt;
 }
 
-.preview-source.markdown-body table.table-fit-1 th,
-.preview-source.markdown-body table.table-fit-1 td {
+.preview-source .markdown-body table.table-fit-1 th,
+.preview-source .markdown-body table.table-fit-1 td {
   padding: 3pt 6pt;
 }
 
-.preview-source.markdown-body table.table-fit-2 {
+.preview-source .markdown-body table.table-fit-2 {
   font-size: 8pt;
 }
 
-.preview-source.markdown-body table.table-fit-2 th,
-.preview-source.markdown-body table.table-fit-2 td {
+.preview-source .markdown-body table.table-fit-2 th,
+.preview-source .markdown-body table.table-fit-2 td {
   padding: 2.5pt 4pt;
 }
 
-.preview-source.markdown-body table.table-fit-3 {
+.preview-source .markdown-body table.table-fit-3 {
   font-size: 7pt;
 }
 
-.preview-source.markdown-body table.table-fit-3 th,
-.preview-source.markdown-body table.table-fit-3 td {
+.preview-source .markdown-body table.table-fit-3 th,
+.preview-source .markdown-body table.table-fit-3 td {
   padding: 2pt 2pt;
 }
 
