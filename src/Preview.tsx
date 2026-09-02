@@ -325,6 +325,15 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
         const docValue = splitLongFencedBlocks(deferredValue);
         await renderContent(source, docValue, seqRef, isStale, t);
         if (cancelled || myToken !== tokenRef.current) return;
+        /*
+         * Measuring tables against a fallback font picks the wrong fit step —
+         * or the wrong page orientation — once the real one arrives wider or
+         * narrower. The document fonts are declared with @font-face, so this
+         * settles as soon as they load and resolves instantly when they are
+         * already in.
+         */
+        await document.fonts.ready;
+        if (cancelled || myToken !== tokenRef.current) return;
         wrapCodeLines(source);
         keepHeadingsWithContent(source);
         // Last chance to measure: everything below this is a serialised string.
