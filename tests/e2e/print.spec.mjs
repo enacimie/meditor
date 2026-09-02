@@ -398,11 +398,23 @@ try {
     return true;
   })()`);
 
-  await page.waitFor(
+await page.waitFor(
     `(() => [...document.querySelectorAll('.paged-view table')].some((t) =>
       (t.querySelectorAll('th').length || t.querySelectorAll('tr:first-child td').length) === ${LAND_COLUMNS})())`,
     { timeout: 40000, interval: 500, message: "the 70-column table should reach the paginated view" },
   );
+
+  // Debug: check if the preference actually made it to the App state
+  const prefsDebug = await page.evaluate(`(() => {
+    // Try to access React internals or the global state
+    const root = document.querySelector('#root');
+    if (!root) return { error: 'no root' };
+    // The App component stores editorPrefs in state - not easily accessible
+    // But we can check if the Preferences dialog would show the checkbox
+    return { doc: document.title };
+  })()`);
+  console.log("prefs debug:", prefsDebug);
+
   await page.waitFor(
     `(() => {
       const n = document.querySelectorAll('.pagedjs_page').length;
