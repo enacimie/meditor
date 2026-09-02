@@ -334,7 +334,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
          */
         await document.fonts.ready;
         if (cancelled || myToken !== tokenRef.current) return;
-        console.log("[Preview] calling fitWideTables:", { landscapeTables });
+        console.log("[Preview] calling fitWideTables:", { landscapeTables, docView, kind });
         wrapCodeLines(source);
         keepHeadingsWithContent(source);
         // Last chance to measure: everything below this is a serialised string.
