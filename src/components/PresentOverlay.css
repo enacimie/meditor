@@ -71,3 +71,106 @@
 .present-exit:hover {
   border-color: rgba(255, 255, 255, 0.7);
 }
+
+/* ---- Slide transitions (View Transitions API) ----
+   The presenter drives slide changes through the View Transitions API. Right
+   before each change it writes the animation names and duration as custom
+   properties on <html>; these rules apply them to the old and new snapshots.
+   With no animation set the snapshots simply swap. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--present-vt-duration, 0.45s);
+  animation-timing-function: var(--present-vt-easing, cubic-bezier(0.4, 0, 0.2, 1));
+  animation-fill-mode: both;
+}
+::view-transition-old(root) {
+  animation-name: var(--present-vt-old, present-vt-none);
+}
+::view-transition-new(root) {
+  animation-name: var(--present-vt-new, present-vt-none);
+}
+
+/* The counter/exit chrome is not part of the show; keep it crisp instead of
+   letting it dissolve together with the slide. */
+.present-hud {
+  view-transition-name: present-hud;
+}
+::view-transition-old(present-hud),
+::view-transition-new(present-hud) {
+  animation: none;
+}
+
+@keyframes present-vt-none {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes present-vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes present-vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes present-vt-slide-out-left {
+  to {
+    transform: translateX(-6%);
+    opacity: 0;
+  }
+}
+@keyframes present-vt-slide-in-right {
+  from {
+    transform: translateX(6%);
+    opacity: 0;
+  }
+}
+@keyframes present-vt-slide-out-right {
+  to {
+    transform: translateX(6%);
+    opacity: 0;
+  }
+}
+@keyframes present-vt-slide-in-left {
+  from {
+    transform: translateX(-6%);
+    opacity: 0;
+  }
+}
+@keyframes present-vt-zoom-out {
+  to {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+}
+@keyframes present-vt-zoom-in {
+  from {
+    transform: scale(1.08);
+    opacity: 0;
+  }
+}
+@keyframes present-vt-wipe-in-ltr {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+}
+@keyframes present-vt-wipe-in-rtl {
+  from {
+    clip-path: inset(0 0 0 100%);
+  }
+}
+
+/* ---- Fragment reveal ----
+   Elements held back until the speaker advances. They keep their space so the
+   slide layout does not jump as they appear. */
+.present-slides .present-frag {
+  transition: opacity 0.35s ease;
+}
+.present-slides .present-frag.present-frag-hidden {
+  opacity: 0;
+}

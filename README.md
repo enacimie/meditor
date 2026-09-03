@@ -68,7 +68,17 @@ document.
   renderer.
 - **Present** (in the menu, for Marp documents): full-screen, one slide at a
   time. Arrow keys / Space / Page Down advance, Home / End jump, Esc returns to
-  editing.
+  editing. Slides change through the View Transitions API, and elements marked
+  as fragments reveal one step at a time before the deck moves on.
+- **Slide transitions**: set a default with `transition:` in the front-matter
+  (`fade`, `slide`, `wipe`, `zoom`, `none`, …) or per slide with a
+  `<!-- transition: wipe 0.6s -->` comment on the slide it should apply to.
+  meditor defaults to a visible fade; `transition: none` switches instantly.
+- **Fragments** (elements that appear one step at a time): Marp marks the
+  items of `*` (and `)`) lists as fragment steps, and they reveal one by one,
+  exactly as Marp Bespoke paces them. Any other element can opt in with the
+  `fragment` class, or a list/row's children with `fragment-list`. Only the
+  presenter reveals them — the preview and exports show everything.
 - **Export**: to HTML (a self-contained deck) and to PDF, one slide per page at
   the slide's own size — 16:9 or 4:3, read from the deck rather than assumed.
 
@@ -278,6 +288,8 @@ meditor/
 │   ├── MarpPreview.tsx       # Marp slide preview + slide↔source sync
 │   ├── marpEngine.ts         # Configured Marp converter (slides → HTML+CSS)
 │   ├── marpDetect.ts         # `marp: true` front-matter detection
+│   ├── marpSlides.ts         # Map slides to their source lines (sync)
+│   ├── marpPresent.ts        # Parse `transition` presentation directives
 │   ├── i18n/                 # Internationalization
 │   │   ├── I18nProvider.tsx  # Language context, storage, browser detection
 │   │   └── translations/     # en.ts + 102 more language files (parity-tested)

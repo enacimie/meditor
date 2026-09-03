@@ -38,6 +38,28 @@ const DECK = [
   "### Third slide",
 ].join("\n");
 
+// A deck that opts into slide transitions (front-matter `transition:`) and
+// carries Marpit-native fragments: the items of a `*` list reveal one step at
+// a time, the same steps Marp Bespoke paces through (its `?f=` URL parameter).
+const FRAG_DECK = [
+  "---",
+  "marp: true",
+  "theme: gaia",
+  "transition: slide",
+  "---",
+  "",
+  "# Slide one",
+  "",
+  "* Alpha item",
+  "* Beta item",
+  "",
+  "---",
+  "",
+  "# Slide two",
+  "",
+  "* Gamma item",
+].join("\n");
+
 const page = await connect(CDP_PORT);
 try {
   await page.freshPage(BASE_URL);
@@ -185,6 +207,92 @@ try {
       mediaBoxes.every(([w, h]) => Math.abs(w - 960) < 3 && Math.abs(h - 540) < 3),
     `pages should be slide-sized (960x540 pt), got ${JSON.stringify(mediaBoxes)}`,
   );
+
+  // ── Presentation: fragments reveal one step at a time ────────────────
+  // Reload the editor with a deck that auto-fragments and declares a slide
+  // transition, then drive the presenter from the keyboard.
+  await page.evaluate(`(() => {
+    const cm = document.querySelector('.cm-content');
+    cm.focus();
+    const range = document.createRange();
+    range.selectNodeContents(cm);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    document.execCommand('insertText', false, ${JSON.stringify(FRAG_DECK)});
+    return true;
+  })()`);
+  await page.waitFor(
+    `(() => {
+      const n = document.querySelectorAll('.marp-slides svg[data-marpit-svg]').length;
+      const prev = window.__fragSlides ?? -1;
+      window.__fragSlides = n;
+      return n === 2 && n === prev;
+    })()`,
+    { timeout: 30000, interval: 400, message: "two fragment slides should render" },
+  );
+
+  await page.click(".menu-toggle");
+  await page.waitFor("!!document.querySelector('.menu-panel')");
+  await page.evaluate(`(() => {
+    const item = [...document.querySelectorAll('.menu-panel [role=menuitem]')]
+      .find((b) => /present/i.test(b.textContent));
+    item.click();
+    return true;
+  })()`);
+  await page.waitFor("!!document.querySelector('.present-overlay')", { timeout: 15000 });
+
+  const hiddenFrags = `document.querySelectorAll('.present-slides svg.present-active .present-frag-hidden').length`;
+  const counterText = `(document.querySelector('.present-counter') || {}).textContent.trim()`;
+
+  // Slide one starts holding back its two content blocks (the title stays).
+  await page.waitFor(`(${counterText}) === '1 / 2'`, { timeout: 5000 });
+  const initialHidden = await page.evaluate(hiddenFrags);
+  assert(initialHidden === 2, `slide one should hold 2 fragments, found ${initialHidden}`);
+
+  // Each ArrowRight reveals one fragment while the slide counter stays put.
+  const arrow = () =>
+    page.evaluate("window.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true})); true");
+  await arrow();
+  await page.waitFor(`(${hiddenFrags}) === 1`, { timeout: 5000, message: "first fragment reveals" });
+  assert((await page.evaluate(counterText)) === "1 / 2", "revealing a fragment must not advance the slide");
+  await arrow();
+  await page.waitFor(`(${hiddenFrags}) === 0`, { timeout: 5000, message: "second fragment reveals" });
+
+  // The next ArrowRight exhausts the fragments and moves to slide two, whose
+  // single block starts hidden again. A slide move also arms the transition.
+  await arrow();
+  await page.waitFor(`(${counterText}) === '2 / 2'`, { timeout: 5000, message: "fragments exhausted -> next slide" });
+  await page.waitFor(`(${hiddenFrags}) === 1`, { timeout: 5000, message: "slide two holds its fragment" });
+
+  const reduced = await page.evaluate(
+    "window.matchMedia('(prefers-reduced-motion: reduce)').matches",
+  );
+  if (!reduced) {
+    const vtOld = await page.evaluate(
+      "document.documentElement.style.getPropertyValue('--present-vt-old').trim()",
+    );
+    assert(
+      vtOld === "present-vt-slide-out-left",
+      `a forward 'slide' transition should arm the outgoing animation, got "${vtOld}"`,
+    );
+  }
+
+  // Going back returns to slide one fully revealed (no hidden fragments).
+  await page.evaluate(
+    "window.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowLeft',bubbles:true})); true",
+  );
+  await page.waitFor(`(${counterText}) === '1 / 2'`, { timeout: 5000, message: "ArrowLeft returns to slide one" });
+  const backHidden = await page.evaluate(hiddenFrags);
+  assert(backHidden === 0, `returning to a slide should show it fully, found ${backHidden} hidden`);
+
+  await page.evaluate(
+    "window.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true})); true",
+  );
+  await page.waitFor("!document.querySelector('.present-overlay')", {
+    timeout: 5000,
+    message: "Escape should leave the fragment presentation",
+  });
 
   assert(
     page.consoleErrors.length === 0,
