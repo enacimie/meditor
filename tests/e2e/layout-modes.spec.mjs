@@ -137,8 +137,31 @@ try {
 
   await press(page, "2", "ctrlKey: true");
   await page.waitFor("!document.querySelector('.app').className.includes('layout-')");
-  // Wait for the page count to settle: that means pagination finished, not
-  // merely that it started.
+  /*
+   * Wait for the typed text to reach a page — not for the page count to hold
+   * still, which is a race this spec lost repeatedly on macOS.
+   *
+   * The heading above is appended at the end of the document, so whenever it
+   * fits on the existing last page the count is identical before and after
+   * repagination. Two consecutive polls then agree on the *stale* pagination,
+   * the wait returns while the preview still shows the old text, and the check
+   * below fails on content that had simply not arrived yet. The tell was the
+   * timing: the spec failed after ~4s, where a passing run takes 6-9s.
+   *
+   * print.spec already waits the right way round — first for the content it
+   * typed, then for the count — and does not flake.
+   */
+  await page.waitFor(
+    `(() => [...document.querySelectorAll('.paged-view .pagedjs_page')]
+      .some((p) => p.textContent.includes('Added while hidden')))()`,
+    {
+      timeout: 25000,
+      interval: 400,
+      message: "the preview should show what was typed while it was hidden",
+    },
+  );
+  // Safe now that the new text is on a page: this says pagination finished
+  // rather than merely reached that heading.
   await page.waitFor(
     `(() => {
       const n = document.querySelectorAll('.paged-view .pagedjs_page').length;
@@ -148,11 +171,16 @@ try {
     })()`,
     { timeout: 25000, interval: 400, message: "preview should repaginate after being hidden" },
   );
+  /*
+   * The heading used to be asserted here as well. With the wait above proving
+   * it reached a page, that assertion could no longer fail, and an assertion
+   * that cannot fail reads like protection without being any — the failure it
+   * used to report is now reported by the wait, under the same words. What can
+   * still fail is the preview coming back with an error banner.
+   */
   const restored = await page.evaluate(`(() => ({
-    hasHeading: document.querySelector('.paged-view')?.textContent?.includes('Added while hidden') ?? false,
     error: document.querySelector('.preview-error')?.textContent ?? null,
   }))()`);
-  assert(restored.hasHeading, "the preview should show what was typed while it was hidden");
   assert(restored.error === null, `no error banner expected, got: ${restored.error}`);
 
   /*
