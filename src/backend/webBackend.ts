@@ -326,9 +326,10 @@ export const webBackend: Backend = {
     return (await target.getFile()).text();
   },
 
-  async exportPdf() {
+  async exportPdf(_defaultName, _locale, _paged, _pageWidthIn, _pageHeightIn) {
     // The browser's own print dialog offers "Save as PDF"; the print
-    // stylesheet scopes the output to the preview pane.
+    // stylesheet scopes the output to the preview pane. A Marp deck supplies
+    // its own page size through an @page rule, so the dimensions are ignored.
     window.print();
   },
 

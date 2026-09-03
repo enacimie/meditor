@@ -8,6 +8,7 @@ export const en = {
   "topbar.newAria": "New tab (Ctrl+N)",
   "topbar.newTypst": "New .typ",
   "topbar.newLatex": "New .tex",
+  "topbar.newMarp": "New Marp deck",
   "topbar.open": "Open",
   "topbar.openTitle": "Open (Ctrl+O)",
   "topbar.openAria": "Open files (Ctrl+O)",
@@ -143,6 +144,7 @@ export const en = {
   "menu.saveAs": "Save as",
   "menu.exportPdf": "Export PDF",
   "menu.exportHtml": "Export HTML",
+  "menu.present": "Present",
   "menu.about": "About meditor",
   "menu.preferences": "Preferences",
   "menu.shortcut.preferences": "Ctrl+,",
@@ -233,5 +235,8 @@ export const en = {
   "update.later": "Not now",
   "update.downloading": "Downloading the update…",
   "update.failed": "Could not check for updates",
+  // Marp presentation mode
+  "present.aria": "Presentation",
+  "present.exit": "Exit",
   // Misc
 };

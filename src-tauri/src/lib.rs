@@ -1172,8 +1172,16 @@ async fn export_pdf(
     default_name: String,
     locale: Option<String>,
     paged: Option<bool>,
+    page_width: Option<f64>,
+    page_height: Option<f64>,
 ) -> Result<(), String> {
     let loc = parse_locale(locale);
+    // A caller that supplies both dimensions wants exactly that page — a Marp
+    // slide — instead of the A4 the two platform paths otherwise impose.
+    let custom_page = match (page_width, page_height) {
+        (Some(w), Some(h)) if w > 0.0 && h > 0.0 => Some((w, h)),
+        _ => None,
+    };
 
     #[cfg(not(any(
         target_os = "linux",
@@ -1184,7 +1192,7 @@ async fn export_pdf(
         target_os = "windows"
     )))]
     {
-        let _ = (app, window, default_name, loc, paged);
+        let _ = (app, window, default_name, loc, paged, custom_page);
         Err(t(loc, "pdf.notSupported"))
     }
 
@@ -1207,7 +1215,10 @@ async fn export_pdf(
         // 25 mm, matching the GTK path — but only when the page still needs
         // them. See the `paged` parameter.
         const MARGIN_IN: f64 = 0.984;
-        let margin = if paged.unwrap_or(true) {
+        let (page_w, page_h) = custom_page.unwrap_or((A4_WIDTH_IN, A4_HEIGHT_IN));
+        // A caller-provided page (a slide) arrives with its own layout, so it
+        // gets no margins either, same as the paginated preview.
+        let margin = if custom_page.is_some() || paged.unwrap_or(true) {
             0.0
         } else {
             MARGIN_IN
@@ -1248,12 +1259,8 @@ async fn export_pdf(
                     let settings =
                         unsafe { environment.CreatePrintSettings() }.map_err(|e| e.to_string())?;
                     unsafe {
-                        settings
-                            .SetPageWidth(A4_WIDTH_IN)
-                            .map_err(|e| e.to_string())?;
-                        settings
-                            .SetPageHeight(A4_HEIGHT_IN)
-                            .map_err(|e| e.to_string())?;
+                        settings.SetPageWidth(page_w).map_err(|e| e.to_string())?;
+                        settings.SetPageHeight(page_h).map_err(|e| e.to_string())?;
                         settings.SetMarginTop(margin).map_err(|e| e.to_string())?;
                         settings
                             .SetMarginBottom(margin)
@@ -1378,12 +1385,24 @@ async fn export_pdf(
                 print_settings.set("output-file-format", Some("pdf"));
                 print_settings.set("output-uri", Some(uri.as_str()));
                 let page_setup = gtk::PageSetup::new();
-                let paper = gtk::PaperSize::new(Some("iso_a4"));
-                page_setup.set_paper_size_and_default_margins(&paper);
-                page_setup.set_top_margin(25.0, gtk::Unit::Mm);
-                page_setup.set_bottom_margin(25.0, gtk::Unit::Mm);
-                page_setup.set_left_margin(25.0, gtk::Unit::Mm);
-                page_setup.set_right_margin(25.0, gtk::Unit::Mm);
+                if let Some((w, h)) = custom_page {
+                    // A slide wants exactly its own dimensions and no margins,
+                    // not the A4 + 25 mm the document path below applies.
+                    let paper =
+                        gtk::PaperSize::new_custom("marp-slide", "Slide", w, h, gtk::Unit::Inch);
+                    page_setup.set_paper_size_and_default_margins(&paper);
+                    page_setup.set_top_margin(0.0, gtk::Unit::Inch);
+                    page_setup.set_bottom_margin(0.0, gtk::Unit::Inch);
+                    page_setup.set_left_margin(0.0, gtk::Unit::Inch);
+                    page_setup.set_right_margin(0.0, gtk::Unit::Inch);
+                } else {
+                    let paper = gtk::PaperSize::new(Some("iso_a4"));
+                    page_setup.set_paper_size_and_default_margins(&paper);
+                    page_setup.set_top_margin(25.0, gtk::Unit::Mm);
+                    page_setup.set_bottom_margin(25.0, gtk::Unit::Mm);
+                    page_setup.set_left_margin(25.0, gtk::Unit::Mm);
+                    page_setup.set_right_margin(25.0, gtk::Unit::Mm);
+                }
                 let operation = webkit2gtk::PrintOperation::new(&wv);
                 operation.set_print_settings(&print_settings);
                 operation.set_page_setup(&page_setup);

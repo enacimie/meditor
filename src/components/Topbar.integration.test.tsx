@@ -64,6 +64,7 @@ function renderTopbar(overrides: {
         onNew={vi.fn()}
         onNewTypst={newTypstSpy as () => void}
         onNewLatex={newLatexSpy as () => void}
+        onNewMarp={vi.fn()}
         onOpen={vi.fn()}
         onSave={vi.fn()}
         onSaveAs={vi.fn()}

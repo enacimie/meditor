@@ -114,6 +114,7 @@ export const es = {
   "menu.saveAs": "Guardar como",
   "menu.exportPdf": "Exportar PDF",
   "menu.exportHtml": "Exportar HTML",
+  "menu.present": "Presentar",
   "menu.about": "Acerca de meditor",
   "menu.preferences": "Preferencias",
   "menu.shortcut.preferences": "Ctrl+,",
@@ -187,6 +188,7 @@ export const es = {
   "about.close": "Cerrar",
   "topbar.newTypst": "Nuevo .typ",
   "topbar.newLatex": "Nuevo .tex",
+  "topbar.newMarp": "Nueva presentación Marp",
   "preview.typstCompiling": "Compilando Typst…",
   "preview.typstError": "Typst:",
   "preview.pages": "páginas",
@@ -207,5 +209,7 @@ export const es = {
   "update.later": "Ahora no",
   "update.downloading": "Descargando la actualización…",
   "update.failed": "No se ha podido comprobar si hay actualizaciones",
+  "present.aria": "Presentación",
+  "present.exit": "Salir",
 
 };

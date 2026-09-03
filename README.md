@@ -53,10 +53,34 @@
   - Clicking in preview **marks** the position (blue outline) as a jump reference.
 - **Resizable panels** by dragging the divider.
 
+### Presentations (Marp)
+
+A Markdown document that opens with `marp: true` front-matter becomes a slide
+deck, rendered live with [Marp](https://marp.app). It is still an ordinary
+`.md` file — the front-matter opts it in, and removing it turns it back into a
+document.
+
+- **Live slide preview**: every `---` on its own line starts a slide. The
+  preview stacks them scaled to the pane and keeps editor ↔ preview sync at
+  slide granularity.
+- **The usual toolkit inside slides**: KaTeX math, highlighted code, and
+  Mermaid diagrams — the same Mermaid the editor already uses, not a second
+  renderer.
+- **Present** (in the menu, for Marp documents): full-screen, one slide at a
+  time. Arrow keys / Space / Page Down advance, Home / End jump, Esc returns to
+  editing.
+- **Export**: to HTML (a self-contained deck) and to PDF, one slide per page at
+  the slide's own size — 16:9 or 4:3, read from the deck rather than assumed.
+
+Themes and directives (`theme:`, `class:`, `paginate`, `<!-- fit -->`…) work as
+documented upstream. meditor builds on Marp's lightweight core and reuses its
+own KaTeX and highlight.js instead of Marp's optional bundles, so nothing is
+duplicated.
+
 ### Export & Distribution
 
-- **Export to PDF** vector (selectable text, vector KaTeX and Mermaid) via WebKitGTK printing, without system dialog. A4 format with 2.5 cm margins on Linux. Typst and LaTeX export use their WASM engines on supported desktop targets.
-- **Export to HTML**: a single self-contained file (styles embedded, Mermaid diagrams as inline SVG, KaTeX already expanded) that opens in any browser with no network access. Markdown documents only.
+- **Export to PDF** vector (selectable text, vector KaTeX and Mermaid) via WebKitGTK printing, without system dialog. A4 format with 2.5 cm margins on Linux. Typst and LaTeX export use their WASM engines on supported desktop targets. Marp decks export one slide per page at the slide's own size.
+- **Export to HTML**: a single self-contained file (styles embedded, Mermaid diagrams as inline SVG, KaTeX already expanded) that opens in any browser with no network access. Markdown documents and Marp decks.
 - Packaged as **AppImage**, **deb**, and **rpm** via `tauri build`.
 
 ### File associations
@@ -73,6 +97,7 @@ Installers register meditor for `.md`/`.markdown` and `.typ`/`.typst` on all des
 | Markdown         | markdown-it + plugins (GFM, footnote, mark, sub/sup, ins, deflist, abbr, emoji, container, texmath, highlightjs) |
 | Math             | KaTeX                                                                                                   |
 | Diagrams         | Mermaid                                                                                                 |
+| Presentations    | Marp (@marp-team/marp-core)                                                                             |
 | Code             | highlight.js                                                                                            |
 | Pagination       | paged.js                                                                                                |
 | Typography       | Latin Modern (GUST)                                                                                     |
@@ -250,11 +275,14 @@ meditor/
 │   ├── ErrorBoundary.tsx     # React error boundary
 │   ├── TypstPreview.tsx      # Typst WASM compiler + SVG preview
 │   ├── LatexPreview.tsx      # SwiftLaTeX WASM compiler + PDF preview
+│   ├── MarpPreview.tsx       # Marp slide preview + slide↔source sync
+│   ├── marpEngine.ts         # Configured Marp converter (slides → HTML+CSS)
+│   ├── marpDetect.ts         # `marp: true` front-matter detection
 │   ├── i18n/                 # Internationalization
 │   │   ├── I18nProvider.tsx  # Language context, storage, browser detection
 │   │   └── translations/     # en.ts + 102 more language files (parity-tested)
 │   ├── hooks/                # useThemeEffect, useSplitDivider, useKeyboardShortcuts…
-│   ├── components/           # Topbar, TabBar, dialogs, LanguagePicker, ShortcutsOverlay…
+│   ├── components/           # Topbar, TabBar, dialogs, LanguagePicker, ShortcutsOverlay, PresentOverlay…
 │   └── assets/fonts/         # Latin Modern fonts (GUST)
 ├── src-tauri/
 │   ├── src/lib.rs            # Commands: read/save, session, and PDF export

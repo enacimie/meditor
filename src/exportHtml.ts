@@ -202,7 +202,7 @@ export function inlineKatexFonts(css: string): string {
  * as a stylesheet of this chunk and both `?inline` and `?raw` resolve to an
  * empty string — which is why nothing was being embedded at all.
  */
-async function katexCssIfNeeded(bodyHtml: string): Promise<string[]> {
+export async function katexCssIfNeeded(bodyHtml: string): Promise<string[]> {
   if (!bodyHtml.includes("katex")) return [];
   try {
     const response = await fetch(katexCssUrl);

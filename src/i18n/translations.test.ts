@@ -98,6 +98,11 @@ describe("translations", () => {
     "prefs.landscapeTables",
     "prefs.landscapeTablesHint",
     "preview.landscapeNote",
+    // Marp presentations; en/es for now like the strings above.
+    "topbar.newMarp",
+    "menu.present",
+    "present.aria",
+    "present.exit",
   ]);
 
   it("every English key is defined in every language", () => {
