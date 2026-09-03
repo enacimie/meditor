@@ -34,7 +34,55 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # The release is created once, here, and the three builds upload into it.
+  #
+  # They used to be handed a tagName each and left to create the release if
+  # they could not find one. Starting within the same second, two of them can
+  # both fail to find it and both create one: v0.2.1 came out as two drafts on
+  # the same tag, six artefacts in one and the two Windows installers in the
+  # other. Every job reported success, and the release the page showed had no
+  # Windows build at all.
+  #
+  # The standing notes live in .github/release-notes.md, so editing what every
+  # release says no longer means editing this file.
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.draft.outputs.id }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create the draft, or adopt the one a re-run already made
+        id: draft
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          PRERELEASE: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
+        run: |
+          set -euo pipefail
+          find_id() {
+            gh api "repos/$GITHUB_REPOSITORY/releases" --paginate \
+              --jq "[.[] | select(.tag_name == \"$TAG\")] | first | .id // empty"
+          }
+          id="$(find_id)"
+          if [ -z "$id" ]; then
+            if [ "$PRERELEASE" = "true" ]; then
+              gh release create "$TAG" --draft --prerelease \
+                --title "meditor $TAG" --notes-file .github/release-notes.md
+            else
+              gh release create "$TAG" --draft \
+                --title "meditor $TAG" --notes-file .github/release-notes.md
+            fi
+            id="$(find_id)"
+          fi
+          if [ -z "$id" ]; then
+            echo "::error::no draft release for $TAG could be created or found"
+            exit 1
+          fi
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+          echo "draft release id: $id"
+
   build:
+    needs: create-release
     strategy:
       fail-fast: false
       matrix:
@@ -118,35 +166,9 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "meditor ${{ github.ref_name }}"
-          # Whoever downloads from this page on Windows 11 meets Smart App
-          # Control, so the explanation belongs here rather than only in the
-          # docs they have not opened yet.
-          releaseBody: |
-            ### Windows: Smart App Control will block this installer
-
-            The installers are not code signed, and Windows 11 refuses to run an
-            unsigned executable that came from the internet. Nothing is wrong
-            with the download.
-
-            **Do not switch Smart App Control off to get around it** — on
-            Windows 11 that cannot be undone without reinstalling. Build the
-            installer yourself instead (`pnpm tauri build --bundles nsis`); one
-            you built carries no mark of the web and installs normally.
-
-            [docs/windows.md](https://github.com/enacimie/meditor/blob/main/docs/windows.md)
-            explains the whole thing, including what signing would take.
-
-            ### Android
-
-            `meditor_<version>_arm64-debug.apk` is a debug build signed with
-            Android's throwaway key — enough to sideload, nowhere near enough to
-            publish.
-          releaseDraft: true
-          prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
-          # tauri-action drives the CLI directly, bypassing scripts/tauri.mjs,
-          # so the LaTeX overlay is layered here instead of in the npm script.
+          # An id, not a tag: creating the release belongs to the job
+          # above now, and this only uploads into what it made.
+          releaseId: ${{ needs.create-release.outputs.release_id }}
           args: ${{ matrix.args }} ${{ env.LATEX_ENABLED == 'true' && '--config src-tauri/conf/latex-enabled.json' || '' }} ${{ env.UPDATER_ENABLED == 'true' && '--config src-tauri/conf/updater-enabled.json' || '' }}
 
   android:
