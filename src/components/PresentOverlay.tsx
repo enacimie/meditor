@@ -24,15 +24,27 @@ function tryStartViewTransition(callback: () => void): boolean {
     callback();
     return false;
   }
+  let transition: ViewTransition | undefined;
   try {
-    doc.startViewTransition(callback);
-    return true;
+    transition = doc.startViewTransition(callback);
   } catch {
-    // A transition could not start (e.g. one already in flight); apply the
-    // change directly rather than strand the deck on the old slide.
+    // Not the "one already in flight" case — that skips the running
+    // transition rather than throwing. This is for an implementation that
+    // offers the method and then refuses the call: apply the change directly
+    // rather than strand the deck on the old slide.
     callback();
     return false;
   }
+  /*
+   * `ready` rejects when a transition is skipped, and starting a second one
+   * while this is in flight is exactly what skips it — which a held arrow key
+   * does, repeating far faster than a 0.45s transition. Nothing here needs to
+   * know, but an unhandled rejection reaches the console, and the E2E suite
+   * fails on console errors. Attached outside the `try` so a throw from here
+   * could never run `callback` a second time.
+   */
+  void transition?.ready?.catch(() => {});
+  return true;
 }
 
 function prefersReducedMotion(): boolean {
@@ -138,6 +150,22 @@ export default function PresentOverlay({ content, t, onExit }: Props) {
     void import("katex/dist/katex.min.css");
   }, []);
 
+  /*
+   * The transition variables have to live on <html>, because that is where the
+   * ::view-transition pseudo-elements look for them — so leaving the overlay
+   * has to take them down again. Pressing Escape during a slide change
+   * otherwise animated the editor back in with whatever that change had armed.
+   */
+  useEffect(
+    () => () => {
+      const root = document.documentElement;
+      root.style.removeProperty("--present-vt-old");
+      root.style.removeProperty("--present-vt-new");
+      root.style.removeProperty("--present-vt-duration");
+    },
+    [],
+  );
+
   const applyActive = useCallback((el: HTMLElement, index: number) => {
     const slides = el.querySelectorAll("svg[data-marpit-svg]");
     slides.forEach((slide, i) => slide.classList.toggle("present-active", i === index));
@@ -190,19 +218,45 @@ export default function PresentOverlay({ content, t, onExit }: Props) {
     (dest: number, direction: number) => {
       const el = containerRef.current;
       if (!el) return;
+      const frags = fragmentsRef.current[dest] ?? [];
+
+      /*
+       * Settle where we are here, synchronously, instead of inside the
+       * callback below.
+       *
+       * `startViewTransition` runs its callback at the next rendering
+       * opportunity, not on the spot. With these written in there, a second
+       * key press arriving in the same frame — a held arrow key repeats far
+       * faster than a 0.45s transition — still read the previous slide and
+       * recomputed the same destination. Two presses, one slide.
+       */
+      currentRef.current = dest;
+      fragIndexRef.current = direction > 0 ? 0 : frags.length;
+
+      /*
+       * Only the DOM belongs in the callback, and only while the deck it was
+       * measured against is still the one on screen. Ctrl+Tab is not disabled
+       * while presenting, so switching documents mid-flight re-runs the render
+       * effect against a different deck; the pending callback would then
+       * activate an index that need not exist in it, and since only the active
+       * slide is displayed, the screen went black with the counter reading
+       * past the end.
+       */
+      const myGen = genRef.current;
       const apply = () => {
+        if (myGen !== genRef.current) return;
         applyActive(el, dest);
-        currentRef.current = dest;
+        // The counter stays here, with the slide it counts: moved out with the
+        // refs it would announce the new number while the old slide was still
+        // animating away. The refs are navigation, this is display.
         setCurrent(dest);
-        const frags = fragmentsRef.current[dest] ?? [];
         if (direction > 0) {
           for (const frag of frags) frag.classList.add("present-frag-hidden");
-          fragIndexRef.current = 0;
         } else {
           for (const frag of frags) frag.classList.remove("present-frag-hidden");
-          fragIndexRef.current = frags.length;
         }
       };
+
       const present = presentsRef.current[dest];
       const type = present?.transition ?? "fade";
       if (type === "none" || prefersReducedMotion()) {
