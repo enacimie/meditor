@@ -53,8 +53,20 @@ export const tauriBackend: Backend = {
     return invoke<string>("read_document", { handle, locale });
   },
 
-  exportPdf(defaultName: string, locale: string, paged: boolean): Promise<void> {
-    return invoke<void>("export_pdf", { defaultName, locale, paged });
+  exportPdf(
+    defaultName: string,
+    locale: string,
+    paged: boolean,
+    pageWidthIn?: number,
+    pageHeightIn?: number,
+  ): Promise<void> {
+    return invoke<void>("export_pdf", {
+      defaultName,
+      locale,
+      paged,
+      pageWidth: pageWidthIn ?? null,
+      pageHeight: pageHeightIn ?? null,
+    });
   },
 
   printDocument(locale: string): Promise<void> {

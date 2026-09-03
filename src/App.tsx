@@ -16,7 +16,8 @@ import type { EditorHandle } from "./Editor";
 
 const Editor = lazy(() => import("./Editor"));
 import Preview, { type PreviewHandle } from "./Preview";
-import { SAMPLE, TYPST_SAMPLE, LATEX_SAMPLE } from "./sample";
+import { SAMPLE, TYPST_SAMPLE, LATEX_SAMPLE, MARP_SAMPLE } from "./sample";
+import { isMarpDocument } from "./marpDetect";
 import Topbar from "./components/Topbar";
 import TabBar from "./components/TabBar";
 import StatusBar from "./components/StatusBar";
@@ -26,6 +27,7 @@ import RenameDialog from "./components/RenameDialog";
 import ShortcutsOverlay from "./components/ShortcutsOverlay";
 import AboutDialog from "./components/AboutDialog";
 const PreferencesDialog = lazy(() => import("./components/PreferencesDialog"));
+const PresentOverlay = lazy(() => import("./components/PresentOverlay"));
 import Outline from "./components/Outline";
 import { parseHeadings, type Heading } from "./components/outlineUtils";
 import { useTranslation } from "./i18n/I18nProvider";
@@ -289,6 +291,7 @@ export default function App() {
   const [outlineOpen, setOutlineOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [preferencesOpen, setPreferencesOpen] = useState(false);
+  const [presenting, setPresenting] = useState(false);
   const [editorPrefs, setEditorPrefs] = useState<EditorPreferences>({
     editorFontSize: INITIAL_PREFERENCES.editorFontSize,
     editorFontFamily: INITIAL_PREFERENCES.editorFontFamily,
@@ -351,6 +354,19 @@ export default function App() {
   // rendered output, so their preview↔editor sync controls must not pretend
   // to work. Markdown provides data-line metadata for both directions.
   const markdownSyncAvailable = (active?.kind ?? "markdown") === "markdown";
+  // A Markdown deck that opts into Marp renders as slides, so the paged
+  // Document/Web toggle and the A4 paper background do not apply to it.
+  const isActiveMarp = useMemo(
+    () => markdownSyncAvailable && isMarpDocument(activeContent),
+    [markdownSyncAvailable, activeContent],
+  );
+
+  // Switching away from the deck (another tab, or the front-matter removed)
+  // leaves nothing to present, so drop out of the overlay instead of letting
+  // it silently reappear on the way back.
+  useEffect(() => {
+    if (presenting && !isActiveMarp) setPresenting(false);
+  }, [presenting, isActiveMarp]);
 
   const mergeDocuments = useCallback((incoming: Doc[]): void => {
     if (!incoming.length) return;
@@ -648,8 +664,26 @@ export default function App() {
     setActiveId(doc.id);
   }, []);
 
+  const newMarpTab = useCallback(() => {
+    if (isOperationBusy(busyOperationRef)) return;
+    // A Marp deck is Markdown that opts in via front-matter, so the kind stays
+    // "markdown"; the preview detects the opt-in and renders slides.
+    const doc = makeDoc(MARP_SAMPLE, docsRef.current, null, undefined, "markdown");
+    setDocs((prev) => [...prev, doc]);
+    setActiveId(doc.id);
+  }, []);
+
   const toggleZen = useCallback(() => {
     setZenMode((z) => !z);
+  }, []);
+
+  const startPresent = useCallback(() => {
+    if (isOperationBusy(busyOperationRef)) return;
+    setPresenting(true);
+  }, []);
+
+  const exitPresent = useCallback(() => {
+    setPresenting(false);
   }, []);
 
   /** Move `step` tabs from the active one, wrapping around like the tab bar. */
@@ -1003,6 +1037,16 @@ export default function App() {
         if (!pdfBytes) throw new Error("LaTeX compilation produced no output");
         const defaultName = `${base}.pdf`;
         await backend.writePdfBytes(pdfBytes, defaultName, lang);
+      } else if (isMarpDocument(active.content)) {
+        // Marp: one slide per page, and that page is the slide itself. Read the
+        // real size from the rendered viewBox rather than assuming 16:9, since
+        // a `size` directive or theme can change it.
+        const { renderMarp } = await import("./marpEngine");
+        const { html } = renderMarp(active.content);
+        const viewBox = /viewBox="0 0 (\d+(?:\.\d+)?) (\d+(?:\.\d+)?)"/.exec(html);
+        const widthIn = viewBox ? Number(viewBox[1]) / 96 : 1280 / 96;
+        const heightIn = viewBox ? Number(viewBox[2]) / 96 : 720 / 96;
+        await backend.exportPdf(`${base}.pdf`, lang, true, widthIn, heightIn);
       } else {
         await backend.exportPdf(`${base}.pdf`, lang,
           // The paginated preview already draws A4 pages with their own
@@ -1035,13 +1079,24 @@ export default function App() {
     try {
       const base =
         active.name.replace(/\.(md|markdown|txt)$/i, "") || t("doc.defaultExport");
-      const { exportMarkdownToHtml } = await import("./exportHtml");
-      const html = await exportMarkdownToHtml(active.content, {
-        fileName: base,
-        lang,
-        rtl: isRtl(lang),
-        t,
-      });
+      // A Marp deck exports as stacked slides; anything else as a document.
+      const html = isMarpDocument(active.content)
+        ? await (
+            await import("./exportMarpHtml")
+          ).exportMarpToHtml(active.content, {
+            fileName: base,
+            lang,
+            rtl: isRtl(lang),
+            t,
+          })
+        : await (
+            await import("./exportHtml")
+          ).exportMarkdownToHtml(active.content, {
+            fileName: base,
+            lang,
+            rtl: isRtl(lang),
+            t,
+          });
       const saved = await backend.writeHtmlFile(html, `${base}.html`, lang);
       // Cancelling the save dialog is not a failure, but it is not a success
       // either: announcing "HTML exported" with no file is worse than silence.
@@ -1389,6 +1444,8 @@ export default function App() {
         onNew={newTab}
         onNewTypst={newTypstTab}
         onNewLatex={newLatexTab}
+        onNewMarp={newMarpTab}
+        onPresent={isActiveMarp && !presenting ? startPresent : undefined}
         onOpen={openFiles}
         onSave={save}
         onSaveAs={saveAs}
@@ -1603,7 +1660,7 @@ export default function App() {
                 {t("pane.goToCode")}
               </button>
             )}
-            {(active?.kind ?? "markdown") !== "typst" && (active?.kind ?? "markdown") !== "latex" && (
+            {(active?.kind ?? "markdown") !== "typst" && (active?.kind ?? "markdown") !== "latex" && !isActiveMarp && (
               <button
                 type="button"
                 className={docView ? "sync-btn on" : "sync-btn"}
@@ -1618,7 +1675,7 @@ export default function App() {
           <div
             className={
               "preview-scroll" +
-              (docView && (active?.kind ?? "markdown") === "markdown" ? " doc-bg" : "")
+              (docView && (active?.kind ?? "markdown") === "markdown" && !isActiveMarp ? " doc-bg" : "")
             }
           >
             <Preview
@@ -1705,6 +1762,11 @@ export default function App() {
             onChange={setEditorPrefs}
             onClose={() => setPreferencesOpen(false)}
           />
+        </Suspense>
+      )}
+      {presenting && isActiveMarp && (
+        <Suspense fallback={null}>
+          <PresentOverlay content={activeContent} t={t} onExit={exitPresent} />
         </Suspense>
       )}
     </div>

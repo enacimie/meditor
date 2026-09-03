@@ -293,6 +293,23 @@ export async function renderContent(
   if (isStale()) return;
   el.innerHTML = renderMarkdown(value);
 
+  await renderMermaidBlocks(el, seqRef, isStale, t);
+}
+
+/**
+ * Replace every `code.language-mermaid` block under `el` with a rendered
+ * diagram, using the shared Mermaid worker pool (main-thread fallback).
+ *
+ * Shared by the Markdown preview and the Marp slide views: Marp emits a
+ * ```mermaid fence as a plain `code.language-mermaid` block, so the very same
+ * pass that diagrams a document diagrams a deck — one Mermaid, not two.
+ */
+export async function renderMermaidBlocks(
+  el: HTMLElement,
+  seqRef: React.MutableRefObject<number>,
+  isStale: () => boolean,
+  t: TranslationFn,
+): Promise<void> {
   const nodes = Array.from(el.querySelectorAll("code.language-mermaid"));
   if (!nodes.length) return;
 

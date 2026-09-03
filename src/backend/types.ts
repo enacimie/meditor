@@ -48,7 +48,14 @@ export type Backend = {
   ): Promise<Doc | null>;
   documentStat(handle: string, locale: string): Promise<DocumentStat>;
   readDocument(handle: string, locale: string): Promise<string>;
-  exportPdf(defaultName: string, locale: string, paged: boolean): Promise<void>;
+  exportPdf(
+    defaultName: string,
+    locale: string,
+    paged: boolean,
+    /** Exact page size in inches — Marp slides — instead of the default A4. */
+    pageWidthIn?: number,
+    pageHeightIn?: number,
+  ): Promise<void>;
   printDocument(locale: string): Promise<void>;
   writePdfBytes(
     pdfBytes: Uint8Array,

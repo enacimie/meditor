@@ -24,6 +24,7 @@ type Props = {
   onNew: () => void;
   onNewTypst: () => void;
   onNewLatex: () => void;
+  onNewMarp: () => void;
   onOpen: () => void;
   onSave: () => void;
   onSaveAs: () => void;
@@ -31,6 +32,8 @@ type Props = {
   onExportPdf?: () => void;
   /** Only offered for Markdown: Typst/LaTeX render through their own engines. */
   onExportHtml?: () => void;
+  /** Only offered for Marp decks: start the full-screen presentation. */
+  onPresent?: () => void;
   onCloseAll: () => void;
   onCloseOthers: () => void;
   onAbout: () => void;
@@ -101,11 +104,13 @@ const Topbar = memo(function Topbar({
   onNew,
   onNewTypst,
   onNewLatex,
+  onNewMarp,
   onOpen,
   onSave,
   onSaveAs,
   onExportPdf,
   onExportHtml,
+  onPresent,
   onCloseAll,
   onCloseOthers,
   onAbout,
@@ -314,6 +319,12 @@ const Topbar = memo(function Topbar({
                   {t("menu.exportHtml")}
                 </button>
               )}
+              {onPresent && (
+                <button type="button" role="menuitem" disabled={busy} onClick={() => { onPresent(); setMenuOpen(false); menuToggleRef.current?.focus(); }}>
+                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/><path d="m10 7 5 3-5 3z"/></svg>
+                  {t("menu.present")}
+                </button>
+              )}
               <button type="button" role="menuitem" disabled={busy} onClick={() => { onNewTypst(); setMenuOpen(false); menuToggleRef.current?.focus(); }}>
                 <svg className="format-icon format-icon-typst" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 5h14"/><path d="M12 5v14"/><path d="M8 19h8"/></svg>
                 {t("topbar.newTypst")}<span className="shortcut">{t("menu.shortcut.newTypst")}</span>
@@ -324,6 +335,10 @@ const Topbar = memo(function Topbar({
                   {t("topbar.newLatex")}<span className="shortcut">{t("menu.shortcut.newLatex")}</span>
                 </button>
               )}
+              <button type="button" role="menuitem" disabled={busy} onClick={() => { onNewMarp(); setMenuOpen(false); menuToggleRef.current?.focus(); }}>
+                <svg className="format-icon format-icon-marp" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+                {t("topbar.newMarp")}
+              </button>
               <div className="menu-sep" />
               <div className="menu-replacedby-section">
                 <div className="menu-section-label" aria-hidden="true">{t("menu.theme")}</div>

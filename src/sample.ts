@@ -457,3 +457,59 @@ def fibonacci(n: int) -> list[int]:
 
 \\end{document}
 `;
+
+export const MARP_SAMPLE = `---
+marp: true
+theme: default
+paginate: true
+---
+
+# meditor + Marp
+
+Presentations written in Markdown and rendered live.
+
+---
+
+## Why slides in an editor?
+
+- Write the deck next to your notes — same tab bar
+- The preview updates as you type
+- Click a slide to jump back to its source
+
+---
+
+## Math, with KaTeX
+
+Inline math like $e^{i\\pi}+1=0$, or a display equation:
+
+$$
+\\int_{-\\infty}^{\\infty} e^{-x^2}\\,dx = \\sqrt{\\pi}
+$$
+
+---
+
+## Code, highlighted
+
+\`\`\`js
+function greet(name) {
+  return "Hello, " + name + "!";
+}
+\`\`\`
+
+---
+
+## A table
+
+| Format | Preview | Export |
+| ----- | :---: | :---: |
+| Markdown | Yes | PDF / HTML |
+| Slides | Yes | PDF / HTML |
+
+---
+
+<!-- _class: lead -->
+
+# Thank you
+
+Every \`---\` on its own line starts a new slide.
+`;

@@ -1,0 +1,91 @@
+/* ---- Marp slide preview ---- */
+.marp-preview {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.marp-slides {
+  flex: 1;
+  min-height: 0;
+}
+
+/* The injected <div class="marpit"> stacks the slides; cap the width so a
+   very wide pane does not stretch a 16:9 slide into a wall. */
+.marp-slides .marpit {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 4px 0 40px;
+}
+
+.marp-slides svg[data-marpit-svg] {
+  display: block;
+  width: 100%;
+  height: auto;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.18),
+    0 6px 22px rgba(0, 0, 0, 0.16);
+  cursor: pointer;
+}
+
+/* Slide-granular sync feedback: box-shadow does not paint on <svg>, so use
+   outline for both the mark and the flash. */
+.marp-slides svg[data-marpit-svg].sync-marked {
+  outline: 3px solid rgba(9, 105, 218, 0.5);
+  outline-offset: 3px;
+}
+
+.marp-slides svg[data-marpit-svg].sync-flash {
+  animation: marpFlash 1.3s ease;
+}
+
+@keyframes marpFlash {
+  0%,
+  25% {
+    outline: 3px solid rgba(9, 105, 218, 0.5);
+    outline-offset: 3px;
+  }
+  100% {
+    outline: 3px solid rgba(9, 105, 218, 0);
+    outline-offset: 3px;
+  }
+}
+
+/* ---- Print: one slide per page ---- */
+@media print {
+  .marp-preview {
+    overflow: visible;
+  }
+
+  /* Drop the on-screen card look and the centered column: each slide fills
+     its own sheet, which the exporter sizes to the slide itself. */
+  .marp-slides .marpit {
+    display: block;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    gap: 0;
+  }
+
+  .marp-slides svg[data-marpit-svg] {
+    width: 100%;
+    height: auto;
+    border-radius: 0;
+    box-shadow: none;
+    cursor: auto;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .marp-slides svg[data-marpit-svg]:last-child {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+}

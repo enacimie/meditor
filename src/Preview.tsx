@@ -18,6 +18,7 @@ import { clearMermaidResources, renderContent, splitLongFencedBlocks } from "./p
 import { isPaginatable } from "./pagedLifecycle";
 import { openExternal } from "./externalLinks";
 import { fitWideTables, keepHeadingsWithContent } from "./previewRenderer";
+import { isMarpDocument } from "./marpDetect";
 import { LATEX_ENABLED } from "./latexSupport";
 
 import type { DocKind } from "./types";
@@ -25,6 +26,7 @@ import "./Preview.css";
 
 const TypstPreview = lazy(() => import("./TypstPreview"));
 const LatexPreview = lazy(() => import("./LatexPreview"));
+const MarpPreview = lazy(() => import("./MarpPreview"));
 
 const PAGED_STYLES: Array<Record<string, string>> = [
   { "meditor-paged.css": pagedCss },
@@ -108,6 +110,9 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
 
   // Defer preview updates during fast typing to keep the UI responsive
   const deferredValue = useDeferredValue(value);
+
+  // A Markdown deck that opts into Marp renders as slides, not a document.
+  const isMarp = kind === "markdown" && isMarpDocument(value);
 
   async function getPreviewer(): Promise<Previewer> {
     destroyPreviewer(activePreviewerRef.current);
@@ -273,9 +278,9 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
   }
 
   useEffect(() => {
-    // Typst and LaTeX previews are handled by their own components —
+    // Typst, LaTeX and Marp previews are handled by their own components —
     // don't fire the markdown/paged.js rendering pipeline for them.
-    if (kind === "typst" || kind === "latex") return;
+    if (kind === "typst" || kind === "latex" || isMarp) return;
 
     let cancelled = false;
     let debounceTimer: number | undefined;
@@ -385,7 +390,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
       cancelled = true;
       if (debounceTimer) clearTimeout(debounceTimer);
     };
-  }, [deferredValue, docView, landscapeTables, retryToken, t, kind, scrollToLineNow]);
+  }, [deferredValue, docView, landscapeTables, retryToken, t, kind, isMarp, scrollToLineNow]);
 
   // Re-run whatever render was skipped while the pane was hidden, as soon as
   // it has a box again — leaving zen mode, switching the layout back, or the
@@ -413,6 +418,14 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
       void clearMermaidResources();
     };
   }, []);
+
+  if (isMarp) {
+    return (
+      <Suspense fallback={<div className="typst-loading" role="status"><span className="typst-spinner" aria-hidden="true" />{t("app.loading")}</div>}>
+        <MarpPreview ref={setChildHandle} value={value} t={t} onReverseSync={onReverseSync} />
+      </Suspense>
+    );
+  }
 
   if (kind === "typst") {
     return (
