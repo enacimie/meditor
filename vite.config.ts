@@ -102,6 +102,24 @@ export default defineConfig(async () => ({
   },
   test: {
     environment: "node",
+    /*
+     * marp-core has to be transformed rather than loaded straight from
+     * node_modules.
+     *
+     * Its ESM build does `import * as xss from "xss"` and then calls
+     * `xss.friendlyAttrValue(...)` while sanitising attributes. `xss` is
+     * CommonJS, and Node's lexer only recognises four of its named exports —
+     * `friendlyAttrValue` is not among them — so under plain Node ESM that
+     * call is `undefined` and sanitising any attribute throws. The browser
+     * never sees this: Vite gives the package a real interop wrapper, which
+     * is exactly what inlining asks for here.
+     *
+     * So the failure is a packaging quirk of the test environment, not of
+     * meditor — but without this line the sanitising tests below fail on a
+     * TypeError instead of on their assertions, which would hide whatever
+     * they were meant to catch.
+     */
+    server: { deps: { inline: ["@marp-team/marp-core"] } },
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
     setupFiles: ["./src/test-setup.ts"],
     coverage: {
