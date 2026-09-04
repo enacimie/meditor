@@ -424,28 +424,50 @@ try {
       `${themeName}: find panel text contrast ${panelRatio.toFixed(2)}:1 must be ≥ 4.5:1`,
     );
 
-    // Mermaid draws its lines and edge labels in #333 whatever the app theme
-    // is, so the surface underneath has to be one they show up on.
-    // Measured on an element made for the purpose, the way the error notice
-    // above is: by this point the document has been typed over and holds no
-    // diagram, and rendering one would mean waiting on the Mermaid worker for
-    // a value that comes from a stylesheet. #333 is Mermaid's own lineColor
-    // and textColor, read from its default theme.
-    const diagramBg = await page.evaluate(`(() => {
+    /*
+     * The diagram has to be legible on whatever it is drawn on, and which
+     * palette that is now depends on the theme.
+     *
+     * Under high contrast Mermaid still draws its own light theme — #333
+     * lines and edge labels — so the surface below it has to be one they show
+     * up on, and it is given a white card for the purpose. Under the dark
+     * theme Mermaid is asked for its dark palette instead, whose #cccccc
+     * lines want the dark page rather than a white card in the middle of it;
+     * see `mermaid-theme.spec`, which checks the palette actually arrives.
+     *
+     * Measured on an element made for the purpose, the way the error notice
+     * above is: by this point the document has been typed over and holds no
+     * diagram, and rendering one would mean waiting on the Mermaid worker for
+     * a value that comes from a stylesheet.
+     */
+    const diagramSurface = await page.evaluate(`(() => {
       const host = document.createElement('div');
       host.className = 'markdown-body';
       const diagram = document.createElement('div');
       diagram.className = 'mermaid';
       host.appendChild(diagram);
       document.body.appendChild(host);
-      const background = getComputedStyle(diagram).backgroundColor;
+      const style = getComputedStyle(diagram);
+      const background = style.backgroundColor;
       host.remove();
-      return background;
+      // A transparent diagram is drawn straight onto the page, so that is
+      // what is behind its lines.
+      const transparent = background === 'rgba(0, 0, 0, 0)' || background === 'transparent';
+      return {
+        background,
+        transparent,
+        page: getComputedStyle(document.body).backgroundColor,
+      };
     })()`);
-    const diagramRatio = contrast("#333333", diagramBg);
+    // What the reader actually sees behind the lines.
+    const behindDiagram = diagramSurface.transparent
+      ? diagramSurface.page
+      : diagramSurface.background;
+    const diagramInk = themeName === "dark" ? "#cccccc" : "#333333";
+    const diagramRatio = contrast(diagramInk, behindDiagram);
     assert(
       diagramRatio >= 3,
-      `${themeName}: Mermaid's #333 lines sit at ${diagramRatio.toFixed(2)}:1 on ${diagramBg} — the arrows are invisible`,
+      `${themeName}: Mermaid's ${diagramInk} lines sit at ${diagramRatio.toFixed(2)}:1 on ${behindDiagram} — the arrows are invisible`,
     );
   }
 

@@ -154,7 +154,12 @@
     --accent: #4493f8;
     --accent-fg: #ffffff;
     --selection-bg: #264f78;
-    --diagram-surface: #ffffff;
+    /* Transparent: on a dark screen the diagram is drawn in Mermaid's own
+       dark theme now, so it needs the page behind it rather than a white
+       card. The Document view keeps its white sheet and its light diagram,
+       which this does not affect — a transparent diagram on white paper is
+       still on white paper. */
+    --diagram-surface: transparent;
     --code-bg: #2d2d2d;
     --code-fg: #c9d1d9;
     --code-keyword: #ff7b72;
@@ -185,7 +190,12 @@
   --accent: #4493f8;
   --accent-fg: #ffffff;
   --selection-bg: #264f78;
-  --diagram-surface: #ffffff;
+  /* Transparent: on a dark screen the diagram is drawn in Mermaid's own
+     dark theme now, so it needs the page behind it rather than a white
+     card. The Document view keeps its white sheet and its light diagram,
+     which this does not affect — a transparent diagram on white paper is
+     still on white paper. */
+  --diagram-surface: transparent;
   --code-bg: #0d1117;
   --code-fg: #c9d1d9;
   --code-keyword: #ff7b72;

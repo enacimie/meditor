@@ -1694,6 +1694,7 @@ export default function App() {
               kind={active?.kind ?? "markdown"}
               landscapeTables={editorPrefs.landscapeTables}
               docHandle={active?.handle ?? null}
+              theme={theme}
               onReverseSync={handleReverseSync}
             />
           </div>

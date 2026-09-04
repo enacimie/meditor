@@ -213,16 +213,20 @@
 
 /* ---- Mermaid ---- */
 /*
- * Mermaid renders with its own light theme, whose lines and edge labels are
- * #333. On the dark page that is 1.32:1, and 1.66:1 on the pure black of the
- * contrast theme: the boxes survive because they carry their own pale fill,
- * but the arrows between them simply are not there.
+ * Mermaid follows the interface theme on screen, and never anywhere else.
  *
- * Giving the diagram the surface it was drawn for is the small half of the
- * fix. Making Mermaid itself follow the theme is the right one, and a change
- * of its own: the theme has to reach a Web Worker, the diagram cache is keyed
- * on the source text alone so switching themes regenerates nothing, and the
- * Document view and the HTML export both want paper regardless.
+ * It used to draw everything in its own light theme, whose lines and edge
+ * labels are #333: on the dark page that is 1.32:1, so the boxes survived on
+ * their pale fill and the arrows between them simply were not there. The
+ * stop-gap was to give the diagram the white surface it had been drawn for.
+ *
+ * Now the theme reaches the render, so a dark screen gets a diagram drawn for
+ * a dark screen and `--diagram-surface` is transparent there. The contrast
+ * theme is the exception and keeps the white card: that pairing was measured
+ * to WCAG AA, and Mermaid's dark palette has not been.
+ *
+ * Everything that is paper — the Document view, the PDF, the HTML export, a
+ * slide — stays light whatever the app is wearing.
  */
 .markdown-body .mermaid {
   text-align: center;

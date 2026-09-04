@@ -13,6 +13,7 @@ import {
 } from "react";
 import type { Previewer } from "pagedjs";
 import { useTranslation } from "./i18n/I18nProvider";
+import { mermaidThemeFor, prefersDarkScheme } from "./mermaidTheme";
 import pagedCss from "./paged.css?inline";
 import latexHighlightCss from "./latex-highlight.css?inline";
 import {
@@ -28,6 +29,7 @@ import { isMarpDocument } from "./marpDetect";
 import { LATEX_ENABLED } from "./latexSupport";
 
 import type { DocKind } from "./types";
+import type { Theme } from "./components/types";
 import "./Preview.css";
 
 const TypstPreview = lazy(() => import("./TypstPreview"));
@@ -62,6 +64,8 @@ type Props = {
    * a platform where there is no directory to look in.
    */
   docHandle?: string | null;
+  /** The interface theme, which the diagrams on screen follow. */
+  theme?: Theme;
   onReverseSync: (line: number) => void;
 };
 
@@ -92,7 +96,15 @@ interface ChildPreviewHandle {
 }
 
 const Preview = forwardRef<PreviewHandle, Props>(function Preview(
-  { value, docView, kind, landscapeTables = false, docHandle = null, onReverseSync },
+  {
+    value,
+    docView,
+    kind,
+    landscapeTables = false,
+    docHandle = null,
+    theme = "system",
+    onReverseSync,
+  },
   ref,
 ) {
   const { t, lang } = useTranslation();
@@ -101,6 +113,14 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
   const imageSource = useMemo(
     () => (docHandle ? { handle: docHandle, locale: lang } : undefined),
     [docHandle, lang],
+  );
+  // Only the web preview follows the interface. A page, a PDF, an exported
+  // file and a slide are paper, and paper is light whatever the app is
+  // wearing — hence the literal "default" at the paginated call below rather
+  // than this value.
+  const screenDiagramTheme = useMemo(
+    () => mermaidThemeFor(theme, "screen", prefersDarkScheme()),
+    [theme],
   );
   const sourceRef = useRef<HTMLDivElement>(null);
   const webRef = useRef<HTMLDivElement>(null);
@@ -317,7 +337,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
           return;
         }
         const docValue = splitLongFencedBlocks(deferredValue);
-        await renderContent(source, docValue, seqRef, isStale, t, imageSource);
+        await renderContent(source, docValue, seqRef, isStale, t, imageSource, "default");
         if (cancelled || myToken !== tokenRef.current) return;
         /*
          * Measuring tables against a fallback font picks the wrong fit step —
@@ -367,7 +387,15 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
           pendingRef.current = true;
           return;
         }
-        await renderContent(web, deferredValue, seqRef, isStale, t, imageSource);
+        await renderContent(
+          web,
+          deferredValue,
+          seqRef,
+          isStale,
+          t,
+          imageSource,
+          screenDiagramTheme,
+        );
       }
       flushPendingScroll();
     };
@@ -414,6 +442,9 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
     isMarp,
     scrollToLineNow,
     imageSource,
+    // Switching the interface theme redraws the diagrams on screen: without
+    // this the preview keeps the ones it made for the other theme.
+    screenDiagramTheme,
   ]);
 
   // Re-run whatever render was skipped while the pane was hidden, as soon as

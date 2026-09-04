@@ -87,6 +87,30 @@ describe("MermaidCache", () => {
     cache.set("", "empty-key-value");
     expect(cache.get("")).toBe("empty-key-value");
   });
+
+  it("keeps the light and dark drawings of one diagram apart", () => {
+    // The bug this exists for: keyed on the source alone, switching themes
+    // regenerated nothing — the cache handed back the picture drawn for the
+    // other theme, so a dark page kept its light diagram for ever.
+    cache.set("graph TD; A-->B", "<svg>light</svg>", "default");
+    cache.set("graph TD; A-->B", "<svg>dark</svg>", "dark");
+
+    expect(cache.get("graph TD; A-->B", "default")).toBe("<svg>light</svg>");
+    expect(cache.get("graph TD; A-->B", "dark")).toBe("<svg>dark</svg>");
+  });
+
+  it("has nothing for a theme it has not drawn yet", () => {
+    cache.set("src", "<svg>light</svg>", "default");
+    expect(cache.get("src", "dark")).toBeUndefined();
+  });
+
+  it("treats an unstated theme as the light one", () => {
+    // Every caller but the web preview leaves it out, and they all mean paper.
+    cache.set("src", "<svg>light</svg>");
+    expect(cache.get("src", "default")).toBe("<svg>light</svg>");
+    cache.set("other", "<svg>x</svg>", "default");
+    expect(cache.get("other")).toBe("<svg>x</svg>");
+  });
 });
 
 /* ---- MermaidPool singletons ---- */

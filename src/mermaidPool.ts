@@ -1,4 +1,5 @@
 import MermaidWorker from "./mermaid.worker?worker";
+import type { MermaidTheme } from "./mermaidTheme";
 
 export type MermaidWorkerMessage =
   | { type: "ready" }
@@ -8,27 +9,36 @@ const WORKER_RENDER_TIMEOUT_MS = 12_000;
 const MERMAID_CACHE_SIZE = 30;
 
 /**
- * Least-recently-used cache for rendered Mermaid SVGs, keyed by diagram
- * source.  Avoids re-rendering unchanged diagrams on every preview update.
+ * Least-recently-used cache for rendered Mermaid SVGs.
+ *
+ * Keyed by theme as well as source: the same diagram drawn light and drawn
+ * dark are two different pictures, and keying on the text alone meant that
+ * switching themes regenerated nothing — the cache handed back the drawing
+ * made for the other one.
  */
 export class MermaidCache {
   private map = new Map<string, string>();
 
-  get(src: string): string | undefined {
-    const svg = this.map.get(src);
+  private static key(src: string, theme: MermaidTheme): string {
+    return `${theme}:${src}`;
+  }
+
+  get(src: string, theme: MermaidTheme = "default"): string | undefined {
+    const key = MermaidCache.key(src, theme);
+    const svg = this.map.get(key);
     if (svg) {
-      this.map.delete(src);
-      this.map.set(src, svg);
+      this.map.delete(key);
+      this.map.set(key, svg);
     }
     return svg;
   }
 
-  set(src: string, svg: string): void {
+  set(src: string, svg: string, theme: MermaidTheme = "default"): void {
     if (this.map.size >= MERMAID_CACHE_SIZE) {
       const oldest = this.map.keys().next().value;
       if (oldest !== undefined) this.map.delete(oldest);
     }
-    this.map.set(src, svg);
+    this.map.set(MermaidCache.key(src, theme), svg);
   }
 
   clear(): void {
@@ -101,7 +111,7 @@ export class MermaidPool {
     });
   }
 
-  render(id: number, src: string): Promise<string> {
+  render(id: number, src: string, theme: MermaidTheme = "default"): Promise<string> {
     return new Promise((resolve, reject) => {
       if (!this.ready) {
         reject(new Error("Worker not ready"));
@@ -116,7 +126,7 @@ export class MermaidPool {
       }, WORKER_RENDER_TIMEOUT_MS);
 
       this.pending.set(id, { resolve, reject, timer });
-      worker.postMessage({ id, src });
+      worker.postMessage({ id, src, theme });
     });
   }
 
@@ -165,14 +175,22 @@ export function destroyMermaidPool(): void {
 }
 
 /** Fallback: render diagram directly in main thread if worker is unavailable. */
-export async function renderMermaidMainThread(id: string, src: string): Promise<string> {
+export async function renderMermaidMainThread(
+  id: string,
+  src: string,
+  theme: MermaidTheme = "default",
+): Promise<string> {
   const mermaidModule = await import("mermaid");
   const mermaid = mermaidModule.default;
   try {
+    // Re-initialised every time rather than once: `initialize` is how the
+    // theme is chosen, and this path has no idea which theme the last caller
+    // asked for.
     mermaid.initialize({
       startOnLoad: false,
       securityLevel: "strict",
       suppressErrorRendering: true,
+      theme,
     });
   } catch {
     // Already initialized
