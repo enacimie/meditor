@@ -39,23 +39,52 @@ try {
     message: "the complete Typst sample should compile to SVG",
   });
 
-  const latexLoad = await page.evaluate(`(async () => {
-    let engine;
-    try {
-      const { getLatexEngineClass } = await import('/src/latexEngine.ts');
-      const Engine = await getLatexEngineClass();
-      engine = new Engine();
-      await Promise.race([
-        engine.loadEngine(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('load timeout')), 40000)),
-      ]);
-      return { ok: true };
-    } catch (error) {
-      return { ok: false, error: String(error) };
-    } finally {
-      try { engine?.closeWorker(); } catch { /* best effort */ }
-    }
-  })()`, 60000);
+  /*
+   * Start the engine load, then poll for its answer, rather than holding one
+   * `Runtime.evaluate` open for the whole minute it can take.
+   *
+   * That single long call was the flakiest thing in the suite: it failed
+   * intermittently with `Promise was collected (-32000)`, on macOS and on
+   * Windows, and took the run down with it. cdp.mjs already classes that error
+   * as transient — "worth retrying, never worth failing on" — but only
+   * `waitFor` acts on the classification; an awaited `evaluate` propagates it
+   * and ends the spec.
+   *
+   * Splitting it moves the waiting onto the path that already handles this:
+   * the kick-off returns at once, the page keeps its own reference to the
+   * promise, and the polling runs under `waitFor`. Whether that was the whole
+   * cause is not something a green run can settle — the failure was never
+   * reproducible on demand — but the spec no longer keeps an evaluation open
+   * across the work that used to lose it.
+   */
+  await page.evaluate(`(() => {
+    window.__latexProbe = (async () => {
+      let engine;
+      try {
+        const { getLatexEngineClass } = await import('/src/latexEngine.ts');
+        const Engine = await getLatexEngineClass();
+        engine = new Engine();
+        await Promise.race([
+          engine.loadEngine(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('load timeout')), 40000)),
+        ]);
+        window.__latexResult = { ok: true };
+      } catch (error) {
+        window.__latexResult = { ok: false, error: String(error) };
+      } finally {
+        try { engine?.closeWorker(); } catch { /* best effort */ }
+      }
+    })();
+    return true;
+  })()`);
+
+  await page.waitFor("!!window.__latexResult", {
+    timeout: 60000,
+    interval: 500,
+    message: "the LaTeX engine should finish loading, or say why it could not",
+  });
+
+  const latexLoad = await page.evaluate("window.__latexResult");
   assert(latexLoad.ok, `LaTeX local WASM worker failed: ${latexLoad.error || "unknown error"}`);
 
   assert(
