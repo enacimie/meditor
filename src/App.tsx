@@ -1612,6 +1612,14 @@ export default function App() {
               zenPlaceholder={t("zen.placeholder")}
               kind={active?.kind ?? "markdown"}
               onCursorLineChange={setCursorLine}
+              onImageError={(error) =>
+                showNotice(
+                  error.kind === "tooLarge"
+                    ? t("image.tooLarge", error.name, error.maxMiB)
+                    : t("image.insertFailed", error.name),
+                  "error",
+                )
+              }
             />
           </Suspense>
         </div>

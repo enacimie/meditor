@@ -133,6 +133,9 @@ export const en = {
   "file.noFileName": "Path has no file name",
   "file.notFound": "Path does not point to a file",
   "file.tooLarge": (max: number) => `File exceeds ${max} MiB limit`,
+  "image.tooLarge": (name: string, max: number) =>
+    `${name} exceeds the ${max} MiB image limit`,
+  "image.insertFailed": (name: string) => `Could not insert image ${name}`,
   "file.documentUnavailable": "Document is no longer available for saving",
   "file.directoryMissing": "Destination folder does not exist",
   "file.sessionTooLarge": "Session exceeds allowed limit",
