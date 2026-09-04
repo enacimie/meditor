@@ -46,7 +46,7 @@
 
 - Two preview modes:
   - **Web**: comfortable on-screen view.
-  - **Document**: **paginated A4 pages** with [paged.js](https://pagedjs.org) and LaTeX aesthetics (**Latin Modern** font, justified text, *booktabs*-style tables).
+  - **Document**: **paginated A4 pages** with [paged.js](https://pagedjs.org) and LaTeX aesthetics (**Latin Modern** font, justified text, *booktabs*-style tables, page numbers and a running title from the second page on).
 - **Bidirectional sync** editor ↔ preview:
   - **Double-click** in preview → jumps to the corresponding line of code.
   - **"Go to preview"** and **"Go to code"** buttons in each panel.

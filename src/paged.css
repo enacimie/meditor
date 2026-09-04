@@ -1,6 +1,51 @@
+/*
+ * The folio and the running head.
+ *
+ * Both live in the 2.5 cm margins the pages already have, so nothing about
+ * pagination moves: the text area is the same size it was, and a document
+ * that filled seven pages still fills seven.
+ *
+ * paged.js turns each margin box into
+ * `.pagedjs_margin-<box> > .pagedjs_margin-content::after`, putting the
+ * `content` declaration on the pseudo-element and every other declaration on
+ * the box. The boxes sit outside `.markdown-body.doc`, so the font and the
+ * colour have to be said here rather than inherited — otherwise the number
+ * arrives in the interface font, and in the dark theme as light text on a
+ * white sheet.
+ */
 @page {
   size: A4;
   margin: 2.5cm;
+
+  @top-center {
+    content: string(doctitle);
+    font-family: "Latin Modern Roman", "LM Roman 10", "CMU Serif",
+      "EB Garamond", Georgia, "Times New Roman", serif;
+    font-size: 10pt;
+    font-style: italic;
+    color: #000000;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  @bottom-center {
+    content: counter(page);
+    font-family: "Latin Modern Roman", "LM Roman 10", "CMU Serif",
+      "EB Garamond", Georgia, "Times New Roman", serif;
+    font-size: 11pt;
+    color: #000000;
+  }
+}
+
+/*
+ * The title is already centred at the top of the first page. A running head
+ * three centimetres above it would read as the same title twice, which is why
+ * LaTeX gives a title page the `plain` style and no running head either.
+ */
+@page :first {
+  @top-center {
+    content: none;
+  }
 }
 
 .markdown-body.doc {
@@ -61,6 +106,14 @@
   font-weight: bold;
   text-align: center;
   margin: 0 0 0.7em;
+  /*
+   * Feeds the running head above. paged.js reads the text of the first h1 on
+   * each page and carries it forward to the pages that have none, so a
+   * document with several h1s shows the one it is currently inside — chapter
+   * behaviour — and a document with none shows an empty head. Nothing in the
+   * markdown pipeline is involved.
+   */
+  string-set: doctitle content(text);
 }
 
 .markdown-body.doc h2 {
@@ -113,7 +166,9 @@
  *
  * Simple selectors only. This file is not injected into the document — it is
  * handed to paged.js as text and parsed by its own engine, which silently
- * produces no pages at all when it meets `:is()`.
+ * produces no pages at all when it meets `:is()`. The `@page` blocks at the
+ * top of the file, their margin boxes and `:first` are the exception: those
+ * that engine understands, and they are the only at-rules it does.
  */
 .markdown-body.doc .keep-with-next {
   break-inside: avoid;
