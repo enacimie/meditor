@@ -38,6 +38,69 @@ const mermaidNoop = () => ({
   contains: [],
 });
 
+/*
+ * YAML front-matter is metadata, and metadata is not prose.
+ *
+ * A block of `key: value` lines fenced by `---` at the very top of a file is
+ * how Hugo, Jekyll, Pandoc, Obsidian and Zettlr carry a document's title,
+ * author and date, and Markdown itself has no idea what it is: the opening
+ * `---` parses as a horizontal rule and the lines under it as a setext
+ * heading, so the whole block arrived in the preview — and in the PDF — as a
+ * rule followed by the raw YAML set in heading type.
+ *
+ * meditor already reads front-matter in two places (`marpDetect` for
+ * `marp: true`, `marpPresent` for slide transitions), so a document that has
+ * it is expected here. This rule only keeps it out of the rendered output;
+ * nothing yet reads a title or an author from it.
+ *
+ * Deliberately narrow, because a leading `---` is also a legitimate horizontal
+ * rule. The fence must open on the very first line, must be closed, and the
+ * line straight after it must read like YAML — a `key:` or a comment. Without
+ * that last condition a document that opens with a decorative rule, carries a
+ * paragraph and then rules off again loses the paragraph in between: the two
+ * rules look exactly like a fence, and everything between them disappears.
+ * An unterminated fence, or one full of prose, still renders as it always did.
+ */
+/** The first line of real front-matter: a YAML key, or a comment above one. */
+const YAML_FIRST_LINE = /^(?:#|[^\s:#][^:]*:(?:\s|$))/;
+function frontMatter(md: MarkdownIt) {
+  md.block.ruler.before(
+    "hr",
+    "front_matter",
+    (state, startLine, endLine, silent) => {
+      // The very top of the document, and nowhere else. Indented, it is a
+      // code block; further down, it is a rule between two paragraphs.
+      if (startLine !== 0 || state.blkIndent !== 0 || state.sCount[startLine] !== 0) {
+        return false;
+      }
+      const open = state.src.slice(state.bMarks[startLine], state.eMarks[startLine]).trim();
+      if (open !== "---") return false;
+
+      const next = startLine + 1;
+      const firstLine =
+        next < endLine
+          ? state.src.slice(state.bMarks[next] + state.tShift[next], state.eMarks[next]).trim()
+          : "";
+      if (!YAML_FIRST_LINE.test(firstLine)) return false;
+
+      for (let line = startLine + 1; line < endLine; line++) {
+        const text = state.src
+          .slice(state.bMarks[line] + state.tShift[line], state.eMarks[line])
+          .trim();
+        if (text !== "---" && text !== "...") continue;
+        if (silent) return true;
+        // Consumed and dropped: no token, so nothing renders and the
+        // `data-line` of everything below is untouched.
+        state.line = line + 1;
+        return true;
+      }
+      // Never closed, so it was a horizontal rule after all.
+      return false;
+    },
+    { alt: ["paragraph", "reference", "blockquote"] },
+  );
+}
+
 function addLineNumbers(md: MarkdownIt) {
   md.core.ruler.push("add_line_numbers", (state) => {
     for (const token of state.tokens) {
@@ -197,6 +260,7 @@ export const md = new MarkdownIt({
       dockerfile: ["docker"],
     },
   })
+  .use(frontMatter)
   .use(taskLists, { enabled: true })
   .use(footnote)
   .use(mark)
