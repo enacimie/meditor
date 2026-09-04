@@ -65,14 +65,24 @@ jobs:
           }
           id="$(find_id)"
           if [ -z "$id" ]; then
-            if [ "$PRERELEASE" = "true" ]; then
-              gh release create "$TAG" --draft --prerelease \
-                --title "meditor $TAG" --notes-file .github/release-notes.md
-            else
-              gh release create "$TAG" --draft \
-                --title "meditor $TAG" --notes-file .github/release-notes.md
-            fi
-            id="$(find_id)"
+            # Create it and read the id out of that same response.
+            #
+            # Creating the release and then looking it up again is a race the
+            # listing loses: v0.3.2's draft was created at 10:05:35.14 and was
+            # still not in the list half a second later, so the job failed on
+            # what would have been the first attempt of every release. Only the
+            # re-run passed, by adopting the draft the failed attempt had left.
+            #
+            # `-F` types its values, so `draft` and `prerelease` go over as JSON
+            # booleans rather than the strings "true"/"false", and `@path` reads
+            # the notes from the file.
+            id="$(gh api --method POST "repos/$GITHUB_REPOSITORY/releases" \
+              -f tag_name="$TAG" \
+              -f name="meditor $TAG" \
+              -F draft=true \
+              -F prerelease="$PRERELEASE" \
+              -F body=@.github/release-notes.md \
+              --jq .id)"
           fi
           if [ -z "$id" ]; then
             echo "::error::no draft release for $TAG could be created or found"
