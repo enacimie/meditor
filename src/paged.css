@@ -28,6 +28,22 @@
   text-indent: 1.6em;
 }
 
+/*
+ * A paragraph opening with a bold number, tagged in markdown.ts. It is prose
+ * to Markdown but a numbered item to the eye, and prose indentation left the
+ * first one hanging out to the left of the rest — the only one in the run with
+ * no paragraph above it to be indented from.
+ *
+ * The same geometry as `ol`: the number sits where a list marker would, and
+ * the lines under it line up with the text rather than the number. `padding`
+ * and the negative `text-indent` together are what `list-style-position:
+ * outside` does for a real list.
+ */
+.markdown-body.doc p.numbered-paragraph {
+  padding-left: 1.6em;
+  text-indent: -1.6em;
+}
+
 .markdown-body.doc h1,
 .markdown-body.doc h2,
 .markdown-body.doc h3,

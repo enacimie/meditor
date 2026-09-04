@@ -48,6 +48,49 @@ function addLineNumbers(md: MarkdownIt) {
   });
 }
 
+/*
+ * A paragraph that opens with a bold number — `**1.** Some text` — is not a
+ * list to Markdown, and cannot be: a list marker is `1.` followed by a space
+ * at the start of a line, and wrapping it in asterisks makes it emphasis
+ * instead. Every other renderer agrees, so the parse stays as it is.
+ *
+ * What it is, though, is how people hand-number paragraphs that carry other
+ * paragraphs in between — replies in a script, notes between steps — which a
+ * real list cannot hold without swallowing them. Those paragraphs then take
+ * prose indentation: the first one flush and the rest indented, so the first
+ * number hangs out to the left of its own siblings.
+ *
+ * So they are tagged here and given a list's geometry in the Document view.
+ * Only the styling changes; the HTML is still a paragraph, and the Markdown
+ * still means what it means everywhere else.
+ */
+const BOLD_ORDINAL = /^\d{1,3}[.)]$/;
+
+function markNumberedParagraphs(md: MarkdownIt) {
+  md.core.ruler.push("mark_numbered_paragraphs", (state) => {
+    for (let i = 0; i < state.tokens.length - 1; i++) {
+      const open = state.tokens[i];
+      if (open.type !== "paragraph_open") continue;
+      const children = state.tokens[i + 1].children;
+      if (!children) continue;
+      // An inline run can open with an empty text token, so the emphasis is
+      // not reliably the first child — find where the content actually starts.
+      const start = children.findIndex((c) => c.type !== "text" || c.content !== "");
+      if (start === -1 || children.length < start + 3) continue;
+      // Three digits at most, so a paragraph opening on a bold year —
+      // "**2024.** It was a difficult year" — stays ordinary prose.
+      if (
+        children[start].type === "strong_open" &&
+        children[start + 1].type === "text" &&
+        BOLD_ORDINAL.test(children[start + 1].content.trim()) &&
+        children[start + 2].type === "strong_close"
+      ) {
+        open.attrJoin("class", "numbered-paragraph");
+      }
+    }
+  });
+}
+
 export const md = new MarkdownIt({
   html: false,
   linkify: true,
@@ -104,6 +147,7 @@ export const md = new MarkdownIt({
   })
   .use(container, "warning")
   .use(container, "note")
+  .use(markNumberedParagraphs)
   .use(addLineNumbers);
 
 const highlightFence = md.renderer.rules.fence;
