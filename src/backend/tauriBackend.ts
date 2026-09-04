@@ -53,6 +53,22 @@ export const tauriBackend: Backend = {
     return invoke<string>("read_document", { handle, locale });
   },
 
+  imageStat(handle: string, relPath: string, locale: string): Promise<DocumentStat> {
+    return invoke<DocumentStat>("image_stat", { handle, relPath, locale });
+  },
+
+  async readImage(
+    handle: string,
+    relPath: string,
+    locale: string,
+  ): Promise<Uint8Array | null> {
+    // Raw bytes rather than base64: the command answers with an ArrayBuffer,
+    // and encoding a photograph into a string to cross the IPC boundary would
+    // cost a third more of everything for nothing.
+    const buffer = await invoke<ArrayBuffer>("read_image", { handle, relPath, locale });
+    return buffer && buffer.byteLength > 0 ? new Uint8Array(buffer) : null;
+  },
+
   exportPdf(
     defaultName: string,
     locale: string,

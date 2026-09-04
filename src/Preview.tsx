@@ -6,6 +6,7 @@ import {
   useDeferredValue,
   useEffect,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
   type MouseEvent,
@@ -50,6 +51,12 @@ type Props = {
   kind: DocKind;
   /** Allow tables too wide for portrait to claim a landscape page. */
   landscapeTables?: boolean;
+  /**
+   * The open document, so `![](assets/shot.png)` can be found beside it.
+   * Null for a document that has never been saved, and for every document on
+   * a platform where there is no directory to look in.
+   */
+  docHandle?: string | null;
   onReverseSync: (line: number) => void;
 };
 
@@ -80,10 +87,16 @@ interface ChildPreviewHandle {
 }
 
 const Preview = forwardRef<PreviewHandle, Props>(function Preview(
-  { value, docView, kind, landscapeTables = false, onReverseSync },
+  { value, docView, kind, landscapeTables = false, docHandle = null, onReverseSync },
   ref,
 ) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
+  // Rebuilt only when the document or the language changes, so the render
+  // effect below does not restart on every keystroke.
+  const imageSource = useMemo(
+    () => (docHandle ? { handle: docHandle, locale: lang } : undefined),
+    [docHandle, lang],
+  );
   const sourceRef = useRef<HTMLDivElement>(null);
   const webRef = useRef<HTMLDivElement>(null);
   const pagedRef = useRef<HTMLDivElement>(null);
@@ -303,7 +316,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
           return;
         }
         const docValue = splitLongFencedBlocks(deferredValue);
-        await renderContent(source, docValue, seqRef, isStale, t);
+        await renderContent(source, docValue, seqRef, isStale, t, imageSource);
         if (cancelled || myToken !== tokenRef.current) return;
         /*
          * Measuring tables against a fallback font picks the wrong fit step —
@@ -353,7 +366,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
           pendingRef.current = true;
           return;
         }
-        await renderContent(web, deferredValue, seqRef, isStale, t);
+        await renderContent(web, deferredValue, seqRef, isStale, t, imageSource);
       }
       flushPendingScroll();
     };
@@ -390,7 +403,17 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
       cancelled = true;
       if (debounceTimer) clearTimeout(debounceTimer);
     };
-  }, [deferredValue, docView, landscapeTables, retryToken, t, kind, isMarp, scrollToLineNow]);
+  }, [
+    deferredValue,
+    docView,
+    landscapeTables,
+    retryToken,
+    t,
+    kind,
+    isMarp,
+    scrollToLineNow,
+    imageSource,
+  ]);
 
   // Re-run whatever render was skipped while the pane was hidden, as soon as
   // it has a box again — leaving zen mode, switching the layout back, or the

@@ -27,6 +27,7 @@
 - **Per-tab independent state** (separate undo history and scroll position).
 - **Typing aids**: automatic bracket/quote pair completion, smart backspace, auto-continue for lists and blockquotes.
 - **Drag & drop or paste images** into the editor — they are inlined as markdown and previewed live.
+- **Images beside the document**: `![](assets/shot.png)` in a saved document shows the file next to it, including one a level up (`../shared/logo.png`), and travels inside the HTML export. Only the desktop can do this: Android hands the app one document with no folder around it, and a browser file handle has no parent either.
 - **Persistence**: open/save real files and **session restoration** (tabs and content) between launches.
 
 ### Interface

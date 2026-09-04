@@ -56,6 +56,10 @@ pub fn tf(locale: Locale, key: &str, arg: &str) -> String {
 fn t_en(key: &str) -> String {
     match key {
         "file.emptyPath" => "Empty or invalid file path",
+        "image.invalidPath" => "Invalid image path",
+        "image.notFound" => "Image not found",
+        "image.unsupportedType" => "Unsupported image type",
+        "image.tooLarge" => "Image exceeds {} MiB limit",
         "file.isDirectory" => "Path points to a directory",
         "file.noParent" => "Path has no parent folder",
         "file.noFileName" => "Path has no file name",
@@ -88,6 +92,10 @@ fn t_en(key: &str) -> String {
 fn t_es(key: &str) -> String {
     match key {
         "file.emptyPath" => "Ruta de archivo vacía o inválida",
+        "image.invalidPath" => "Ruta de imagen inválida",
+        "image.notFound" => "Imagen no encontrada",
+        "image.unsupportedType" => "Tipo de imagen no admitido",
+        "image.tooLarge" => "La imagen supera el límite de {} MiB",
         "file.isDirectory" => "La ruta apunta a un directorio",
         "file.noParent" => "La ruta no tiene carpeta padre",
         "file.noFileName" => "La ruta no tiene nombre de archivo",
@@ -120,6 +128,10 @@ fn t_es(key: &str) -> String {
 fn t_fr(key: &str) -> String {
     match key {
         "file.emptyPath" => "Chemin de fichier vide ou invalide",
+        "image.invalidPath" => "Chemin d'image invalide",
+        "image.notFound" => "Image introuvable",
+        "image.unsupportedType" => "Type d'image non pris en charge",
+        "image.tooLarge" => "L'image dépasse la limite de {} Mio",
         "file.isDirectory" => "Le chemin pointe vers un dossier",
         "file.noParent" => "Le chemin n'a pas de dossier parent",
         "file.noFileName" => "Le chemin n'a pas de nom de fichier",
@@ -152,6 +164,10 @@ fn t_fr(key: &str) -> String {
 fn t_ps(key: &str) -> String {
     match key {
         "file.emptyPath" => "د فایل خالي یا ناسمه لار",
+        "image.invalidPath" => "د انځور ناسمه لار",
+        "image.notFound" => "انځور و نه موندل شو",
+        "image.unsupportedType" => "د انځور ناملاتړ شوی ډول",
+        "image.tooLarge" => "انځور د {} MiB له بریده اوړي",
         "file.isDirectory" => "لار یوې پوښې ته اشاره کوي",
         "file.noParent" => "لار اصلي پوښه نلري",
         "file.noFileName" => "لار د فایل نوم نلري",
@@ -184,6 +200,10 @@ fn t_ps(key: &str) -> String {
 fn t_sd(key: &str) -> String {
     match key {
         "file.emptyPath" => "خالي يا غلط فائل رستو",
+        "image.invalidPath" => "غلط تصوير جو رستو",
+        "image.notFound" => "تصوير نه مليو",
+        "image.unsupportedType" => "تصوير جو قسم قبول ناهي",
+        "image.tooLarge" => "تصوير {} MiB جي حد کان وڌيڪ آهي",
         "file.isDirectory" => "رستو هڪ ڊائريڪٽري ڏانهن اشارو ڪري ٿو",
         "file.noParent" => "رستو ۾ اصلي فولڊر ناهي",
         "file.noFileName" => "رستو ۾ فائل جو نالو ناهي",

@@ -326,6 +326,22 @@ export const webBackend: Backend = {
     return (await target.getFile()).text();
   },
 
+  /*
+   * Relative images cannot resolve in the browser, and saying so is the whole
+   * implementation. The File System Access API hands over a handle to one
+   * file and nothing around it: there is no parent directory to be relative
+   * to, and no way to ask for one without putting a second picker in front of
+   * the user for every image. A document with `![](assets/shot.png)` shows a
+   * broken image here, exactly as it does when opened from a plain web page.
+   */
+  async imageStat() {
+    return null;
+  },
+
+  async readImage() {
+    return null;
+  },
+
   async exportPdf(_defaultName, _locale, _paged, _pageWidthIn, _pageHeightIn) {
     // The browser's own print dialog offers "Save as PDF"; the print
     // stylesheet scopes the output to the preview pane. A Marp deck supplies

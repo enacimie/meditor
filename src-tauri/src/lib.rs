@@ -646,6 +646,166 @@ fn location_stat(app: &tauri::AppHandle, location: &Location) -> Option<Document
     }
 }
 
+/// The most an image may weigh before it is refused.
+///
+/// Generous next to the 10 MiB the editor accepts on paste, because a
+/// document may point at a photograph nobody put there through meditor.
+const MAX_IMAGE_BYTES: u64 = 32 * 1024 * 1024;
+
+/// What may be served to an `<img>`, by extension.
+///
+/// An allow-list rather than a deny-list, and the reason this command cannot
+/// be used to read the user's documents: only these are ever handed back, and
+/// only ever into an image element.
+const IMAGE_EXTENSIONS: [&str; 9] = [
+    "png", "jpg", "jpeg", "gif", "webp", "bmp", "svg", "avif", "ico",
+];
+
+fn has_image_extension(path: &Path) -> bool {
+    path.extension()
+        .and_then(|extension| extension.to_str())
+        .map(|extension| {
+            let lower = extension.to_ascii_lowercase();
+            IMAGE_EXTENSIONS.contains(&lower.as_str())
+        })
+        .unwrap_or(false)
+}
+
+/// The file a document-relative image link points at.
+///
+/// `![](assets/shot.png)` in a saved document means "next to this file", the
+/// same as it does in every other Markdown tool, and the frontend cannot
+/// resolve that itself: a webview has no filesystem, and the app deliberately
+/// grants it none.
+///
+/// So the resolving happens here, and the argument that arrives from the
+/// frontend is a *relative* path — never an absolute one, and never a URL.
+/// The document it is relative to comes from the handle registry, so the
+/// frontend cannot name a base directory either.
+///
+/// Going up with `..` is allowed on purpose: `../shared/logo.png` is how
+/// people lay out a folder of documents, and refusing it would make meditor
+/// the only editor that cannot open such a file. What keeps that safe is not
+/// the shape of the path but what may come back through it — an image, by
+/// extension, below the size ceiling, and only ever into an `<img>`.
+fn resolve_image_path(locale: Locale, document: &Path, rel_path: &str) -> Result<PathBuf, String> {
+    if rel_path.is_empty() || rel_path.contains('\0') {
+        return Err(t(locale, "image.invalidPath"));
+    }
+    // A URL is not a relative path, whatever it looks like. Checked before
+    // anything else so `file://…` and `https://…` cannot arrive as one.
+    if rel_path.contains("://") {
+        return Err(t(locale, "image.invalidPath"));
+    }
+    // Absolute in any notation, including the ones this platform does not use
+    // itself: a Linux build must still refuse `C:\` and `\server\share`.
+    let bytes = rel_path.as_bytes();
+    let windows_drive =
+        bytes.len() >= 2 && bytes[1] == b':' && (bytes[0] as char).is_ascii_alphabetic();
+    if rel_path.starts_with('/')
+        || rel_path.starts_with('\\')
+        || windows_drive
+        || Path::new(rel_path).is_absolute()
+    {
+        return Err(t(locale, "image.invalidPath"));
+    }
+
+    let parent = document
+        .parent()
+        .ok_or_else(|| t(locale, "image.invalidPath"))?;
+    let joined = parent.join(rel_path);
+    // Canonicalising is what turns `a/../b` into `b` and follows any links,
+    // so everything below is asked of the file that would actually be read.
+    let resolved = joined
+        .canonicalize()
+        .map_err(|_| t(locale, "image.notFound"))?;
+
+    let metadata = std::fs::metadata(&resolved).map_err(|_| t(locale, "image.notFound"))?;
+    if !metadata.is_file() {
+        return Err(t(locale, "image.notFound"));
+    }
+    if !has_image_extension(&resolved) {
+        return Err(t(locale, "image.unsupportedType"));
+    }
+    if metadata.len() > MAX_IMAGE_BYTES {
+        return Err(tf(
+            locale,
+            "image.tooLarge",
+            &(MAX_IMAGE_BYTES / (1024 * 1024)).to_string(),
+        ));
+    }
+    Ok(resolved)
+}
+
+/// Look a document up by handle, as every command that touches one does.
+fn document_location(
+    registry: &tauri::State<'_, DocumentRegistry>,
+    locale: Locale,
+    handle: &str,
+) -> Result<Location, String> {
+    registry
+        .0
+        .lock()
+        .map_err(|_| t(locale, "file.registryLock"))?
+        .get(handle)
+        .cloned()
+        .ok_or_else(|| t(locale, "file.documentUnavailable"))
+}
+
+/// Fingerprint of an image beside a document, or `null` when there is none to
+/// read — which includes every case where relative images cannot work at all.
+///
+/// The preview asks for this on each render and only re-reads the bytes when
+/// the answer changes, so editing a document does not re-read its images on
+/// every keystroke, and editing an image in another program still shows up.
+#[tauri::command]
+fn image_stat(
+    registry: tauri::State<'_, DocumentRegistry>,
+    handle: String,
+    rel_path: String,
+    locale: Option<String>,
+) -> Result<Option<DocumentStat>, String> {
+    let loc = parse_locale(locale);
+    let location = document_location(&registry, loc, &handle)?;
+    // A content URI has no parent directory to be relative to — the Storage
+    // Access Framework hands over one document and nothing around it — so on
+    // Android there is nothing to resolve and nothing to report.
+    let Some(document) = as_path(&location) else {
+        return Ok(None);
+    };
+    let Ok(resolved) = resolve_image_path(loc, document, &rel_path) else {
+        return Ok(None);
+    };
+    Ok(std::fs::metadata(&resolved).ok().map(|m| metadata_stat(&m)))
+}
+
+/// The bytes of an image beside a document.
+///
+/// Returned raw rather than base64: the preview turns them into a blob URL,
+/// and encoding a photograph into a string to cross the IPC boundary would
+/// cost a third more of everything for nothing.
+#[tauri::command]
+fn read_image(
+    registry: tauri::State<'_, DocumentRegistry>,
+    handle: String,
+    rel_path: String,
+    locale: Option<String>,
+) -> Result<tauri::ipc::Response, String> {
+    let loc = parse_locale(locale);
+    let location = document_location(&registry, loc, &handle)?;
+    let Some(document) = as_path(&location) else {
+        return Ok(tauri::ipc::Response::new(Vec::new()));
+    };
+    let Ok(resolved) = resolve_image_path(loc, document, &rel_path) else {
+        // A missing or unreadable image is not an error the user needs told
+        // about: the document simply shows a broken image where it says one
+        // should be, exactly as it would in any other renderer.
+        return Ok(tauri::ipc::Response::new(Vec::new()));
+    };
+    let bytes = std::fs::read(&resolved).map_err(|e| e.to_string())?;
+    Ok(tauri::ipc::Response::new(bytes))
+}
+
 /// Fingerprint of one open document, or `null` when it cannot be watched
 /// (deleted, provider gone). The frontend treats `null` as "skip": deletion
 /// surfaces on the next save, where it can be explained.
@@ -1498,6 +1658,8 @@ pub fn run() {
             save_as,
             save_document,
             document_stat,
+            image_stat,
+            read_image,
             read_document,
             load_session,
             save_session,
@@ -1619,6 +1781,142 @@ mod tests {
             kind_from_path(Path::new("paper.md")),
             DocumentKind::Markdown
         );
+    }
+
+    /// A tree with a document, an image beside it and one a level up.
+    ///
+    /// Returns the document's path; everything hangs off its parent.
+    fn image_fixture(name: &str) -> (PathBuf, PathBuf) {
+        let root =
+            std::env::temp_dir().join(format!("meditor-img-{}-{}", name, std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        let notes = root.join("notes");
+        std::fs::create_dir_all(notes.join("assets")).unwrap();
+        std::fs::create_dir_all(root.join("shared")).unwrap();
+        std::fs::write(notes.join("document.md"), "# Doc").unwrap();
+        std::fs::write(notes.join("assets").join("shot.png"), b"\x89PNG\r\n\x1a\n").unwrap();
+        std::fs::write(root.join("shared").join("logo.png"), b"\x89PNG\r\n\x1a\n").unwrap();
+        std::fs::write(notes.join("secret.txt"), "not an image").unwrap();
+        (notes.join("document.md"), root)
+    }
+
+    #[test]
+    fn resolves_an_image_beside_the_document() {
+        let (document, root) = image_fixture("beside");
+        let resolved = resolve_image_path(Locale::En, &document, "assets/shot.png").unwrap();
+        assert!(resolved.ends_with("shot.png"));
+        assert!(resolved.is_file());
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    /// `../shared/logo.png` is how a folder of documents shares its pictures,
+    /// and refusing it would make meditor the only editor that cannot open
+    /// such a file. What keeps it safe is what may come back — an image, by
+    /// extension, under the ceiling — not the shape of the path.
+    #[test]
+    fn resolves_an_image_a_level_up() {
+        let (document, root) = image_fixture("levelup");
+        let resolved = resolve_image_path(Locale::En, &document, "../shared/logo.png").unwrap();
+        assert!(resolved.ends_with("logo.png"));
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn refuses_anything_that_is_not_a_relative_path() {
+        let (document, root) = image_fixture("absolute");
+        for rel in [
+            "",
+            "/etc/passwd",
+            r"\\server\share\x.png",
+            r"C:\Windows\x.png",
+            "file:///etc/passwd",
+            "https://example.com/x.png",
+        ] {
+            assert!(
+                resolve_image_path(Locale::En, &document, rel).is_err(),
+                "should have refused {rel:?}",
+            );
+        }
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    /// Refused because it is absolute, not because it happens not to exist.
+    ///
+    /// The list above proves less than it looks: `join` on an absolute path
+    /// throws the base away, so those paths are also refused by the file
+    /// simply not being there. This one points at a real image outside the
+    /// document's tree, which resolves perfectly well the moment the check
+    /// on the shape of the path is gone.
+    #[test]
+    fn refuses_an_absolute_path_that_would_otherwise_resolve() {
+        let (document, root) = image_fixture("absolute-real");
+        let outside = root.join("outside.png");
+        std::fs::write(&outside, b"\x89PNG\r\n\x1a\n").unwrap();
+        let absolute = outside.canonicalize().unwrap();
+        let as_text = absolute.to_string_lossy().into_owned();
+
+        // It is genuinely there, and genuinely an image.
+        assert!(absolute.is_file());
+        assert!(has_image_extension(&absolute));
+
+        assert!(
+            resolve_image_path(Locale::En, &document, &as_text).is_err(),
+            "an absolute path must be refused even when it points at a real image",
+        );
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    /// The allow-list is what stops this command being a way to read the
+    /// user's documents: only an image ever comes back through it.
+    #[test]
+    fn refuses_a_file_that_is_not_an_image() {
+        let (document, root) = image_fixture("notimage");
+        assert!(resolve_image_path(Locale::En, &document, "secret.txt").is_err());
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn refuses_an_image_that_is_not_there() {
+        let (document, root) = image_fixture("missing");
+        assert!(resolve_image_path(Locale::En, &document, "assets/nope.png").is_err());
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn refuses_a_directory_named_like_an_image() {
+        let (document, root) = image_fixture("directory");
+        std::fs::create_dir_all(document.parent().unwrap().join("folder.png")).unwrap();
+        assert!(resolve_image_path(Locale::En, &document, "folder.png").is_err());
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    /// The extension is read from the canonical path, so a link that reaches
+    /// a non-image through a symlink with an image's name is still refused.
+    #[cfg(unix)]
+    #[test]
+    fn refuses_a_symlink_that_lands_on_a_non_image() {
+        let (document, root) = image_fixture("symlink");
+        let link = document.parent().unwrap().join("innocent.png");
+        std::os::unix::fs::symlink(document.parent().unwrap().join("secret.txt"), &link).unwrap();
+        assert!(resolve_image_path(Locale::En, &document, "innocent.png").is_err());
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn refuses_an_image_over_the_ceiling() {
+        let (document, root) = image_fixture("toobig");
+        let big = document.parent().unwrap().join("huge.png");
+        std::fs::write(&big, vec![0u8; (MAX_IMAGE_BYTES + 1) as usize]).unwrap();
+        assert!(resolve_image_path(Locale::En, &document, "huge.png").is_err());
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn accepts_an_extension_in_any_case() {
+        let (document, root) = image_fixture("case");
+        std::fs::write(document.parent().unwrap().join("Shot.PNG"), b"\x89PNG").unwrap();
+        assert!(resolve_image_path(Locale::En, &document, "Shot.PNG").is_ok());
+        let _ = std::fs::remove_dir_all(root);
     }
 
     #[test]
