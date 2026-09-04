@@ -40,20 +40,44 @@ export const TAURI_SHIM = `(() => {
   /** Command names in call order (for ordering assertions). */
   window.__meditorInvokeOrder = () => invokes.map((i) => i.cmd);
 
+  // Anything a spec wants different from the defaults below. Set by an init
+  // script registered BEFORE this one, so it is already in place when the
+  // shim builds its canned session. Absent for every spec that does not care.
+  const CONFIG = window.__meditorShimConfig ?? {};
+
   const SESSION = {
     docs: [
       {
         id: "e2e-doc",
         name: "E2E Doc",
-        path: null,
-        content: "# E2E session doc\\n\\nRestored by the shim.",
+        path: CONFIG.docPath ?? null,
+        content: CONFIG.docContent ?? "# E2E session doc\\n\\nRestored by the shim.",
         dirty: false,
-        handle: null,
+        handle: CONFIG.docHandle ?? null,
       },
     ],
     activeId: "e2e-doc",
     split: 50,
   };
+
+  /**
+   * Images the fake document has beside it: { "assets/x.png": "<base64>" }.
+   *
+   * The two image commands answer from this the way Rust answers from the
+   * filesystem — a fingerprint for one that is there, nothing for one that is
+   * not, and the bytes as an ArrayBuffer, which is what a Tauri command
+   * returning raw bytes hands back.
+   */
+  const IMAGES = CONFIG.images ?? {};
+
+  function imageBytes(relPath) {
+    const base64 = IMAGES[relPath];
+    if (!base64) return null;
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  }
 
   function handleInvoke(cmd, args) {
     switch (cmd) {
@@ -66,6 +90,14 @@ export const TAURI_SHIM = `(() => {
       // where every menu entry is offered.
       case "platform":
         return "linux";
+      case "image_stat": {
+        const bytes = imageBytes(args?.relPath);
+        return bytes ? { modifiedMs: 1700000000000, size: bytes.length } : null;
+      }
+      case "read_image": {
+        const bytes = imageBytes(args?.relPath);
+        return bytes ? bytes.buffer : new ArrayBuffer(0);
+      }
       case "save_session":
       case "save_document":
       case "save_as":

@@ -160,6 +160,13 @@ save goes through "save as". Fixing that properly needs `ACTION_OPEN_DOCUMENT`
 and `takePersistableUriPermission`, which is a change to the dialog plugin
 upstream rather than to this app.
 
+**A relative image cannot be found.** `![](assets/shot.png)` means "the file
+beside this document", and beside is exactly what the framework does not give:
+it hands over one document, with no directory around it to look in. Such an
+image shows as broken on Android and resolves normally on a desktop. Images
+pasted into the editor are unaffected — they are carried inside the document
+itself.
+
 ## PDF export
 
 Split, because the two routes are not the same thing.

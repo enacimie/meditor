@@ -1,5 +1,6 @@
 import type { TranslationFn } from "./i18n/translations";
 import { sanitizeSvg } from "./sanitizeSvg";
+import { resolveRelativeImages, type ImageSource } from "./documentImages";
 
 /**
  * Fenced-code-block pattern: ```lang\n...\n```
@@ -317,10 +318,19 @@ export async function renderContent(
   seqRef: React.MutableRefObject<number>,
   isStale: () => boolean,
   t: TranslationFn,
+  images?: ImageSource,
 ): Promise<void> {
   const renderMarkdown = await getMarkdownRenderer();
   if (isStale()) return;
   el.innerHTML = renderMarkdown(value);
+
+  // Awaited here, before this function returns, because everything that
+  // measures this container runs after it: paged.js decides where a page ends
+  // from the height of what is on it, and an image whose bytes have not been
+  // decoded yet is zero high. `resolveRelativeImages` waits for the decode
+  // for the same reason.
+  await resolveRelativeImages(el, images, isStale);
+  if (isStale()) return;
 
   await renderMermaidBlocks(el, seqRef, isStale, t);
 }

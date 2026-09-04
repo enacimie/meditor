@@ -1096,6 +1096,7 @@ export default function App() {
             lang,
             rtl: isRtl(lang),
             t,
+            docHandle: active.handle ?? null,
           });
       const saved = await backend.writeHtmlFile(html, `${base}.html`, lang);
       // Cancelling the save dialog is not a failure, but it is not a success
@@ -1684,6 +1685,7 @@ export default function App() {
               docView={docView}
               kind={active?.kind ?? "markdown"}
               landscapeTables={editorPrefs.landscapeTables}
+              docHandle={active?.handle ?? null}
               onReverseSync={handleReverseSync}
             />
           </div>

@@ -48,6 +48,16 @@ export type Backend = {
   ): Promise<Doc | null>;
   documentStat(handle: string, locale: string): Promise<DocumentStat>;
   readDocument(handle: string, locale: string): Promise<string>;
+  /**
+   * Fingerprint of an image beside a document, or null when there is none to
+   * read. Null is also the answer wherever relative images cannot work at all
+   * — an Android content URI has no directory around it, and a web file
+   * handle has no parent — so a caller never has to ask which platform it is
+   * on.
+   */
+  imageStat(handle: string, relPath: string, locale: string): Promise<DocumentStat>;
+  /** The bytes of an image beside a document; null when there are none. */
+  readImage(handle: string, relPath: string, locale: string): Promise<Uint8Array | null>;
   exportPdf(
     defaultName: string,
     locale: string,

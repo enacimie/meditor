@@ -222,11 +222,35 @@ export async function katexCssIfNeeded(bodyHtml: string): Promise<string[]> {
  */
 export async function exportMarkdownToHtml(
   markdown: string,
-  { fileName, lang, rtl, t }: { fileName: string; lang: string; rtl: boolean; t: TranslationFn },
+  {
+    fileName,
+    lang,
+    rtl,
+    t,
+    docHandle,
+  }: {
+    fileName: string;
+    lang: string;
+    rtl: boolean;
+    t: TranslationFn;
+    /** The open document, so images beside it travel inside the export. */
+    docHandle?: string | null;
+  },
 ): Promise<string> {
   const host = document.createElement("div");
   const seqRef = { current: 0 };
-  await renderContent(host, markdown, seqRef, () => false, t);
+  // `data` rather than `blob`: a blob URL lives only in the session that made
+  // it, and this file has to open on another machine with no network. An
+  // image beside the document therefore goes in whole, as the Mermaid
+  // diagrams and the KaTeX fonts already do.
+  await renderContent(
+    host,
+    markdown,
+    seqRef,
+    () => false,
+    t,
+    docHandle ? { handle: docHandle, locale: lang, format: "data" } : undefined,
+  );
   const bodyHtml = host.innerHTML;
 
   return buildStandaloneHtml({
