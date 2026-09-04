@@ -103,6 +103,9 @@ describe("translations", () => {
     "menu.present",
     "present.aria",
     "present.exit",
+    // Image paste notices; en/es for now like the strings above.
+    "image.tooLarge",
+    "image.insertFailed",
   ]);
 
   it("every English key is defined in every language", () => {

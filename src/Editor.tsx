@@ -25,7 +25,11 @@ import {
   buildMarkdownPairKeymap,
   buildSmartBackspaceKeymap,
 } from "./editorKeymaps";
-import { useImagePaste } from "./hooks/useImagePaste";
+import {
+  useImagePaste,
+  imagePlaceholderField,
+  type ImagePasteError,
+} from "./hooks/useImagePaste";
 import {
   fontStackFor,
   DEFAULT_EDITOR_FONT_FAMILY,
@@ -181,6 +185,8 @@ type Props = {
   onCursorLineChange?: (line: number) => void;
   /** Document language ("markdown" or "typst"). */
   kind: DocKind;
+  /** Told when a pasted or dropped image could not be inserted. */
+  onImageError?: (error: ImagePasteError) => void;
 };
 
 const Editor = forwardRef<EditorHandle, Props>(function Editor(
@@ -197,6 +203,7 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
     zenPlaceholder,
     onCursorLineChange,
     kind,
+    onImageError,
   },
   ref,
 ) {
@@ -283,7 +290,7 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
 
   // Image drag-and-drop + clipboard paste
   const { dragOver, busy, handleDragOver, handleDragEnter, handleDragLeave, handleDrop, handlePaste } =
-    useImagePaste({ viewRef });
+    useImagePaste({ viewRef, onError: onImageError });
 
   useLayoutEffect(() => {
     onChangeRef.current = onChange;
@@ -367,6 +374,10 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
       // `*|*`; this one claims only MARKDOWN_PAIRS, so deleteBracketPair still
       // gets `(|)` and deleteCharBackward still gets ordinary text.
       Prec.high(buildSmartBackspaceKeymap()),
+      // Tracks where each in-flight pasted image is going to land. Part of the
+      // shared extension list, so a state created for another tab carries it
+      // too.
+      imagePlaceholderField,
       wrapCompartment.current.of(initialWrap.current ? EditorView.lineWrapping : []),
       placeholderCompartment.current.of(
         initialZenMode.current && initialZenPlaceholder.current ? placeholder(initialZenPlaceholder.current) : [],
