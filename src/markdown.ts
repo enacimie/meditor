@@ -64,6 +64,72 @@ function addLineNumbers(md: MarkdownIt) {
  * Only the styling changes; the HTML is still a paragraph, and the Markdown
  * still means what it means everywhere else.
  */
+/*
+ * Ids on headings, so a link to one inside the document arrives somewhere.
+ *
+ * `[the reading view](#the-reading-view)` is ordinary Markdown and works
+ * everywhere it is published — GitHub, GitLab, a static site — and until now
+ * it did nothing here: no heading carried an id, so the click found no target
+ * and quietly did nothing. The Outline could already jump; a link written into
+ * the prose could not.
+ *
+ * Written here rather than pulled in, for the same reason the numbered
+ * paragraphs above are: it is thirty lines, the rules have to be ours anyway,
+ * and the file is already the one place this pipeline is described.
+ *
+ * The slug follows GitHub's, which is the one people's existing documents are
+ * written against: lower case, punctuation dropped, spaces to hyphens, and a
+ * numeric suffix when a title repeats. Letters outside ASCII are kept rather
+ * than stripped — a document written in Spanish, Greek or Arabic would
+ * otherwise have every heading collapse to the same empty slug, and #sección
+ * is what GitHub itself produces.
+ */
+/** The ids `markdown-it-footnote` generates for notes and their back-links. */
+const FOOTNOTE_ID = /^fn(ref)?\d+$/;
+
+function slugify(text: string): string {
+  return (
+    text
+      .trim()
+      .toLowerCase()
+      // Punctuation and symbols go; letters, numbers, marks and the two
+      // characters GitHub keeps stay.
+      .replace(/[^\p{L}\p{N}\p{M}_ -]/gu, "")
+      .replace(/ +/g, "-")
+  );
+}
+
+function headingAnchors(md: MarkdownIt) {
+  md.core.ruler.push("heading_anchors", (state) => {
+    const used = new Map<string, number>();
+    for (let i = 0; i < state.tokens.length; i++) {
+      const open = state.tokens[i];
+      if (open.type !== "heading_open") continue;
+      const inline = state.tokens[i + 1];
+      if (!inline || inline.type !== "inline") continue;
+      // `children` rather than `content`, so the id comes from the words a
+      // reader sees: emphasis markers, link syntax and inline code fences are
+      // not part of the title as it is read.
+      const text = (inline.children ?? [])
+        .filter((child) => child.type === "text" || child.type === "code_inline")
+        .map((child) => child.content)
+        .join("");
+      const base = slugify(text);
+      if (!base) continue;
+      const seen = used.get(base) ?? 0;
+      used.set(base, seen + 1);
+      // A repeated title gets a numeric suffix, as it does on GitHub, so the
+      // second "Notes" is `#notes-1` and both are reachable.
+      let id = seen === 0 ? base : `${base}-${seen}`;
+      // The footnote plugin owns `fn1` and `fnref1`. A heading that slugs to
+      // one of those would put a second element under the same id and take
+      // over where a footnote's back-link lands, so it steps aside instead.
+      if (FOOTNOTE_ID.test(id)) id = `${id}-heading`;
+      if (!open.attrGet("id")) open.attrSet("id", id);
+    }
+  });
+}
+
 const BOLD_ORDINAL = /^\d{1,3}[.)]$/;
 
 function markNumberedParagraphs(md: MarkdownIt) {
@@ -148,6 +214,7 @@ export const md = new MarkdownIt({
   .use(container, "warning")
   .use(container, "note")
   .use(markNumberedParagraphs)
+  .use(headingAnchors)
   .use(addLineNumbers);
 
 const highlightFence = md.renderer.rules.fence;

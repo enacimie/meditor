@@ -248,6 +248,35 @@ function getMermaidTools(): Promise<typeof import("./mermaidPool")> {
 }
 
 /** Release optional Mermaid resources without starting a pending import. */
+/**
+ * The element an in-document link points at, or null.
+ *
+ * `[texto](#sección)` is written percent-encoded by markdown-it, so the href
+ * arrives as `#secci%C3%B3n`. Handing that to `querySelector` throws — `%` is
+ * not valid in a selector — and the throw looked exactly like a link with no
+ * target, which is why headings in any language quietly went nowhere even
+ * once they had ids.
+ *
+ * So the fragment is decoded first and matched as an id, with the id escaped
+ * on the way back into a selector: `#1. Introducción` is a perfectly good id
+ * and a nonsense selector.
+ */
+export function findAnchorTarget(
+  container: Element | null | undefined,
+  href: string,
+): Element | null {
+  if (!container || !href.startsWith("#")) return null;
+  let id: string;
+  try {
+    id = decodeURIComponent(href.slice(1));
+  } catch {
+    // A malformed escape sequence — "#%zz". Nothing to look for.
+    return null;
+  }
+  if (!id) return null;
+  return container.querySelector(`[id="${CSS.escape(id)}"]`);
+}
+
 export function clearMermaidResources(): void {
   if (!mermaidModule) return;
   mermaidModule.clearMermaidCache();
