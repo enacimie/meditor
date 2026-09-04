@@ -186,5 +186,82 @@ describe("identificadores en los títulos", () => {
     // El id se añade sobre el mismo token que lleva `data-line`; perderlo
     // rompería el salto entre la vista previa y el editor.
     expect(renderMarkdown("# T\n\n## Otro\n")).toContain('data-line="2"');
+
+  });
+});
+
+describe("front-matter YAML", () => {
+  /*
+   * Un bloque de `clave: valor` entre `---` al principio del fichero es cómo
+   * Hugo, Jekyll, Pandoc, Obsidian y Zettlr guardan el título, el autor y la
+   * fecha de un documento. Markdown no sabe qué es: el `---` de arriba se
+   * lee como línea horizontal y lo de debajo como un título subrayado, así
+   * que el bloque entero acababa en la vista previa —y en el PDF— como una
+   * raya seguida del YAML en crudo y en cuerpo de encabezado.
+   */
+
+  it("no renderiza el bloque de metadatos", () => {
+    const html = renderMarkdown("---\ntitle: Mi documento\nauthor: Alguien\n---\n\n# Encabezado\n");
+    expect(html).not.toContain("title:");
+    expect(html).not.toContain("author:");
+    expect(html).not.toContain("<hr>");
+    expect(html).toContain("<h1");
+  });
+
+  it("acepta el cierre con puntos suspensivos de YAML", () => {
+    expect(renderMarkdown("---\ntitle: X\n...\n\n# H\n")).not.toContain("title:");
+  });
+
+  it("acepta un comentario antes de la primera clave", () => {
+    expect(renderMarkdown("---\n# nota\ntitle: X\n---\n\n# H\n")).not.toContain("title:");
+  });
+
+  it("conserva los números de línea de lo que viene después", () => {
+    // Si se perdieran, el salto entre la vista previa y el editor llevaría a
+    // la línea equivocada en todo documento con metadatos.
+    const html = renderMarkdown("---\ntitle: X\n---\n\n# Encabezado\n\nTexto.\n");
+    expect(html).toContain('data-line="4"');
+    expect(html).toContain('data-line="6"');
+  });
+
+  it("no se traga el texto entre dos rayas decorativas", () => {
+    // El caso que costaría caro: un documento que abre con una línea
+    // horizontal, lleva un párrafo y vuelve a rayar. Las dos rayas son
+    // idénticas a una valla de metadatos, y sin la comprobación de que lo
+    // de dentro parece YAML el párrafo desaparecía de la vista.
+    const html = renderMarkdown("---\n\nTexto importante\n\n---\n\n# H\n");
+    expect(html).toContain("Texto importante");
+    expect(html.match(/<hr>/g)).toHaveLength(2);
+  });
+
+  it("deja en paz una valla que no llega a cerrarse", () => {
+    const html = renderMarkdown("---\ntitle: X\n\n# H\n");
+    expect(html).toContain("title:");
+  });
+
+  it("deja en paz una raya que no abre el documento", () => {
+    const html = renderMarkdown("Párrafo\n\n---\n\n# H\n");
+    expect(html).toContain("<hr>");
+    expect(html).toContain("Párrafo");
+  });
+
+  it("no confunde con metadatos una valla a mitad del documento", () => {
+    // Los metadatos van arriba, por definición. Un par de rayas más abajo con
+    // algo que lleve dos puntos dentro —una nota, una cita atribuida— tiene la
+    // forma exacta de una valla, y sin exigir que abra el fichero ese texto
+    // se perdería.
+    const html = renderMarkdown("Intro\n\n---\nNota: esto importa\n---\n\n# H\n");
+    expect(html).toContain("Nota: esto importa");
+  });
+
+  it("deja en paz una valla sangrada", () => {
+    // Sangrada es un bloque de código, no metadatos.
+    expect(renderMarkdown("  ---\ntitle: X\n---\n\n# H\n")).toContain("title:");
+  });
+
+  it("sigue ocultando el front-matter de un documento Marp", () => {
+    // `marp: true` se lee aparte, sobre la fuente, y no depende de esto —
+    // pero el bloque tampoco ha de verse cuando se renderiza como Markdown.
+    expect(renderMarkdown("---\nmarp: true\n---\n\n# H\n")).not.toContain("marp:");
   });
 });
