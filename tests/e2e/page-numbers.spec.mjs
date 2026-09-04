@@ -37,8 +37,27 @@ try {
   await page.waitFor("!!document.querySelector('.cm-content')", { timeout: 20000 });
   await page.waitFor("document.querySelectorAll('.pagedjs_page').length > 1", {
     timeout: 40000,
+    interval: 500,
     message: "the Document view never produced a second page to number",
   });
+  // And then wait for it to stop growing. paged.js lays the pages out one at a
+  // time, so a count read the moment the second page appears is not the count
+  // the printer will see: on CI this spec first read four pages, printed
+  // seven, and reported the difference as a defect in the margin boxes. The
+  // idiom is print.spec's.
+  await page.waitFor(
+    `(() => {
+      const n = document.querySelectorAll('.pagedjs_page').length;
+      const previous = window.__pageNumbersPages ?? -1;
+      window.__pageNumbersPages = n;
+      return n > 1 && n === previous;
+    })()`,
+    {
+      timeout: 40000,
+      interval: 500,
+      message: "pagination should settle before it is counted",
+    },
+  );
 
   const pages = await page.evaluate(`(() => {
     const pages = [...document.querySelectorAll('.pagedjs_page')];
@@ -138,6 +157,12 @@ try {
   // ── Printing: same number of sheets, still A4 ────────────────────────
   // The boxes live in margins the pages already had, so they must not cost a
   // single extra sheet. Comparing the two counts is what would catch it.
+  // Counted again here rather than reused from above, so the comparison is
+  // between the pages that exist at this moment and the sheets printed from
+  // them, with no window in between for another page to arrive.
+  const paginated = await page.evaluate(
+    "document.querySelectorAll('.pagedjs_page').length",
+  );
   const pdfRes = await page.send("Page.printToPDF", {
     preferCSSPageSize: true,
     printBackground: true,
@@ -145,8 +170,8 @@ try {
   const pdf = Buffer.from(pdfRes.result.data, "base64").toString("latin1");
   const printed = (pdf.match(/\/Type\s*\/Page(?!s)/g) || []).length;
   assert(
-    printed === pages.length,
-    `the PDF should have one sheet per paginated page (${pages.length}), got ${printed}`,
+    printed === paginated,
+    `the PDF should have one sheet per paginated page (${paginated}), got ${printed}`,
   );
   const boxes = [...pdf.matchAll(/\/MediaBox\s*\[\s*[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)\s*\]/g)]
     .map((m) => [Number(m[1]), Number(m[2])]);
