@@ -4,7 +4,10 @@ import { renderMarkdown } from "./markdown";
 describe("renderMarkdown", () => {
   it("renderiza Markdown extendido y líneas de bloques de código", () => {
     const html = renderMarkdown("# Título\n\n```ts\nconst x = 1;\n```");
-    expect(html).toContain("<h1 data-line=\"0\">");
+    // El título lleva además su identificador, así que la comprobación es
+    // sobre el atributo y no sobre la etiqueta entera: lo que importa aquí es
+    // que el número de línea llega, no en qué orden se escriben los atributos.
+    expect(html).toMatch(/<h1[^>]*\sdata-line="0"/);
     expect(html).toContain("<pre data-line=\"2\">");
     expect(html).toContain("const");
   });
@@ -102,5 +105,86 @@ describe("párrafos que abren con un número en negrita", () => {
     // La clase se añade sobre el mismo token que lleva `data-line`; perderlo
     // rompería el salto entre la vista previa y el editor.
     expect(renderMarkdown("# T\n\n**1.** Uno\n")).toContain('data-line="2"');
+  });
+});
+
+describe("identificadores en los títulos", () => {
+  /*
+   * `[texto](#un-titulo)` es Markdown corriente y funciona allá donde el
+   * documento se publique, pero aquí no llevaba a ninguna parte: ningún
+   * título tenía id, así que el enlace no encontraba destino y el clic no
+   * hacía nada. El esquema lateral ya sabía saltar; un enlace escrito dentro
+   * de la prosa, no.
+   */
+
+  /** El valor del atributo `id` de cada título del HTML, en orden. */
+  const ids = (markdown: string): string[] =>
+    [...renderMarkdown(markdown).matchAll(/<h[1-6][^>]*\sid="([^"]*)"/g)].map((m) => m[1]);
+
+  it("da a cada título un identificador a partir de su texto", () => {
+    expect(ids("# Primer título\n\n## Segundo\n")).toEqual([
+      "primer-título",
+      "segundo",
+    ]);
+  });
+
+  it("conserva las letras que no son ASCII", () => {
+    // Sin esto, un documento en español, griego o árabe tendría todos sus
+    // títulos colapsados al mismo identificador vacío. GitHub también las
+    // conserva, y es contra GitHub contra lo que la gente ya ha escrito sus
+    // enlaces.
+    expect(ids("## Sección\n")).toEqual(["sección"]);
+    expect(ids("## Ελλάδα\n")).toEqual(["ελλάδα"]);
+  });
+
+  it("quita la puntuación y une las palabras con guiones", () => {
+    expect(ids("## ¿Qué es esto, exactamente?\n")).toEqual(["qué-es-esto-exactamente"]);
+  });
+
+  it("numera los títulos que se repiten para que ambos sean alcanzables", () => {
+    expect(ids("## Notas\n\n## Notas\n\n## Notas\n")).toEqual([
+      "notas",
+      "notas-1",
+      "notas-2",
+    ]);
+  });
+
+  it("toma el texto que se lee, no los signos del formato", () => {
+    // El id se calcula sobre las palabras visibles: el énfasis y el código
+    // en línea no forman parte del título tal y como se lee.
+    expect(ids("## Usar **negrita** y `código`\n")).toEqual([
+      "usar-negrita-y-código",
+    ]);
+  });
+
+  it("no mete la dirección de un enlace dentro del identificador", () => {
+    // El caso que separa mirar los hijos del token de mirar la fuente en
+    // crudo: en crudo la URL forma parte del texto y el identificador sale
+    // como `ver-la-documentaciónhttpsejemplocomdocs`, que no es lo que nadie
+    // escribiría en un enlace ni lo que genera GitHub.
+    expect(ids("## Ver [la documentación](https://ejemplo.com/docs)\n")).toEqual([
+      "ver-la-documentación",
+    ]);
+  });
+
+  it("no le quita a una nota al pie su destino", () => {
+    // El plugin de notas es dueño de `fn1` y `fnref1`. Un título que generase
+    // ese mismo id pondría dos elementos bajo él y se quedaría con el sitio
+    // al que vuelve el enlace de la nota.
+    const html = renderMarkdown("## fn1\n\nTexto[^1]\n\n[^1]: La nota\n");
+    expect(html).toContain('id="fn1-heading"');
+    expect(html.match(/id="fn1"/g)).toHaveLength(1);
+  });
+
+  it("deja sin id un título que no da ninguna letra ni número", () => {
+    // Un identificador vacío no lleva a ningún sitio y chocaría con el
+    // siguiente título igual de vacío.
+    expect(ids("## ***\n")).toEqual([]);
+  });
+
+  it("conserva el número de línea del título", () => {
+    // El id se añade sobre el mismo token que lleva `data-line`; perderlo
+    // rompería el salto entre la vista previa y el editor.
+    expect(renderMarkdown("# T\n\n## Otro\n")).toContain('data-line="2"');
   });
 });

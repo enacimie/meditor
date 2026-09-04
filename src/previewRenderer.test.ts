@@ -4,6 +4,7 @@ import {
   splitLongFencedBlocks,
   keepHeadingsWithContent,
   fitWideTables,
+  findAnchorTarget,
 } from "./previewRenderer";
 
 /* ---- splitLongFencedBlocks ---- */
@@ -379,5 +380,54 @@ describe("fitWideTables", () => {
 
     fitWideTables(root, fixed(400), true, "Landscape page");
     expect(root.querySelector("table")!.classList.contains("needs-landscape")).toBe(false);
+  });
+});
+
+/* ---- findAnchorTarget ---- */
+describe("findAnchorTarget", () => {
+  /** A container holding one heading with the given id. */
+  const withHeading = (id: string) => {
+    const root = document.createElement("div");
+    root.innerHTML = `<h2 id="${id}">A heading</h2><p>text</p>`;
+    return root;
+  };
+
+  it("finds a plain ASCII heading", () => {
+    const root = withHeading("introduction");
+    expect(findAnchorTarget(root, "#introduction")).toBe(root.querySelector("h2"));
+  });
+
+  it("finds a heading whose href arrived percent-encoded", () => {
+    // The defect this exists for. markdown-it writes `[x](#sección)` out as
+    // `#secci%C3%B3n`, and handing that straight to querySelector throws,
+    // which used to look exactly like a link with no target.
+    const root = withHeading("sección");
+    expect(findAnchorTarget(root, "#secci%C3%B3n")).toBe(root.querySelector("h2"));
+  });
+
+  it("finds an id that is not a valid selector on its own", () => {
+    // "1. Introducción" is a perfectly good id and nonsense as a selector.
+    const root = withHeading("1. introducción");
+    expect(findAnchorTarget(root, "#1.%20introducci%C3%B3n")).toBe(
+      root.querySelector("h2"),
+    );
+  });
+
+  it("returns null when nothing carries that id", () => {
+    expect(findAnchorTarget(withHeading("introduction"), "#missing")).toBeNull();
+  });
+
+  it("returns null for a malformed escape rather than throwing", () => {
+    expect(findAnchorTarget(withHeading("introduction"), "#%zz")).toBeNull();
+  });
+
+  it("returns null for a bare hash and for a href that is not one", () => {
+    const root = withHeading("introduction");
+    expect(findAnchorTarget(root, "#")).toBeNull();
+    expect(findAnchorTarget(root, "https://example.com")).toBeNull();
+  });
+
+  it("returns null without a container", () => {
+    expect(findAnchorTarget(null, "#introduction")).toBeNull();
   });
 });

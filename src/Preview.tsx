@@ -14,7 +14,12 @@ import type { Previewer } from "pagedjs";
 import { useTranslation } from "./i18n/I18nProvider";
 import pagedCss from "./paged.css?inline";
 import latexHighlightCss from "./latex-highlight.css?inline";
-import { clearMermaidResources, renderContent, splitLongFencedBlocks } from "./previewRenderer";
+import {
+  clearMermaidResources,
+  findAnchorTarget,
+  renderContent,
+  splitLongFencedBlocks,
+} from "./previewRenderer";
 import { isPaginatable } from "./pagedLifecycle";
 import { openExternal } from "./externalLinks";
 import { fitWideTables, keepHeadingsWithContent } from "./previewRenderer";
@@ -245,13 +250,9 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
       const href = link.getAttribute("href") || "";
       if (href.startsWith("#")) {
         e.preventDefault();
-        try {
-          const target = activeContainer()?.querySelector(href);
-          if (target) {
-            target.scrollIntoView({ behavior: "smooth", block: "center" });
-          }
-        } catch {
-          /* invalid selector */
+        const target = findAnchorTarget(activeContainer(), href);
+        if (target) {
+          target.scrollIntoView({ behavior: "smooth", block: "center" });
         }
         return;
       }
