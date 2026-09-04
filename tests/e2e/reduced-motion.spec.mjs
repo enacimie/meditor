@@ -127,9 +127,20 @@ async function present() {
   return { ...before, armed };
 }
 
-async function emulate(reduce) {
+/*
+ * Both halves state the value rather than one of them clearing the override.
+ *
+ * Clearing it hands the question back to whatever the machine happens to
+ * prefer, and CI machines prefer `reduce`: the second half then measured a
+ * browser still in reduced motion and failed on all three platforms, while
+ * passing here. An emulated media test that depends on the host's own setting
+ * is not testing what it says it is.
+ *
+ * `null` really does clear, and is only used on the way out.
+ */
+async function emulate(preference) {
   await page.send("Emulation.setEmulatedMedia", {
-    features: reduce ? [{ name: "prefers-reduced-motion", value: "reduce" }] : [],
+    features: preference ? [{ name: "prefers-reduced-motion", value: preference }] : [],
   });
 }
 
@@ -160,7 +171,7 @@ try {
   );
 
   // ── With the setting on: nothing moves ────────────────────────────
-  await emulate(true);
+  await emulate("reduce");
   const quiet = await present();
 
   assert(quiet.reduce, "the reduced-motion media query should report as matching");
@@ -180,10 +191,10 @@ try {
   // ── With it off: everything moves ─────────────────────────────────
   // Without this half the assertions above would still pass if presenting had
   // stopped working altogether.
-  await emulate(false);
+  await emulate("no-preference");
   const moving = await present();
 
-  assert(!moving.reduce, "the media query should stop matching once emulation is off");
+  assert(!moving.reduce, "the media query should not match when no-preference is emulated");
   assert(
     seconds(moving.overlayAnimation) > 0.05,
     `the overlay should animate in normally, got ${moving.overlayAnimation}`,
@@ -205,7 +216,7 @@ try {
 } finally {
   // Per-target, and every spec opens its own page — reset anyway rather than
   // leave a media override behind for whatever runs next.
-  await emulate(false).catch(() => {});
+  await emulate(null).catch(() => {});
 
   /*
    * Hand the next spec the document it expects, by leaving it in the editor:
