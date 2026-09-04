@@ -31,4 +31,57 @@ describe("slideStartLines", () => {
     const src = "# Hi\n\n---\n\n## Two\n";
     expect(slideStartLines(src)).toEqual([0, 3]);
   });
+
+  /*
+   * Two spellings Marp renders as a single slide, which the old line-by-line
+   * scan counted as two. Every slide after one of them was mapped to the wrong
+   * source line, so clicking a slide jumped to the wrong place in the editor,
+   * and the presenter — which reads its per-slide transitions off the same
+   * split — animated each slide with its neighbour's.
+   */
+
+  it("does not break on a --- that underlines a setext heading", () => {
+    // CommonMark gives the heading precedence over the thematic break here,
+    // so Marp renders one slide.
+    const src = "---\nmarp: true\n---\n\nSome text\n---\nmore\n";
+    expect(slideStartLines(src)).toEqual([3]);
+  });
+
+  it("does not break on a --- indented inside a list", () => {
+    // It belongs to the list item. Leading whitespace on its own cannot tell
+    // this apart from a real break, which is how the scan got it wrong.
+    const src = "---\nmarp: true\n---\n\n- item\n\n  ---\n\n- other\n";
+    expect(slideStartLines(src)).toEqual([3]);
+  });
+
+  it("does not break on a --- inside a blockquote", () => {
+    const src = "---\nmarp: true\n---\n\nSome text\n\n> ---\n\nmore\n";
+    expect(slideStartLines(src)).toEqual([3]);
+  });
+
+  /*
+   * The other half, and the half worth having: three lines that look like the
+   * two above and *are* slide breaks. A rule as tempting as "a --- under a
+   * non-blank line underlines a heading" fixes the cases above and silently
+   * breaks all three of these, so they are pinned against the fix as much as
+   * against the bug.
+   */
+
+  it("still breaks on a --- under an ATX heading", () => {
+    // `# Heading` is not a paragraph, so there is nothing to underline.
+    const src = "---\nmarp: true\n---\n\n# Heading\n---\nmore\n";
+    expect(slideStartLines(src)).toEqual([3, 6]);
+  });
+
+  it("still breaks on a --- under a list item", () => {
+    const src = "---\nmarp: true\n---\n\n- item\n---\nmore\n";
+    expect(slideStartLines(src)).toEqual([3, 6]);
+  });
+
+  it("still breaks on a spaced-out - - - under a paragraph", () => {
+    // A setext underline admits no internal spaces, so this can only be a
+    // thematic break.
+    const src = "---\nmarp: true\n---\n\nSome text\n- - -\nmore\n";
+    expect(slideStartLines(src)).toEqual([3, 6]);
+  });
 });
