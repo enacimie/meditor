@@ -23,7 +23,6 @@ import { search, searchKeymap, openSearchPanel, gotoLine } from "@codemirror/sea
 import { undo, redo } from "@codemirror/commands";
 import {
   buildMarkdownPairKeymap,
-  buildAutoContinueKeymap,
   buildSmartBackspaceKeymap,
 } from "./editorKeymaps";
 import { useImagePaste } from "./hooks/useImagePaste";
@@ -356,8 +355,18 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
       ),
       keymap.of(searchKeymap),
       buildMarkdownPairKeymap(),
-      buildSmartBackspaceKeymap(),
-      buildAutoContinueKeymap(),
+      // ADDING A KEYMAP? Cover it in Editor.keys.test.tsx, which dispatches a
+      // real keydown. A binding called directly from a test passes whether or
+      // not the editor ever reaches it.
+      //
+      // High precedence on purpose: basicSetup binds Backspace (closeBrackets,
+      // then deleteCharBackward) at default precedence, and it is listed first,
+      // so at the same precedence this never runs. Prec.high puts it in the
+      // same bucket as lang-markdown's deleteMarkupBackward, which claims only
+      // the positions just after list and blockquote markup and declines at
+      // `*|*`; this one claims only MARKDOWN_PAIRS, so deleteBracketPair still
+      // gets `(|)` and deleteCharBackward still gets ordinary text.
+      Prec.high(buildSmartBackspaceKeymap()),
       wrapCompartment.current.of(initialWrap.current ? EditorView.lineWrapping : []),
       placeholderCompartment.current.of(
         initialZenMode.current && initialZenPlaceholder.current ? placeholder(initialZenPlaceholder.current) : [],
