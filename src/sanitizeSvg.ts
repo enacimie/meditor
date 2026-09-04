@@ -119,7 +119,32 @@ const REFERENCE_ATTRIBUTES = new Set([
   "filter",
 ]);
 
-const CSS_DANGEROUS_RE = /(?:@import|url\s*\(|expression\s*\(|javascript\s*:|-moz-binding|behavior\s*:|<|>)/i;
+/*
+ * What may never appear in CSS, in an attribute or in a stylesheet.
+ *
+ * `<` is on the list because the sanitised SVG goes back into the page through
+ * `innerHTML`: a stylesheet reading `</style><script>...` is text to the
+ * parser that checks it and markup to the parser that inserts it, which is the
+ * one way CSS here can become script. `>` on its own opens nothing, and it is
+ * the CSS child combinator, so it is not on the list -- blocking it threw away
+ * whole stylesheets over an ordinary selector.
+ */
+const CSS_DANGEROUS_RE =
+  /(?:@import|expression\s*\(|javascript\s*:|-moz-binding|behavior\s*:|<)/i;
+
+/** Any `url()` at all, for the places where none is allowed. */
+const CSS_ANY_URL_RE = /url\s*\(/i;
+
+/**
+ * Every `url()` in a stylesheet, with whatever it points at.
+ *
+ * The quote is captured so that the same one has to close it, and the target
+ * is read without it: `url(#a)`, `url('#a')` and `url("#a")` are one thing
+ * written three ways, and a check that understood only the bare form would
+ * wave the other two through unread.
+ */
+const CSS_URL_RE = /url\s*\(\s*(['"]?)([^)'"]*)\1\s*\)/gi;
+const SAME_DOCUMENT_REFERENCE_RE = /^#[A-Za-z0-9_:.-]+$/;
 const BLOCKED_ELEMENT_RE = /script|foreignobject|iframe|object|embed|link|audio|video/i;
 const RASTER_DATA_URI_RE = /^data:image\/(?:png|jpe?g|gif|webp);base64,[a-z0-9+/=]+$/i;
 
@@ -132,8 +157,40 @@ function isSafeReference(value: string): boolean {
   );
 }
 
+/**
+ * CSS for a `style` attribute, where nothing may reach outside the element.
+ *
+ * No `url()` of any kind: an attribute on one shape has no business pointing
+ * anywhere, and the reference attributes that legitimately do — `fill`,
+ * `marker-end` and the rest — are checked by `isSafeReference` instead.
+ */
 function isSafeCss(value: string): boolean {
-  return !CSS_DANGEROUS_RE.test(value);
+  return !CSS_DANGEROUS_RE.test(value) && !CSS_ANY_URL_RE.test(value);
+}
+
+/**
+ * CSS for a `<style>` element.
+ *
+ * The same rules, with one opening: a stylesheet may point at this document's
+ * own definitions, because `marker-end: url(#arrowhead)` is how an SVG draws
+ * an arrow and every diagram with one is written that way. Each `url()` is
+ * read on its own and has to be a bare `#id`; a path, a scheme, a
+ * protocol-relative host or a data URI fails, so a stylesheet still cannot
+ * make the page fetch anything.
+ *
+ * A `url()` this pattern cannot parse at all — an unbalanced quote, say —
+ * matches nothing and would slip through the loop, so anything containing
+ * `url(` must also match the strict form exactly as many times as it appears.
+ */
+function isSafeStylesheetCss(text: string): boolean {
+  if (CSS_DANGEROUS_RE.test(text)) return false;
+  if (!CSS_ANY_URL_RE.test(text)) return true;
+
+  const parsed = [...text.matchAll(CSS_URL_RE)];
+  const written = text.match(new RegExp(CSS_ANY_URL_RE.source, "gi")) ?? [];
+  if (parsed.length !== written.length) return false;
+
+  return parsed.every((match) => SAME_DOCUMENT_REFERENCE_RE.test(match[2].trim()));
 }
 
 function sanitizeElement(element: Element): void {
@@ -144,7 +201,7 @@ function sanitizeElement(element: Element): void {
   }
 
   if (tag === "style") {
-    if (!isSafeCss(element.textContent ?? "")) element.remove();
+    if (!isSafeStylesheetCss(element.textContent ?? "")) element.remove();
     return;
   }
 
