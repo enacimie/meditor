@@ -717,6 +717,12 @@ body,
     text-indent: 1.6em;
   }
 
+  /* Kept in step with paged.css, which explains why this exists. */
+  .markdown-body p.numbered-paragraph {
+    padding-left: 1.6em;
+    text-indent: -1.6em;
+  }
+
   .markdown-body h1,
   .markdown-body h2,
   .markdown-body h3,

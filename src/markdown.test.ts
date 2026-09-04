@@ -47,3 +47,60 @@ describe("renderMarkdown", () => {
     expect(cppCanonical).toContain("language-cpp");
   });
 });
+
+describe("párrafos que abren con un número en negrita", () => {
+  /*
+   * `**1.** Texto` no es una lista para Markdown y no puede serlo: el marcador
+   * es `1.` seguido de espacio, y envolverlo en asteriscos lo vuelve énfasis.
+   * Pero es como se numeran a mano los párrafos que llevan otros párrafos
+   * intercalados —respuestas, notas—, y con la sangría de prosa el primero
+   * quedaba desalineado de sus hermanos por ser el único sin párrafo encima
+   * del que sangrarse. Se marcan aquí para darles en la vista de documento la
+   * misma geometría que una lista.
+   */
+
+  it("marca el párrafo que abre con un número en negrita", () => {
+    expect(renderMarkdown("**1.** Primer punto\n")).toContain("numbered-paragraph");
+  });
+
+  it("lo marca también cuando no es el primero del documento", () => {
+    // El caso que motivó todo: el primero se veía distinto de los demás, así
+    // que todos han de quedar marcados igual, estén donde estén.
+    const html = renderMarkdown("**1.** Uno\n\n—respuesta\n\n**2.** Dos\n");
+    expect(html.match(/numbered-paragraph/g)).toHaveLength(2);
+  });
+
+  it("acepta la forma con paréntesis", () => {
+    expect(renderMarkdown("**1)** Primer punto\n")).toContain("numbered-paragraph");
+  });
+
+  it("deja en paz un párrafo que abre con un año en negrita", () => {
+    // El falso positivo que saldría caro: prosa que empieza citando un año
+    // pasaría a sangrarse como si fuera el punto de una enumeración.
+    expect(renderMarkdown("**2024.** Fue un año complicado\n")).not.toContain(
+      "numbered-paragraph",
+    );
+  });
+
+  it("deja en paz la negrita que no abre el párrafo", () => {
+    expect(renderMarkdown("Como decía **1.** ayer\n")).not.toContain("numbered-paragraph");
+  });
+
+  it("deja en paz la negrita que no es un número", () => {
+    expect(renderMarkdown("**Nota.** Un aviso cualquiera\n")).not.toContain(
+      "numbered-paragraph",
+    );
+  });
+
+  it("no toca una lista de verdad", () => {
+    const html = renderMarkdown("1. Uno\n2. Dos\n");
+    expect(html).toContain("<ol");
+    expect(html).not.toContain("numbered-paragraph");
+  });
+
+  it("conserva el número de línea del párrafo", () => {
+    // La clase se añade sobre el mismo token que lleva `data-line`; perderlo
+    // rompería el salto entre la vista previa y el editor.
+    expect(renderMarkdown("# T\n\n**1.** Uno\n")).toContain('data-line="2"');
+  });
+});
