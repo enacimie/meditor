@@ -3,6 +3,11 @@
  *
  * Runs in a real browser because the preview needs the marp-core browser helper
  * and inline-SVG layout, neither of which jsdom reproduces.
+ *
+ * The deck replaces the document, and the specs share one session: the app
+ * writes it out as the page unloads, so whatever is in the editor here is what
+ * the next spec opens. The sample is read before it is replaced and put back
+ * before this closes.
  */
 import { connect, assert } from "./cdp.mjs";
 
@@ -61,12 +66,10 @@ const FRAG_DECK = [
 ].join("\n");
 
 const page = await connect(CDP_PORT);
-try {
-  await page.freshPage(BASE_URL);
-  await page.waitFor("!!document.querySelector('.cm-content')", { timeout: 20000 });
 
-  // Replace the sample document with a Marp deck.
-  await page.evaluate(`(() => {
+/** Put `text` in the editor, replacing whatever is there. */
+const setDocument = (text) =>
+  page.evaluate(`(() => {
     const cm = document.querySelector('.cm-content');
     cm.focus();
     const range = document.createRange();
@@ -74,9 +77,32 @@ try {
     const selection = window.getSelection();
     selection.removeAllRanges();
     selection.addRange(range);
-    document.execCommand('insertText', false, ${JSON.stringify(DECK)});
+    document.execCommand('insertText', false, ${JSON.stringify(text)});
     return true;
   })()`);
+
+let sampleDocument = null;
+try {
+  await page.freshPage(BASE_URL);
+  await page.waitFor("!!document.querySelector('.cm-content')", { timeout: 20000 });
+
+  // Read the sample out of the session before the deck replaces it. Restoring
+  // storage is not enough — the app overwrites it from the editor on unload —
+  // so what has to be put back is the editor's own content.
+  await page.waitFor("!!localStorage.getItem('meditor.web.session.v3')", {
+    timeout: 20000,
+    message: "the app should have written a session to restore later",
+  });
+  sampleDocument = await page.evaluate(
+    "JSON.parse(localStorage.getItem('meditor.web.session.v3')).docs[0].content",
+  );
+  assert(
+    typeof sampleDocument === "string" && sampleDocument.length > 0,
+    "the sample document should be readable before it is replaced",
+  );
+
+  // Replace the sample document with a Marp deck.
+  await setDocument(DECK);
 
   // The preview should switch to the slide view and settle on three slides.
   await page.waitFor(
@@ -304,5 +330,23 @@ try {
       `print ${pageCount} pages @ ${mediaBoxes[0][0]}x${mediaBoxes[0][1]}pt`,
   );
 } finally {
+  /*
+   * Put the sample back, or every spec after this one inherits a deck. The
+   * one that measures diagram themes did, and failed in the suite while
+   * passing on its own — a deck has no diagrams in it.
+   */
+  try {
+    if (sampleDocument) {
+      await setDocument(sampleDocument);
+      await page.waitFor(
+        "!document.querySelector('.marp-slides svg[data-marpit-svg]')",
+        { timeout: 10000, message: "the sample should have replaced the deck" },
+      );
+    }
+  } catch (error) {
+    // Said out loud rather than swallowed: a spec that fails to clean up
+    // breaks the next one, and that is a confusing way to find out.
+    console.error("marp.spec could not restore the sample document:", error);
+  }
   page.close();
 }
