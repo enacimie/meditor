@@ -107,6 +107,9 @@ describe("translations", () => {
     "image.tooLarge",
     "image.insertFailed",
     "image.notStored",
+    // Formatting shortcuts; en/es for now like the strings above.
+    "shortcuts.bold",
+    "shortcuts.italic",
   ]);
 
   it("every English key is defined in every language", () => {

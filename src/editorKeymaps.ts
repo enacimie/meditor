@@ -1,5 +1,7 @@
 import { keymap, EditorView } from "@codemirror/view";
-import type { Extension } from "@codemirror/state";
+import type { ChangeSpec, Extension } from "@codemirror/state";
+import { EditorSelection } from "@codemirror/state";
+import type { DocKind } from "./types";
 
 /** Markdown tokens that auto-close in pairs: *, _, ~, `, $ */
 export const MARKDOWN_PAIRS: [string, string][] = [
@@ -54,6 +56,120 @@ export function buildMarkdownPairKeymap(): Extension {
       },
     },
   ]);
+
+  return keymap.of(bindings);
+}
+
+/*
+ * Bold and italic, from the keyboard.
+ *
+ * Every one of these toggles rather than only wrapping. Ctrl+B on text that is
+ * already bold is how a writer un-bolds it — in a word processor, in a
+ * comment box, everywhere — and a shortcut that only ever added markers would
+ * turn `**word**` into `****word****` and look broken.
+ *
+ * The markers differ by language, so the keymap is built for the document it
+ * is going into. LaTeX has no one-character equivalent — `	extbf{}` is a
+ * command, not a wrapper — and is left out rather than guessed at.
+ */
+type FormattingMarkers = {
+  bold: string;
+  italic: string;
+};
+
+const MARKERS: Partial<Record<DocKind, FormattingMarkers>> = {
+  markdown: { bold: "**", italic: "*" },
+  // Typst writes them with single characters: *bold* and _italic_.
+  typst: { bold: "*", italic: "_" },
+};
+
+/**
+ * Wrap each selection in `marker`, or take it off when it is already there.
+ *
+ * Two ways a range can already be wrapped, and both have to be recognised or
+ * the toggle only works when the selection was made one particular way: the
+ * markers can be inside the selection (the user selected `**word**`) or just
+ * outside it (they selected `word` between markers).
+ */
+function toggleWrap(view: EditorView, marker: string): boolean {
+  const { state } = view;
+  const length = marker.length;
+
+  view.dispatch(
+    state.changeByRange((range) => {
+      const selected = state.sliceDoc(range.from, range.to);
+
+      // Markers inside the selection.
+      if (
+        selected.length >= length * 2 &&
+        selected.startsWith(marker) &&
+        selected.endsWith(marker)
+      ) {
+        const inner = selected.slice(length, selected.length - length);
+        return {
+          changes: { from: range.from, to: range.to, insert: inner },
+          range: EditorSelection.range(range.from, range.from + inner.length),
+        };
+      }
+
+      // Markers just outside it.
+      const before = state.sliceDoc(Math.max(0, range.from - length), range.from);
+      const after = state.sliceDoc(range.to, Math.min(state.doc.length, range.to + length));
+      if (before === marker && after === marker) {
+        const changes: ChangeSpec[] = [
+          { from: range.from - length, to: range.from },
+          { from: range.to, to: range.to + length },
+        ];
+        return {
+          changes,
+          range: EditorSelection.range(range.from - length, range.to - length),
+        };
+      }
+
+      // Not wrapped: wrap it. An empty selection becomes an empty pair with
+      // the cursor between the markers, ready to type into.
+      return {
+        changes: [
+          { from: range.from, insert: marker },
+          { from: range.to, insert: marker },
+        ],
+        range: EditorSelection.range(
+          range.from + length,
+          range.to + length,
+        ),
+      };
+    }),
+  );
+  return true;
+}
+
+/**
+ * Bold and italic for the document's own language.
+ *
+ * Empty for a language with no obvious equivalents, so the keys fall through
+ * to whatever else wants them rather than doing something almost right.
+ *
+ * No link shortcut. The two keys a writer would reach for are already taken
+ * by things worth keeping — `Mod-k` focuses the find field, and
+ * `Mod-Shift-k` is CodeMirror's delete-line — and quietly taking one of them
+ * is a bigger decision than adding a shortcut.
+ */
+export function buildFormattingKeymap(kind: DocKind): Extension {
+  const markers = MARKERS[kind];
+  if (!markers) return [];
+
+  const bindings = [
+    {
+      key: "Mod-b",
+      run: (view: EditorView) => toggleWrap(view, markers.bold),
+      preventDefault: true,
+    },
+    {
+      key: "Mod-i",
+      run: (view: EditorView) => toggleWrap(view, markers.italic),
+      preventDefault: true,
+    },
+  ];
 
   return keymap.of(bindings);
 }

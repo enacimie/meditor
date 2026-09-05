@@ -22,6 +22,7 @@ import { search, searchKeymap, openSearchPanel, gotoLine } from "@codemirror/sea
 // the on-screen buttons can call them.
 import { undo, redo } from "@codemirror/commands";
 import {
+  buildFormattingKeymap,
   buildMarkdownPairKeymap,
   buildSmartBackspaceKeymap,
 } from "./editorKeymaps";
@@ -222,6 +223,10 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   const spellcheckCompartment = useRef(new Compartment());
   const placeholderCompartment = useRef(new Compartment());
   const languageCompartment = useRef(new Compartment());
+  // Bold and italic are written differently in Markdown and Typst, so the
+  // keymap changes with the document — and the editor is reconfigured on a
+  // tab switch rather than remounted, so it has to live in a compartment.
+  const formattingCompartment = useRef(new Compartment());
   const kindSeqRef = useRef(0);
   const activeIdRef = useRef(activeId);
   const suppress = useRef(false);
@@ -380,6 +385,20 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
       // `*|*`; this one claims only MARKDOWN_PAIRS, so deleteBracketPair still
       // gets `(|)` and deleteCharBackward still gets ordinary text.
       Prec.high(buildSmartBackspaceKeymap()),
+      /*
+       * Bold and italic, in the markers this document's language uses.
+       *
+       * High precedence, and for the same reason as the backspace above:
+       * `defaultKeymap` binds Mod-i to `selectParentSyntax`, which declines
+       * on plain text and claims the key the moment the text is emphasised —
+       * so at ordinary precedence Ctrl+I would make a word italic and then
+       * refuse to make it plain again. Taking the key is deliberate: in a
+       * writing application Ctrl+I is italic, and selecting the parent syntax
+       * node has no place on it.
+       */
+      Prec.high(
+        formattingCompartment.current.of(buildFormattingKeymap(initialKind.current)),
+      ),
       // Tracks where each in-flight pasted image is going to land. Part of the
       // shared extension list, so a state created for another tab carries it
       // too.
@@ -562,6 +581,9 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
     // a newer kind after a quick tab switch or language toggle.
     kindSeqRef.current++;
     const seq = kindSeqRef.current;
+    view.dispatch({
+      effects: formattingCompartment.current.reconfigure(buildFormattingKeymap(kind)),
+    });
     if (isTypst) {
       applyTypstLang(view, languageCompartment.current, seq, kindSeqRef, languageExtRef);
     } else if (isLatex) {
