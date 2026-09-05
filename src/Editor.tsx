@@ -26,6 +26,7 @@ import {
   buildMarkdownPairKeymap,
   buildSmartBackspaceKeymap,
 } from "./editorKeymaps";
+import { taskToggleOnLine } from "./taskList";
 import {
   useImagePaste,
   imagePlaceholderField,
@@ -167,6 +168,16 @@ export type EditorHandle = {
    */
   undo: () => void;
   redo: () => void;
+  /**
+   * Flip the task checkbox on `line` (0-based), if that line holds one.
+   *
+   * Driven from the preview, where the checkboxes are. It goes into the live
+   * editor rather than back through React so that it costs one character of
+   * change: handing a whole new document to the `content` prop rebuilds the
+   * `EditorState` from scratch, which throws the undo history away and sends
+   * the cursor to the top of the file.
+   */
+  toggleTask: (line: number) => void;
 };
 
 type Props = {
@@ -340,6 +351,24 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
       const view = viewRef.current;
       if (!view) return 0;
       return view.state.doc.lineAt(view.state.selection.main.head).number - 1;
+    },
+    toggleTask(line: number) {
+      const view = viewRef.current;
+      if (!view) return;
+      const doc = view.state.doc;
+      // `doc.line` throws rather than returning nothing, and the line number
+      // comes from a render that may be a keystroke behind the document.
+      if (line < 0 || line >= doc.lines) return;
+      const info = doc.line(line + 1);
+      const toggle = taskToggleOnLine(info.text);
+      if (!toggle) return;
+      const at = info.from + toggle.at;
+      // No selection in the transaction: the reader is in the preview, and
+      // moving their cursor because they ticked something off would be rude.
+      view.dispatch({
+        changes: { from: at, to: at + 1, insert: toggle.insert },
+        userEvent: "input",
+      });
     },
     focusSearch() {
       const view = viewRef.current;
