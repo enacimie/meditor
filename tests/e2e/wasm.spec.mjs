@@ -84,14 +84,20 @@ try {
     message: "the LaTeX engine should finish loading, or say why it could not",
   });
 
-  const latexLoad = await page.evaluate("window.__latexResult");
+  // A pure read, so it may be retried: the engine has just finished a
+  // minute of WASM loading and this is exactly when the context has been
+  // seen to drop an evaluation on Windows CI.
+  const latexLoad = await page.read("window.__latexResult");
   assert(latexLoad.ok, `LaTeX local WASM worker failed: ${latexLoad.error || "unknown error"}`);
 
   assert(
     page.consoleErrors.length === 0,
     "console errors: " + page.consoleErrors.join(" | "),
   );
-  console.log("PASS: wasm.spec — Typst sample compile + LaTeX worker/WASM load");
+  console.log(
+    "PASS: wasm.spec — Typst sample compile + LaTeX worker/WASM load" +
+      (page.transientReads ? ` (${page.transientReads} read(s) retried)` : ""),
+  );
 } finally {
   page.close();
 }

@@ -262,6 +262,8 @@ export class CdpSession {
   constructor(ws) {
     this.ws = ws;
     this.consoleErrors = [];
+    /** How many reads were retried past a transient error, for reporting. */
+    this.transientReads = 0;
     this._id = 0;
     this._pending = new Map();
     this._listeners = [];
@@ -358,6 +360,41 @@ export class CdpSession {
       );
     }
     return res.result?.result?.value;
+  }
+
+  /**
+   * Evaluate a read-only expression, retrying the errors that mean "the page
+   * moved on".
+   *
+   * `evaluate` cannot do this on its own. Most of what specs evaluate has side
+   * effects — a click, a keystroke, a document replaced — and running one of
+   * those twice because the first attempt reported a collected promise would
+   * be worse than the failure. So retrying is opt-in, and the opting-in is
+   * saying "this only reads".
+   *
+   * Which is exactly the shape of the flake this exists for: `wasm.spec` waits
+   * a minute for a WASM engine to load and then reads the result out of the
+   * page, and that read has failed on Windows CI with `Promise was collected`
+   * four times. Nothing about the read is wrong; the context was busy.
+   *
+   * @param {string} expression - must not change anything.
+   */
+  async read(expression, { attempts = 4, delay = 150 } = {}) {
+    let lastTransient;
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      try {
+        return await this.evaluate(expression);
+      } catch (error) {
+        if (!isTransientEvaluationError(error)) throw error;
+        lastTransient = error;
+        this.transientReads++;
+        await sleep(delay);
+      }
+    }
+    throw new Error(
+      `read gave up after ${attempts} attempts: ${expression} ` +
+        `(last transient error: ${lastTransient?.message})`,
+    );
   }
 
   /**
