@@ -110,9 +110,66 @@ try {
     `evaluate should still hand the error on, got ${propagated?.message}`,
   );
 
+  // ── A failure says which command it came from ───────────────────────
+  // Through the real protocol, not the stub above: this half lives in the
+  // reject path of the pending map, which the stub never reaches.
+  let named = null;
+  try {
+    await page.send("Bogus.method", {});
+  } catch (error) {
+    named = error;
+  }
+  assert(
+    named !== null && /in Bogus\.method$/.test(String(named.message)),
+    `a protocol error should name the command it answered, got ${named?.message}`,
+  );
+
+  // ── And which expression was being evaluated ─────────────────────────
+  // Five CI runs have died on `Promise was collected` with an error that named
+  // neither, and each time the call had to be guessed from the timestamps.
+  restore = failNextEvaluations(page, 1, "Promise was collected (-32000)");
+  let described = null;
+  try {
+    await page.evaluate("window.__somethingIdentifiable");
+  } catch (error) {
+    described = error;
+  } finally {
+    restore();
+  }
+  assert(
+    described !== null &&
+      /Promise was collected/.test(String(described.message)) &&
+      /evaluating: window\.__somethingIdentifiable/.test(String(described.message)),
+    `the error should keep its wording and name the expression, got ${described?.message}`,
+  );
+
+  // ── A repeatable evaluation retries even though it writes ────────────
+  // `read` is the read-only face of it; `freshPage` clears storage through the
+  // same door, because doing that twice is what it already does on purpose.
+  const beforeRepeat = page.transientReads;
+  restore = failNextEvaluations(page, 1, "Execution context was destroyed");
+  let cleared;
+  try {
+    cleared = await page.evaluateRepeatable(
+      "localStorage.setItem('cdp-read-probe', 'x'); localStorage.getItem('cdp-read-probe')",
+    );
+  } finally {
+    restore();
+  }
+  assert(
+    cleared === "x",
+    `a repeatable evaluation should get through, got ${JSON.stringify(cleared)}`,
+  );
+  assert(
+    page.transientReads === beforeRepeat + 1,
+    `the retry should have been counted, got ${page.transientReads - beforeRepeat}`,
+  );
+  await page.evaluate("localStorage.removeItem('cdp-read-probe'); true");
+
   console.log(
     "PASS: cdp-read.spec — a read retries a collected promise, refuses a real error, " +
-      "gives up after its attempts, and evaluate still propagates",
+      "gives up after its attempts, evaluate still propagates, and a failure names " +
+      "its command and expression",
   );
 } finally {
   await page.close();

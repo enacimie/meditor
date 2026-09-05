@@ -33,6 +33,12 @@ export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  * Typst/LaTeX WASM, for instance). They are worth retrying, never worth
  * failing on.
  */
+/** One readable line of an expression, for an error message. */
+function summarise(expression) {
+  const line = String(expression).replace(/\s+/g, " ").trim();
+  return line.length > 120 ? `${line.slice(0, 117)}...` : line;
+}
+
 function isTransientEvaluationError(error) {
   const message = String(error?.message ?? error);
   return (
@@ -270,10 +276,11 @@ export class CdpSession {
     ws.onmessage = (event) => {
       const msg = JSON.parse(event.data);
       if (msg.id && this._pending.has(msg.id)) {
-        const { resolve, reject } = this._pending.get(msg.id);
+        const { resolve, reject, method } = this._pending.get(msg.id);
         this._pending.delete(msg.id);
-        if (msg.error) reject(new Error(`${msg.error.message} (${msg.error.code})`));
-        else resolve(msg);
+        if (msg.error) {
+          reject(new Error(`${msg.error.message} (${msg.error.code}) in ${method}`));
+        } else resolve(msg);
         return;
       }
       for (const listener of this._listeners) {
@@ -322,6 +329,7 @@ export class CdpSession {
         reject(new Error(`CDP command timed out after ${timeoutMs}ms: ${method}`));
       }, timeoutMs);
       this._pending.set(id, {
+        method,
         resolve: (msg) => {
           clearTimeout(timer);
           resolve(msg);
@@ -347,11 +355,22 @@ export class CdpSession {
    * @param {number} [timeoutMs] - must exceed any timeout inside `expression`.
    */
   async evaluate(expression, timeoutMs = SEND_TIMEOUT_MS) {
-    const res = await this.send("Runtime.evaluate", {
-      expression,
-      returnByValue: true,
-      awaitPromise: true,
-    }, timeoutMs);
+    let res;
+    try {
+      res = await this.send("Runtime.evaluate", {
+        expression,
+        returnByValue: true,
+        awaitPromise: true,
+      }, timeoutMs);
+    } catch (error) {
+      // Say which evaluation it was. `Promise was collected` has taken down
+      // five CI runs, and every time the error named neither the command nor
+      // the expression, so which call had failed had to be reasoned out from
+      // the timestamps. The message keeps its original wording at the front,
+      // because `isTransientEvaluationError` and one spec both match on it.
+      error.message = `${error.message} — evaluating: ${summarise(expression)}`;
+      throw error;
+    }
     if (res.result?.exceptionDetails) {
       const detail = res.result.exceptionDetails;
       throw new Error(
@@ -363,23 +382,18 @@ export class CdpSession {
   }
 
   /**
-   * Evaluate a read-only expression, retrying the errors that mean "the page
-   * moved on".
+   * Evaluate something safe to run more than once, retrying the errors that
+   * mean "the page moved on".
    *
    * `evaluate` cannot do this on its own. Most of what specs evaluate has side
    * effects — a click, a keystroke, a document replaced — and running one of
    * those twice because the first attempt reported a collected promise would
-   * be worse than the failure. So retrying is opt-in, and the opting-in is
-   * saying "this only reads".
+   * be worse than the failure. So retrying is opt-in, and the opting-in is the
+   * caller saying "running this again changes nothing".
    *
-   * Which is exactly the shape of the flake this exists for: `wasm.spec` waits
-   * a minute for a WASM engine to load and then reads the result out of the
-   * page, and that read has failed on Windows CI with `Promise was collected`
-   * four times. Nothing about the read is wrong; the context was busy.
-   *
-   * @param {string} expression - must not change anything.
+   * @param {string} expression - must be safe to evaluate more than once.
    */
-  async read(expression, { attempts = 4, delay = 150 } = {}) {
+  async evaluateRepeatable(expression, { attempts = 4, delay = 150 } = {}) {
     let lastTransient;
     for (let attempt = 0; attempt < attempts; attempt++) {
       try {
@@ -395,6 +409,20 @@ export class CdpSession {
       `read gave up after ${attempts} attempts: ${expression} ` +
         `(last transient error: ${lastTransient?.message})`,
     );
+  }
+
+  /**
+   * Evaluate a read-only expression, retrying the errors that mean "the page
+   * moved on". A read changes nothing, so it is always safe to repeat.
+   *
+   * This is the shape the retry exists for: `wasm.spec` waits a minute for a
+   * WASM engine to load and then reads the result out of the page, and that
+   * read has failed on Windows CI with `Promise was collected`.
+   *
+   * @param {string} expression - must not change anything.
+   */
+  read(expression, options) {
+    return this.evaluateRepeatable(expression, options);
   }
 
   /**
@@ -445,9 +473,14 @@ export class CdpSession {
   async freshPage(url) {
     await this.navigate(url);
     await this.waitFor("document.readyState === 'complete'", { timeout: 15000 });
-    await this.evaluate("localStorage.clear(); true");
+    // Repeatable rather than plain: this runs while the page is still
+    // settling from a navigation, which is when the execution context gets
+    // replaced under an evaluation. Clearing storage twice is already what
+    // this method does on purpose, so a third time costs nothing — whereas
+    // the whole spec run dying because the context blinked costs a CI job.
+    await this.evaluateRepeatable("localStorage.clear(); true");
     await sleep(700);
-    await this.evaluate("localStorage.clear(); true");
+    await this.evaluateRepeatable("localStorage.clear(); true");
     await this.reload();
   }
 
