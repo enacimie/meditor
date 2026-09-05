@@ -1612,12 +1612,16 @@ export default function App() {
               zenMode={zenMode}
               zenPlaceholder={t("zen.placeholder")}
               kind={active?.kind ?? "markdown"}
+              docHandle={active?.handle ?? null}
+              locale={lang}
               onCursorLineChange={setCursorLine}
               onImageError={(error) =>
                 showNotice(
                   error.kind === "tooLarge"
                     ? t("image.tooLarge", error.name, error.maxMiB)
-                    : t("image.insertFailed", error.name),
+                    : error.kind === "notStored"
+                      ? t("image.notStored", error.name)
+                      : t("image.insertFailed", error.name),
                   "error",
                 )
               }

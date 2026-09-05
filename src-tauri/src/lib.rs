@@ -752,6 +752,155 @@ fn document_location(
         .ok_or_else(|| t(locale, "file.documentUnavailable"))
 }
 
+/// The folder a document's own images live in, beside it.
+///
+/// `assets/` rather than `<document>.assets/`, because a document gets
+/// renamed (F2) and saved elsewhere (Save As), and a folder named after it
+/// would have to follow or be orphaned. `assets/` survives both, and is what
+/// people already write by hand.
+const IMAGE_FOLDER: &str = "assets";
+
+/// Characters Windows refuses in a file name, plus the path separators.
+const UNSAFE_NAME_CHARS: [char; 9] = ['<', '>', ':', '"', '|', '?', '*', '/', '\\'];
+
+/// Device names Windows still reserves, whatever the extension.
+const RESERVED_STEMS: [&str; 22] = [
+    "con", "prn", "aux", "nul", "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8",
+    "com9", "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9",
+];
+
+/// A file name that is safe to create, from whatever the frontend proposed.
+///
+/// The name comes from a pasted file, which means it comes from wherever that
+/// file came from. Everything up to the last separator is dropped rather than
+/// escaped — a name is a name, not a path — and what is left is stripped of
+/// the characters Windows refuses and the leading dots that would hide it.
+///
+/// Returns `None` when nothing usable is left, in which case the caller names
+/// the file itself.
+fn sanitize_image_name(proposed: &str) -> Option<String> {
+    // Any path in front of the name is not part of the name.
+    let base = proposed
+        .rsplit(['/', '\\'])
+        .next()
+        .unwrap_or(proposed)
+        .trim();
+
+    let cleaned: String = base
+        .chars()
+        .filter(|c| !c.is_control() && !UNSAFE_NAME_CHARS.contains(c))
+        .collect();
+    // Windows drops trailing dots and spaces silently, so a name ending in one
+    // would not be the name that was created.
+    let cleaned = cleaned.trim_matches(|c: char| c == '.' || c.is_whitespace());
+    if cleaned.is_empty() {
+        return None;
+    }
+
+    let path = Path::new(cleaned);
+    if !has_image_extension(path) {
+        return None;
+    }
+    let stem = path.file_stem()?.to_str()?.to_ascii_lowercase();
+    if RESERVED_STEMS.contains(&stem.as_str()) {
+        return Some(format!("image-{cleaned}"));
+    }
+    Some(cleaned.to_string())
+}
+
+/// Where an image was written, as the document should refer to it.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct WrittenImage {
+    rel_path: String,
+}
+
+/// Write an image into `assets/` beside a document.
+///
+/// The frontend proposes a name and never a path: the folder comes from the
+/// document's own location, looked up by handle. Nothing here can write
+/// outside that folder — the name is reduced to a single component, and the
+/// folder is canonicalised and checked to be under the document's own
+/// directory before anything is created, which is what stops an `assets`
+/// symlink pointing somewhere else.
+///
+/// Returns `None` where there is nowhere to write: a document that has never
+/// been saved, or an Android content URI, which is one file and no folder.
+#[tauri::command]
+fn write_image(
+    registry: tauri::State<'_, DocumentRegistry>,
+    handle: String,
+    name: String,
+    bytes: Vec<u8>,
+    locale: Option<String>,
+) -> Result<Option<WrittenImage>, String> {
+    let loc = parse_locale(locale);
+    let location = document_location(&registry, loc, &handle)?;
+    let Some(document) = as_path(&location) else {
+        return Ok(None);
+    };
+    let Some(parent) = document.parent() else {
+        return Ok(None);
+    };
+    if bytes.len() as u64 > MAX_IMAGE_BYTES {
+        return Err(tf(
+            loc,
+            "image.tooLarge",
+            &(MAX_IMAGE_BYTES / (1024 * 1024)).to_string(),
+        ));
+    }
+    let file_name = sanitize_image_name(&name).ok_or_else(|| t(loc, "image.unsupportedType"))?;
+
+    let folder = parent.join(IMAGE_FOLDER);
+    std::fs::create_dir_all(&folder).map_err(|e| e.to_string())?;
+    // Canonicalised after creating it, so a symlink is followed and seen.
+    let folder = folder.canonicalize().map_err(|e| e.to_string())?;
+    let root = parent.canonicalize().map_err(|e| e.to_string())?;
+    if !folder.starts_with(&root) {
+        return Err(t(loc, "image.invalidPath"));
+    }
+
+    // `create_new` rather than a check followed by a write: two pastes of the
+    // same name in the same second would both see the name free.
+    let mut attempt = 0;
+    loop {
+        let candidate = if attempt == 0 {
+            file_name.clone()
+        } else {
+            let path = Path::new(&file_name);
+            let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("image");
+            match path.extension().and_then(|e| e.to_str()) {
+                Some(extension) => format!("{stem}-{attempt}.{extension}"),
+                None => format!("{stem}-{attempt}"),
+            }
+        };
+        let target = folder.join(&candidate);
+        // `std::fs`, not the plugin's: this is a real path on the desktop,
+        // and the plugin's OpenOptions has no `create_new`.
+        match std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&target)
+        {
+            Ok(mut file) => {
+                use std::io::Write;
+                file.write_all(&bytes).map_err(|e| e.to_string())?;
+                file.flush().map_err(|e| e.to_string())?;
+                return Ok(Some(WrittenImage {
+                    rel_path: format!("{IMAGE_FOLDER}/{candidate}"),
+                }));
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {
+                attempt += 1;
+                if attempt > 999 {
+                    return Err(t(loc, "image.invalidPath"));
+                }
+            }
+            Err(error) => return Err(error.to_string()),
+        }
+    }
+}
+
 /// Fingerprint of an image beside a document, or `null` when there is none to
 /// read — which includes every case where relative images cannot work at all.
 ///
@@ -1660,6 +1809,7 @@ pub fn run() {
             document_stat,
             image_stat,
             read_image,
+            write_image,
             read_document,
             load_session,
             save_session,
@@ -1798,6 +1948,149 @@ mod tests {
         std::fs::write(root.join("shared").join("logo.png"), b"\x89PNG\r\n\x1a\n").unwrap();
         std::fs::write(notes.join("secret.txt"), "not an image").unwrap();
         (notes.join("document.md"), root)
+    }
+
+    #[test]
+    fn keeps_an_ordinary_image_name() {
+        assert_eq!(sanitize_image_name("shot.png").as_deref(), Some("shot.png"));
+        assert_eq!(
+            sanitize_image_name("Captura de pantalla.PNG").as_deref(),
+            Some("Captura de pantalla.PNG"),
+        );
+    }
+
+    /// The name arrives from a pasted file, so it arrives from wherever that
+    /// file did. Everything before the last separator is not part of it.
+    #[test]
+    fn takes_only_the_name_out_of_a_path() {
+        for proposed in [
+            "../../../etc/shot.png",
+            r"..\..\windows\shot.png",
+            "/absolute/shot.png",
+            r"C:\Users\someone\shot.png",
+        ] {
+            assert_eq!(
+                sanitize_image_name(proposed).as_deref(),
+                Some("shot.png"),
+                "{proposed:?}",
+            );
+        }
+    }
+
+    #[test]
+    fn refuses_a_name_that_is_not_an_image() {
+        assert_eq!(sanitize_image_name("notes.txt"), None);
+        assert_eq!(sanitize_image_name("script.exe"), None);
+        assert_eq!(sanitize_image_name("shot"), None);
+        assert_eq!(sanitize_image_name(""), None);
+        assert_eq!(sanitize_image_name("   "), None);
+        // Nothing left once the separators are gone.
+        assert_eq!(sanitize_image_name("../"), None);
+    }
+
+    #[test]
+    fn steps_around_the_names_windows_reserves() {
+        // `con.png` cannot be created on Windows at all.
+        assert_eq!(
+            sanitize_image_name("con.png").as_deref(),
+            Some("image-con.png"),
+        );
+        assert_eq!(
+            sanitize_image_name("LPT1.png").as_deref(),
+            Some("image-LPT1.png"),
+        );
+        // A name that merely starts like one is left alone.
+        assert_eq!(
+            sanitize_image_name("console.png").as_deref(),
+            Some("console.png"),
+        );
+    }
+
+    #[test]
+    fn drops_trailing_dots_and_the_characters_windows_refuses() {
+        // Windows drops these silently, so the file created would not have the
+        // name that was asked for.
+        assert_eq!(
+            sanitize_image_name("shot.png. ").as_deref(),
+            Some("shot.png")
+        );
+        assert_eq!(
+            sanitize_image_name("sh<o>t:\"|?*.png").as_deref(),
+            Some("shot.png"),
+        );
+    }
+
+    /// The naming and collision logic of `write_image`, without a Tauri app.
+    ///
+    /// The command itself needs an `AppHandle` and a registry, which a unit
+    /// test has no way to build; what it does once it has a folder is this,
+    /// and this is where the decisions are.
+    fn write_into(folder: &Path, name: &str) -> String {
+        let file_name = sanitize_image_name(name).expect("a usable name");
+        std::fs::create_dir_all(folder).unwrap();
+        let mut attempt = 0;
+        loop {
+            let candidate = if attempt == 0 {
+                file_name.clone()
+            } else {
+                let path = Path::new(&file_name);
+                let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("image");
+                match path.extension().and_then(|e| e.to_str()) {
+                    Some(extension) => format!("{stem}-{attempt}.{extension}"),
+                    None => format!("{stem}-{attempt}"),
+                }
+            };
+            let target = folder.join(&candidate);
+            match std::fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(&target)
+            {
+                Ok(_) => return candidate,
+                Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => attempt += 1,
+                Err(error) => panic!("{error}"),
+            }
+        }
+    }
+
+    #[test]
+    fn gives_a_repeated_name_a_suffix_rather_than_overwriting() {
+        let (document, root) = image_fixture("collide");
+        let folder = document.parent().unwrap().join("assets");
+        assert_eq!(write_into(&folder, "photo.png"), "photo.png");
+        assert_eq!(write_into(&folder, "photo.png"), "photo-1.png");
+        assert_eq!(write_into(&folder, "photo.png"), "photo-2.png");
+        // And the first one is still there, with its own bytes.
+        assert!(folder.join("photo.png").is_file());
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    /// The check that stops `assets` being a way out of the document's folder.
+    ///
+    /// Creating the directory and canonicalising it is what makes a symlink
+    /// visible; comparing against the document's own canonical directory is
+    /// what refuses it.
+    #[cfg(unix)]
+    #[test]
+    fn refuses_an_assets_folder_that_leads_outside() {
+        let (document, root) = image_fixture("escape");
+        let parent = document.parent().unwrap();
+        let outside = root.join("elsewhere");
+        std::fs::create_dir_all(&outside).unwrap();
+        let link = parent.join("assets-link");
+        std::os::unix::fs::symlink(&outside, &link).unwrap();
+
+        let folder = link.canonicalize().unwrap();
+        let confined = parent.canonicalize().unwrap();
+        assert!(
+            !folder.starts_with(&confined),
+            "a symlinked assets folder must not count as being inside the document's own",
+        );
+
+        // And the real one does.
+        let real = parent.join("assets").canonicalize().unwrap();
+        assert!(real.starts_with(&confined));
+        let _ = std::fs::remove_dir_all(root);
     }
 
     #[test]

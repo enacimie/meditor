@@ -9,17 +9,25 @@
  * hand, so the gap between "started" and "finished" is a place where things
  * can be made to happen rather than a race nobody can reach.
  */
-import { describe, it, expect, vi, beforeAll, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { EditorView } from "@codemirror/view";
 import { EditorState } from "@codemirror/state";
 import { history, undo } from "@codemirror/commands";
 import type { ClipboardEvent, DragEvent } from "react";
-import {
+
+const writeImage = vi.fn();
+vi.mock("../backend", () => ({
+  backend: {
+    writeImage: (...args: unknown[]) => writeImage(...args),
+  },
+}));
+
+const {
   useImagePaste,
   imagePlaceholderField,
-  type ImagePasteError,
-} from "./useImagePaste";
+}: typeof import("./useImagePaste") = await import("./useImagePaste");
+type ImagePasteError = import("./useImagePaste").ImagePasteError;
 
 beforeAll(() => {
   if (!("getClientRects" in (document.createTextNode("") as Node))) {
@@ -60,6 +68,11 @@ class FakeFileReader {
 
 vi.stubGlobal("FileReader", FakeFileReader);
 
+beforeEach(() => {
+  writeImage.mockReset();
+  writeImage.mockResolvedValue(null);
+});
+
 afterEach(() => {
   readers.length = 0;
   vi.restoreAllMocks();
@@ -90,11 +103,13 @@ const BIG = 2_000_000;
 const SMALL = 10;
 const TOO_BIG = 11 * 1024 * 1024;
 
-function setup(view: EditorView) {
+function setup(view: EditorView, docHandle: string | null = null) {
   const errors: ImagePasteError[] = [];
   const { result } = renderHook(() =>
     useImagePaste({
       viewRef: { current: view },
+      docHandle,
+      locale: "en",
       onError: (error) => errors.push(error),
     }),
   );
@@ -270,5 +285,127 @@ describe("dropping a file", () => {
 
     await waitFor(() => expect(text(view)).toBe(`abc![big.png](${DATA_URL})`));
     expect(text(view)).not.toContain("Reading image");
+  });
+});
+
+describe("a document that has been saved", () => {
+  /*
+   * A `.md` carrying its pictures as base64 is portable and enormous: a couple
+   * of screenshots outweigh the prose several times over, in the file, in the
+   * session snapshot and in every export. A saved document gets real files
+   * beside it and a link.
+   */
+
+  it("writes the image beside the document and links to it", async () => {
+    writeImage.mockResolvedValue({ relPath: "assets/shot.png" });
+    const view = makeView("abc", 3);
+    const { api } = setup(view, "doc-1");
+
+    api.current.handlePaste(pasteEvent(makeFile("shot.png", SMALL)));
+
+    await waitFor(() => expect(text(view)).toBe("abc![shot.png](assets/shot.png)"));
+    // No base64 anywhere: the bytes went to disk, not into the document.
+    expect(text(view)).not.toContain("data:");
+    expect(writeImage).toHaveBeenCalledWith(
+      "doc-1",
+      "shot.png",
+      expect.any(Uint8Array),
+      "en",
+    );
+  });
+
+  it("links to the name the backend chose, not the one proposed", async () => {
+    // The backend renames on a collision, and the document has to point at
+    // the file that now exists rather than the one that was asked for.
+    writeImage.mockResolvedValue({ relPath: "assets/shot-1.png" });
+    const view = makeView("", 0);
+    const { api } = setup(view, "doc-1");
+
+    api.current.handlePaste(pasteEvent(makeFile("shot.png", SMALL)));
+
+    await waitFor(() => expect(text(view)).toBe("![shot-1.png](assets/shot-1.png)"));
+  });
+
+  it("escapes a name that would break the link", async () => {
+    writeImage.mockResolvedValue({ relPath: "assets/mi foto.png" });
+    const view = makeView("", 0);
+    const { api } = setup(view, "doc-1");
+
+    api.current.handlePaste(pasteEvent(makeFile("mi foto.png", SMALL)));
+
+    // A bare space ends the link target in Markdown, so the picture would not
+    // load and the rest of the line would be read as a title.
+    await waitFor(() => expect(text(view)).toContain("(assets/mi%20foto.png)"));
+  });
+
+  it("gives a clipboard screenshot a name of its own", async () => {
+    // Every browser calls a pasted screenshot `image.png`, so a folder of them
+    // would be image.png, image-1.png, image-2.png with nothing to tell them
+    // apart.
+    writeImage.mockResolvedValue({ relPath: "assets/whatever.png" });
+    const view = makeView("", 0);
+    const { api } = setup(view, "doc-1");
+
+    api.current.handlePaste(pasteEvent(makeFile("image.png", SMALL)));
+
+    await waitFor(() => expect(writeImage).toHaveBeenCalled());
+    const proposed = writeImage.mock.calls[0][1] as string;
+    expect(proposed).toMatch(/^image-\d{8}-\d{6}[.]png$/);
+  });
+
+  it("keeps a dragged file's own name", async () => {
+    writeImage.mockResolvedValue({ relPath: "assets/diagram.png" });
+    const view = makeView("", 0);
+    const { api } = setup(view, "doc-1");
+
+    void api.current.handleDrop(dropEvent(makeFile("diagram.png", SMALL)));
+
+    await waitFor(() => expect(writeImage).toHaveBeenCalled());
+    expect(writeImage.mock.calls[0][1]).toBe("diagram.png");
+  });
+});
+
+describe("a document with nowhere to write", () => {
+  it("embeds the image, without a word", async () => {
+    // A new tab, an Android content URI, the web build. Losing the picture or
+    // demanding a save first would both be worse than a larger document.
+    const view = makeView("abc", 3);
+    const { api, errors } = setup(view, null);
+
+    api.current.handlePaste(pasteEvent(makeFile("shot.png", SMALL)));
+    await waitFor(() => expect(readers.length).toBe(1));
+    readers[0].resolve(DATA_URL);
+
+    await waitFor(() => expect(text(view)).toBe(`abc![shot.png](${DATA_URL})`));
+    expect(writeImage).not.toHaveBeenCalled();
+    expect(errors).toHaveLength(0);
+  });
+
+  it("embeds it when the backend says there is nowhere", async () => {
+    writeImage.mockResolvedValue(null);
+    const view = makeView("", 0);
+    const { api, errors } = setup(view, "doc-1");
+
+    api.current.handlePaste(pasteEvent(makeFile("shot.png", SMALL)));
+    await waitFor(() => expect(readers.length).toBe(1));
+    readers[0].resolve(DATA_URL);
+
+    await waitFor(() => expect(text(view)).toContain(DATA_URL));
+    expect(errors).toHaveLength(0);
+  });
+
+  it("embeds it and says so when the write fails", async () => {
+    // Disk full, permission refused. The paste still happens — losing the
+    // image would be worse — but the user is told why the file is not there.
+    writeImage.mockRejectedValue(new Error("disk full"));
+    const view = makeView("", 0);
+    const { api, errors } = setup(view, "doc-1");
+
+    api.current.handlePaste(pasteEvent(makeFile("shot.png", SMALL)));
+    await waitFor(() => expect(readers.length).toBe(1));
+    readers[0].resolve(DATA_URL);
+
+    await waitFor(() => expect(text(view)).toContain(DATA_URL));
+    expect(errors).toEqual([{ kind: "notStored", name: "shot.png" }]);
   });
 });
