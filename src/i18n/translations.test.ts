@@ -106,6 +106,7 @@ describe("translations", () => {
     // Image paste notices; en/es for now like the strings above.
     "image.tooLarge",
     "image.insertFailed",
+    "image.notStored",
   ]);
 
   it("every English key is defined in every language", () => {

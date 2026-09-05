@@ -48,6 +48,10 @@ const CONFIG = `window.__meditorShimConfig = ${JSON.stringify({
     // Named with a space, and written into the document percent-encoded.
     "assets/mi foto.png": PNG_2x1,
   },
+  // The document has a folder to write into, and anything written into it
+  // reads back as the same 2x1 picture.
+  canWriteImages: true,
+  writtenImage: PNG_2x1,
 })};`;
 
 const page = await connect(CDP_PORT);
@@ -188,6 +192,49 @@ try {
     "an image on a paginated page must have a height, or the page breaks are worked out around nothing",
   );
 
+  // ── Pasting writes a file and links to it ────────────────────────────
+  // The document is saved, so the picture belongs beside it rather than
+  // inside it. Driven through a real paste event, because the path from the
+  // clipboard to the link runs through the browser's own plumbing.
+  await page.evaluate(`(() => {
+    const binary = atob(${JSON.stringify(PNG_2x1)});
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const file = new File([bytes], 'pasted.png', { type: 'image/png' });
+    const data = new DataTransfer();
+    data.items.add(file);
+    const cm = document.querySelector('.cm-content');
+    cm.focus();
+    cm.dispatchEvent(new ClipboardEvent('paste', {
+      clipboardData: data,
+      bubbles: true,
+      cancelable: true,
+    }));
+    return true;
+  })()`);
+
+  await page.waitFor("window.__meditorWrittenImages().length === 1", {
+    timeout: 20000,
+    message: "pasting into a saved document should write the picture beside it",
+  });
+  const stored = await page.evaluate("window.__meditorWrittenImages()[0]");
+  assert(
+    stored.relPath === "assets/pasted.png",
+    `the picture should have gone into assets/, got ${stored.relPath}`,
+  );
+
+  const inserted = await page.evaluate(
+    "document.querySelector('.cm-content').textContent",
+  );
+  assert(
+    inserted.includes("![pasted.png](assets/pasted.png)"),
+    `the document should link to the file, got ${JSON.stringify(inserted.slice(0, 120))}`,
+  );
+  assert(
+    !inserted.includes("data:image"),
+    "a saved document should not carry the picture inside it as well",
+  );
+
   assert(
     page.consoleErrors.length === 0,
     `console errors while resolving images: ${JSON.stringify(page.consoleErrors)}`,
@@ -195,7 +242,8 @@ try {
 
   console.log(
     `PASS: images.spec — 3 images beside the document decoded at 2x1 from ${reads} reads ` +
-      `(${stats} stats), missing one left broken, remote one untouched`,
+      `(${stats} stats), missing one left broken, remote one untouched, ` +
+      `and a pasted one written to ${stored.relPath}`,
   );
 } finally {
   await page.removeInitScript(shimId);

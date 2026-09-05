@@ -136,6 +136,8 @@ export const en = {
   "image.tooLarge": (name: string, max: number) =>
     `${name} exceeds the ${max} MiB image limit`,
   "image.insertFailed": (name: string) => `Could not insert image ${name}`,
+  "image.notStored": (name: string) =>
+    `${name} could not be saved beside the document, so it was embedded in it`,
   "file.documentUnavailable": "Document is no longer available for saving",
   "file.directoryMissing": "Destination folder does not exist",
   "file.sessionTooLarge": "Session exceeds allowed limit",

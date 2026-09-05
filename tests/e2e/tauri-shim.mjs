@@ -70,6 +70,10 @@ export const TAURI_SHIM = `(() => {
    */
   const IMAGES = CONFIG.images ?? {};
 
+  /** Every write_image call, so a spec can assert on what was stored. */
+  const written = [];
+  window.__meditorWrittenImages = () => written;
+
   function imageBytes(relPath) {
     const base64 = IMAGES[relPath];
     if (!base64) return null;
@@ -97,6 +101,26 @@ export const TAURI_SHIM = `(() => {
       case "read_image": {
         const bytes = imageBytes(args?.relPath);
         return bytes ? bytes.buffer : new ArrayBuffer(0);
+      }
+      case "write_image": {
+        // As Rust does: the name is a proposal, the folder is decided here,
+        // and a name already taken gets a suffix rather than overwriting.
+        if (!CONFIG.canWriteImages) return null;
+        const name = String(args?.name ?? "");
+        let candidate = name;
+        let attempt = 0;
+        while (IMAGES["assets/" + candidate] !== undefined) {
+          attempt++;
+          const dot = name.lastIndexOf(".");
+          candidate =
+            dot > 0
+              ? name.slice(0, dot) + "-" + attempt + name.slice(dot)
+              : name + "-" + attempt;
+        }
+        // Remember it, so the preview can read back what was just written.
+        IMAGES["assets/" + candidate] = CONFIG.writtenImage ?? "";
+        written.push({ name, relPath: "assets/" + candidate });
+        return { relPath: "assets/" + candidate };
       }
       case "save_session":
       case "save_document":

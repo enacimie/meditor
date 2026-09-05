@@ -342,6 +342,15 @@ export const webBackend: Backend = {
     return null;
   },
 
+  /*
+   * And nowhere to write one either, for the same reason: a file handle is a
+   * handle to that one file, with no directory around it to put anything
+   * beside. A pasted image stays inside the document here.
+   */
+  async writeImage() {
+    return null;
+  },
+
   async exportPdf(_defaultName, _locale, _paged, _pageWidthIn, _pageHeightIn) {
     // The browser's own print dialog offers "Save as PDF"; the print
     // stylesheet scopes the output to the preview pane. A Marp deck supplies

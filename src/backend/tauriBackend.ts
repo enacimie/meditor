@@ -69,6 +69,22 @@ export const tauriBackend: Backend = {
     return buffer && buffer.byteLength > 0 ? new Uint8Array(buffer) : null;
   },
 
+  writeImage(
+    handle: string,
+    name: string,
+    bytes: Uint8Array,
+    locale: string,
+  ): Promise<{ relPath: string } | null> {
+    // As an array, the way `write_pdf_bytes` sends its bytes: a Vec<u8> on the
+    // Rust side, and the paste path already refuses anything over 10 MiB.
+    return invoke<{ relPath: string } | null>("write_image", {
+      handle,
+      name,
+      bytes: Array.from(bytes),
+      locale,
+    });
+  },
+
   exportPdf(
     defaultName: string,
     locale: string,

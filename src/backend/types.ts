@@ -58,6 +58,20 @@ export type Backend = {
   imageStat(handle: string, relPath: string, locale: string): Promise<DocumentStat>;
   /** The bytes of an image beside a document; null when there are none. */
   readImage(handle: string, relPath: string, locale: string): Promise<Uint8Array | null>;
+  /**
+   * Write an image into `assets/` beside a document, and say what to link to.
+   *
+   * `name` is a proposal, not a path: the backend decides the final name and
+   * refuses anything that is not an image. Null where there is nowhere to
+   * write — a document that has never been saved, an Android content URI, the
+   * web build — and the caller falls back to embedding the image instead.
+   */
+  writeImage(
+    handle: string,
+    name: string,
+    bytes: Uint8Array,
+    locale: string,
+  ): Promise<{ relPath: string } | null>;
   exportPdf(
     defaultName: string,
     locale: string,

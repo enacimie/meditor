@@ -26,7 +26,7 @@
 - **Multi-document tabs**: create, close, rename (double-click or **F2**), and unsaved changes indicator. Navigate with **Ctrl+Tab** / **Ctrl+Shift+Tab**.
 - **Per-tab independent state** (separate undo history and scroll position).
 - **Typing aids**: automatic bracket/quote pair completion, smart backspace, auto-continue for lists and blockquotes.
-- **Drag & drop or paste images** into the editor — they are inlined as markdown and previewed live.
+- **Drag & drop or paste images** into the editor. In a saved document they are written to an `assets/` folder beside it and linked, so the `.md` stays a text file; in one that has never been saved they are embedded, as they always were.
 - **Images beside the document**: `![](assets/shot.png)` in a saved document shows the file next to it, including one a level up (`../shared/logo.png`), and travels inside the HTML export. Only the desktop can do this: Android hands the app one document with no folder around it, and a browser file handle has no parent either.
 - **Persistence**: open/save real files and **session restoration** (tabs and content) between launches.
 

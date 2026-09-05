@@ -187,6 +187,10 @@ type Props = {
   kind: DocKind;
   /** Told when a pasted or dropped image could not be inserted. */
   onImageError?: (error: ImagePasteError) => void;
+  /** The open document, so a pasted image can be written beside it. */
+  docHandle?: string | null;
+  /** The interface language, for the backend's messages. */
+  locale?: string;
 };
 
 const Editor = forwardRef<EditorHandle, Props>(function Editor(
@@ -204,6 +208,8 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
     onCursorLineChange,
     kind,
     onImageError,
+    docHandle = null,
+    locale = "en",
   },
   ref,
 ) {
@@ -290,7 +296,7 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
 
   // Image drag-and-drop + clipboard paste
   const { dragOver, busy, handleDragOver, handleDragEnter, handleDragLeave, handleDrop, handlePaste } =
-    useImagePaste({ viewRef, onError: onImageError });
+    useImagePaste({ viewRef, onError: onImageError, docHandle, locale });
 
   useLayoutEffect(() => {
     onChangeRef.current = onChange;
