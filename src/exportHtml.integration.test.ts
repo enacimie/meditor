@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, vi } from "vitest";
 
-vi.mock("./mermaidPool", () => ({
+vi.mock("./mermaidRender", () => ({
   getMermaidCache: () => ({ get: vi.fn(), set: vi.fn(), clear: vi.fn() }),
   getMermaidPool: async () => {
     throw new Error("no worker in tests");

@@ -31,7 +31,7 @@ import yaml from "highlight.js/lib/languages/yaml";
 import dockerfile from "highlight.js/lib/languages/dockerfile";
 import katex from "katex";
 
-// Mermaid blocks are rendered separately by the mermaid worker/pool.
+// Mermaid blocks are rendered separately, by mermaidRender.
 // Register a no-op language so highlight.js doesn't warn about unknown "mermaid".
 const mermaidNoop = () => ({
   name: "Mermaid",

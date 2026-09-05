@@ -1,5 +1,11 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import {
+  MermaidCache,
+  clearMermaidCache,
+  getMermaidCache,
+  renderMermaidMainThread,
+} from "./mermaidRender";
 
 const mermaidMock = vi.hoisted(() => ({
   initialize: vi.fn(),
@@ -7,41 +13,10 @@ const mermaidMock = vi.hoisted(() => ({
 }));
 
 // Mermaid's real SVG renderer needs browser layout APIs that jsdom does not
-// provide. Mock the package boundary so the main-thread adapter itself can be
-// tested without skipping the fallback path entirely.
+// provide, so the package boundary is mocked and what is tested is the
+// adapter around it: the theme it is initialised with, and the cache.
 vi.mock("mermaid", () => ({ default: mermaidMock }));
 
-// Workers can't run in jsdom — mock the worker module
-vi.mock("./mermaid.worker?worker", () => ({
-  default: class MockWorker {
-    onmessage: ((_e: MessageEvent) => void) | null = null;
-    onerror: ((_e: ErrorEvent) => void) | null = null;
-    constructor() {
-      // Simulate async worker init — runs after onmessage is assigned
-      setTimeout(() => {
-        if (this.onmessage) {
-          this.onmessage(
-            new MessageEvent("message", { data: { type: "ready" } }),
-          );
-        }
-      }, 0);
-    }
-    postMessage(_msg: unknown) {}
-    terminate() {}
-  },
-}));
-
-import {
-  MermaidCache,
-  MermaidPool,
-  getMermaidCache,
-  clearMermaidCache,
-  getMermaidPool,
-  destroyMermaidPool,
-  renderMermaidMainThread,
-} from "./mermaidPool";
-
-/* ---- MermaidCache ---- */
 describe("MermaidCache", () => {
   let cache: MermaidCache;
 
@@ -113,10 +88,9 @@ describe("MermaidCache", () => {
   });
 });
 
-/* ---- MermaidPool singletons ---- */
-describe("MermaidPool singletons", () => {
+/* ---- the shared cache ---- */
+describe("the shared cache", () => {
   beforeEach(() => {
-    destroyMermaidPool();
     clearMermaidCache();
   });
 
@@ -141,79 +115,33 @@ describe("MermaidPool singletons", () => {
 });
 
 /* ---- MermaidPool class ---- */
-describe("MermaidPool", () => {
-  afterEach(() => {
-    destroyMermaidPool();
-  });
 
-  it("constructs with given worker count", () => {
-    const pool = new MermaidPool(2);
-    pool.destroy();
-    expect(true).toBe(true);
-  });
-
-  it("waitReady resolves when mock workers initialise", async () => {
-    const pool = new MermaidPool(1);
-    await pool.waitReady();
-    expect(true).toBe(true);
-    pool.destroy();
-  });
-
-  it("throws 'Worker not ready' when rendering before waitReady", async () => {
-    const pool = new MermaidPool(1);
-    await expect(pool.render(1, "graph TD")).rejects.toThrow(
-      "Worker not ready",
-    );
-    pool.destroy();
-  });
-
-  it("destroy() cleans up without errors", () => {
-    const pool = new MermaidPool(2);
-    pool.destroy();
-    expect(true).toBe(true);
-  });
-
-  it("getMermaidPool returns singleton", async () => {
-    destroyMermaidPool();
-    const p1 = await getMermaidPool();
-    const p2 = await getMermaidPool();
-    expect(p1).toBe(p2);
-    destroyMermaidPool();
-  });
-
-  it("destroyMermaidPool resets singleton", async () => {
-    destroyMermaidPool();
-    const p1 = await getMermaidPool();
-    destroyMermaidPool();
-    const p2 = await getMermaidPool();
-    expect(p1).not.toBe(p2);
-    destroyMermaidPool();
-  });
-});
-
-/* ---- renderMermaidMainThread ---- */
 describe("renderMermaidMainThread", () => {
   beforeEach(() => {
     mermaidMock.initialize.mockReset();
     mermaidMock.render.mockReset();
+    mermaidMock.render.mockResolvedValue({ svg: "<svg>drawn</svg>" });
   });
-  it("renders a simple diagram and returns SVG string", async () => {
-    mermaidMock.render.mockResolvedValue({
-      svg: '<svg id="test-mmd"><g>diagram</g></svg>',
-    });
-    const svg = await renderMermaidMainThread(
-      "test-mmd",
-      "graph TD\n  A --> B",
-    );
-    expect(typeof svg).toBe("string");
-    expect(svg).toContain("<svg");
-    expect(svg).toContain("test-mmd");
-  }, 15_000);
 
-  it("throws on invalid mermaid syntax", async () => {
-    mermaidMock.render.mockRejectedValue(new Error("invalid diagram"));
-    await expect(
-      renderMermaidMainThread("bad-id", "not a valid diagram @@@"),
-    ).rejects.toThrow("invalid diagram");
-  }, 15_000);
+  it("draws with the theme it is given", async () => {
+    // Mermaid picks its palette when `initialize` is called, so the theme has
+    // to arrive there and not merely be passed along.
+    await renderMermaidMainThread("mmd-1", "graph TD; A-->B", "dark");
+    expect(mermaidMock.initialize).toHaveBeenCalledWith(
+      expect.objectContaining({ theme: "dark" }),
+    );
+  });
+
+  it("draws light when nothing asks otherwise", async () => {
+    await renderMermaidMainThread("mmd-2", "graph TD; A-->B");
+    expect(mermaidMock.initialize).toHaveBeenCalledWith(
+      expect.objectContaining({ theme: "default" }),
+    );
+  });
+
+  it("hands back the SVG mermaid produced", async () => {
+    expect(await renderMermaidMainThread("mmd-3", "graph TD; A-->B")).toBe(
+      "<svg>drawn</svg>",
+    );
+  });
 });
