@@ -185,6 +185,8 @@ export const en = {
   // Shortcuts help
   "shortcuts.title": "Keyboard shortcuts",
   "shortcuts.close": "Close",
+  "shortcuts.bold": "Bold",
+  "shortcuts.italic": "Italic",
   "shortcuts.ctrlN": "Ctrl+N",
   "shortcuts.ctrlO": "Ctrl+O",
   "shortcuts.ctrlS": "Ctrl+S",

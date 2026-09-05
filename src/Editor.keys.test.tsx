@@ -64,14 +64,29 @@ function setCursor(view: EditorView, pos: number, head?: number) {
 }
 
 /** A real keystroke, through CodeMirror's own keydown handling. */
-function press(view: EditorView, key: string): boolean {
+function press(
+  view: EditorView,
+  key: string,
+  modifiers: { ctrlKey?: boolean; shiftKey?: boolean } = {},
+): boolean {
   const event = new KeyboardEvent("keydown", {
     key,
     bubbles: true,
     cancelable: true,
+    ...modifiers,
   });
   view.contentDOM.dispatchEvent(event);
   return event.defaultPrevented;
+}
+
+/** Ctrl+key, the way the shortcuts are actually pressed. */
+const ctrl = (view: EditorView, key: string, shift = false) =>
+  press(view, key, { ctrlKey: true, shiftKey: shift });
+
+/** The selected text, for asserting where the selection ended up. */
+function selected(view: EditorView): string {
+  const { from, to } = view.state.selection.main;
+  return view.state.sliceDoc(from, to);
 }
 
 function text(view: EditorView): string {
@@ -172,5 +187,87 @@ describe("markdown pairs", () => {
     setCursor(view, 0, 5);
     press(view, "*");
     expect(text(view)).toBe("*hello*");
+  });
+});
+
+describe("formatting shortcuts", () => {
+  /*
+   * Ctrl+B on text that is already bold is how a writer un-bolds it. A
+   * shortcut that only ever added markers would turn `**word**` into
+   * `****word****`, which is why every one of these toggles.
+   */
+
+  it("makes the selection bold, and takes it back off", async () => {
+    const view = await mount("hello world");
+    setCursor(view, 0, 5);
+    ctrl(view, "b");
+    expect(text(view)).toBe("**hello** world");
+    expect(selected(view), "the words stay selected, ready to toggle again").toBe("hello");
+
+    ctrl(view, "b");
+    expect(text(view)).toBe("hello world");
+  });
+
+  it("un-bolds when the markers are inside the selection", async () => {
+    // Selecting by double-click takes the word; selecting by dragging often
+    // takes the markers with it, and both have to work.
+    const view = await mount("**hello** world");
+    setCursor(view, 0, 9);
+    ctrl(view, "b");
+    expect(text(view)).toBe("hello world");
+  });
+
+  it("italicises with one marker, not two", async () => {
+    const view = await mount("hello");
+    setCursor(view, 0, 5);
+    ctrl(view, "i");
+    expect(text(view)).toBe("*hello*");
+    ctrl(view, "i");
+    expect(text(view)).toBe("hello");
+  });
+
+  it("opens an empty pair when nothing is selected", async () => {
+    const view = await mount("");
+    ctrl(view, "b");
+    expect(text(view)).toBe("****");
+    // Between the markers, ready to type into.
+    expect(view.state.selection.main.head).toBe(2);
+  });
+
+  it("uses Typst's own markers in a Typst document", async () => {
+    // Typst writes bold as *this* and italic as _this_, and a Markdown
+    // document's `**` would simply be wrong there.
+    const view = await mount("hello", "typst");
+    setCursor(view, 0, 5);
+    ctrl(view, "b");
+    expect(text(view)).toBe("*hello*");
+  });
+
+  it("un-italics text CodeMirror would rather expand the selection over", async () => {
+    // `defaultKeymap` binds Mod-i to selectParentSyntax, which declines on
+    // plain text and claims the key the moment the text is emphasised. At
+    // ordinary precedence Ctrl+I made a word italic and then refused to make
+    // it plain again — it selected `*hello*` instead.
+    const view = await mount("*hello*");
+    setCursor(view, 1, 6);
+    ctrl(view, "i");
+    expect(text(view)).toBe("hello");
+  });
+
+  it("leaves Ctrl+K to the find field", async () => {
+    // Taking a documented shortcut is a bigger decision than adding one.
+    const view = await mount("hello");
+    setCursor(view, 0, 5);
+    ctrl(view, "k");
+    expect(text(view)).toBe("hello");
+  });
+
+  it("leaves Ctrl+Shift+K to delete-line", async () => {
+    // The other key a writer might reach for is CodeMirror's own delete-line,
+    // which is worth more than a link shortcut.
+    const view = await mount("one\ntwo");
+    setCursor(view, 0);
+    ctrl(view, "k", true);
+    expect(text(view)).toBe("two");
   });
 });

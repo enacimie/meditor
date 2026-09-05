@@ -150,6 +150,8 @@ export const es = {
   "outline.empty": "No se encontraron encabezados",
   "shortcuts.title": "Atajos de teclado",
   "shortcuts.close": "Cerrar",
+  "shortcuts.bold": "Negrita",
+  "shortcuts.italic": "Cursiva",
   "shortcuts.ctrlN": "Ctrl+N",
   "shortcuts.ctrlO": "Ctrl+O",
   "shortcuts.ctrlS": "Ctrl+S",

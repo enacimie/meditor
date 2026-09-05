@@ -33,6 +33,8 @@ const ShortcutsOverlay = memo(function ShortcutsOverlay({ t, onClose }: Props) {
     [t("shortcuts.ctrlTab"), t("shortcuts.nextTab")],
     [t("shortcuts.ctrlShiftTab"), t("shortcuts.prevTab")],
     ["F2", t("tab.rename")],
+    ["Ctrl+B", t("shortcuts.bold")],
+    ["Ctrl+I", t("shortcuts.italic")],
     [t("shortcuts.ctrlF"), t("shortcuts.find")],
     [t("shortcuts.ctrlK"), t("shortcuts.focusSearch")],
     [t("shortcuts.ctrlH"), t("shortcuts.replace")],
