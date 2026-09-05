@@ -19,20 +19,44 @@ try {
     timeout: 15000,
   });
 
-  const typstMenuItem = await page.evaluate(`(async () => {
+  /*
+   * Three synchronous steps rather than one asynchronous one.
+   *
+   * This call is where `Promise was collected (-32000)` has been landing. It
+   * used to click the menu open, `await` a zero-delay timer and click the item
+   * on the other side of it, which leaves Chrome awaiting a page-side promise
+   * across a task boundary — the one shape in this suite that has ever failed
+   * that way, and the shape the LaTeX probe below was already moved off.
+   *
+   * A synchronous expression returns its value outright: there is no pending
+   * promise for the protocol to lose. The waiting moves to `waitFor`, which
+   * has tolerated transient errors all along.
+   */
+  const MENU_ITEMS = `[...document.querySelectorAll('[role="menu"] [role="menuitem"]')]`;
+  const TYPST_ITEM =
+    `${MENU_ITEMS}.find((el) => /typst/i.test(el.textContent || '') ` +
+    `|| (el.textContent || '').toLowerCase().includes('.typ'))`;
+
+  const menuOpened = await page.evaluate(`(() => {
     const menuToggle = document.querySelector('button[aria-haspopup="menu"]');
     if (!(menuToggle instanceof HTMLElement)) return false;
     menuToggle.click();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    const menu = document.querySelector('[role="menu"]');
-    const item = [...(menu?.querySelectorAll('[role="menuitem"]') ?? [])].find((el) =>
-      /typst/i.test(el.textContent || '') || (el.textContent || '').toLowerCase().includes('.typ'),
-    );
+    return true;
+  })()`);
+  assert(menuOpened, "the more-options menu should have a toggle to click");
+
+  await page.waitFor(`!!(${TYPST_ITEM})`, {
+    timeout: 10000,
+    message: "Typst action should be available in the more-options menu",
+  });
+
+  const typstMenuItem = await page.evaluate(`(() => {
+    const item = ${TYPST_ITEM};
     if (!(item instanceof HTMLElement)) return false;
     item.click();
     return true;
   })()`);
-  assert(typstMenuItem, "Typst action should be available in the more-options menu");
+  assert(typstMenuItem, "the Typst menu item should be clickable");
 
   await page.waitFor("!!document.querySelector('.typst-svg-wrapper svg')", {
     timeout: 45000,
