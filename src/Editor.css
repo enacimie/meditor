@@ -43,3 +43,25 @@
 @keyframes editor-busy-spin {
   to { transform: rotate(360deg); }
 }
+
+/*
+ * Focus mode: everything but the paragraph being written steps back.
+ *
+ * Opacity rather than a colour, so it works in all four themes without
+ * naming one — and a value that is clearly dimmer while staying readable,
+ * because the rest of the document is still there to be glanced at.
+ */
+.cm-dimmed-paragraph {
+  opacity: 0.35;
+  transition: opacity 120ms ease-out;
+}
+
+/*
+ * Someone who has asked for less movement should not get a fade on every
+ * keystroke; the dimming itself stays, since that is the point of the mode.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .cm-dimmed-paragraph {
+    transition: none;
+  }
+}

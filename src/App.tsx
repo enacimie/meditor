@@ -47,10 +47,14 @@ import {
   clampFontSize,
   normalizeFontFamily,
   normalizeSpellcheck,
+  normalizeFocusMode,
   normalizeLandscapeTables,
+  normalizeTypewriterMode,
   DEFAULT_EDITOR_FONT_FAMILY,
   DEFAULT_SPELLCHECK,
+  DEFAULT_FOCUS_MODE,
   DEFAULT_LANDSCAPE_TABLES,
+  DEFAULT_TYPEWRITER_MODE,
   DEFAULT_EDITOR_FONT_SIZE,
   type EditorPreferences,
 } from "./editorPreferences";
@@ -83,6 +87,8 @@ const DEFAULT_PREFERENCES: Preferences = {
   editorFontFamily: DEFAULT_EDITOR_FONT_FAMILY,
   spellcheck: DEFAULT_SPELLCHECK,
   landscapeTables: DEFAULT_LANDSCAPE_TABLES,
+  focusMode: DEFAULT_FOCUS_MODE,
+  typewriterMode: DEFAULT_TYPEWRITER_MODE,
 };
 /**
  * Whether a first run should open in the paginated A4 view.
@@ -133,6 +139,8 @@ function loadPreferences(): Preferences {
       editorFontFamily: normalizeFontFamily(stored.editorFontFamily),
       spellcheck: normalizeSpellcheck(stored.spellcheck),
       landscapeTables: normalizeLandscapeTables(stored.landscapeTables),
+      focusMode: normalizeFocusMode(stored.focusMode),
+      typewriterMode: normalizeTypewriterMode(stored.typewriterMode),
     };
   } catch {
     return DEFAULT_PREFERENCES;
@@ -297,6 +305,8 @@ export default function App() {
     editorFontFamily: INITIAL_PREFERENCES.editorFontFamily,
     spellcheck: INITIAL_PREFERENCES.spellcheck,
     landscapeTables: INITIAL_PREFERENCES.landscapeTables,
+    focusMode: INITIAL_PREFERENCES.focusMode,
+    typewriterMode: INITIAL_PREFERENCES.typewriterMode,
   });
   const [cursorLine, setCursorLine] = useState(0);
 
@@ -1609,6 +1619,8 @@ export default function App() {
               fontSize={editorPrefs.editorFontSize}
               fontFamily={editorPrefs.editorFontFamily}
               spellcheck={editorPrefs.spellcheck}
+              focusMode={editorPrefs.focusMode}
+              typewriterMode={editorPrefs.typewriterMode}
               zenMode={zenMode}
               zenPlaceholder={t("zen.placeholder")}
               kind={active?.kind ?? "markdown"}

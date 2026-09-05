@@ -197,6 +197,46 @@ const PreferencesDialog = memo(function PreferencesDialog({
             </div>
           </div>
 
+          <div className="prefs-row">
+            <label className="prefs-label" htmlFor="prefs-focus-mode">
+              {t("prefs.focusMode")}
+            </label>
+            <div className="prefs-control">
+              <input
+                id="prefs-focus-mode"
+                type="checkbox"
+                checked={value.focusMode}
+                aria-describedby="prefs-focus-mode-hint"
+                onChange={(e) =>
+                  onChange({ ...value, focusMode: e.target.checked })
+                }
+              />
+              <span className="prefs-hint" id="prefs-focus-mode-hint">
+                {t("prefs.focusModeHint")}
+              </span>
+            </div>
+          </div>
+
+          <div className="prefs-row">
+            <label className="prefs-label" htmlFor="prefs-typewriter">
+              {t("prefs.typewriterMode")}
+            </label>
+            <div className="prefs-control">
+              <input
+                id="prefs-typewriter"
+                type="checkbox"
+                checked={value.typewriterMode}
+                aria-describedby="prefs-typewriter-hint"
+                onChange={(e) =>
+                  onChange({ ...value, typewriterMode: e.target.checked })
+                }
+              />
+              <span className="prefs-hint" id="prefs-typewriter-hint">
+                {t("prefs.typewriterModeHint")}
+              </span>
+            </div>
+          </div>
+
           <p className="prefs-preview" style={{
             fontSize: `${value.editorFontSize}px`,
             fontFamily: EDITOR_FONT_FAMILIES.find((f) => f.id === value.editorFontFamily)?.stack,
