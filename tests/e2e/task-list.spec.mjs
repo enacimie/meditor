@@ -53,19 +53,19 @@ const editorText = () =>
     .join('\\n')`);
 
 /**
- * Press a key on the editor, with the platform's own Mod modifier.
+ * Undo, on whichever modifier this platform's CodeMirror is listening for.
  *
- * CodeMirror binds undo to `Mod-z`, which is Cmd on a Mac and Ctrl everywhere
- * else, and it decides which from the browser it is running in. Sending
- * ctrlKey unconditionally is how this spec passed on Linux and Windows and
- * failed on the Mac runner, where nothing was undone at all.
+ * It binds undo to `Mod-z`, which is Cmd on a Mac and Ctrl everywhere else,
+ * and works out which from the browser it is running in. Sending ctrlKey
+ * unconditionally is how this spec passed on Linux and Windows and failed on
+ * the Mac runner, where nothing was undone at all.
  */
-const pressMod = (key, code) =>
+const pressUndo = () =>
   page.evaluate(`(() => {
     const mac = /Mac|iP(hone|ad|od)/.test(navigator.platform || navigator.userAgent);
     const cm = document.querySelector('.cm-content');
     cm.dispatchEvent(new KeyboardEvent('keydown', {
-      key: '${key}', code: '${code}',
+      key: 'z', code: 'KeyZ',
       ctrlKey: !mac, metaKey: mac,
       bubbles: true, cancelable: true,
     }));
@@ -202,7 +202,7 @@ try {
   // document to React: a whole-document update rebuilds the editor state, and
   // the reader loses everything they could have undone, plus their place in
   // the file. Both are invisible until you look for them.
-  await pressMod("z", "KeyZ");
+  await pressUndo();
   await page.waitFor(
     `[...document.querySelectorAll('.cm-content .cm-line')].some((l) => l.textContent === '- [x] second')`,
     { timeout: 10000, message: "undo should put the second task back the way it was" },
@@ -213,11 +213,19 @@ try {
     `ticking a box should not move the cursor, was on line ${cursorBefore} and is now on ${cursorAfter}`,
   );
 
-  // Put it back so the assertions below read what they expect.
-  await pressMod("y", "KeyY");
+  // ── The preview follows the undo, and takes a click after it ─────────
+  // Put back with another click rather than a redo: redo is `Mod-Shift-z` on a
+  // Mac and `Mod-y` elsewhere, and this is the app's own path anyway, so it
+  // tests something instead of just restoring state.
+  await page.waitFor(
+    `document.querySelectorAll(${JSON.stringify(VISIBLE_BOXES)})[1]?.checked === true`,
+    { timeout: 15000, message: "undoing should show the box ticked again in the preview" },
+  );
+  const again = await clickTask(1);
+  assert(again, "the second checkbox should still be clickable after an undo");
   await page.waitFor(
     `[...document.querySelectorAll('.cm-content .cm-line')].some((l) => l.textContent === '- [ ] second')`,
-    { timeout: 10000, message: "redo should tick it off again" },
+    { timeout: 10000, message: "clicking after an undo should untick it again" },
   );
 
   // ── Nothing else in the document moved ───────────────────────────────
