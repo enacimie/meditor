@@ -1290,6 +1290,18 @@ export default function App() {
   }
 
   /**
+   * Tick a task off from the preview.
+   *
+   * Handed straight to the editor, which owns the text. Going through
+   * `updateContent` would work and be shorter, but a whole-document update
+   * rebuilds the `EditorState`, and losing the undo history because you
+   * ticked a box is a worse bug than the one this fixes.
+   */
+  function toggleTask(line: number) {
+    editorRef.current?.toggleTask(line);
+  }
+
+  /**
    * Open the find panel, bringing the editor back if it is hidden.
    *
    * Ctrl+K deliberately refuses to do that (see the shortcut below): it moves
@@ -1711,6 +1723,7 @@ export default function App() {
               landscapeTables={editorPrefs.landscapeTables}
               docHandle={active?.handle ?? null}
               theme={theme}
+              onToggleTask={toggleTask}
               onReverseSync={handleReverseSync}
             />
           </div>

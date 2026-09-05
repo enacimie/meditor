@@ -66,6 +66,11 @@ type Props = {
   docHandle?: string | null;
   /** The interface theme, which the diagrams on screen follow. */
   theme?: Theme;
+  /**
+   * A task checkbox was clicked, with the source line it stands for. Absent
+   * for a preview that has no document to edit.
+   */
+  onToggleTask?: (line: number) => void;
   onReverseSync: (line: number) => void;
 };
 
@@ -103,6 +108,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
     landscapeTables = false,
     docHandle = null,
     theme = "system",
+    onToggleTask,
     onReverseSync,
   },
   ref,
@@ -134,6 +140,10 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
   docViewRef.current = docView;
   const onReverseSyncRef = useRef(onReverseSync);
   onReverseSyncRef.current = onReverseSync;
+  // Read at click time: the handler below is built once and would otherwise
+  // hold the document that was open when it was.
+  const onToggleTaskRef = useRef(onToggleTask);
+  onToggleTaskRef.current = onToggleTask;
 
   const seqRef = useRef(0);
   const tokenRef = useRef(0);
@@ -278,6 +288,27 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
   }
 
   function handleClick(e: MouseEvent) {
+    /*
+     * A task checkbox is a real, enabled input, and its own tick is exactly
+     * the state the document is about to be in — so the default action is
+     * deliberately left alone. Refusing it and waiting for the render instead
+     * would leave the box unticked for the 250 ms debounce plus however long
+     * paged.js takes to lay the document out again, which on anything long is
+     * a click that appears to have done nothing.
+     *
+     * What was missing was the other half: writing it into the Markdown, so
+     * the next repaint agrees with the box rather than putting it back.
+     */
+    const checkbox = (e.target as HTMLElement).closest<HTMLInputElement>(
+      "input.task-list-item-checkbox",
+    );
+    if (checkbox) {
+      const item = checkbox.closest<HTMLElement>("[data-line]");
+      const line = item ? Number(item.getAttribute("data-line")) : NaN;
+      if (Number.isInteger(line)) onToggleTaskRef.current?.(line);
+      return;
+    }
+
     const link = (e.target as HTMLElement).closest("a[href]");
     if (link) {
       const href = link.getAttribute("href") || "";
