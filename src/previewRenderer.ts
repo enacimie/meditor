@@ -319,6 +319,8 @@ export async function renderContent(
   isStale: () => boolean,
   t: TranslationFn,
   images?: ImageSource,
+  /** Which Mermaid theme its diagrams should be drawn with. */
+  diagramTheme: MermaidTheme = "default",
 ): Promise<void> {
   const renderMarkdown = await getMarkdownRenderer();
   if (isStale()) return;
@@ -332,7 +334,7 @@ export async function renderContent(
   await resolveRelativeImages(el, images, isStale);
   if (isStale()) return;
 
-  await renderMermaidBlocks(el, seqRef, isStale, t);
+  await renderMermaidBlocks(el, seqRef, isStale, t, diagramTheme);
 }
 
 /**
@@ -348,6 +350,12 @@ export async function renderMermaidBlocks(
   seqRef: React.MutableRefObject<number>,
   isStale: () => boolean,
   t: TranslationFn,
+  /**
+   * Which of Mermaid's themes to draw with. Defaults to the light one, which
+   * is what every surface but the web preview wants — a page, a PDF, an
+   * exported file and a slide are all paper.
+   */
+  theme: MermaidTheme = "default",
 ): Promise<void> {
   const nodes = Array.from(el.querySelectorAll("code.language-mermaid"));
   if (!nodes.length) return;
@@ -394,17 +402,17 @@ export async function renderMermaidBlocks(
     let svg: string | null = null;
     let error: string | null = null;
 
-    const cached = cache.get(src);
+    const cached = cache.get(src, theme);
     if (cached) {
       svg = cached;
     } else if (pool) {
       try {
-        svg = await pool.render(renderId, src);
+        svg = await pool.render(renderId, src, theme);
       } catch {
         // Worker render failed (expected when DOMPurify is unavailable
         // in the shim DOM).  Fall back silently to main thread.
         try {
-          svg = await renderMermaidMainThread(id, src);
+          svg = await renderMermaidMainThread(id, src, theme);
           error = null;
         } catch (mainErr) {
           error = mainErr instanceof Error ? mainErr.message : String(mainErr);
@@ -412,7 +420,7 @@ export async function renderMermaidBlocks(
       }
     } else {
       try {
-        svg = await renderMermaidMainThread(id, src);
+        svg = await renderMermaidMainThread(id, src, theme);
       } catch (mainErr) {
         error = mainErr instanceof Error ? mainErr.message : String(mainErr);
       }
@@ -422,7 +430,7 @@ export async function renderMermaidBlocks(
       svg = sanitizeSvg(svg) || null;
     }
     if (svg && !cached) {
-      cache.set(src, svg);
+      cache.set(src, svg, theme);
     }
 
     if (isStale()) return;

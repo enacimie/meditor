@@ -114,9 +114,51 @@ describe("renderContent", () => {
 
     expect(el.querySelector(".mermaid")!.innerHTML).toContain("worker");
     expect(mockPool.render).toHaveBeenCalledTimes(1);
+    // The theme is part of what is cached: the same diagram drawn light and
+    // drawn dark are two pictures, and one must not be handed back for the
+    // other.
     expect(mockCache.set).toHaveBeenCalledWith(
       src,
       '<svg id="worker">worker</svg>',
+      "default",
+    );
+  });
+
+  it("hands the worker the theme it was asked for", async () => {
+    // The whole point of the change: the theme has to reach the Web Worker,
+    // which is the only thing that can draw the diagram in it.
+    const src = "graph TD\n  A-->B";
+    const el = makeEl(mdWithMermaid(src));
+    mockPool.render.mockResolvedValue('<svg id="worker">worker</svg>');
+
+    await renderContent(el, mdWithMermaid(src), seqRef(), neverStale, t, undefined, "dark");
+
+    expect(mockPool.render).toHaveBeenCalledWith(
+      expect.any(Number),
+      src,
+      "dark",
+    );
+    expect(mockCache.get).toHaveBeenCalledWith(src, "dark");
+    expect(mockCache.set).toHaveBeenCalledWith(
+      src,
+      '<svg id="worker">worker</svg>',
+      "dark",
+    );
+  });
+
+  it("draws light when nothing asks otherwise", async () => {
+    // Every caller but the web preview leaves the theme out, and every one of
+    // them is paper.
+    const src = "graph TD\n  A-->B";
+    const el = makeEl(mdWithMermaid(src));
+    mockPool.render.mockResolvedValue('<svg id="worker">worker</svg>');
+
+    await renderContent(el, mdWithMermaid(src), seqRef(), neverStale, t);
+
+    expect(mockPool.render).toHaveBeenCalledWith(
+      expect.any(Number),
+      src,
+      "default",
     );
   });
 

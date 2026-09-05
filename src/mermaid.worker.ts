@@ -159,16 +159,35 @@ function createShimDocument(): ShimDocument {
 
 // ── Worker message handling ───────────────────────────────────────
 
-type RenderRequest = { id: number; src: string };
+type MermaidTheme = "default" | "dark";
+type RenderRequest = { id: number; src: string; theme?: MermaidTheme };
 type RenderResponse = { type: "result"; id: number; svg?: string; error?: string };
 
 let mermaidReady = false;
 let mermaidInitPromise: Promise<void> | undefined;
+/** The theme mermaid is currently initialised with. */
+let currentTheme: MermaidTheme = "default";
 
-async function ensureMermaid(): Promise<void> {
-  if (mermaidReady) return;
+async function ensureMermaid(theme: MermaidTheme): Promise<void> {
+  // `initialize` is cheap and idempotent, and calling it again is the only way
+  // to change the theme: mermaid reads it once, when it builds the diagram's
+  // styles. Without this a worker would keep whichever theme it happened to
+  // start with for the life of the app.
+  if (mermaidReady) {
+    if (theme === currentTheme) return;
+    const mermaidModule = await import("mermaid");
+    currentTheme = theme;
+    mermaidModule.default.initialize({
+      startOnLoad: false,
+      securityLevel: "strict",
+      suppressErrorRendering: true,
+      theme,
+    });
+    return;
+  }
   if (mermaidInitPromise) return mermaidInitPromise;
 
+  currentTheme = theme;
   mermaidInitPromise = (async () => {
     const mermaidModule = await import("mermaid");
 
@@ -180,7 +199,7 @@ async function ensureMermaid(): Promise<void> {
       startOnLoad: false,
       securityLevel: "strict",
       suppressErrorRendering: true,
-      theme: "default",
+      theme: currentTheme,
     });
 
     mermaidReady = true;
@@ -189,9 +208,13 @@ async function ensureMermaid(): Promise<void> {
   return mermaidInitPromise;
 }
 
-async function renderDiagram(id: number, src: string): Promise<RenderResponse> {
+async function renderDiagram(
+  id: number,
+  src: string,
+  theme: MermaidTheme,
+): Promise<RenderResponse> {
   try {
-    await ensureMermaid();
+    await ensureMermaid(theme);
     const mermaidModule = await import("mermaid");
     const mermaid = mermaidModule.default;
 
@@ -204,8 +227,8 @@ async function renderDiagram(id: number, src: string): Promise<RenderResponse> {
 }
 
 self.onmessage = async (e: MessageEvent<RenderRequest>) => {
-  const { id, src } = e.data;
-  const response = await renderDiagram(id, src);
+  const { id, src, theme } = e.data;
+  const response = await renderDiagram(id, src, theme ?? "default");
   self.postMessage(response);
 };
 
