@@ -52,6 +52,48 @@ const editorText = () =>
     .map((l) => l.textContent)
     .join('\\n')`);
 
+/**
+ * Press a key on the editor, with the platform's own Mod modifier.
+ *
+ * CodeMirror binds undo to `Mod-z`, which is Cmd on a Mac and Ctrl everywhere
+ * else, and it decides which from the browser it is running in. Sending
+ * ctrlKey unconditionally is how this spec passed on Linux and Windows and
+ * failed on the Mac runner, where nothing was undone at all.
+ */
+const pressMod = (key, code) =>
+  page.evaluate(`(() => {
+    const mac = /Mac|iP(hone|ad|od)/.test(navigator.platform || navigator.userAgent);
+    const cm = document.querySelector('.cm-content');
+    cm.dispatchEvent(new KeyboardEvent('keydown', {
+      key: '${key}', code: '${code}',
+      ctrlKey: !mac, metaKey: mac,
+      bubbles: true, cancelable: true,
+    }));
+    return true;
+  })()`);
+
+/**
+ * Which line of the editor the cursor is on.
+ *
+ * Not its pixel offset: the editor's font finishes loading somewhere in the
+ * middle of this spec, every line height changes with it, and comparing two
+ * `top` values then measures the font rather than the cursor. Line heights and
+ * the cursor move together, so the index they agree on does not.
+ */
+const cursorLine = () =>
+  page.read(`(() => {
+    const cursor = document.querySelector('.cm-cursor');
+    if (!cursor) return -1;
+    const top = parseFloat(cursor.style.top);
+    if (Number.isNaN(top)) return -1;
+    const lines = [...document.querySelectorAll('.cm-content .cm-line')];
+    let index = -1;
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].offsetTop <= top + 1) index = i;
+    }
+    return index;
+  })()`);
+
 /*
  * Only the two containers the click handler is attached to.
  *
@@ -119,12 +161,10 @@ try {
   // Where the cursor is before anything is clicked. Read now, not later: a
   // whole-document update sends it to the top, and comparing two readings
   // taken after that would agree with each other and prove nothing.
-  const cursorBefore = await page.read(
-    "document.querySelector('.cm-cursor')?.style.top ?? null",
-  );
+  const cursorBefore = await cursorLine();
   assert(
-    cursorBefore !== null,
-    "the editor should have a visible cursor to lose in the first place",
+    cursorBefore > 0,
+    `the cursor should start somewhere down the document to have a place to lose, got ${cursorBefore}`,
   );
 
   // ── Ticking a pending task writes it into the document ───────────────
@@ -162,33 +202,19 @@ try {
   // document to React: a whole-document update rebuilds the editor state, and
   // the reader loses everything they could have undone, plus their place in
   // the file. Both are invisible until you look for them.
-  await page.evaluate(`(() => {
-    const cm = document.querySelector('.cm-content');
-    cm.dispatchEvent(new KeyboardEvent('keydown', {
-      key: 'z', code: 'KeyZ', ctrlKey: true, bubbles: true, cancelable: true,
-    }));
-    return true;
-  })()`);
+  await pressMod("z", "KeyZ");
   await page.waitFor(
     `[...document.querySelectorAll('.cm-content .cm-line')].some((l) => l.textContent === '- [x] second')`,
     { timeout: 10000, message: "undo should put the second task back the way it was" },
   );
-  const cursorAfter = await page.read(
-    "document.querySelector('.cm-cursor')?.style.top ?? null",
-  );
+  const cursorAfter = await cursorLine();
   assert(
     cursorAfter === cursorBefore,
-    `ticking a box should not move the cursor, was ${cursorBefore} and is now ${cursorAfter}`,
+    `ticking a box should not move the cursor, was on line ${cursorBefore} and is now on ${cursorAfter}`,
   );
 
   // Put it back so the assertions below read what they expect.
-  await page.evaluate(`(() => {
-    const cm = document.querySelector('.cm-content');
-    cm.dispatchEvent(new KeyboardEvent('keydown', {
-      key: 'y', code: 'KeyY', ctrlKey: true, bubbles: true, cancelable: true,
-    }));
-    return true;
-  })()`);
+  await pressMod("y", "KeyY");
   await page.waitFor(
     `[...document.querySelectorAll('.cm-content .cm-line')].some((l) => l.textContent === '- [ ] second')`,
     { timeout: 10000, message: "redo should tick it off again" },
