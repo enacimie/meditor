@@ -1,6 +1,11 @@
 import type { TranslationFn } from "./i18n/translations";
 import { sanitizeSvg } from "./sanitizeSvg";
 import { resolveRelativeImages, type ImageSource } from "./documentImages";
+// Imported rather than inherited: this type used to resolve without an
+// import at all, because the Mermaid worker had no top-level import or
+// export and TypeScript therefore treated its file as a global script,
+// leaking its own copy of the alias into every module in the project.
+import type { MermaidTheme } from "./mermaidTheme";
 
 /**
  * Fenced-code-block pattern: ```lang\n...\n```
@@ -232,11 +237,11 @@ function minContentWidth(el: HTMLElement): number {
 
 let markdownPromise: Promise<typeof import("./markdown")> | undefined;
 let markdownStylesPromise: Promise<unknown[]> | undefined;
-let mermaidPromise: Promise<typeof import("./mermaidPool")> | undefined;
-let mermaidModule: typeof import("./mermaidPool") | undefined;
+let mermaidPromise: Promise<typeof import("./mermaidRender")> | undefined;
+let mermaidModule: typeof import("./mermaidRender") | undefined;
 
-function getMermaidTools(): Promise<typeof import("./mermaidPool")> {
-  mermaidPromise ??= import("./mermaidPool")
+function getMermaidTools(): Promise<typeof import("./mermaidRender")> {
+  mermaidPromise ??= import("./mermaidRender")
     .then((module) => {
       mermaidModule = module;
       return module;
@@ -281,7 +286,6 @@ export function findAnchorTarget(
 export function clearMermaidResources(): void {
   if (!mermaidModule) return;
   mermaidModule.clearMermaidCache();
-  mermaidModule.destroyMermaidPool();
 }
 
 async function getMarkdownRenderer() {
@@ -339,7 +343,7 @@ export async function renderContent(
 
 /**
  * Replace every `code.language-mermaid` block under `el` with a rendered
- * diagram, using the shared Mermaid worker pool (main-thread fallback).
+ * diagram, drawn by Mermaid on the main thread and cached by source and theme.
  *
  * Shared by the Markdown preview and the Marp slide views: Marp emits a
  * ```mermaid fence as a plain `code.language-mermaid` block, so the very same
@@ -360,20 +364,8 @@ export async function renderMermaidBlocks(
   const nodes = Array.from(el.querySelectorAll("code.language-mermaid"));
   if (!nodes.length) return;
 
-  const {
-    getMermaidCache,
-    getMermaidPool,
-    renderMermaidMainThread,
-  } = await getMermaidTools();
+  const { getMermaidCache, renderMermaidMainThread } = await getMermaidTools();
   if (isStale()) return;
-
-  // Try to get worker pool; if unavailable, fall back to main thread
-  let pool = null;
-  try {
-    pool = await getMermaidPool();
-  } catch {
-    // Worker setup failed; will use main thread for all diagrams
-  }
 
   const cache = getMermaidCache();
 
@@ -382,7 +374,7 @@ export async function renderMermaidBlocks(
     const pre = code.parentElement;
     if (!pre) continue;
     const src = code.textContent ?? "";
-    // Module-wide counter: the ids index the shared Mermaid worker pool, so a
+    // Module-wide counter: Mermaid keys its work by the id it is given, so a
     // preview render and an export running at the same time must not hand out
     // the same one — a collision resolves a diagram with somebody else's SVG.
     // seqRef is still advanced so callers keep their own render count.
@@ -405,19 +397,6 @@ export async function renderMermaidBlocks(
     const cached = cache.get(src, theme);
     if (cached) {
       svg = cached;
-    } else if (pool) {
-      try {
-        svg = await pool.render(renderId, src, theme);
-      } catch {
-        // Worker render failed (expected when DOMPurify is unavailable
-        // in the shim DOM).  Fall back silently to main thread.
-        try {
-          svg = await renderMermaidMainThread(id, src, theme);
-          error = null;
-        } catch (mainErr) {
-          error = mainErr instanceof Error ? mainErr.message : String(mainErr);
-        }
-      }
     } else {
       try {
         svg = await renderMermaidMainThread(id, src, theme);

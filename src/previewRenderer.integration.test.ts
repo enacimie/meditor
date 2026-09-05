@@ -8,21 +8,13 @@ const mockCache = {
   clear: vi.fn(),
 };
 
-const mockPool = {
-  render: vi.fn(),
-  waitReady: vi.fn(),
-  destroy: vi.fn(),
-};
-
 const mockRenderMainThread = vi.fn();
 
-vi.mock("./mermaidPool", () => ({
+vi.mock("./mermaidRender", () => ({
   getMermaidCache: () => mockCache,
-  getMermaidPool: async () => mockPool,
-  renderMermaidMainThread: (id: string, src: string) =>
-    mockRenderMainThread(id, src),
+  renderMermaidMainThread: (id: string, src: string, theme?: string) =>
+    mockRenderMainThread(id, src, theme),
   clearMermaidCache: vi.fn(),
-  destroyMermaidPool: vi.fn(),
 }));
 
 // Mock markdown so we can embed <code class="language-mermaid"> blocks
@@ -64,7 +56,6 @@ function mdWithMermaid(src: string): string {
 describe("renderContent", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockPool.render.mockRejectedValue(new Error("worker failure"));
     mockRenderMainThread.mockResolvedValue('<svg id="fallback">OK</svg>');
     mockCache.get.mockReturnValue(undefined);
   });
@@ -76,14 +67,12 @@ describe("renderContent", () => {
     await renderContent(el, "<p>Hello World</p>", seqRef(), neverStale, t);
 
     expect(el.innerHTML).toBe("<p>Hello World</p>");
-    expect(mockPool.render).not.toHaveBeenCalled();
     expect(mockRenderMainThread).not.toHaveBeenCalled();
   });
 
   it("renders empty string", async () => {
     const el = makeEl("");
     await renderContent(el, "", seqRef(), neverStale, t);
-    expect(mockPool.render).not.toHaveBeenCalled();
   });
 
   // ── Cache hit ────────────────────────────────────────────────
@@ -98,50 +87,47 @@ describe("renderContent", () => {
 
     expect(el.querySelector(".mermaid")!.innerHTML).toContain("cached");
     expect(el.querySelector(".mermaid-error")).toBeNull();
-    expect(mockPool.render).not.toHaveBeenCalled();
     expect(mockRenderMainThread).not.toHaveBeenCalled();
   });
 
   // ── Worker success ───────────────────────────────────────────
 
-  it("renders via worker when pool is available", async () => {
+  it("draws the diagram and caches what it drew", async () => {
     const src = "graph TD\n  A-->B";
     const el = makeEl(mdWithMermaid(src));
 
-    mockPool.render.mockResolvedValue('<svg id="worker">worker</svg>');
+    mockRenderMainThread.mockResolvedValue('<svg id="drawn">drawn</svg>');
 
     await renderContent(el, mdWithMermaid(src), seqRef(), neverStale, t);
 
-    expect(el.querySelector(".mermaid")!.innerHTML).toContain("worker");
-    expect(mockPool.render).toHaveBeenCalledTimes(1);
+    expect(el.querySelector(".mermaid")!.innerHTML).toContain("drawn");
+    expect(mockRenderMainThread).toHaveBeenCalledTimes(1);
     // The theme is part of what is cached: the same diagram drawn light and
     // drawn dark are two pictures, and one must not be handed back for the
     // other.
     expect(mockCache.set).toHaveBeenCalledWith(
       src,
-      '<svg id="worker">worker</svg>',
+      '<svg id="drawn">drawn</svg>',
       "default",
     );
   });
 
-  it("hands the worker the theme it was asked for", async () => {
-    // The whole point of the change: the theme has to reach the Web Worker,
-    // which is the only thing that can draw the diagram in it.
+  it("draws with the theme it was asked for", async () => {
     const src = "graph TD\n  A-->B";
     const el = makeEl(mdWithMermaid(src));
-    mockPool.render.mockResolvedValue('<svg id="worker">worker</svg>');
+    mockRenderMainThread.mockResolvedValue('<svg id="drawn">drawn</svg>');
 
     await renderContent(el, mdWithMermaid(src), seqRef(), neverStale, t, undefined, "dark");
 
-    expect(mockPool.render).toHaveBeenCalledWith(
-      expect.any(Number),
+    expect(mockRenderMainThread).toHaveBeenCalledWith(
+      expect.any(String),
       src,
       "dark",
     );
     expect(mockCache.get).toHaveBeenCalledWith(src, "dark");
     expect(mockCache.set).toHaveBeenCalledWith(
       src,
-      '<svg id="worker">worker</svg>',
+      '<svg id="drawn">drawn</svg>',
       "dark",
     );
   });
@@ -151,39 +137,20 @@ describe("renderContent", () => {
     // them is paper.
     const src = "graph TD\n  A-->B";
     const el = makeEl(mdWithMermaid(src));
-    mockPool.render.mockResolvedValue('<svg id="worker">worker</svg>');
+    mockRenderMainThread.mockResolvedValue('<svg id="drawn">drawn</svg>');
 
     await renderContent(el, mdWithMermaid(src), seqRef(), neverStale, t);
 
-    expect(mockPool.render).toHaveBeenCalledWith(
-      expect.any(Number),
+    expect(mockRenderMainThread).toHaveBeenCalledWith(
+      expect.any(String),
       src,
       "default",
     );
   });
 
-  // ── Worker failure + main-thread fallback ────────────────────
-
-  it("falls back to main thread when worker fails", async () => {
-    const src = "graph TD\n  A-->B";
-    const el = makeEl(mdWithMermaid(src));
-
-    mockPool.render.mockRejectedValue(new Error("worker crash"));
-    mockRenderMainThread.mockResolvedValue('<svg id="mt">main-thread</svg>');
-
-    await renderContent(el, mdWithMermaid(src), seqRef(), neverStale, t);
-
-    expect(el.querySelector(".mermaid")!.innerHTML).toContain("main-thread");
-    expect(mockPool.render).toHaveBeenCalledTimes(1);
-    expect(mockRenderMainThread).toHaveBeenCalledTimes(1);
-  });
-
-  // ── Both worker AND main thread fail ─────────────────────────
-
-  it("shows error message when both fail", async () => {
+  it("shows the error when the diagram cannot be drawn", async () => {
     const el = makeEl(mdWithMermaid("bad @@@ syntax"));
 
-    mockPool.render.mockRejectedValue(new Error("worker fail"));
     mockRenderMainThread.mockRejectedValue(new Error("main fail"));
 
     await renderContent(el, mdWithMermaid("bad @@@ syntax"), seqRef(), neverStale, t);
@@ -198,7 +165,6 @@ describe("renderContent", () => {
   it("handles non-Error rejections in the error message", async () => {
     const el = makeEl(mdWithMermaid("bad"));
 
-    mockPool.render.mockRejectedValue("string error");
     mockRenderMainThread.mockRejectedValue(42);
 
     await renderContent(el, mdWithMermaid("bad"), seqRef(), neverStale, t);
@@ -219,7 +185,7 @@ describe("renderContent", () => {
     const el = makeEl(html);
 
     let call = 0;
-    mockPool.render.mockImplementation(async () => {
+    mockRenderMainThread.mockImplementation(async () => {
       call++;
       return `<svg id="w${call}">diagram-${call}</svg>`;
     });
@@ -238,7 +204,7 @@ describe("renderContent", () => {
     const el = makeEl(
       '<pre data-line="5"><code class="language-mermaid">x</code></pre>',
     );
-    mockPool.render.mockResolvedValue("<svg>ok</svg>");
+    mockRenderMainThread.mockResolvedValue("<svg>ok</svg>");
 
     await renderContent(
       el,
@@ -255,7 +221,7 @@ describe("renderContent", () => {
     const el = makeEl(
       '<pre data-line="7"><code class="language-mermaid">bad</code></pre>',
     );
-    mockPool.render.mockRejectedValue(new Error("fail"));
+    mockRenderMainThread.mockRejectedValue(new Error("fail"));
     mockRenderMainThread.mockRejectedValue(new Error("fail too"));
 
     await renderContent(
@@ -282,7 +248,6 @@ describe("renderContent", () => {
     // The mermaid nodes exist but processing was aborted.
     // The mermaid code elements should still be in the DOM (not replaced)
     expect(el.querySelector("code.language-mermaid")).not.toBeNull();
-    expect(mockPool.render).not.toHaveBeenCalled();
   });
 
   // ── Orphan code element (impossible in practice) ─────────────
@@ -299,7 +264,7 @@ describe("renderContent", () => {
     ].join("\n");
     const el = makeEl(html);
     const seq = seqRef(10);
-    mockPool.render.mockResolvedValue("<svg>x</svg>");
+    mockRenderMainThread.mockResolvedValue("<svg>x</svg>");
 
     await renderContent(el, html, seq, neverStale, t);
 
@@ -311,7 +276,7 @@ describe("renderContent", () => {
   it("does not leave loading spinners after render", async () => {
     const src = "graph TD\n  A-->B";
     const el = makeEl(mdWithMermaid(src));
-    mockPool.render.mockResolvedValue("<svg>done</svg>");
+    mockRenderMainThread.mockResolvedValue("<svg>done</svg>");
 
     await renderContent(el, mdWithMermaid(src), seqRef(), neverStale, t);
 

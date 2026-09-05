@@ -97,9 +97,6 @@ export default defineConfig(async () => ({
     ],
   },
 
-  worker: {
-    format: "es",
-  },
   test: {
     environment: "node",
     /*
