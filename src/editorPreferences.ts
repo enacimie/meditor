@@ -19,6 +19,16 @@ export const DEFAULT_SPELLCHECK = true;
  */
 export const DEFAULT_LANDSCAPE_TABLES = false;
 
+/**
+ * Writing aids, both off unless asked for.
+ *
+ * Dimming the page and moving it under the caret are strong opinions about
+ * how someone writes: welcome to the people who want them, and an editor
+ * behaving oddly to everyone else.
+ */
+export const DEFAULT_FOCUS_MODE = false;
+export const DEFAULT_TYPEWRITER_MODE = false;
+
 export type EditorPreferences = {
   editorFontSize: number;
   editorFontFamily: string;
@@ -26,6 +36,10 @@ export type EditorPreferences = {
   spellcheck: boolean;
   /** Let a table too wide for any portrait page use a landscape one. */
   landscapeTables: boolean;
+  /** Dim everything but the paragraph being written. */
+  focusMode: boolean;
+  /** Keep the line being written in the middle of the pane. */
+  typewriterMode: boolean;
 };
 
 /**
@@ -93,6 +107,16 @@ export function normalizeSpellcheck(value: unknown): boolean {
 /** Read a stored boolean, falling back to the default. */
 export function normalizeLandscapeTables(value: unknown): boolean {
   return typeof value === "boolean" ? value : DEFAULT_LANDSCAPE_TABLES;
+}
+
+/** Read a stored boolean, falling back to the default. */
+export function normalizeFocusMode(value: unknown): boolean {
+  return typeof value === "boolean" ? value : DEFAULT_FOCUS_MODE;
+}
+
+/** Read a stored boolean, falling back to the default. */
+export function normalizeTypewriterMode(value: unknown): boolean {
+  return typeof value === "boolean" ? value : DEFAULT_TYPEWRITER_MODE;
 }
 
 /** Accept a stored family id only if it is still offered. */

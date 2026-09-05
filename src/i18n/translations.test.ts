@@ -95,6 +95,10 @@ describe("translations", () => {
     "update.failed",
     "conflict.reloadedNotice",
     // Landscape tables preference; en/es for now like the strings above.
+    "prefs.focusMode",
+    "prefs.focusModeHint",
+    "prefs.typewriterMode",
+    "prefs.typewriterModeHint",
     "prefs.landscapeTables",
     "prefs.landscapeTablesHint",
     "preview.landscapeNote",

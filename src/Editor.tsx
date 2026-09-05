@@ -36,6 +36,7 @@ import {
   DEFAULT_EDITOR_FONT_SIZE,
   DEFAULT_SPELLCHECK,
 } from "./editorPreferences";
+import { writingAidExtensions } from "./editorFocus";
 import type { DocKind } from "./types";
 import "./Editor.css";
 
@@ -179,6 +180,10 @@ type Props = {
   fontFamily?: string;
   /** Let the platform spell-check the text (Preferences). */
   spellcheck?: boolean;
+  /** Dim everything but the paragraph being written. */
+  focusMode?: boolean;
+  /** Keep the line being written in the middle of the pane. */
+  typewriterMode?: boolean;
   zenMode?: boolean;
   zenPlaceholder?: string;
   /** Fired when the cursor moves (or the active doc changes). 0-based line. */
@@ -203,6 +208,8 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
     fontSize = DEFAULT_EDITOR_FONT_SIZE,
     fontFamily = DEFAULT_EDITOR_FONT_FAMILY,
     spellcheck = DEFAULT_SPELLCHECK,
+    focusMode = false,
+    typewriterMode = false,
     zenMode,
     zenPlaceholder,
     onCursorLineChange,
@@ -220,6 +227,8 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   const wrapCompartment = useRef(new Compartment());
   const fontCompartment = useRef(new Compartment());
   const spellcheckCompartment = useRef(new Compartment());
+  // The writing aids come and go without a remount, like the other settings.
+  const writingAidsCompartment = useRef(new Compartment());
   const placeholderCompartment = useRef(new Compartment());
   const languageCompartment = useRef(new Compartment());
   const kindSeqRef = useRef(0);
@@ -235,6 +244,7 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   const initialFontSize = useRef(fontSize);
   const initialFontFamily = useRef(fontFamily);
   const initialSpellcheck = useRef(spellcheck);
+  const initialWritingAids = useRef({ focusMode, typewriterMode });
   const initialZenMode = useRef(zenMode);
   const initialZenPlaceholder = useRef(zenPlaceholder);
   const initialKind = useRef(kind);
@@ -256,6 +266,8 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   const fontFamilyRef = useRef(fontFamily);
   fontFamilyRef.current = fontFamily;
   const spellcheckRef = useRef(spellcheck);
+  const writingAidsRef = useRef({ focusMode, typewriterMode });
+  writingAidsRef.current = { focusMode, typewriterMode };
   spellcheckRef.current = spellcheck;
   const zenModeRef = useRef(zenMode);
   zenModeRef.current = zenMode;
@@ -288,6 +300,9 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
         ),
         spellcheckCompartment.current.reconfigure(
           spellcheckAttributes(spellcheckRef.current),
+        ),
+        writingAidsCompartment.current.reconfigure(
+          writingAidExtensions(writingAidsRef.current),
         ),
         languageCompartment.current.reconfigure(languageExtRef.current),
       ],
@@ -403,6 +418,9 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
       // change them without rebuilding the editor state.
       fontCompartment.current.of(
         fontTheme(initialFontSize.current, initialFontFamily.current),
+      ),
+      writingAidsCompartment.current.of(
+        writingAidExtensions(initialWritingAids.current),
       ),
       spellcheckCompartment.current.of(
         spellcheckAttributes(initialSpellcheck.current),
@@ -552,6 +570,16 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
       ),
     });
   }, [spellcheck]);
+
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch({
+      effects: writingAidsCompartment.current.reconfigure(
+        writingAidExtensions({ focusMode, typewriterMode }),
+      ),
+    });
+  }, [focusMode, typewriterMode]);
 
   useEffect(() => {
     const view = viewRef.current;

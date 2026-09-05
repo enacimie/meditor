@@ -7,7 +7,9 @@ import {
   DEFAULT_EDITOR_FONT_FAMILY,
   DEFAULT_EDITOR_FONT_SIZE,
   DEFAULT_SPELLCHECK,
+  DEFAULT_FOCUS_MODE,
   DEFAULT_LANDSCAPE_TABLES,
+  DEFAULT_TYPEWRITER_MODE,
   clampFontSize,
   fontStackFor,
   normalizeFontFamily,
@@ -29,6 +31,8 @@ const value = {
   editorFontFamily: DEFAULT_EDITOR_FONT_FAMILY,
   spellcheck: DEFAULT_SPELLCHECK,
   landscapeTables: DEFAULT_LANDSCAPE_TABLES,
+  focusMode: DEFAULT_FOCUS_MODE,
+  typewriterMode: DEFAULT_TYPEWRITER_MODE,
 };
 
 beforeEach(() => {
@@ -92,7 +96,7 @@ describe("PreferencesDialog", () => {
     render(
       <PreferencesDialog
         t={t}
-        value={{ editorFontSize: 20, editorFontFamily: "serif", spellcheck: true, landscapeTables: false }}
+        value={{ ...value, editorFontSize: 20, editorFontFamily: "serif" }}
         onChange={vi.fn()}
         onClose={vi.fn()}
       />,
