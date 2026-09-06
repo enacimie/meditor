@@ -193,6 +193,112 @@ function headingAnchors(md: MarkdownIt) {
   });
 }
 
+/*
+ * `[TOC]` on a line of its own becomes a table of contents.
+ *
+ * The marker is Typora's and MarkText's, not the `[[toc]]` of the markdown-it
+ * plugin family. A document is a text file that outlives this editor, and of
+ * the spellings in use `[TOC]` is the one that renders as a table of contents
+ * in the most other places; the alternatives show up as literal brackets.
+ *
+ * Two rules rather than one. The block rule only marks the spot, because when
+ * it runs the headings have not been given their ids yet — `heading_anchors`
+ * is a core rule and core rules run after the whole block pass. The core rule
+ * below fills the marker in once they have.
+ */
+/** `[TOC]` alone on the line, in any case, with nothing else on it. */
+const TOC_MARKER = /^\[toc\]$/i;
+
+/** How deep the list goes. Three, as LaTeX does by default. */
+const TOC_DEPTH = 3;
+
+function tocPlaceholder(md: MarkdownIt) {
+  md.block.ruler.before(
+    "reference",
+    // After markdown-it's own `code` rule, which is why there is no indent
+    // check here: four spaces make a code block before this ever sees the
+    // line. `markdown.test.ts` pins that.
+    "toc_marker",
+    (state, startLine, _endLine, silent) => {
+      const line = state.src
+        .slice(state.bMarks[startLine] + state.tShift[startLine], state.eMarks[startLine])
+        .trim();
+      if (!TOC_MARKER.test(line)) return false;
+      if (silent) return true;
+
+      const token = state.push("toc", "nav", 0);
+      token.map = [startLine, startLine + 1];
+      token.block = true;
+      state.line = startLine + 1;
+      return true;
+    },
+    { alt: ["paragraph", "reference", "blockquote"] },
+  );
+
+  /*
+   * Rendered from the ids `heading_anchors` produced, so a link here and the
+   * heading it points at can never disagree — including the `-1` suffix a
+   * repeated title gets.
+   *
+   * A heading with no id is skipped rather than linked to nothing: `slugify`
+   * returns empty for a title that is all punctuation or emoji.
+   */
+  md.core.ruler.push("toc_build", (state) => {
+    const markers = state.tokens.filter((token) => token.type === "toc");
+    if (markers.length === 0) return;
+
+    const entries: Array<{ level: number; id: string; text: string }> = [];
+    for (let i = 0; i < state.tokens.length; i++) {
+      const open = state.tokens[i];
+      if (open.type !== "heading_open") continue;
+      const level = Number(open.tag.slice(1));
+      if (!Number.isInteger(level) || level > TOC_DEPTH) continue;
+      const id = open.attrGet("id");
+      const inline = state.tokens[i + 1];
+      if (!id || !inline || inline.type !== "inline") continue;
+      const text = (inline.children ?? [])
+        .filter((child) => child.type === "text" || child.type === "code_inline")
+        .map((child) => child.content)
+        .join("")
+        .trim();
+      if (text) entries.push({ level, id, text });
+    }
+
+    for (const token of markers) {
+      // A marker in a document with no headings renders as nothing at all.
+      // The alternative is an empty box that says only that the author has
+      // not written any headings yet, which they can see for themselves.
+      token.content = entries.length === 0 ? "" : renderToc(entries);
+    }
+  });
+
+  md.renderer.rules.toc = (tokens, idx) => tokens[idx].content;
+}
+
+/** Escape for text that goes into an attribute or between tags. */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function renderToc(entries: Array<{ level: number; id: string; text: string }>): string {
+  // `role="doc-toc"` rather than a label of our own: the renderer has no
+  // locale, and a hard-coded English label in a Spanish document would be
+  // worse than the role a screen reader already knows how to announce.
+  const items = entries
+    .map(
+      (entry) =>
+        `<li class="toc-item toc-level-${entry.level}">` +
+        `<a href="#${encodeURIComponent(entry.id)}">${escapeHtml(entry.text)}</a>` +
+        `</li>`,
+    )
+    .join("");
+  return `<nav class="markdown-toc" role="doc-toc"><ol>${items}</ol></nav>`;
+}
+
 const BOLD_ORDINAL = /^\d{1,3}[.)]$/;
 
 function markNumberedParagraphs(md: MarkdownIt) {
@@ -279,6 +385,7 @@ export const md = new MarkdownIt({
   .use(container, "note")
   .use(markNumberedParagraphs)
   .use(headingAnchors)
+  .use(tocPlaceholder)
   .use(addLineNumbers);
 
 const highlightFence = md.renderer.rules.fence;

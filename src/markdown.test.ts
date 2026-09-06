@@ -265,3 +265,68 @@ describe("front-matter YAML", () => {
     expect(renderMarkdown("---\nmarp: true\n---\n\n# H\n")).not.toContain("marp:");
   });
 });
+
+describe("the [TOC] marker", () => {
+  it("lists the headings, linked to the ids they actually have", () => {
+    const html = renderMarkdown(
+      ["[TOC]", "", "# Uno", "", "## Detalle", "", "# Dos", ""].join("\n"),
+    );
+    expect(html).toContain('<nav class="markdown-toc" role="doc-toc">');
+    expect(html).toContain('<a href="#uno">Uno</a>');
+    expect(html).toContain('<a href="#detalle">Detalle</a>');
+    expect(html).toContain('<a href="#dos">Dos</a>');
+  });
+
+  it("follows the suffix a repeated title gets, rather than guessing", () => {
+    // The link and the heading come from the same ids, so the second "Notas"
+    // is reachable instead of both entries landing on the first.
+    const html = renderMarkdown(["[TOC]", "", "# Notas", "", "# Notas", ""].join("\n"));
+    expect(html).toContain('<a href="#notas">Notas</a>');
+    expect(html).toContain('<a href="#notas-1">Notas</a>');
+  });
+
+  it("keeps the level, so the list can be indented", () => {
+    const html = renderMarkdown(["[TOC]", "", "# Uno", "", "### Hondo", ""].join("\n"));
+    expect(html).toContain('class="toc-item toc-level-1"');
+    expect(html).toContain('class="toc-item toc-level-3"');
+  });
+
+  it("stops at the third level", () => {
+    const html = renderMarkdown(["[TOC]", "", "### Tres", "", "#### Cuatro", ""].join("\n"));
+    // Scoped to the nav: the h4 itself is still in the document, and looking
+    // for its text anywhere would pass whatever the list contained.
+    const nav = html.slice(html.indexOf("<nav"), html.indexOf("</nav>"));
+    expect(nav).toContain(">Tres<");
+    expect(nav).not.toContain(">Cuatro<");
+  });
+
+  it("renders nothing when the document has no headings", () => {
+    const html = renderMarkdown(["[TOC]", "", "Just prose.", ""].join("\n"));
+    expect(html).not.toContain("markdown-toc");
+    expect(html).not.toContain("[TOC]");
+  });
+
+  it("takes the marker in either case, and only on a line of its own", () => {
+    expect(renderMarkdown(["[toc]", "", "# H", ""].join("\n"))).toContain("markdown-toc");
+    // Prose that mentions it is prose.
+    const prose = renderMarkdown(["See [TOC] below.", "", "# H", ""].join("\n"));
+    expect(prose).not.toContain("markdown-toc");
+    expect(prose).toContain("[TOC]");
+  });
+
+  it("is a code block when it is indented like one", () => {
+    const html = renderMarkdown(["    [TOC]", "", "# H", ""].join("\n"));
+    expect(html).not.toContain("markdown-toc");
+    expect(html).toContain("<pre><code");
+  });
+
+  it("escapes a title rather than letting it write markup", () => {
+    const html = renderMarkdown(["[TOC]", "", "# a <img> & b", ""].join("\n"));
+    // Inside the nav. Looking at the whole document would find the escaped
+    // text in the heading markdown-it already escaped, and pass whatever the
+    // link contained.
+    const nav = html.slice(html.indexOf("<nav"), html.indexOf("</nav>"));
+    expect(nav).toContain("a &lt;img&gt; &amp; b");
+    expect(nav).not.toContain("<img>");
+  });
+});
