@@ -1579,6 +1579,19 @@ async fn print_document(
 /// drifted: Windows honoured `paged` and Linux never read it, so the same
 /// export came out with 25 mm of extra margin on one platform and not the
 /// other — while the comment on the Windows side said they matched.
+///
+/// Limited to the platforms that have a PDF path at all — the same list the
+/// two branches of `export_pdf` are written against. macOS and Android have
+/// neither and answer `pdf.notSupported`, where an ungated helper is dead code
+/// and `clippy -D warnings` rightly says so.
+#[cfg(any(
+    target_os = "linux",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd",
+    target_os = "windows"
+))]
 fn pdf_margin_mm(custom_page: bool, paged: bool) -> f64 {
     if custom_page || paged {
         0.0
@@ -1974,6 +1987,16 @@ mod tests {
      * on Linux. What is testable, and what actually broke, is the rule itself:
      * both platforms now ask the same question and must get the same answer.
      */
+    // Gated with the function they cover: on a platform with no PDF path
+    // there is nothing here to call.
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "windows"
+    ))]
     #[test]
     fn a_paginated_document_is_not_margined_again() {
         // The default, and the case that was wrong on Linux: the sheets that
@@ -1981,12 +2004,28 @@ mod tests {
         assert_eq!(pdf_margin_mm(false, true), 0.0);
     }
 
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "windows"
+    ))]
     #[test]
     fn a_slide_brings_its_own_page() {
         assert_eq!(pdf_margin_mm(true, true), 0.0);
         assert_eq!(pdf_margin_mm(true, false), 0.0);
     }
 
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "windows"
+    ))]
     #[test]
     fn the_plain_web_view_still_gets_real_margins() {
         // The one case that needs them: an unpaginated document is a run of
