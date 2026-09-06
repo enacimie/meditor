@@ -275,3 +275,28 @@
   font-family: ui-monospace, monospace;
   font-size: 85%;
 }
+
+/*
+ * The table of contents on screen.
+ *
+ * No page numbers here — there are no pages to number. What it is on screen is
+ * a set of links into the document, which is why the marker is worth having in
+ * the web view at all and not only in the printed one.
+ */
+.markdown-body .markdown-toc ol {
+  list-style: none;
+  padding-left: 0;
+  margin: 0.5em 0;
+}
+
+.markdown-body .markdown-toc .toc-item {
+  margin: 0.2em 0;
+}
+
+.markdown-body .markdown-toc .toc-level-2 {
+  padding-left: 1.5em;
+}
+
+.markdown-body .markdown-toc .toc-level-3 {
+  padding-left: 3em;
+}

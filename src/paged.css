@@ -404,3 +404,46 @@
 .markdown-body.doc img {
   max-width: 100%;
 }
+
+/*
+ * The table of contents, on paper.
+ *
+ * This is the half a printed index needs and a screen one does not: the page
+ * each entry is on. `target-counter(attr(href), page)` is resolved by paged.js
+ * — it rewrites the rule into a counter of its own and sets that counter per
+ * link from the page the target actually landed on — so the numbers are the
+ * real ones, not a guess made before pagination.
+ *
+ * The link is the flex container, not the item: the number is `a::after`, so
+ * it can only be pushed to the right edge by the element it lives inside.
+ */
+.markdown-body.doc .markdown-toc ol {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.markdown-body.doc .markdown-toc .toc-item {
+  margin: 0.15em 0;
+}
+
+.markdown-body.doc .markdown-toc .toc-item a {
+  display: flex;
+  justify-content: space-between;
+  gap: 1em;
+  color: #000000;
+  text-decoration: none;
+}
+
+.markdown-body.doc .markdown-toc .toc-item a::after {
+  content: target-counter(attr(href), page);
+  font-variant-numeric: tabular-nums;
+}
+
+.markdown-body.doc .markdown-toc .toc-level-2 {
+  padding-left: 1.5em;
+}
+
+.markdown-body.doc .markdown-toc .toc-level-3 {
+  padding-left: 3em;
+}
