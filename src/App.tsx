@@ -1129,7 +1129,11 @@ export default function App() {
 
   async function printDocument() {
     try {
-      await backend.printDocument(lang);
+      // A Marp deck is a stack of slides, each already its own page; the
+      // paginated view draws A4 pages with their own margins. Either way the
+      // printer must not inset them a second time.
+      const paged = docView || (!!active && isMarpDocument(active.content));
+      await backend.printDocument(lang, paged);
     } catch (e) {
       await showNativeAlert(String(e), lang);
     }

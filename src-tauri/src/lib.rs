@@ -1475,10 +1475,17 @@ fn alert(app: tauri::AppHandle, message: String, locale: Option<String>) {
 ///
 /// Unlike `export_pdf`, nothing is saved to a file: the document is handed to
 /// the OS print dialog so the user can pick a printer (or "Save as PDF").
+/// Print what is on screen.
+///
+/// `paged` says whether the view already carries its own page boxes — the
+/// paginated Document view and a Marp deck do. It reaches the GTK path only:
+/// Windows opens WebView2's print dialog, where the margins are the person's
+/// to choose, and macOS has no print path at all.
 #[tauri::command]
 async fn print_document(
     window: tauri::WebviewWindow,
     locale: Option<String>,
+    paged: Option<bool>,
 ) -> Result<(), String> {
     #[cfg(not(any(
         target_os = "linux",
@@ -1489,13 +1496,15 @@ async fn print_document(
         target_os = "windows"
     )))]
     {
-        let _ = &window;
+        let _ = (&window, paged);
         Err(t(parse_locale(locale), "pdf.notSupported"))
     }
 
     #[cfg(target_os = "windows")]
     {
-        let _ = &locale;
+        // `paged` goes unread here on purpose: this opens WebView2's own print
+        // dialog, and the margins in it belong to whoever is standing at it.
+        let _ = (&locale, paged);
         let (tx, rx) = mpsc::channel::<Result<(), String>>();
         window
             .with_webview(move |webview| {
@@ -1533,10 +1542,14 @@ async fn print_document(
                 let page_setup = gtk::PageSetup::new();
                 let paper = gtk::PaperSize::new(Some("iso_a4"));
                 page_setup.set_paper_size_and_default_margins(&paper);
-                page_setup.set_top_margin(25.0, gtk::Unit::Mm);
-                page_setup.set_bottom_margin(25.0, gtk::Unit::Mm);
-                page_setup.set_left_margin(25.0, gtk::Unit::Mm);
-                page_setup.set_right_margin(25.0, gtk::Unit::Mm);
+                // The same call `export_pdf` makes. Printing had the bug that
+                // export had: 25 mm unconditionally, on top of pages that
+                // already carry their own.
+                let margin = pdf_margin_mm(false, paged.unwrap_or(true));
+                page_setup.set_top_margin(margin, gtk::Unit::Mm);
+                page_setup.set_bottom_margin(margin, gtk::Unit::Mm);
+                page_setup.set_left_margin(margin, gtk::Unit::Mm);
+                page_setup.set_right_margin(margin, gtk::Unit::Mm);
                 let operation = webkit2gtk::PrintOperation::new(&wv);
                 operation.set_print_settings(&print_settings);
                 operation.set_page_setup(&page_setup);

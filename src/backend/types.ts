@@ -104,7 +104,14 @@ export type Backend = {
     pageWidthIn?: number,
     pageHeightIn?: number,
   ): Promise<void>;
-  printDocument(locale: string): Promise<void>;
+  /**
+   * Print what is on screen.
+   *
+   * `paged` says whether the view already draws its own pages — the paginated
+   * Document view and a Marp deck do — so the printer must not add margins of
+   * its own on top. Same signal `exportPdf` takes, for the same reason.
+   */
+  printDocument(locale: string, paged: boolean): Promise<void>;
   writePdfBytes(
     pdfBytes: Uint8Array,
     defaultName: string,

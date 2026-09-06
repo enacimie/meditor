@@ -110,8 +110,8 @@ export const tauriBackend: Backend = {
     });
   },
 
-  printDocument(locale: string): Promise<void> {
-    return invoke<void>("print_document", { locale });
+  printDocument(locale: string, paged: boolean): Promise<void> {
+    return invoke<void>("print_document", { locale, paged });
   },
 
   writePdfBytes(pdfBytes: Uint8Array, defaultName: string, locale: string): Promise<void> {
