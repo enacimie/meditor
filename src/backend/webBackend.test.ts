@@ -175,4 +175,13 @@ describe("webBackend files with the File System Access API", () => {
     await new Promise((r) => setTimeout(r, 400));
     await expect(pending).resolves.toEqual([]);
   }, 10000);
+
+  it("offers nothing recent, because a browser has nothing it could reopen", async () => {
+    // Not an oversight to be filled in later: a picker handle is not a path,
+    // and the one the page could keep needs the user's permission again on
+    // every visit. The menu section is drawn only when this is non-empty, so
+    // returning [] is what keeps it out of the browser build.
+    expect(await webBackend.recentFiles()).toEqual([]);
+    expect(await webBackend.openRecent(0, "en")).toBeNull();
+  });
 });

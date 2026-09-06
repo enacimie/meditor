@@ -63,6 +63,7 @@ import { compileLatexToPdf } from "./latexEngine";
 import { LATEX_ENABLED } from "./latexSupport";
 import { classifyExternalChange, type DocumentStat } from "./externalChange";
 import { backend } from "./backend";
+import type { RecentEntry } from "./backend/types";
 import "./App.css";
 
 type FileOperation = "open" | "save" | "saveAs" | "export" | "exportHtml";
@@ -724,12 +725,64 @@ export default function App() {
     [],
   );
 
+  /*
+   * The recent documents, as the backend last listed them.
+   *
+   * Refreshed after anything that reorders the backend's list, and that is not
+   * cosmetic: a click sends the *position* in this list, so a copy that has
+   * gone stale would open the document that took the clicked one's place.
+   * Opening a recent document reorders it too — the one just opened moves to
+   * the top — so that path refreshes as well.
+   */
+  const [recent, setRecent] = useState<RecentEntry[]>([]);
+
+  const refreshRecent = useCallback(async () => {
+    try {
+      setRecent(await backend.recentFiles());
+    } catch (error) {
+      // A menu section that fails to load is not worth interrupting anyone
+      // over; the rest of the menu still works.
+      console.error("could not read the recent documents:", error);
+      setRecent([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshRecent();
+  }, [refreshRecent]);
+
+  async function openRecent(index: number) {
+    if (!beginOperation("open")) return;
+    try {
+      const payload = await backend.openRecent(index, lang);
+      if (!payload) {
+        // The position went away between the menu being drawn and clicked.
+        await refreshRecent();
+        showNotice(t("op.cancelled"), "info");
+        return;
+      }
+      const opened = normalizeDoc(payload);
+      await openPaths([opened]);
+      await refreshRecent();
+      showNotice(t("op.filesOpened", 1), "success");
+    } catch (error) {
+      // The usual reason is that the file has been moved or deleted since it
+      // was listed, so the list is re-read before the message goes up.
+      await refreshRecent();
+      showNotice(operationNoticeError(t, "open"), "error", 0);
+      await showNativeAlert(operationErrorPrefix(t, "open") + String(error), lang);
+    } finally {
+      endOperation("open");
+    }
+  }
+
   async function openFiles() {
     if (!beginOperation("open")) return;
     try {
       const opened = (await backend.openFiles(lang)).map(normalizeDoc);
       if (opened.length) {
         await openPaths(opened);
+        await refreshRecent();
         showNotice(
           t("op.filesOpened", opened.length),
           "success",
@@ -852,6 +905,7 @@ export default function App() {
         return;
       }
       const saved = normalizeDoc(savedPayload);
+      void refreshRecent();
       setDocs((prev) =>
         prev.map((d) =>
           d.id === documentId
@@ -1472,6 +1526,8 @@ export default function App() {
         onOpen={openFiles}
         onSave={save}
         onSaveAs={saveAs}
+        recent={recent}
+        onOpenRecent={openRecent}
         onExportPdf={pdfExportAvailable ? exportPdf : undefined}
         onExportHtml={active?.kind === "markdown" ? exportHtml : undefined}
         onCloseAll={closeAllTabs}

@@ -83,6 +83,8 @@ export const TAURI_SHIM = `(() => {
     return bytes;
   }
 
+  const RECENT = (CONFIG.recent ?? []).map((entry) => ({ ...entry }));
+
   function handleInvoke(cmd, args) {
     switch (cmd) {
       case "cli_files":
@@ -121,6 +123,30 @@ export const TAURI_SHIM = `(() => {
         IMAGES["assets/" + candidate] = CONFIG.writtenImage ?? "";
         written.push({ name, relPath: "assets/" + candidate });
         return { relPath: "assets/" + candidate };
+      }
+      /*
+       * The recent list the way Rust keeps it: the frontend is handed rows to
+       * draw and sends back a position, never a path. The open therefore
+       * has to resolve the index here, which is what makes the spec able to
+       * tell "opened the right row" from "opened something".
+       */
+      case "recent_files":
+        return RECENT.map(({ name, path }) => ({ name, path }));
+      case "open_recent": {
+        const entry = RECENT[Number(args?.index)];
+        if (!entry) return null;
+        // Opening moves it to the front, as remembering does in Rust.
+        RECENT.splice(RECENT.indexOf(entry), 1);
+        RECENT.unshift(entry);
+        return {
+          id: "recent-" + entry.name,
+          name: entry.name,
+          path: entry.path,
+          content: entry.content,
+          dirty: false,
+          handle: "handle-" + entry.name,
+          kind: "markdown",
+        };
       }
       case "save_session":
       case "save_document":

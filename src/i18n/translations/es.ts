@@ -117,6 +117,8 @@ export const es = {
   "file.registryLock": "No se pudo acceder al registro de documentos",
   "file.sessionUnavailable": "Un documento ya no está disponible",
   "menu.saveAs": "Guardar como",
+  "menu.recent": "Documentos recientes",
+  "menu.recentGone": (name: string) => `${name} ya no está donde estaba`,
   "menu.exportPdf": "Exportar PDF",
   "menu.exportHtml": "Exportar HTML",
   "menu.present": "Presentar",
