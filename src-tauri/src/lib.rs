@@ -1565,6 +1565,41 @@ async fn print_document(
 /// out its own A4 pages complete with margins. Asking the printer for margins
 /// on top of that insets every page twice and spills each one onto a second
 /// sheet, so the export gains a blank page for every real one.
+/// The margin to leave around an exported page, in millimetres.
+///
+/// Zero for anything that arrives already laid out. A Marp slide brings its
+/// own page, and the paginated Document view is a stack of A4-sized sheets
+/// with their 2.5 cm already inside them — `paged.css` never reaches the
+/// document, so what the print engine is handed is those sheets, not a page
+/// box it should margin. Adding a printer margin there does it twice and asks
+/// an A4 sheet to fit inside less than A4. Only the plain, unpaginated web
+/// view is a document that still needs margins of its own.
+///
+/// Shared because the two platform paths each decided this for themselves and
+/// drifted: Windows honoured `paged` and Linux never read it, so the same
+/// export came out with 25 mm of extra margin on one platform and not the
+/// other — while the comment on the Windows side said they matched.
+///
+/// Limited to the platforms that have a PDF path at all — the same list the
+/// two branches of `export_pdf` are written against. macOS and Android have
+/// neither and answer `pdf.notSupported`, where an ungated helper is dead code
+/// and `clippy -D warnings` rightly says so.
+#[cfg(any(
+    target_os = "linux",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd",
+    target_os = "windows"
+))]
+fn pdf_margin_mm(custom_page: bool, paged: bool) -> f64 {
+    if custom_page || paged {
+        0.0
+    } else {
+        25.0
+    }
+}
+
 #[tauri::command]
 async fn export_pdf(
     app: tauri::AppHandle,
@@ -1612,17 +1647,10 @@ async fn export_pdf(
         // path sets, so both platforms produce the same page.
         const A4_WIDTH_IN: f64 = 8.268;
         const A4_HEIGHT_IN: f64 = 11.693;
-        // 25 mm, matching the GTK path — but only when the page still needs
-        // them. See the `paged` parameter.
-        const MARGIN_IN: f64 = 0.984;
         let (page_w, page_h) = custom_page.unwrap_or((A4_WIDTH_IN, A4_HEIGHT_IN));
-        // A caller-provided page (a slide) arrives with its own layout, so it
-        // gets no margins either, same as the paginated preview.
-        let margin = if custom_page.is_some() || paged.unwrap_or(true) {
-            0.0
-        } else {
-            MARGIN_IN
-        };
+        // WebView2 measures in inches; the decision itself is shared with the
+        // GTK path so the two cannot drift again.
+        let margin = pdf_margin_mm(custom_page.is_some(), paged.unwrap_or(true)) / 25.4;
 
         let path = {
             let selected = app
@@ -1768,7 +1796,6 @@ async fn export_pdf(
          * behaviour blind on the platform that has been shipping is worse than
          * reporting it. Measured on Windows: 7 preview pages came out as 9.
          */
-        let _ = paged;
         let url = url::Url::from_file_path(&path).map_err(|_| t(loc, "pdf.invalidPath"))?;
         let uri = url.as_str().to_string();
         let (result_tx, result_rx) = mpsc::channel::<Result<(), String>>();
@@ -1785,24 +1812,23 @@ async fn export_pdf(
                 print_settings.set("output-file-format", Some("pdf"));
                 print_settings.set("output-uri", Some(uri.as_str()));
                 let page_setup = gtk::PageSetup::new();
-                if let Some((w, h)) = custom_page {
-                    // A slide wants exactly its own dimensions and no margins,
-                    // not the A4 + 25 mm the document path below applies.
-                    let paper =
-                        gtk::PaperSize::new_custom("marp-slide", "Slide", w, h, gtk::Unit::Inch);
-                    page_setup.set_paper_size_and_default_margins(&paper);
-                    page_setup.set_top_margin(0.0, gtk::Unit::Inch);
-                    page_setup.set_bottom_margin(0.0, gtk::Unit::Inch);
-                    page_setup.set_left_margin(0.0, gtk::Unit::Inch);
-                    page_setup.set_right_margin(0.0, gtk::Unit::Inch);
-                } else {
-                    let paper = gtk::PaperSize::new(Some("iso_a4"));
-                    page_setup.set_paper_size_and_default_margins(&paper);
-                    page_setup.set_top_margin(25.0, gtk::Unit::Mm);
-                    page_setup.set_bottom_margin(25.0, gtk::Unit::Mm);
-                    page_setup.set_left_margin(25.0, gtk::Unit::Mm);
-                    page_setup.set_right_margin(25.0, gtk::Unit::Mm);
-                }
+                // A slide wants exactly its own dimensions; everything else is
+                // A4.
+                let paper = match custom_page {
+                    Some((w, h)) => {
+                        gtk::PaperSize::new_custom("marp-slide", "Slide", w, h, gtk::Unit::Inch)
+                    }
+                    None => gtk::PaperSize::new(Some("iso_a4")),
+                };
+                page_setup.set_paper_size_and_default_margins(&paper);
+                // The same call Windows makes. This branch used to look only at
+                // `custom_page` and margin everything else by 25 mm, including
+                // the paginated document, which already carries its own.
+                let margin = pdf_margin_mm(custom_page.is_some(), paged.unwrap_or(true));
+                page_setup.set_top_margin(margin, gtk::Unit::Mm);
+                page_setup.set_bottom_margin(margin, gtk::Unit::Mm);
+                page_setup.set_left_margin(margin, gtk::Unit::Mm);
+                page_setup.set_right_margin(margin, gtk::Unit::Mm);
                 let operation = webkit2gtk::PrintOperation::new(&wv);
                 operation.set_print_settings(&print_settings);
                 operation.set_page_setup(&page_setup);
@@ -1952,6 +1978,60 @@ pub fn run() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /*
+     * The margin decision, which is the whole of the Linux double-margin bug.
+     *
+     * It cannot be checked by printing anything from here — WebKitGTK is not
+     * on this platform, and the branch that used to get it wrong only compiles
+     * on Linux. What is testable, and what actually broke, is the rule itself:
+     * both platforms now ask the same question and must get the same answer.
+     */
+    // Gated with the function they cover: on a platform with no PDF path
+    // there is nothing here to call.
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "windows"
+    ))]
+    #[test]
+    fn a_paginated_document_is_not_margined_again() {
+        // The default, and the case that was wrong on Linux: the sheets that
+        // paged.js produced already contain their 2.5 cm.
+        assert_eq!(pdf_margin_mm(false, true), 0.0);
+    }
+
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "windows"
+    ))]
+    #[test]
+    fn a_slide_brings_its_own_page() {
+        assert_eq!(pdf_margin_mm(true, true), 0.0);
+        assert_eq!(pdf_margin_mm(true, false), 0.0);
+    }
+
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "windows"
+    ))]
+    #[test]
+    fn the_plain_web_view_still_gets_real_margins() {
+        // The one case that needs them: an unpaginated document is a run of
+        // text with nothing around it.
+        assert_eq!(pdf_margin_mm(false, false), 25.0);
+    }
 
     #[test]
     fn rejects_empty_and_directory_paths() {
