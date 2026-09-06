@@ -11,11 +11,16 @@
  * Only a browser can show that. The click, the source edit and the repaint
  * are three separate things, and a unit test can watch at most one of them.
  *
- * The spec types its own document and restores what it found, because the
- * specs share one session.
+ * The document comes from the shim rather than being typed into the editor.
+ * Typing it meant selecting what was there first, and a DOM Range does not
+ * reach CodeMirror — `drawSelection` keeps a selection of its own — so the
+ * text landed after the sample instead of over it. Everything below then ran
+ * against both documents at once and still passed, because `editorText` reads
+ * the rendered lines and CodeMirror only renders the viewport.
  */
 
 import { connect, assert } from "./cdp.mjs";
+import { TAURI_SHIM } from "./tauri-shim.mjs";
 
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:1420";
 const CDP_PORT = Number(process.env.CDP_PORT);
@@ -32,21 +37,40 @@ const DOCUMENT = [
 
 const page = await connect(CDP_PORT);
 
-/** Put `text` in the editor, replacing whatever is there. */
-const setDocument = (text) =>
-  page.evaluate(`(() => {
-    const cm = document.querySelector('.cm-content');
-    cm.focus();
-    const range = document.createRange();
-    range.selectNodeContents(cm);
-    const selection = window.getSelection();
-    selection.removeAllRanges();
-    selection.addRange(range);
-    document.execCommand('insertText', false, ${JSON.stringify(text)});
-    return true;
+/**
+ * Put the cursor on `line` with a real click, the way a reader would.
+ *
+ * The assertions below need it somewhere other than the top of the document,
+ * so that losing it is visible. A click and not a keystroke: "go to the end"
+ * is a different chord on a Mac, and this needs none.
+ */
+const placeCursor = async (line) => {
+  const box = await page.read(`(() => {
+    const el = document.querySelectorAll('.cm-content .cm-line')[${line}];
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return { x: Math.round(r.left + 4), y: Math.round(r.top + r.height / 2) };
   })()`);
+  assert(box, `there should be a line ${line} to click`);
+  for (const type of ["mousePressed", "mouseReleased"]) {
+    await page.send("Input.dispatchMouseEvent", {
+      type,
+      x: box.x,
+      y: box.y,
+      button: "left",
+      clickCount: 1,
+    });
+  }
+};
 
-/** The editor's text, as one string with real newlines. */
+/**
+ * The editor's text, as one string with real newlines.
+ *
+ * The rendered lines only: CodeMirror renders the viewport, so this is the
+ * whole document just while the document is short. It is what made the
+ * append-instead-of-replace bug invisible, and it is safe here only because
+ * `DOCUMENT` is six lines.
+ */
 const editorText = () =>
   page.read(`[...document.querySelectorAll('.cm-content .cm-line')]
     .map((l) => l.textContent)
@@ -120,27 +144,33 @@ const clickTask = (index) =>
     return { checkedNow: box.checked };
   })()`);
 
-let inherited = null;
+const CONFIG = `window.__meditorShimConfig = ${JSON.stringify({
+  docContent: DOCUMENT,
+})};`;
+
+let configId;
+let shimId;
 try {
+  configId = await page.addInitScript(CONFIG);
+  shimId = await page.addInitScript(TAURI_SHIM);
   await page.freshPage(BASE_URL);
   await page.waitFor("!!document.querySelector('.cm-content')", { timeout: 20000 });
-  await page.waitFor("!!localStorage.getItem('meditor.web.session.v3')", {
-    timeout: 20000,
-    message: "the app should have written a session to restore later",
-  });
-  inherited = await page.read(
-    "JSON.parse(localStorage.getItem('meditor.web.session.v3')).docs[0].content",
+
+  // ── This document, and not the one the other specs leave behind ──────
+  // The guard that was missing. When the text was typed in rather than handed
+  // over, it landed after the sample and every assertion below still passed;
+  // the sample has six task lines of its own, five of them ticked, so even
+  // "three or more checkboxes" was true before this document had rendered.
+  const opening = await editorText();
+  assert(
+    opening.startsWith("# Tasks"),
+    `the editor should hold this spec's document, got ${JSON.stringify(opening.slice(0, 60))}`,
+  );
+  assert(
+    !opening.includes("A **Markdown** editor"),
+    "the sample document should not be here as well",
   );
 
-  await setDocument(DOCUMENT);
-  /*
-   * Wait for this document, not merely for checkboxes.
-   *
-   * The sample the other specs leave behind has six task lines of its own,
-   * five of them ticked, so "three or more boxes" is true before a single
-   * character of this document has been rendered — and the first click then
-   * lands on someone else's list.
-   */
   await page.waitFor(
     `(() => {
       const boxes = [...document.querySelectorAll(${JSON.stringify(VISIBLE_BOXES)})];
@@ -157,6 +187,10 @@ try {
     JSON.stringify(initial) === "[false,true,false]",
     `the boxes should start as the document says, got ${JSON.stringify(initial)}`,
   );
+
+  // The reader is somewhere down the document, not at the top, so that a
+  // cursor sent back to the start is something this can see.
+  await placeCursor(4);
 
   // Where the cursor is before anything is clicked. Read now, not later: a
   // whole-document update sends it to the top, and comparing two readings
@@ -249,10 +283,7 @@ try {
       "undo and the cursor survive it, and a second box further along the line is left alone",
   );
 } finally {
-  try {
-    if (inherited) await setDocument(inherited);
-  } catch {
-    /* the page may already be gone; the next spec opens its own */
-  }
+  await page.removeInitScript(shimId);
+  await page.removeInitScript(configId);
   await page.close();
 }
