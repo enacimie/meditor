@@ -160,6 +160,13 @@ save goes through "save as". Fixing that properly needs `ACTION_OPEN_DOCUMENT`
 and `takePersistableUriPermission`, which is a change to the dialog plugin
 upstream rather than to this app.
 
+**There are no recent documents.** The list the desktop menu shows is a list
+of paths, and what the framework hands this app is a `content://` URI whose
+permission does not outlive the process it was granted to. Storing one would
+put a row in the menu that cannot be opened, so nothing is stored and the
+section is not drawn. Same cause as the "save as" note above: it needs
+`takePersistableUriPermission`, upstream in the dialog plugin.
+
 **A relative image cannot be found, and a pasted one cannot be written.**
 `![](assets/shot.png)` means "the file beside this document", and beside is
 exactly what the framework does not give: it hands over one document, with no

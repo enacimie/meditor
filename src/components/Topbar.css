@@ -218,6 +218,41 @@
   flex-shrink: 0;
 }
 
+/*
+ * The label above the recent documents. Not a `menuitem`: it is a caption, and
+ * arrow-key navigation in the panel walks the items, so a focusable heading
+ * would be a stop on the way to nothing.
+ */
+.menu-heading {
+  padding: 8px 10px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--fg);
+  opacity: 0.6;
+  text-transform: uppercase;
+}
+
+.menu-separator {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--border);
+}
+
+/*
+ * A path can be long and a menu cannot. The name is what identifies the
+ * document; the whole path is in the tooltip for the two `notes.md` case.
+ */
+.menu-recent-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-panel button.menu-recent {
+  max-width: 100%;
+}
+
 .menu-panel .shortcut {
   margin-left: auto;
   color: var(--fg);

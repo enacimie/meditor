@@ -2,6 +2,7 @@ import { memo, useRef, useEffect, useState, lazy, Suspense, type KeyboardEvent a
 import type { Language, TranslationFn } from "../i18n/translations";
 import { LANGUAGES, isRtl } from "../i18n/translations";
 import type { Theme, Notice, LayoutMode } from "./types";
+import type { RecentEntry } from "../backend/types";
 import brandIcon from "../assets/meditor-icon.png";
 import { LATEX_ENABLED } from "../latexSupport";
 import "./Topbar.css";
@@ -28,6 +29,15 @@ type Props = {
   onOpen: () => void;
   onSave: () => void;
   onSaveAs: () => void;
+  /**
+   * The documents opened lately, freshest first. Empty where there is nothing
+   * to reopen, and the section is then not drawn at all rather than drawn
+   * saying so — an empty list is the normal state of a fresh install, and a
+   * menu that explains its own emptiness is noise.
+   */
+  recent?: RecentEntry[];
+  /** Reopen the recent document drawn at `index`. */
+  onOpenRecent?: (index: number) => void;
   /** Omitted where the backend cannot produce a PDF for this document. */
   onExportPdf?: () => void;
   /** Only offered for Markdown: Typst/LaTeX render through their own engines. */
@@ -108,6 +118,8 @@ const Topbar = memo(function Topbar({
   onOpen,
   onSave,
   onSaveAs,
+  recent = [],
+  onOpenRecent,
   onExportPdf,
   onExportHtml,
   onPresent,
@@ -301,6 +313,26 @@ const Topbar = memo(function Topbar({
                 <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
                 {t("menu.saveAs")}<span className="shortcut">{t("menu.shortcut.saveAs")}</span>
               </button>
+              {onOpenRecent && recent.length > 0 && (
+                <>
+                  <div className="menu-heading" role="presentation">{t("menu.recent")}</div>
+                  {recent.map((entry, index) => (
+                    <button
+                      key={entry.path}
+                      type="button"
+                      role="menuitem"
+                      className="menu-recent"
+                      disabled={busy}
+                      title={entry.path}
+                      onClick={() => { onOpenRecent(index); setMenuOpen(false); menuToggleRef.current?.focus(); }}
+                    >
+                      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+                      <span className="menu-recent-name">{entry.name}</span>
+                    </button>
+                  ))}
+                  <div className="menu-separator" role="separator" />
+                </>
+              )}
               {onExportPdf && (
                 <button type="button" role="menuitem" disabled={busy} onClick={() => { onExportPdf(); setMenuOpen(false); menuToggleRef.current?.focus(); }}>
                   <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15l3 3 3-3"/></svg>

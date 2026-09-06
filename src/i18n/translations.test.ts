@@ -108,6 +108,8 @@ describe("translations", () => {
     "present.aria",
     "present.exit",
     // Image paste notices; en/es for now like the strings above.
+    "menu.recent",
+    "menu.recentGone",
     "image.tooLarge",
     "image.insertFailed",
     "image.notStored",

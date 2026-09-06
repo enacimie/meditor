@@ -29,12 +29,15 @@ function renderTopbar(overrides: {
   onNewTypstSpy?: ReturnType<typeof vi.fn>;
   onNewLatexSpy?: ReturnType<typeof vi.fn>;
   onCheckUpdatesSpy?: ReturnType<typeof vi.fn>;
+  recent?: Array<{ name: string; path: string }>;
+  onOpenRecentSpy?: ReturnType<typeof vi.fn>;
 } = {}) {
   const langSpy = (overrides.onSetLanguageSpy ?? vi.fn()) as (code: Language) => void;
   const themeSpy = (overrides.onSetThemeSpy ?? vi.fn()) as (t: string) => void;
   const newTypstSpy = overrides.onNewTypstSpy ?? vi.fn();
   const newLatexSpy = overrides.onNewLatexSpy ?? vi.fn();
   const checkUpdatesSpy = overrides.onCheckUpdatesSpy as (() => void) | undefined;
+  const openRecentSpy = overrides.onOpenRecentSpy as ((i: number) => void) | undefined;
 
   function Inner() {
     const { t, lang, setLanguage } = useTranslation();
@@ -68,6 +71,8 @@ function renderTopbar(overrides: {
         onOpen={vi.fn()}
         onSave={vi.fn()}
         onSaveAs={vi.fn()}
+        recent={overrides.recent}
+        onOpenRecent={openRecentSpy}
         onExportPdf={vi.fn()}
         onCloseAll={vi.fn()}
         onCloseOthers={vi.fn()}
@@ -84,12 +89,61 @@ function renderTopbar(overrides: {
     </I18nProvider>,
   );
 
-  return { ...utils, langSpy, themeSpy, newTypstSpy, newLatexSpy };
+  return { ...utils, langSpy, themeSpy, newTypstSpy, newLatexSpy, openRecentSpy };
 }
 
 import React from "react";
 
 // ─── Integration tests ────────────────────────────────────────────
+
+describe("the recent documents in the menu", () => {
+  const RECENT = [
+    { name: "notes.md", path: "/home/e/work/notes.md" },
+    { name: "otras notas.md", path: "/home/e/personal/otras notas.md" },
+  ];
+
+  it("lists them, newest first, under a heading", () => {
+    renderTopbar({ recent: RECENT, onOpenRecentSpy: vi.fn() });
+    fireEvent.click(getMenuToggle());
+    expect(screen.getByText("Recent documents")).toBeDefined();
+    const items = screen
+      .getAllByRole("menuitem")
+      .filter((el) => el.classList.contains("menu-recent"));
+    expect(items.map((el) => el.textContent)).toEqual(["notes.md", "otras notas.md"]);
+  });
+
+  it("sends the position, not the path", () => {
+    // The whole reason the list lives in the backend: the web layer never gets
+    // to say which file to read, only which row was clicked.
+    const spy = vi.fn();
+    renderTopbar({ recent: RECENT, onOpenRecentSpy: spy });
+    fireEvent.click(getMenuToggle());
+    fireEvent.click(screen.getByText("otras notas.md"));
+    expect(spy).toHaveBeenCalledWith(1);
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it("puts the whole path where it can be read without cluttering the row", () => {
+    renderTopbar({ recent: RECENT, onOpenRecentSpy: vi.fn() });
+    fireEvent.click(getMenuToggle());
+    const row = screen.getByText("notes.md").closest("button");
+    expect(row?.getAttribute("title")).toBe("/home/e/work/notes.md");
+  });
+
+  it("draws no section at all when there is nothing to reopen", () => {
+    // A fresh install, and the browser build. A menu that explains its own
+    // emptiness is worse than a menu that is simply shorter.
+    renderTopbar({ recent: [], onOpenRecentSpy: vi.fn() });
+    fireEvent.click(getMenuToggle());
+    expect(screen.queryByText("Recent documents")).toBeNull();
+  });
+
+  it("draws no section where the backend cannot reopen anything", () => {
+    renderTopbar({ recent: RECENT });
+    fireEvent.click(getMenuToggle());
+    expect(screen.queryByText("Recent documents")).toBeNull();
+  });
+});
 
 describe("Topbar integration", () => {
   it("renders brand and action buttons", () => {

@@ -3,6 +3,7 @@ import type { Doc } from "../types";
 import type { DocumentStat } from "../externalChange";
 import type {
   Backend,
+  RecentEntry,
   SessionInput,
   SessionRestorePayload,
 } from "./types";
@@ -35,6 +36,14 @@ export const tauriBackend: Backend = {
 
   openFiles(locale: string): Promise<Doc[]> {
     return invoke<Doc[]>("open_files", { locale });
+  },
+
+  recentFiles(): Promise<RecentEntry[]> {
+    return invoke<RecentEntry[]>("recent_files");
+  },
+
+  openRecent(index: number, locale: string): Promise<Doc | null> {
+    return invoke<Doc | null>("open_recent", { index, locale });
   },
 
   saveDocument(handle: string, content: string, locale: string): Promise<void> {

@@ -7,6 +7,14 @@ import type { DocumentStat } from "../externalChange";
  */
 export type BackendDocument = Doc;
 
+/** One row of the recent-documents menu. */
+export type RecentEntry = {
+  /** The file's own name, which is what the row says. */
+  name: string;
+  /** The full path, for the tooltip that tells two `notes.md` apart. */
+  path: string;
+};
+
 /** What save_session sends up; handles ride along untouched. */
 export type SessionInput = {
   docs: Array<
@@ -39,6 +47,22 @@ export type Backend = {
   saveSession(input: SessionInput, locale: string): Promise<void>;
   /** Native picker; empty array when cancelled. */
   openFiles(locale: string): Promise<Doc[]>;
+  /**
+   * The documents opened lately, freshest first, for the menu to draw.
+   *
+   * Empty wherever there is nothing to reopen: the web build, and Android,
+   * where a document arrives as a permission that does not outlive the
+   * process it was granted to.
+   */
+  recentFiles(): Promise<RecentEntry[]>;
+  /**
+   * Reopen the recent document at `index` in the list `recentFiles` returned.
+   *
+   * By position and not by path on purpose: a command that opened a path the
+   * web layer named would be a command that reads any file the user can.
+   * Null when that position is no longer there.
+   */
+  openRecent(index: number, locale: string): Promise<Doc | null>;
   saveDocument(handle: string, content: string, locale: string): Promise<void>;
   /** Native picker; null when cancelled. */
   saveAs(

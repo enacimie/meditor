@@ -1,4 +1,5 @@
 mod locale;
+mod recent;
 
 use locale::{t, tf, Locale};
 use serde::{Deserialize, Serialize};
@@ -356,6 +357,7 @@ fn document_from_location(
     let content = read_location(app, locale, &normalized)?;
     let name = location_name(app, locale, &normalized);
     let handle = register_normalized(locale, registry, normalized.clone())?;
+    remember_recent(app, locale, &normalized);
     Ok(NativeDocument {
         id: next_handle(),
         // The extension is read off the name rather than the location: a
@@ -402,6 +404,58 @@ fn session_file_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     let dir = app.path().app_config_dir().map_err(|e| e.to_string())?;
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     Ok(dir.join("session.json"))
+}
+
+/// Where the recent list is kept, beside the session.
+fn recent_file_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    let dir = app.path().app_config_dir().map_err(|e| e.to_string())?;
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    Ok(dir.join("recent.json"))
+}
+
+/// The stored list, or an empty one for anything unreadable.
+///
+/// A missing, truncated or hand-edited file costs the user their recent list
+/// and nothing else, so none of it is worth failing a startup over.
+fn load_recent(app: &tauri::AppHandle) -> Vec<PathBuf> {
+    let Ok(path) = recent_file_path(app) else {
+        return Vec::new();
+    };
+    let Ok(raw) = std::fs::read_to_string(path) else {
+        return Vec::new();
+    };
+    serde_json::from_str(&raw).unwrap_or_default()
+}
+
+/// Note that a document was just opened or saved, and write the list out.
+///
+/// Only a real path: a `content://` URI cannot be reopened later (see
+/// `recent.rs`), so remembering one would offer the user a door that does not
+/// open. Failures are reported and swallowed — losing the recent list must
+/// never be the reason an open fails.
+fn remember_recent(app: &tauri::AppHandle, locale: Locale, location: &Location) {
+    let Some(path) = as_path(location) else {
+        return;
+    };
+    let state = app.state::<recent::RecentFiles>();
+    let Some(paths) = state.remember(path.to_path_buf()) else {
+        return;
+    };
+    let stored = match serde_json::to_string(&paths) {
+        Ok(stored) => stored,
+        Err(error) => {
+            eprintln!("could not encode the recent list: {error}");
+            return;
+        }
+    };
+    match recent_file_path(app) {
+        Ok(file) => {
+            if let Err(error) = write_atomic(locale, &file, &stored) {
+                eprintln!("could not write the recent list: {error}");
+            }
+        }
+        Err(error) => eprintln!("could not find where to keep the recent list: {error}"),
+    }
 }
 
 fn write_atomic(locale: Locale, path: &Path, content: &str) -> Result<(), String> {
@@ -477,6 +531,9 @@ fn saved_document(
     write_location(app, locale, &normalized, content.as_bytes())?;
     let name = location_name(app, locale, &normalized);
     let handle = register_normalized(locale, registry, normalized.clone())?;
+    // "Save as" is how a document gets a path in the first place, so it counts
+    // as having been opened from there.
+    remember_recent(app, locale, &normalized);
     Ok(NativeDocument {
         id: next_handle(),
         kind: kind_from_path(Path::new(&name)),
@@ -579,6 +636,40 @@ fn save_as(
         None => return Ok(None),
     };
     saved_document(&app, loc, location, content, &registry).map(Some)
+}
+
+/// The recent documents, for the menu to draw.
+///
+/// Names and paths to show. The frontend never sends one of these paths back:
+/// see `open_recent`, which takes the position instead.
+#[tauri::command]
+fn recent_files(recent: tauri::State<'_, recent::RecentFiles>) -> Vec<recent::RecentEntry> {
+    recent.entries()
+}
+
+/// Open the recent document the menu drew at `index`.
+///
+/// An index and not a path, deliberately. A command that opened whatever path
+/// the webview named would let anything running in the web layer read any file
+/// the user can, which is the one thing the rest of this file is careful not to
+/// allow. What this grants instead is reopening something the user opened
+/// before, from a list the backend keeps.
+///
+/// `Ok(None)` when the position no longer exists — the list was pruned between
+/// the menu being drawn and being clicked.
+#[tauri::command]
+fn open_recent(
+    app: tauri::AppHandle,
+    index: usize,
+    registry: tauri::State<'_, DocumentRegistry>,
+    recent: tauri::State<'_, recent::RecentFiles>,
+    locale: Option<String>,
+) -> Result<Option<NativeDocument>, String> {
+    let loc = parse_locale(locale);
+    let Some(path) = recent.path_at(index) else {
+        return Ok(None);
+    };
+    document_from_location(&app, loc, Location::Path(path), &registry).map(Some)
 }
 
 #[tauri::command]
@@ -1791,6 +1882,10 @@ pub fn run() {
         {
             eprintln!("the updater is not configured in this build: {error}");
         }
+        // Read once, here rather than at `manage` time: finding the file needs
+        // an app handle, and this is the first place there is one.
+        app.state::<recent::RecentFiles>()
+            .restore(load_recent(app.handle()));
         Ok(())
     });
 
@@ -1802,8 +1897,11 @@ pub fn run() {
         // grant `fs:default`, so the frontend gains no new access to the disk.
         .plugin(tauri_plugin_fs::init())
         .manage(DocumentRegistry(Mutex::new(HashMap::new())))
+        .manage(recent::RecentFiles::default())
         .invoke_handler(tauri::generate_handler![
             open_files,
+            open_recent,
+            recent_files,
             save_as,
             save_document,
             document_stat,

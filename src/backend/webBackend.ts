@@ -249,6 +249,20 @@ export const webBackend: Backend = {
     localStorage.setItem(SESSION_KEY, JSON.stringify(payload));
   },
 
+  /*
+   * Nothing to reopen in a browser. A file handle from the picker is not a
+   * path and cannot be turned into one, and the one the page could keep in
+   * IndexedDB needs the user's permission again on every visit — so a list
+   * called "recent" here would be a list of prompts, not of documents.
+   */
+  async recentFiles() {
+    return [];
+  },
+
+  async openRecent() {
+    return null;
+  },
+
   async openFiles(locale) {
     try {
       if (!fsaAvailable()) {

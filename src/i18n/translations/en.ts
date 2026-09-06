@@ -147,6 +147,8 @@ export const en = {
   "file.sessionUnavailable": "A document is no longer available",
   // Menu items
   "menu.saveAs": "Save as",
+  "menu.recent": "Recent documents",
+  "menu.recentGone": (name: string) => `${name} is no longer where it was`,
   "menu.exportPdf": "Export PDF",
   "menu.exportHtml": "Export HTML",
   "menu.present": "Present",
