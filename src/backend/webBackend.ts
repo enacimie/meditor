@@ -372,6 +372,10 @@ export const webBackend: Backend = {
     window.print();
   },
 
+  /*
+   * The browser's own print dialog decides the margins, so `paged` has nowhere
+   * to go here. Taken all the same, because the interface is one shape.
+   */
   async printDocument() {
     window.print();
   },

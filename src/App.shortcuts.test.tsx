@@ -297,7 +297,10 @@ describe("tab and quit shortcuts", () => {
     await waitFor(() => expect(invokeMock).toHaveBeenCalledWith("exit_app"));
   });
 
-  it("Ctrl+P opens the native print dialog", async () => {
+  it("Ctrl+P opens the native print dialog, saying the view is paginated", async () => {
+    // `paged` is not decoration: on Linux it decides whether the printer adds
+    // 25 mm around pages that already carry their own. The Document view is
+    // the default, so the flag that reaches the backend must say so.
     render(
       <I18nProvider>
         <App />
@@ -308,6 +311,11 @@ describe("tab and quit shortcuts", () => {
     });
 
     fireEvent.keyDown(window, { key: "p", ctrlKey: true });
-    await waitFor(() => expect(invokeMock).toHaveBeenCalledWith("print_document", expect.anything()));
+    await waitFor(() =>
+      expect(invokeMock).toHaveBeenCalledWith(
+        "print_document",
+        expect.objectContaining({ paged: true }),
+      ),
+    );
   });
 });
