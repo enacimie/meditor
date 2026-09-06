@@ -38,32 +38,6 @@ const DOCUMENT = [
 const page = await connect(CDP_PORT);
 
 /**
- * Put the cursor on `line` with a real click, the way a reader would.
- *
- * The assertions below need it somewhere other than the top of the document,
- * so that losing it is visible. A click and not a keystroke: "go to the end"
- * is a different chord on a Mac, and this needs none.
- */
-const placeCursor = async (line) => {
-  const box = await page.read(`(() => {
-    const el = document.querySelectorAll('.cm-content .cm-line')[${line}];
-    if (!el) return null;
-    const r = el.getBoundingClientRect();
-    return { x: Math.round(r.left + 4), y: Math.round(r.top + r.height / 2) };
-  })()`);
-  assert(box, `there should be a line ${line} to click`);
-  for (const type of ["mousePressed", "mouseReleased"]) {
-    await page.send("Input.dispatchMouseEvent", {
-      type,
-      x: box.x,
-      y: box.y,
-      button: "left",
-      clickCount: 1,
-    });
-  }
-};
-
-/**
  * The editor's text, as one string with real newlines.
  *
  * The rendered lines only: CodeMirror renders the viewport, so this is the
@@ -117,6 +91,48 @@ const cursorLine = () =>
     }
     return index;
   })()`);
+
+/**
+ * Put the cursor on `line` with a real click, the way a reader would, and
+ * make sure it landed.
+ *
+ * The assertions below need it somewhere other than the top of the document,
+ * so that losing it is visible. A click and not a keystroke: "go to the end"
+ * is a different chord on a Mac, and this needs none.
+ *
+ * The click is checked and repeated because a single one is not reliable: on
+ * the macOS runner it has been seen to leave the cursor at line 0, and the
+ * assertion that followed then reported a cursor that had never moved as a
+ * cursor that had been lost. Whatever the cause — focus arriving late, the
+ * layout shifting between measuring the line and clicking it — waiting for
+ * the cursor to be where it was asked to be turns the race into a wait.
+ */
+const placeCursor = async (line) => {
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    const box = await page.read(`(() => {
+      const el = document.querySelectorAll('.cm-content .cm-line')[${line}];
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return { x: Math.round(r.left + 4), y: Math.round(r.top + r.height / 2) };
+    })()`);
+    assert(box, `there should be a line ${line} to click`);
+    for (const type of ["mousePressed", "mouseReleased"]) {
+      await page.send("Input.dispatchMouseEvent", {
+        type,
+        x: box.x,
+        y: box.y,
+        button: "left",
+        clickCount: 1,
+      });
+    }
+    await new Promise((resolve) => setTimeout(resolve, 200 * attempt));
+    if ((await cursorLine()) === line) return;
+  }
+  const landed = await cursorLine();
+  throw new Error(
+    `the cursor should be on line ${line} after clicking it, and is on ${landed}`,
+  );
+};
 
 /*
  * Only the two containers the click handler is attached to.
