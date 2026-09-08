@@ -13,6 +13,9 @@ import {
   pageMetrics,
   paperById,
   paperByName,
+  marginByName,
+  MIN_DOCUMENT_MARGIN_MM,
+  MAX_DOCUMENT_MARGIN_MM,
 } from "./pageSetup";
 
 const read = (name: string) => readFileSync(new URL(name, import.meta.url), "utf8");
@@ -160,6 +163,49 @@ describe("the paper a document names", () => {
     expect(paperByName("")).toBeNull();
     expect(paperByName(null)).toBeNull();
     expect(paperByName(undefined)).toBeNull();
+  });
+});
+
+describe("the margin a document names", () => {
+  it("reads the units a document is likely to state it in", () => {
+    expect(marginByName("25mm")).toBe(25);
+    expect(marginByName("2.5cm")).toBe(25);
+    expect(marginByName("1in")).toBe(25.4);
+    expect(marginByName("36pt")).toBe(12.7);
+  });
+
+  it("reads a bare number as millimetres", () => {
+    // Which is what `pageMetrics` speaks, and what the preference stores.
+    expect(marginByName("30")).toBe(30);
+  });
+
+  it("ignores case and the space around and inside it", () => {
+    expect(marginByName("  2.5 CM ")).toBe(25);
+    expect(marginByName("1 IN")).toBe(25.4);
+  });
+
+  it("answers nothing for a width outside the range that still prints", () => {
+    /*
+     * The folio and the running title are `@page` margin boxes and live in
+     * this white space. A document that asks for 2 mm is asking for a page
+     * with nowhere to put its number, and the reader's preference is a better
+     * answer than a page that loses it.
+     */
+    expect(marginByName("2mm")).toBeNull();
+    expect(marginByName("0")).toBeNull();
+    expect(marginByName("80mm")).toBeNull();
+    expect(marginByName(`${MIN_DOCUMENT_MARGIN_MM}mm`)).toBe(MIN_DOCUMENT_MARGIN_MM);
+    expect(marginByName(`${MAX_DOCUMENT_MARGIN_MM}mm`)).toBe(MAX_DOCUMENT_MARGIN_MM);
+  });
+
+  it("answers nothing for what it cannot read", () => {
+    expect(marginByName("wide")).toBeNull();
+    expect(marginByName("1em")).toBeNull();
+    expect(marginByName("2.5cm 3cm")).toBeNull();
+    expect(marginByName("-10mm")).toBeNull();
+    expect(marginByName("")).toBeNull();
+    expect(marginByName(null)).toBeNull();
+    expect(marginByName(undefined)).toBeNull();
   });
 });
 

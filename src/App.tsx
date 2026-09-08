@@ -32,7 +32,12 @@ const PresentOverlay = lazy(() => import("./components/PresentOverlay"));
 import Outline from "./components/Outline";
 import { parseHeadings, type Heading } from "./components/outlineUtils";
 import { useTranslation } from "./i18n/I18nProvider";
-import { paperById, paperByName, pageMetrics as metricsFor } from "./pageSetup";
+import {
+  paperById,
+  paperByName,
+  marginByName,
+  pageMetrics as metricsFor,
+} from "./pageSetup";
 import { isRtl } from "./i18n/translations";
 import { useThemeEffect } from "./hooks/useThemeEffect";
 import { useSplitDivider } from "./hooks/useSplitDivider";
@@ -416,6 +421,17 @@ export default function App() {
   );
 
   /*
+   * And the margin it asks for, by the same route and for the same reason.
+   *
+   * `margin: 1in` is what a document written to a house style says, and it
+   * has to travel with the document rather than depend on who opens it.
+   */
+  const declaredMargin = useMemo(
+    () => (markdownSyncAvailable ? frontMatterValue(activeContent, "margin") : null),
+    [markdownSyncAvailable, activeContent],
+  );
+
+  /*
    * The sheet everything paginated agrees on: the Document view, the
    * measuring passes behind it, the HTML export and the printer. One value,
    * because a document laid out for one paper and printed on another does not
@@ -431,9 +447,9 @@ export default function App() {
     () =>
       metricsFor(
         paperByName(declaredPaper) ?? paperById(editorPrefs.paperSize),
-        editorPrefs.pageMarginMm,
+        marginByName(declaredMargin) ?? editorPrefs.pageMarginMm,
       ),
-    [declaredPaper, editorPrefs.paperSize, editorPrefs.pageMarginMm],
+    [declaredPaper, declaredMargin, editorPrefs.paperSize, editorPrefs.pageMarginMm],
   );
 
   // Switching away from the deck (another tab, or the front-matter removed)
