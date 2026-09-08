@@ -124,12 +124,30 @@ function conflictDialog(): HTMLElement | null {
   return document.querySelector(".conflict-overlay");
 }
 
-beforeAll(() => {
+beforeAll(async () => {
   if (!("getClientRects" in (document.createTextNode("") as Node))) {
     (Range.prototype as unknown as Record<string, unknown>).getClientRects = function () {
       return [] as unknown as DOMRectList;
     };
   }
+  /*
+   * Load the editor before any fake clock exists.
+   *
+   * App reaches it through `React.lazy`, so mounting starts a dynamic import —
+   * and a dynamic import does not complete while the timers are faked, which
+   * they are from the first line of `mountApp` onwards. `.cm-editor` then
+   * never appears and every test in this file fails on the same assertion,
+   * about the editor rather than about anything it was written to check.
+   *
+   * It passed all the same for as long as the whole suite ran together: Vite
+   * caches transforms across the run, so by the time this file executed the
+   * module was already prepared and resolved inside the window the fake clock
+   * allowed. Run on its own it had to be transformed from cold, and did not.
+   *
+   * Resolving it here, on real timers, makes the file stand up by itself
+   * without changing a single assertion.
+   */
+  await import("./Editor");
 });
 
 beforeEach(() => {
