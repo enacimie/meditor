@@ -44,6 +44,18 @@ import "./Editor.css";
 
 // Lazy-load the LaTeX language mode (legacy StreamLanguage, MIT licensed).
 let latexLangPromise: Promise<Extension> | null = null;
+/**
+ * The caret's column, one-based, as a reader counts it.
+ *
+ * Characters from the start of the line and not screen columns: a tab counts
+ * as one, which is what every editor that shows this reports and what makes
+ * the number match a position in the file.
+ */
+function columnOf(state: EditorState): number {
+  const head = state.selection.main.head;
+  return head - state.doc.lineAt(head).from + 1;
+}
+
 function getLatexLang(): Promise<Extension> {
   if (!latexLangPromise) {
     latexLangPromise = import("@codemirror/legacy-modes/mode/stex")
@@ -198,8 +210,14 @@ type Props = {
   typewriterMode?: boolean;
   zenMode?: boolean;
   zenPlaceholder?: string;
-  /** Fired when the cursor moves (or the active doc changes). 0-based line. */
-  onCursorLineChange?: (line: number) => void;
+  /**
+   * Fired when the cursor moves, or the active document changes.
+   *
+   * The line is zero-based, which is what the outline indexes with; the column
+   * is one-based, which is how a status bar reports it. Two conventions in one
+   * callback is worth saying out loud rather than leaving to be discovered.
+   */
+  onCursorLineChange?: (line: number, column: number) => void;
   /** Document language ("markdown" or "typst"). */
   kind: DocKind;
   /** Told when a pasted or dropped image could not be inserted. */
@@ -459,7 +477,7 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
         if (u.selectionSet || u.docChanged) {
           const line =
             u.state.doc.lineAt(u.state.selection.main.head).number - 1;
-          onCursorLineChangeRef.current?.(line);
+          onCursorLineChangeRef.current?.(line, columnOf(u.state));
         }
       }),
       // Font size and family live in their own compartment so Preferences can
@@ -580,6 +598,7 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
     // Report the initial cursor line so the outline highlights on first render.
     onCursorLineChangeRef.current?.(
       view.state.doc.lineAt(view.state.selection.main.head).number - 1,
+      columnOf(view.state),
     );
     const currentStates = states.current;
     return () => {
@@ -697,6 +716,7 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
     // Report the cursor position of the newly active document.
     onCursorLineChangeRef.current?.(
       view.state.doc.lineAt(view.state.selection.main.head).number - 1,
+      columnOf(view.state),
     );
   }, [activeId, content, wrap, syncCompartments]);
 
