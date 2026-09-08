@@ -828,10 +828,40 @@ export default function App() {
     }
   }
 
+  /**
+   * Adopt the fingerprint of a file this application has just written.
+   *
+   * Without this, saving looks exactly like somebody else editing the file.
+   * The write moves the mtime, so the next poll reads the disk and compares it
+   * to the buffer — and if the writer typed anything in between, the two
+   * differ and the document is dirty again, which the watcher calls a conflict
+   * and puts a dialog in front of a change this application made itself.
+   *
+   * Rare with Ctrl+S, which needs the writer to type inside the three-second
+   * poll window. Constant with an autosave.
+   *
+   * There is a window of its own here: another process could write between our
+   * save and this stat, and we would adopt its fingerprint and never notice
+   * its change. It is microseconds wide and the honest fix is for
+   * `save_document` to hand the fingerprint back from Rust, atomically —
+   * a change to the command's contract, worth making when something else needs
+   * it too.
+   */
+  async function adoptOwnWrite(handle: string): Promise<void> {
+    try {
+      const stat = await backend.documentStat(handle, lang);
+      if (stat) statsRef.current.set(handle, stat);
+    } catch {
+      // A fingerprint that cannot be read back is a missed nicety, not a
+      // failed save. The next poll will treat the file as changed and, since
+      // the bytes match, adopt it quietly anyway.
+    }
+  }
+
   function writeFileOrdered(handle: string, content: string): Promise<void> {
-    const next = saveQueueRef.current.then(() =>
-      backend.saveDocument(handle, content, lang),
-    );
+    const next = saveQueueRef.current
+      .then(() => backend.saveDocument(handle, content, lang))
+      .then(() => adoptOwnWrite(handle));
     saveQueueRef.current = next.catch(() => undefined);
     return next;
   }

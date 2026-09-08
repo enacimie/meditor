@@ -8,6 +8,7 @@ import { describe, it, expect, vi, beforeEach, afterEach, beforeAll } from "vite
 import { render, screen, cleanup, fireEvent, act } from "@testing-library/react";
 import { I18nProvider } from "./i18n/I18nProvider";
 import App from "./App";
+import { EditorView } from "@codemirror/view";
 
 const h = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -223,5 +224,86 @@ describe("external file changes", () => {
     expect(saveAsCall).toBeDefined();
     expect(saveAsCall?.[1]?.content).toBe("my edit");
     expect(conflictDialog()).toBeNull();
+  });
+});
+
+describe("saving is not an external change", () => {
+  /**
+   * Type into the live editor.
+   *
+   * Through the view, not the DOM: a Range does not reach CodeMirror, and text
+   * dispatched any other way lands somewhere other than where it looks.
+   */
+  function type(text: string) {
+    const view = EditorView.findFromDOM(
+      document.querySelector(".cm-editor") as HTMLElement,
+    );
+    if (!view) throw new Error("no EditorView mounted");
+    act(() => {
+      view.dispatch({ changes: { from: view.state.doc.length, insert: text } });
+    });
+  }
+
+  /** A save, as the disk sees it: new bytes and a new fingerprint. */
+  function diskAcceptsSaves() {
+    const original = h.invoke.getMockImplementation()!;
+    h.invoke.mockImplementation(async (cmd: string, args?: Record<string, unknown>) => {
+      if (cmd === "save_document") {
+        h.disk = String(args?.content ?? "");
+        h.stat = { modifiedMs: h.stat.modifiedMs + 500, size: h.disk.length };
+        return null;
+      }
+      return original(cmd, args);
+    });
+  }
+
+  it("does not raise a conflict when the writer keeps typing after a save", async () => {
+    /*
+     * The race, and it is not hypothetical: a save moves the file's
+     * fingerprint, so the next poll reads the disk and compares it to the
+     * buffer. Type in between and they differ, the document is dirty again,
+     * and the watcher calls that a conflict — over a change this application
+     * made itself, seconds ago.
+     *
+     * Rare with Ctrl+S and constant with an autosave, which is why it is fixed
+     * before one exists.
+     */
+    await mountApp();
+    diskAcceptsSaves();
+
+    type(" edited");
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "s", ctrlKey: true });
+      await vi.advanceTimersByTimeAsync(100);
+    });
+
+    // The writer carries on, inside the poll window.
+    type(" and more");
+    await tick();
+
+    expect(
+      conflictDialog(),
+      "the file changed because this app saved it; that is not a conflict",
+    ).toBeNull();
+  });
+
+  it("still raises a conflict when someone else changes the file", async () => {
+    // The other half: the guard must not be a blanket "ignore the disk".
+    await mountApp();
+    diskAcceptsSaves();
+
+    type(" edited");
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "s", ctrlKey: true });
+      await vi.advanceTimersByTimeAsync(100);
+    });
+
+    // Someone else writes the file, and the writer has unsaved work.
+    type(" mine");
+    h.disk = "theirs";
+    h.stat = { modifiedMs: h.stat.modifiedMs + 5000, size: 6 };
+    await tick();
+
+    expect(conflictDialog(), "a real outside change still has to be asked about").not.toBeNull();
   });
 });
