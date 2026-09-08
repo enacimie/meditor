@@ -101,10 +101,7 @@ export const ar = {
   "session.saveError": "تعذر حفظ الجلسة",
   // Native
   // PDF
-  "pdf.emptyFile": "أنتج تصدير PDF ملفاً فارغاً",
   "pdf.invalidPdf": "لم ينتج التصدير ملف PDF صالحاً",
-  "pdf.timeout": "انتهت مهلة تصدير PDF",
-  "pdf.notSupported": "تصدير PDF مدعوم فقط على Linux حالياً",
   // File operations (Rust)
   "file.emptyPath": "مسار الملف فارغ أو غير صالح",
   "file.isDirectory": "المسار يشير إلى مجلد",

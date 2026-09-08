@@ -101,10 +101,7 @@ export const bn = {
   "session.saveError": "সেশন সংরক্ষণ করতে পারেনি",
   // Native
   // PDF
-  "pdf.emptyFile": "PDF রপ্তানি একটি খালি ফাইল তৈরি করেছে",
   "pdf.invalidPdf": "রপ্তানি একটি বৈধ PDF ফাইল তৈরি করেনি",
-  "pdf.timeout": "PDF রপ্তানির সময় শেষ হয়েছে",
-  "pdf.notSupported": "PDF রপ্তানি বর্তমানে শুধুমাত্র Linux-এ সমর্থিত",
   // File operations (Rust)
   "file.emptyPath": "খালি বা অবৈধ ফাইল পাথ",
   "file.isDirectory": "পাথ একটি ডিরেক্টরির দিকে নির্দেশ করে",

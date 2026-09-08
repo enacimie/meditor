@@ -122,10 +122,7 @@ export const en = {
   "session.saveError": "Could not save session",
   // Native
   // PDF
-  "pdf.emptyFile": "PDF export produced an empty file",
   "pdf.invalidPdf": "Export did not produce a valid PDF file",
-  "pdf.timeout": "PDF export timed out",
-  "pdf.notSupported": "PDF export is only supported on Linux for now",
   // File operations (Rust)
   "file.emptyPath": "Empty or invalid file path",
   "file.isDirectory": "Path points to a directory",

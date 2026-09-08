@@ -101,10 +101,7 @@ export const de = {
   "session.saveError": "Sitzung konnte nicht gespeichert werden",
   // Native
   // PDF
-  "pdf.emptyFile": "PDF-Export erzeugte eine leere Datei",
   "pdf.invalidPdf": "Export erzeugte keine gültige PDF-Datei",
-  "pdf.timeout": "PDF-Export hat Zeitlimit überschritten",
-  "pdf.notSupported": "PDF-Export wird derzeit nur unter Linux unterstützt",
   // File operations (Rust)
   "file.emptyPath": "Leerer oder ungültiger Dateipfad",
   "file.isDirectory": "Pfad zeigt auf ein Verzeichnis",

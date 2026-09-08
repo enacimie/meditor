@@ -100,10 +100,7 @@ export const az = {
   "session.saveError": "Sessiya saxlanıla bilmədi",
   // Native
   // PDF
-  "pdf.emptyFile": "PDF ixrac boş fayl yaratdı",
   "pdf.invalidPdf": "İxrac etibarlı PDF faylı yaratmadı",
-  "pdf.timeout": "PDF ixrac vaxtı bitdi",
-  "pdf.notSupported": "PDF ixrac hazırda yalnız Linux-da dəstəklənir",
   // File operations (Rust)
   "file.emptyPath": "Boş və ya etibarsız fayl yolu",
   "file.isDirectory": "Yol qovluğa işarə edir",

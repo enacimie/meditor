@@ -100,10 +100,7 @@ export const si = {
   "session.saveError": "සැසිය සුරැකිය නොහැක",
   // Native
   // PDF
-  "pdf.emptyFile": "PDF අපනයනය හිස් ගොනුවක් නිෂ්පාදනය කළේය",
   "pdf.invalidPdf": "අපනයනය වලංගු PDF ගොනුවක් නිෂ්පාදනය නොකළේය",
-  "pdf.timeout": "PDF අපනයන කාලය අවසන්",
-  "pdf.notSupported": "PDF අපනයනය දැනට Linux සඳහා පමණක් සහාය දක්වයි",
   // File operations (Rust)
   "file.emptyPath": "හිස් හෝ අවලංගු ගොනු මාර්ගය",
   "file.isDirectory": "මාර්ගය නාමාවලියකට යොමු වේ",

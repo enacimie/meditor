@@ -101,10 +101,7 @@ export const ru = {
   "session.saveError": "Не удалось сохранить сессию",
   // Native
   // PDF
-  "pdf.emptyFile": "Экспорт PDF создал пустой файл",
   "pdf.invalidPdf": "Экспорт не создал действительный PDF файл",
-  "pdf.timeout": "Время экспорта PDF истекло",
-  "pdf.notSupported": "Экспорт PDF пока поддерживается только на Linux",
   // File operations (Rust)
   "file.emptyPath": "Пустой или неверный путь к файлу",
   "file.isDirectory": "Путь указывает на директорию",

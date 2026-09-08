@@ -100,10 +100,7 @@ export const ceb = {
   "session.saveError": "Dili ma-save ang sesyon",
   // Native
   // PDF
-  "pdf.emptyFile": "Ang pag-export sa PDF nakahimo og walay sulod nga file",
   "pdf.invalidPdf": "Ang pag-export wala makahimo og balido nga PDF file",
-  "pdf.timeout": "Nahurot ang oras sa pag-export sa PDF",
-  "pdf.notSupported": "Ang pag-export sa PDF gisuportahan ra sa Linux sa pagkakaron",
   // File operations (Rust)
   "file.emptyPath": "Walay sulod o dili balido nga file path",
   "file.isDirectory": "Ang path nagtudlo sa usa ka direktoryo",

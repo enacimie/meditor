@@ -100,10 +100,7 @@ export const ku = {
   "session.saveError": "Danişîn tomarkirin nekir",
   // Native
   // PDF
-  "pdf.emptyFile": "Derxistina PDF pelekî vala çêkir",
   "pdf.invalidPdf": "Derxistin pelekî PDF ya derbasdar çênekir",
-  "pdf.timeout": "Dema derxistina PDF qediya",
-  "pdf.notSupported": "Derxistina PDF niha tenê li ser Linux tê piştgirîkirin",
   // File operations (Rust)
   "file.emptyPath": "Rêça pelê vala an nederbasdar",
   "file.isDirectory": "Rêç nîşanî peldankekê dide",

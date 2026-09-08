@@ -100,10 +100,7 @@ export const ne = {
   "session.saveError": "सत्र सुरक्षित गर्न सकिएन",
   // Native
   // PDF
-  "pdf.emptyFile": "PDF निर्यातले खाली फाइल उत्पादन गर्यो",
   "pdf.invalidPdf": "निर्यातले मान्य PDF फाइल उत्पादन गरेन",
-  "pdf.timeout": "PDF निर्यातको समय सकियो",
-  "pdf.notSupported": "PDF निर्यात हाल Linux का लागि मात्र समर्थित छ",
   // File operations (Rust)
   "file.emptyPath": "खाली वा अमान्य फाइल पथ",
   "file.isDirectory": "पथले डाइरेक्टरीलाई इंगित गर्दछ",

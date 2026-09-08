@@ -100,10 +100,7 @@ export const uz = {
   "session.saveError": "Sessiyani saqlab bo'lmadi",
   // Native
   // PDF
-  "pdf.emptyFile": "PDF eksport bo'sh fayl yaratdi",
   "pdf.invalidPdf": "Eksport haqiqiy PDF fayl yaratmadi",
-  "pdf.timeout": "PDF eksport vaqti tugadi",
-  "pdf.notSupported": "PDF eksport hozircha faqat Linuxda qo'llab-quvvatlanadi",
   // File operations (Rust)
   "file.emptyPath": "Bo'sh yoki noto'g'ri fayl yo'li",
   "file.isDirectory": "Yo'l papkaga ishora qiladi",

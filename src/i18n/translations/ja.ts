@@ -101,10 +101,7 @@ export const ja = {
   "session.saveError": "セッションを保存できませんでした",
   // Native
   // PDF
-  "pdf.emptyFile": "PDFエクスポートが空のファイルを生成しました",
   "pdf.invalidPdf": "エクスポートが有効なPDFファイルを生成しませんでした",
-  "pdf.timeout": "PDFエクスポートがタイムアウトしました",
-  "pdf.notSupported": "PDFエクスポートは現在Linuxのみ対応です",
   // File operations (Rust)
   "file.emptyPath": "ファイルパスが空または無効です",
   "file.isDirectory": "パスがディレクトリを指しています",

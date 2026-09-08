@@ -101,10 +101,7 @@ export const it = {
   "session.saveError": "Impossibile salvare la sessione",
   // Native
   // PDF
-  "pdf.emptyFile": "L'esportazione PDF ha prodotto un file vuoto",
   "pdf.invalidPdf": "L'esportazione non ha prodotto un file PDF valido",
-  "pdf.timeout": "L'esportazione PDF è scaduta",
-  "pdf.notSupported": "L'esportazione PDF è supportata solo su Linux per ora",
   // File operations (Rust)
   "file.emptyPath": "Percorso file vuoto o non valido",
   "file.isDirectory": "Il percorso punta a una directory",

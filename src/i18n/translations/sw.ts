@@ -101,10 +101,7 @@ export const sw = {
   "session.saveError": "Haikuweza kuhifadhi kikao",
   // Native
   // PDF
-  "pdf.emptyFile": "Uhamishaji wa PDF ulitengeneza faili tupu",
   "pdf.invalidPdf": "Uhamishaji haukutengeneza faili sahihi ya PDF",
-  "pdf.timeout": "Muda wa uhamishaji PDF umeisha",
-  "pdf.notSupported": "Uhamishaji wa PDF unatumika kwenye Linux tu kwa sasa",
   // File operations (Rust)
   "file.emptyPath": "Njia ya faili tupu au batili",
   "file.isDirectory": "Njia inaelekeza kwenye saraka",

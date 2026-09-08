@@ -101,10 +101,7 @@ export const ko = {
   "session.saveError": "세션을 저장할 수 없습니다",
   // Native
   // PDF
-  "pdf.emptyFile": "PDF 내보내기가 빈 파일을 생성했습니다",
   "pdf.invalidPdf": "내보내기가 유효한 PDF 파일을 생성하지 않았습니다",
-  "pdf.timeout": "PDF 내보내기 시간이 초과되었습니다",
-  "pdf.notSupported": "PDF 내보내기는 현재 Linux만 지원합니다",
   // File operations (Rust)
   "file.emptyPath": "파일 경로가 비어 있거나 잘못되었습니다",
   "file.isDirectory": "경로가 디렉토리를 가리킵니다",

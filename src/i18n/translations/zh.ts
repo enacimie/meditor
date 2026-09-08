@@ -101,10 +101,7 @@ export const zh = {
   "session.saveError": "无法保存会话",
   // Native
   // PDF
-  "pdf.emptyFile": "PDF 导出产生了空文件",
   "pdf.invalidPdf": "导出未生成有效的 PDF 文件",
-  "pdf.timeout": "PDF 导出超时",
-  "pdf.notSupported": "PDF 导出目前仅支持 Linux",
   // File operations (Rust)
   "file.emptyPath": "文件路径为空或无效",
   "file.isDirectory": "路径指向目录",
