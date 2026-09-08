@@ -1594,17 +1594,7 @@ async fn print_document(
                     settings.set_print_backgrounds(true);
                 }
                 let print_settings = gtk::PrintSettings::new();
-                let page_setup = gtk::PageSetup::new();
-                let paper = gtk::PaperSize::new(Some("iso_a4"));
-                page_setup.set_paper_size_and_default_margins(&paper);
-                // The same call `export_pdf` makes. Printing had the bug that
-                // export had: 25 mm unconditionally, on top of pages that
-                // already carry their own.
-                let margin = pdf_margin_mm(false, paged.unwrap_or(true));
-                page_setup.set_top_margin(margin, gtk::Unit::Mm);
-                page_setup.set_bottom_margin(margin, gtk::Unit::Mm);
-                page_setup.set_left_margin(margin, gtk::Unit::Mm);
-                page_setup.set_right_margin(margin, gtk::Unit::Mm);
+                let page_setup = gtk_page_setup(None, paged.unwrap_or(true));
                 let operation = webkit2gtk::PrintOperation::new(&wv);
                 operation.set_print_settings(&print_settings);
                 operation.set_page_setup(&page_setup);
@@ -1666,6 +1656,37 @@ fn pdf_margin_mm(custom_page: bool, paged: bool) -> f64 {
     } else {
         25.0
     }
+}
+
+/// The page a GTK print operation lays out on.
+///
+/// Shared by `export_pdf` and `print_document` for the reason `pdf_margin_mm`
+/// is shared: these two wrote the same page setup twice and drifted apart,
+/// and the drift was the bug. A slide asks for its own size in inches;
+/// everything else is A4, and the margin is whatever the rule says.
+///
+/// GTK must be up before this is called — it is, inside `with_webview`, and
+/// the test below calls `gtk::init` itself.
+#[cfg(any(
+    target_os = "linux",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd"
+))]
+fn gtk_page_setup(custom_page: Option<(f64, f64)>, paged: bool) -> gtk::PageSetup {
+    let page_setup = gtk::PageSetup::new();
+    let paper = match custom_page {
+        Some((w, h)) => gtk::PaperSize::new_custom("marp-slide", "Slide", w, h, gtk::Unit::Inch),
+        None => gtk::PaperSize::new(Some("iso_a4")),
+    };
+    page_setup.set_paper_size_and_default_margins(&paper);
+    let margin = pdf_margin_mm(custom_page.is_some(), paged);
+    page_setup.set_top_margin(margin, gtk::Unit::Mm);
+    page_setup.set_bottom_margin(margin, gtk::Unit::Mm);
+    page_setup.set_left_margin(margin, gtk::Unit::Mm);
+    page_setup.set_right_margin(margin, gtk::Unit::Mm);
+    page_setup
 }
 
 #[tauri::command]
@@ -1884,24 +1905,7 @@ async fn export_pdf(
                 print_settings.set_printer(&printer);
                 print_settings.set("output-file-format", Some("pdf"));
                 print_settings.set("output-uri", Some(uri.as_str()));
-                let page_setup = gtk::PageSetup::new();
-                // A slide wants exactly its own dimensions; everything else is
-                // A4.
-                let paper = match custom_page {
-                    Some((w, h)) => {
-                        gtk::PaperSize::new_custom("marp-slide", "Slide", w, h, gtk::Unit::Inch)
-                    }
-                    None => gtk::PaperSize::new(Some("iso_a4")),
-                };
-                page_setup.set_paper_size_and_default_margins(&paper);
-                // The same call Windows makes. This branch used to look only at
-                // `custom_page` and margin everything else by 25 mm, including
-                // the paginated document, which already carries its own.
-                let margin = pdf_margin_mm(custom_page.is_some(), paged.unwrap_or(true));
-                page_setup.set_top_margin(margin, gtk::Unit::Mm);
-                page_setup.set_bottom_margin(margin, gtk::Unit::Mm);
-                page_setup.set_left_margin(margin, gtk::Unit::Mm);
-                page_setup.set_right_margin(margin, gtk::Unit::Mm);
+                let page_setup = gtk_page_setup(custom_page, paged.unwrap_or(true));
                 let operation = webkit2gtk::PrintOperation::new(&wv);
                 operation.set_print_settings(&print_settings);
                 operation.set_page_setup(&page_setup);
@@ -2556,5 +2560,196 @@ mod tests {
         queue_open_paths([second.clone()]);
         assert_eq!(drain_pending_paths(), vec![first, second]);
         assert!(drain_pending_paths().is_empty());
+    }
+}
+
+/// Printing a paginated document through WebKitGTK, for real.
+///
+/// Everything else about this path is checked by reasoning: `pdf_margin_mm`
+/// has unit tests, `gtk_page_setup` is shared so its two callers cannot drift,
+/// and CI compiles the branch. None of that has ever produced a PDF, and the
+/// defect this test exists for is invisible to all of it — WebKitGTK put the
+/// seven-page sample onto fourteen sheets, a nearly blank one after every real
+/// one, on every version of this code that has shipped.
+///
+/// So: build the shape paged.js hands the print engine, style it with the
+/// application's own print stylesheet, print it, and count the pages that come
+/// out. `include_str!` is the point of the design — the fix lives in
+/// `print.css`, so the test has to read `print.css` rather than a copy of what
+/// it says.
+///
+/// `#[ignore]` because it needs a display and a GTK main loop, which
+/// `cargo test --lib` has on no other platform and is not asked to arrange.
+/// CI runs it as its own Linux-only step:
+///
+/// ```sh
+/// LC_ALL=C GTK_PRINT_BACKENDS=file xvfb-run -a \
+///   cargo test --lib -- --ignored --test-threads=1 gtk_print
+/// ```
+///
+/// `--test-threads=1` is not tidiness: gtk-rs pins "the main thread" to
+/// whichever thread calls `init` first, and every GTK call here has to be on
+/// that one.
+#[cfg(all(test, target_os = "linux"))]
+mod gtk_print_tests {
+    use super::*;
+    use gtk::prelude::*;
+    use std::cell::Cell;
+    use std::rc::Rc;
+    use std::time::{Duration, Instant};
+    use webkit2gtk::{LoadEvent, PrintOperationExt, WebViewExt};
+
+    /// The application's print stylesheet, read rather than restated.
+    ///
+    /// This is what makes the test a guard: the sheet height that keeps a page
+    /// from spilling is a rule in this file, so removing it has to turn the
+    /// test red.
+    const PRINT_CSS: &str = include_str!("../../src/preview/print.css");
+
+    /// What paged.js leaves behind: page boxes sized from its own variables,
+    /// inside the wrapper `print.css` selects on, under the `@page` rule it
+    /// injects for the printer.
+    fn paged_document(sheets: usize) -> String {
+        let pages: String = (1..=sheets)
+            .map(|n| format!("<div class=\"pagedjs_page\" id=\"page-{n}\">Page {n}</div>"))
+            .collect();
+        format!(
+            "<!doctype html><html><head><meta charset=\"utf-8\"><style>\
+             @page {{ size: a4; margin: 0; }}\
+             html, body {{ margin: 0; padding: 0; }}\
+             .pagedjs_page {{\
+               --pagedjs-width: 210mm; --pagedjs-height: 297mm;\
+               width: var(--pagedjs-width); height: var(--pagedjs-height);\
+               break-after: page; overflow: hidden;\
+             }}\
+             .paged-view .pagedjs_page {{ margin: 0 auto 24px; }}\
+             </style><style>{PRINT_CSS}</style></head>\
+             <body><div class=\"paged-view\"><div class=\"pagedjs_pages\">{pages}</div></div></body></html>"
+        )
+    }
+
+    /// Pump the GTK main loop until `done`, or give up.
+    ///
+    /// `recv_timeout` on a channel is what the application does, because there
+    /// the loop is somebody else's job. Here that would deadlock: nothing else
+    /// is running the loop the load and the print both need.
+    fn pump_until(done: &Rc<Cell<bool>>, limit: Duration) -> bool {
+        let deadline = Instant::now() + limit;
+        while !done.get() && Instant::now() < deadline {
+            gtk::main_iteration_do(false);
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        done.get()
+    }
+
+    /// How many pages a cairo-written PDF has.
+    ///
+    /// One `/MediaBox` per page object, and cairo writes its dictionaries
+    /// uncompressed, so this is a count rather than a guess.
+    fn page_count(pdf: &[u8]) -> usize {
+        pdf.windows(9).filter(|w| *w == b"/MediaBox").count()
+    }
+
+    /// The first `/MediaBox` as (width, height) in points.
+    fn first_media_box(pdf: &[u8]) -> Option<(f64, f64)> {
+        let at = pdf.windows(9).position(|w| w == b"/MediaBox")?;
+        let rest = &pdf[at..];
+        let open = rest.iter().position(|b| *b == b'[')?;
+        let close = rest.iter().position(|b| *b == b']')?;
+        let inside = std::str::from_utf8(&rest[open + 1..close]).ok()?;
+        let numbers: Vec<f64> = inside
+            .split_whitespace()
+            .filter_map(|n| n.parse::<f64>().ok())
+            .collect();
+        match numbers.as_slice() {
+            [x0, y0, x1, y1] => Some((x1 - x0, y1 - y0)),
+            _ => None,
+        }
+    }
+
+    /// Print `body` through the page setup the application uses, and hand back
+    /// the PDF bytes.
+    fn print_through_webkit(tag: &str, body: &str) -> Vec<u8> {
+        gtk::init().expect("GTK should start; this test needs a display");
+
+        let out = std::env::temp_dir().join(format!(
+            "meditor-gtk-print-{}-{tag}.pdf",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_file(&out);
+        let uri = url::Url::from_file_path(&out).expect("a temp path is a valid file URL");
+
+        let view = webkit2gtk::WebView::new();
+        let window = gtk::Window::new(gtk::WindowType::Toplevel);
+        window.add(&view);
+        window.show_all();
+
+        let loaded = Rc::new(Cell::new(false));
+        let loaded_signal = Rc::clone(&loaded);
+        view.connect_load_changed(move |_, event| {
+            if event == LoadEvent::Finished {
+                loaded_signal.set(true);
+            }
+        });
+        view.load_html(body, None);
+        assert!(
+            pump_until(&loaded, Duration::from_secs(30)),
+            "the fixture should finish loading",
+        );
+
+        let settings = gtk::PrintSettings::new();
+        // Never consult CUPS: there may be no printer at all, and the point is
+        // the file. The application asks for this printer by its translated
+        // name; the step that runs this test sets LC_ALL=C so the name here is
+        // the untranslated one.
+        settings.set_printer("Print to File");
+        settings.set("output-file-format", Some("pdf"));
+        settings.set("output-uri", Some(uri.as_str()));
+
+        let operation = webkit2gtk::PrintOperation::new(&view);
+        operation.set_print_settings(&settings);
+        operation.set_page_setup(&gtk_page_setup(None, true));
+
+        let settled = Rc::new(Cell::new(false));
+        let failure = Rc::new(Cell::new(false));
+        let settled_on_finish = Rc::clone(&settled);
+        let settled_on_failure = Rc::clone(&settled);
+        let failure_flag = Rc::clone(&failure);
+        operation.connect_finished(move |_| settled_on_finish.set(true));
+        operation.connect_failed(move |_, error| {
+            eprintln!("the print operation failed: {error}");
+            failure_flag.set(true);
+            settled_on_failure.set(true);
+        });
+        operation.print();
+
+        assert!(
+            pump_until(&settled, Duration::from_secs(60)),
+            "the print operation should finish or fail, not hang",
+        );
+        assert!(!failure.get(), "the print operation reported a failure");
+
+        let bytes = std::fs::read(&out).expect("the printer should have written a file");
+        let _ = std::fs::remove_file(&out);
+        bytes
+    }
+
+    #[test]
+    #[ignore = "needs a display and a GTK main loop; CI runs it on Linux only"]
+    fn gtk_print_lays_a_paginated_document_out_one_sheet_per_page() {
+        let pdf = print_through_webkit("three", &paged_document(3));
+        assert_eq!(&pdf[..5], b"%PDF-", "the printer should write a PDF");
+        assert_eq!(
+            page_count(&pdf),
+            3,
+            "three paged.js pages should print as three sheets; six means each \
+             one spilled onto a blank second sheet, which is what this engine \
+             does to a page box exactly as tall as the paper",
+        );
+        let (width, height) = first_media_box(&pdf).expect("a page should declare its size");
+        assert!(
+            (width - 595.0).abs() < 3.0 && (height - 842.0).abs() < 3.0,
+            "the sheet should still be A4 in points, got {width} x {height}",
+        );
     }
 }

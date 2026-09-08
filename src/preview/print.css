@@ -16,6 +16,21 @@
   .paged-view .pagedjs_page {
     margin: 0;
     box-shadow: none;
+    /*
+     * Half a millimetre off the sheet, and it is not cosmetic.
+     *
+     * paged.js sizes each page to the full page box, so the sheet is exactly
+     * as tall as the paper. Chrome prints that one page per sheet. WebKitGTK
+     * does not: measured on 2.50.4, a sheet of exactly 297 mm overflows the
+     * 297 mm page by a rounding hair and pushes an all but blank second page,
+     * so the seven-page sample came out of the Linux export as fourteen.
+     * 296.5 mm prints seven; so does 296 mm; 296.9 mm still spills.
+     *
+     * Taken off the height rather than added to the paper so the sheet stays
+     * A4 in the PDF, and expressed against paged.js's own variable so it
+     * survives a page size that is not A4.
+     */
+    height: calc(var(--pagedjs-height) - 0.5mm);
   }
 }
 
