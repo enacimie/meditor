@@ -17,6 +17,7 @@ import {
   normalizeLandscapeTables,
   MAX_EDITOR_FONT_SIZE,
   MIN_EDITOR_FONT_SIZE,
+  DEFAULT_PAPER_SIZE,
 } from "../editorPreferences";
 import { translations } from "../i18n/translations";
 
@@ -33,6 +34,7 @@ const value = {
   landscapeTables: DEFAULT_LANDSCAPE_TABLES,
   focusMode: DEFAULT_FOCUS_MODE,
   typewriterMode: DEFAULT_TYPEWRITER_MODE,
+  paperSize: DEFAULT_PAPER_SIZE,
 };
 
 beforeEach(() => {

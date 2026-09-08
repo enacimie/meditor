@@ -1,5 +1,5 @@
 import type { TranslationFn } from "./i18n/translations";
-import { DEFAULT_PAGE } from "./pageSetup";
+import { DEFAULT_PAGE, type PageMetrics } from "./pageSetup";
 import { sanitizeSvg } from "./sanitizeSvg";
 import { resolveRelativeImages, type ImageSource } from "./documentImages";
 // Imported rather than inherited: this type used to resolve without an
@@ -38,15 +38,15 @@ export function splitLongFencedBlocks(md: string, maxLines = CODE_BLOCK_MAX_LINE
   });
 }
 
-/** How tall the content box is, in CSS pixels. A4 minus its margins: 934. */
-const PAGE_CONTENT_PX = DEFAULT_PAGE.contentHeightPx;
-
 /**
- * Past this, a heading group is not worth keeping in one piece: paged.js would
- * have nowhere to put it and would leave a page-sized hole rather than break
- * the rule.
+ * How much of a page a heading group may take before it is not worth keeping
+ * in one piece: past this paged.js has nowhere to put it and leaves a
+ * page-sized hole rather than break the rule.
+ *
+ * A share of the page rather than a number of pixels, so it means the same
+ * thing on a sheet of another size.
  */
-const KEEP_TOGETHER_MAX_PX = PAGE_CONTENT_PX * 0.6;
+const KEEP_TOGETHER_SHARE = 0.6;
 
 const HEADING_TAG = /^H[1-6]$/;
 
@@ -72,7 +72,9 @@ const HEADING_TAG = /^H[1-6]$/;
 export function keepHeadingsWithContent(
   root: HTMLElement,
   measure: (el: HTMLElement) => number = (el) => el.offsetHeight,
+  metrics: PageMetrics = DEFAULT_PAGE,
 ): void {
+  const keepTogetherMax = metrics.contentHeightPx * KEEP_TOGETHER_SHARE;
   const blocks = Array.from(root.children) as HTMLElement[];
   let i = 0;
 
@@ -94,7 +96,7 @@ export function keepHeadingsWithContent(
     // and skipping would turn the feature off silently. Grouping something
     // that turns out too tall is the milder failure — paged.js simply splits
     // it, which is what it did before any of this.
-    if (height === 0 || height <= KEEP_TOGETHER_MAX_PX) {
+    if (height === 0 || height <= keepTogetherMax) {
       const wrapper = root.ownerDocument.createElement("div");
       wrapper.className = "keep-with-next";
       // The last child decides which sibling rule has to be restored around
@@ -110,18 +112,6 @@ export function keepHeadingsWithContent(
     i = end + 1;
   }
 }
-
-/** How wide the content box is, in CSS pixels. A4 minus its margins: 605. */
-const PAGE_CONTENT_WIDTH_PX = DEFAULT_PAGE.contentWidthPx;
-
-/**
- * The same page on its side, which is what a wide table can be given.
- *
- * Derived rather than stated. As two constants these disagreed by a pixel —
- * 934 for the portrait height and 933 for the landscape width, both of them
- * 247 mm — which cost nothing but was the kind of thing that eventually does.
- */
-const LANDSCAPE_CONTENT_WIDTH_PX = DEFAULT_PAGE.landscapeContentWidthPx;
 
 /**
  * The steps `paged.css` defines, smallest sacrifice first. Each one trades
@@ -167,6 +157,7 @@ export function fitWideTables(
   measure: (el: HTMLElement) => number = minContentWidth,
   allowLandscape = false,
   landscapeNote = "",
+  metrics: PageMetrics = DEFAULT_PAGE,
 ): void {
   for (const table of Array.from(root.querySelectorAll("table"))) {
     table.classList.remove(...TABLE_FIT_STEPS, NEEDS_LANDSCAPE_CLASS);
@@ -193,13 +184,13 @@ export function fitWideTables(
       }
       continue;
     }
-    if (natural <= PAGE_CONTENT_WIDTH_PX) continue;
+    if (natural <= metrics.contentWidthPx) continue;
 
     let fits = false;
     for (const step of TABLE_FIT_STEPS) {
       table.classList.remove(...TABLE_FIT_STEPS);
       table.classList.add(step);
-      if (measure(table) <= PAGE_CONTENT_WIDTH_PX) {
+      if (measure(table) <= metrics.contentWidthPx) {
         fits = true;
         break;
       }
@@ -213,7 +204,7 @@ export function fitWideTables(
      */
     if (!fits && allowLandscape) {
       const w = measure(table);
-      if (w <= LANDSCAPE_CONTENT_WIDTH_PX) {
+      if (w <= metrics.landscapeContentWidthPx) {
         table.classList.add(NEEDS_LANDSCAPE_CLASS);
         if (landscapeNote) table.setAttribute("data-landscape-note", landscapeNote);
       }

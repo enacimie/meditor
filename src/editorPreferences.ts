@@ -1,3 +1,5 @@
+import { PAPERS, type PaperId } from "./pageSetup";
+
 /**
  * Editor appearance preferences.
  *
@@ -18,6 +20,9 @@ export const DEFAULT_SPELLCHECK = true;
  * page turning landscape on its own is a surprise the reader should ask for.
  */
 export const DEFAULT_LANDSCAPE_TABLES = false;
+
+/** A4, which is what the project has always laid out on. */
+export const DEFAULT_PAPER_SIZE: PaperId = "a4";
 
 /**
  * Writing aids, both off unless asked for.
@@ -40,6 +45,14 @@ export type EditorPreferences = {
   focusMode: boolean;
   /** Keep the line being written in the middle of the pane. */
   typewriterMode: boolean;
+  /**
+   * The sheet the Document view lays out on, and prints to.
+   *
+   * A preference and not a per-document setting, for now: it is the paper in
+   * the printer, which does not change between documents as often as it
+   * changes between people.
+   */
+  paperSize: PaperId;
 };
 
 /**
@@ -107,6 +120,11 @@ export function normalizeSpellcheck(value: unknown): boolean {
 /** Read a stored boolean, falling back to the default. */
 export function normalizeLandscapeTables(value: unknown): boolean {
   return typeof value === "boolean" ? value : DEFAULT_LANDSCAPE_TABLES;
+}
+
+/** A stored paper id, or A4 for anything this build does not know. */
+export function normalizePaperSize(value: unknown): PaperId {
+  return typeof value === "string" && value in PAPERS ? (value as PaperId) : DEFAULT_PAPER_SIZE;
 }
 
 /** Read a stored boolean, falling back to the default. */

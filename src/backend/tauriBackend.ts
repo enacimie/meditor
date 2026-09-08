@@ -100,6 +100,7 @@ export const tauriBackend: Backend = {
     paged: boolean,
     pageWidthIn?: number,
     pageHeightIn?: number,
+    paper?: string,
   ): Promise<void> {
     return invoke<void>("export_pdf", {
       defaultName,
@@ -107,11 +108,12 @@ export const tauriBackend: Backend = {
       paged,
       pageWidth: pageWidthIn ?? null,
       pageHeight: pageHeightIn ?? null,
+      paper: paper ?? null,
     });
   },
 
-  printDocument(locale: string, paged: boolean): Promise<void> {
-    return invoke<void>("print_document", { locale, paged });
+  printDocument(locale: string, paged: boolean, paper?: string): Promise<void> {
+    return invoke<void>("print_document", { locale, paged, paper: paper ?? null });
   },
 
   writePdfBytes(pdfBytes: Uint8Array, defaultName: string, locale: string): Promise<void> {

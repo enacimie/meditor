@@ -6,6 +6,7 @@ import {
   fitWideTables,
   findAnchorTarget,
 } from "./previewRenderer";
+import { DEFAULT_PAGE, LETTER, pageMetrics } from "./pageSetup";
 
 /* ---- splitLongFencedBlocks ---- */
 describe("splitLongFencedBlocks", () => {
@@ -429,5 +430,53 @@ describe("findAnchorTarget", () => {
 
   it("returns null without a container", () => {
     expect(findAnchorTarget(null, "#introduction")).toBeNull();
+  });
+});
+
+/* ---- the paper the passes are given ---- */
+describe("the measuring passes follow the paper they are given", () => {
+  /*
+   * The point of threading the page through: a Letter sheet is wider than A4,
+   * so a table that has to be shrunk for one fits the other as it is. These
+   * two functions are where a paper size stops being a preference and becomes
+   * a layout, so it is measured against both rather than assumed.
+   */
+  const letter = pageMetrics(LETTER);
+  const fixed = (px: number) => () => px;
+  const build = (html: string): HTMLElement => {
+    const root = document.createElement("div");
+    root.innerHTML = html;
+    return root;
+  };
+  const wideTable = () =>
+    build(`<table><thead><tr>${"<th>h</th>".repeat(8)}</tr></thead></table>`);
+  const shrunk = (root: HTMLElement) => root.querySelector("table")!.className !== "";
+
+  it("lets through a table that fits Letter but not A4", () => {
+    const width = DEFAULT_PAGE.contentWidthPx + 3;
+    expect(width).toBeGreaterThan(DEFAULT_PAGE.contentWidthPx);
+    expect(width).toBeLessThanOrEqual(letter.contentWidthPx);
+
+    const onA4 = wideTable();
+    fitWideTables(onA4, fixed(width));
+    expect(shrunk(onA4), "A4 has to shrink it").toBe(true);
+
+    const onLetter = wideTable();
+    fitWideTables(onLetter, fixed(width), false, "", letter);
+    expect(shrunk(onLetter), "Letter does not").toBe(false);
+  });
+
+  it("keeps a heading group together against the page it is on", () => {
+    // The threshold is a share of the page, so a group too tall for the
+    // shorter Letter sheet can still fit the taller A4 one.
+    const perBlock = Math.round((letter.contentHeightPx * 0.6) / 2) + 2;
+
+    const onA4 = build("<h2>Title</h2><p>Body</p>");
+    keepHeadingsWithContent(onA4, fixed(perBlock));
+    expect(onA4.querySelector(".keep-with-next"), "A4 keeps it together").not.toBeNull();
+
+    const onLetter = build("<h2>Title</h2><p>Body</p>");
+    keepHeadingsWithContent(onLetter, fixed(perBlock), letter);
+    expect(onLetter.querySelector(".keep-with-next"), "Letter gives up on it").toBeNull();
   });
 });

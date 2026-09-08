@@ -33,9 +33,11 @@ export function mmToInches(mm: number): number {
 }
 
 /** A sheet of paper: its size in millimetres, and what each platform calls it. */
+export type PaperId = "a4" | "letter";
+
 export type Paper = {
   /** The id this application uses, and stores in preferences. */
-  id: "a4";
+  id: PaperId;
   widthMm: number;
   heightMm: number;
   /** The CSS `size` keyword, for `@page`. */
@@ -51,6 +53,29 @@ export const A4: Paper = {
   cssSize: "A4",
   gtkName: "iso_a4",
 };
+
+/**
+ * US Letter: 8.5 × 11 inches, in the millimetres everything else here speaks.
+ *
+ * Wider than A4 and shorter, which is why it cannot be treated as a detail of
+ * the print dialog: a document laid out for one and printed on the other does
+ * not merely shift, it spills — the sheet is taller than the page and every
+ * one of them takes two.
+ */
+export const LETTER: Paper = {
+  id: "letter",
+  widthMm: 215.9,
+  heightMm: 279.4,
+  cssSize: "Letter",
+  gtkName: "na_letter",
+};
+
+export const PAPERS: Record<PaperId, Paper> = { a4: A4, letter: LETTER };
+
+/** The paper a stored id names, falling back to A4 for anything unknown. */
+export function paperById(id: string | undefined): Paper {
+  return PAPERS[id as PaperId] ?? A4;
+}
 
 /**
  * The margin the Document view leaves around its content.
@@ -103,3 +128,56 @@ export function pageMetrics(
 
 /** The page as it ships, which is what every caller wants until it is asked. */
 export const DEFAULT_PAGE = pageMetrics();
+
+/**
+ * `paged.css` with the page it should describe written into it.
+ *
+ * A string rewrite, because there is no other way in. `paged.css` never
+ * reaches the document: paged.js is handed it as text and runs it through a
+ * parser of its own, which does not resolve `var()` inside `@page` and drops
+ * quietly what it does not understand. So the size has to be a literal by the
+ * time it gets there.
+ *
+ * Four lines, and each replacement is asserted to have matched exactly once.
+ * A silent miss here does not look like a bug: the document paginates against
+ * one page and prints on another, which is the failure #89 measured on Linux.
+ */
+export function buildPagedCss(css: string, metrics: PageMetrics = DEFAULT_PAGE): string {
+  /*
+   * An empty stylesheet is not a stylesheet that lost its `@page`.
+   *
+   * `./paged.css?inline` resolves to an empty string under vitest, which does
+   * not process CSS — the same reason `pagedMarginBoxes.test.ts` reads the
+   * file from disk instead of importing it. Throwing there would fail tests
+   * over the test runner rather than over the code.
+   */
+  if (css.trim() === "") return css;
+
+  /**
+   * Replace every match, and refuse to carry on if there were none.
+   *
+   * Counted with `match` rather than `test`: a global regex carries its
+   * `lastIndex` between calls, and a guard that is sometimes right is worse
+   * than no guard.
+   */
+  const rewrite = (text: string, pattern: RegExp, replacement: string, what: string) => {
+    if ((text.match(pattern)?.length ?? 0) === 0) {
+      throw new Error(
+        `paged.css no longer declares ${what}: the page would silently stay A4 ` +
+          "while everything else moved to the chosen paper",
+      );
+    }
+    return text.replace(pattern, replacement);
+  };
+
+  let out = css;
+  out = rewrite(out, /^(\s*)size:\s*A4;$/gm, `$1size: ${metrics.paper.cssSize};`, "its page size");
+  out = rewrite(
+    out,
+    /^(\s*)size:\s*A4 landscape;$/gm,
+    `$1size: ${metrics.paper.cssSize} landscape;`,
+    "the landscape page size",
+  );
+  out = rewrite(out, /^(\s*)margin:\s*2\.5cm;$/gm, `$1margin: ${metrics.marginCss};`, "its margin");
+  return out;
+}

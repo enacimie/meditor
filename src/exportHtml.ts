@@ -9,6 +9,7 @@
  */
 import pagedCss from "./paged.css?inline";
 import { frontMatterValue } from "./frontMatter";
+import { DEFAULT_PAGE, buildPagedCss, type PageMetrics } from "./pageSetup";
 import latexHighlightCss from "./latex-highlight.css?inline";
 import type { TranslationFn } from "./i18n/translations";
 import { renderContent } from "./previewRenderer";
@@ -71,6 +72,8 @@ type BuildOptions = {
   dir: "ltr" | "rtl";
   /** Extra stylesheets to embed (KaTeX is only pulled in when it is used). */
   extraCss?: string[];
+  /** The sheet the file describes, so it prints as the Document view did. */
+  metrics?: PageMetrics;
 };
 
 /** Wrap rendered markdown in a complete, self-contained HTML document. */
@@ -80,8 +83,9 @@ export function buildStandaloneHtml({
   lang,
   dir,
   extraCss = [],
+  metrics = DEFAULT_PAGE,
 }: BuildOptions): string {
-  const styles = [BASE_CSS, pagedCss, latexHighlightCss, ...extraCss]
+  const styles = [pageFrameCss(metrics), buildPagedCss(pagedCss, metrics), latexHighlightCss, ...extraCss]
     .filter((css) => css.trim().length > 0)
     .join("\n");
   return `<!doctype html>
@@ -108,7 +112,11 @@ ${bodyHtml}
  * Page frame for the exported file. paged.css styles the document itself but
  * assumes a paginated container, so the export supplies the page around it.
  */
-const BASE_CSS = `
+function pageFrameCss(metrics: PageMetrics): string {
+  // A hair wider than the sheet: past that the frame is pointless and the
+  // page should just be the screen.
+  const narrow = `${Math.round(metrics.paper.widthMm) + 10}mm`;
+  return `
 body {
   margin: 0;
   background: #f5f5f5;
@@ -116,10 +124,10 @@ body {
 }
 main.markdown-body.doc {
   box-sizing: border-box;
-  max-width: 21cm;
-  min-height: 29.7cm;
+  max-width: ${metrics.widthCss};
+  min-height: ${metrics.heightCss};
   margin: 1.5rem auto;
-  padding: 2.5cm;
+  padding: ${metrics.marginCss};
   background: #fff;
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.18);
 }
@@ -137,7 +145,7 @@ main.markdown-body.doc table { max-width: 100%; }
     box-shadow: none;
   }
 }
-@media (max-width: 22cm) {
+@media (max-width: ${narrow}) {
   main.markdown-body.doc {
     margin: 0;
     padding: 1.25cm 1rem;
@@ -145,6 +153,7 @@ main.markdown-body.doc table { max-width: 100%; }
   }
 }
 `;
+}
 
 /**
  * KaTeX's stylesheet points at its fonts with paths that only resolve next to
@@ -237,6 +246,7 @@ export async function exportMarkdownToHtml(
     rtl,
     t,
     docHandle,
+    metrics = DEFAULT_PAGE,
   }: {
     fileName: string;
     lang: string;
@@ -244,6 +254,8 @@ export async function exportMarkdownToHtml(
     t: TranslationFn;
     /** The open document, so images beside it travel inside the export. */
     docHandle?: string | null;
+    /** The sheet, so the file prints as the Document view showed it. */
+    metrics?: PageMetrics;
   },
 ): Promise<string> {
   const host = document.createElement("div");
@@ -268,5 +280,6 @@ export async function exportMarkdownToHtml(
     lang,
     dir: rtl ? "rtl" : "ltr",
     extraCss: await katexCssIfNeeded(bodyHtml),
+    metrics,
   });
 }

@@ -338,11 +338,15 @@
 }
 
 /*
- * A table that fits on no portrait step can still fit an A4 sheet turned
- * sideways (933 px of content instead of 605). The user opts in from
- * Preferences; previewRenderer.ts then marks it `.needs-landscape` and this
- * named page moves just its pages. paged.js honours `page:` — the sheets
- * before and after stay portrait.
+ * A table that fits on no portrait step can still fit the sheet turned
+ * sideways: its content is then as wide as the page is tall, which for A4 is
+ * 934 px instead of 605. The user opts in from Preferences; previewRenderer.ts
+ * then marks it `.needs-landscape` and this named page moves just its pages.
+ * paged.js honours `page:` — the sheets before and after stay portrait.
+ *
+ * The size below is rewritten by `buildPagedCss` along with the one above, so
+ * a document on Letter does not print its wide tables on a different sheet
+ * from the rest of it.
  *
  * A sideways page is a cost the reader should see coming, so the table gets a
  * small notice pinned to its top rather than the page quietly rotating.

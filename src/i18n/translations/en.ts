@@ -166,6 +166,8 @@ export const en = {
   "prefs.focusModeHint": "Dim everything but the paragraph you are writing",
   "prefs.typewriterMode": "Typewriter mode",
   "prefs.typewriterModeHint": "Keep the line you are writing in the middle of the pane",
+  "prefs.paperSize": "Paper size",
+  "prefs.paperSizeHint": "The sheet the Document view lays out on, and prints to",
   "prefs.landscapeTables": "Landscape pages for wide tables",
   "prefs.landscapeTablesHint": "A table too wide for any portrait page may claim a sideways one",
   "preview.landscapeNote": "Landscape page — wide table",
