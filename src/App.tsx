@@ -69,8 +69,8 @@ import "./App.css";
 type FileOperation = "open" | "save" | "saveAs" | "export" | "exportHtml";
 
 // Editor/preview preferences. The interface language is NOT part of this
-// object: I18nProvider owns it (meditor.language.v1, with all 20 languages
-// validated) so there is a single source of truth for the locale.
+// object: I18nProvider owns it (meditor.language.v1, validated against the
+// languages that exist) so there is a single source of truth for the locale.
 type Preferences = {
   docView: boolean;
   wrap: boolean;
