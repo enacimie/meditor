@@ -378,3 +378,93 @@ describe("an explicit page break", () => {
     expect(html).not.toContain('class="page-break"');
   });
 });
+
+describe("a title block from the front-matter", () => {
+  const withMeta = (lines: string[], body = "# Capítulo uno") =>
+    renderMarkdown(["---", ...lines, "---", "", body, ""].join("\n"));
+
+  it("prints the title, the author and the date, in that order", () => {
+    const html = withMeta(["title: Informe anual", "author: Eduardo", "date: 2026-09-08"]);
+    expect(html).toContain('<header class="doc-title-block"');
+    expect(html).toMatch(
+      /<h1 class="doc-title running-head">Informe anual<\/h1><p class="doc-author">Eduardo<\/p><p class="doc-date">2026-09-08<\/p>/,
+    );
+  });
+
+  it("prints only what is there", () => {
+    const html = withMeta(["author: Eduardo"]);
+    expect(html).toContain('class="doc-author"');
+    // The elements, not substrings of them: `class="doc-title-block"` starts
+    // with `class="doc-title`, so anything looser fails for the wrong reason.
+    expect(html).not.toMatch(/<h1[^>]*class="doc-title/);
+    expect(html).not.toMatch(/<p[^>]*class="doc-date"/);
+  });
+
+  it("leaves the chapters feeding the head when there is an author but no title", () => {
+    // Only a title takes the head over. An author alone says who wrote the
+    // document, not what it is called.
+    const html = withMeta(["author: Eduardo"]);
+    expect(html).toMatch(/<h1[^>]*class="[^"]*running-head/);
+  });
+
+  it("escapes the values, which come from a file like any other text", () => {
+    const html = withMeta(['title: "<script>alert(1)</script>"']);
+    expect(html).not.toContain("<script>");
+    expect(html).toContain("&lt;script&gt;");
+  });
+
+  it("leaves front-matter with none of the three as invisible as it was", () => {
+    const html = withMeta(["marp: true"]);
+    expect(html).not.toContain("doc-title-block");
+    expect(html).not.toContain("marp");
+  });
+
+  it("keeps the rest of the block out of the document", () => {
+    const html = withMeta(["title: Informe", "marp: true", "transition: fade"]);
+    expect(html).toContain("Informe");
+    expect(html).not.toContain("transition");
+    expect(html).not.toContain("marp");
+  });
+
+  it("does not read a title out of an unclosed fence", () => {
+    // Which is a horizontal rule followed by prose, and has always rendered
+    // as one.
+    const html = renderMarkdown("---\ntitle: No es front-matter\n\n# Cuerpo");
+    expect(html).not.toContain("doc-title-block");
+  });
+});
+
+describe("who feeds the running head", () => {
+  it("is the title block, when the document has a title", () => {
+    const html = renderMarkdown(
+      ["---", "title: Informe", "---", "", "# Capítulo uno", "", "# Capítulo dos", ""].join("\n"),
+    );
+    expect(html).toContain('<h1 class="doc-title running-head">Informe</h1>');
+    // The chapters must not also answer to it: paged.js takes the last match
+    // on the page, so a marked chapter heading would quietly replace the name
+    // of the document.
+    const chapters = html.match(/<h1[^>]*>Capítulo/g) ?? [];
+    expect(chapters).toHaveLength(2);
+    expect(chapters.every((tag) => !tag.includes("running-head"))).toBe(true);
+  });
+
+  it("is every h1, when it does not", () => {
+    const html = renderMarkdown(["# Capítulo uno", "", "# Capítulo dos", ""].join("\n"));
+    const chapters = html.match(/<h1[^>]*>/g) ?? [];
+    expect(chapters).toHaveLength(2);
+    expect(chapters.every((tag) => tag.includes("running-head"))).toBe(true);
+  });
+
+  it("keeps the heading ids it already had", () => {
+    // Marking a heading must not cost it its anchor, which is what the TOC and
+    // every in-document link point at.
+    //
+    // The rule uses `attrJoin` rather than `attrSet`, but this test does not
+    // prove that and no test can today: nothing else puts a class on an `h1`,
+    // so the two behave identically. `attrJoin` is there for whatever does
+    // next, not for something being guarded now.
+    const html = renderMarkdown("# Capítulo uno");
+    expect(html).toMatch(/<h1[^>]*id="capítulo-uno"/);
+    expect(html).toMatch(/<h1[^>]*class="[^"]*running-head/);
+  });
+});

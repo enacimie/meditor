@@ -109,3 +109,19 @@ describe("buildStandaloneHtml", () => {
     expect(html).toContain(".katex { color: red }");
   });
 });
+
+describe("documentTitle and the front-matter", () => {
+  it("prefers what the document calls itself", () => {
+    const markdown = "---\ntitle: Informe anual\n---\n\n# Introducción\n";
+    expect(documentTitle(markdown, "archivo.md")).toBe("Informe anual");
+  });
+
+  it("still falls back to the first heading", () => {
+    expect(documentTitle("# Introducción", "archivo.md")).toBe("Introducción");
+  });
+
+  it("ignores a title that is not in front-matter at all", () => {
+    // A `title:` line in the body is prose, not metadata.
+    expect(documentTitle("title: no es esto\n\n# De verdad", "archivo.md")).toBe("De verdad");
+  });
+});

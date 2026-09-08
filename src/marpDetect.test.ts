@@ -44,6 +44,16 @@ describe("isMarpDocument", () => {
     expect(isMarpDocument("---\nmarp: true\n# never closed")).toBe(false);
   });
 
+  it("rejects an indented key, which is not a top-level one", () => {
+    // Behaviour change, on purpose. The old reader here allowed leading
+    // whitespace; the one for presentation directives never did, because an
+    // indented line can belong to a block scalar — a `style: |` payload that
+    // mentions `transition:` must not be read as a directive. Now that both
+    // read the same block, they read it the same way, and column zero is what
+    // a top-level YAML key actually is.
+    expect(isMarpDocument("---\n  marp: true\n---\n\n# Deck")).toBe(false);
+  });
+
   it("rejects marp:true without the space YAML requires", () => {
     expect(isMarpDocument("---\nmarp:true\n---\n")).toBe(false);
   });

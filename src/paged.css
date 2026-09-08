@@ -106,14 +106,50 @@
   font-weight: bold;
   text-align: center;
   margin: 0 0 0.7em;
-  /*
-   * Feeds the running head above. paged.js reads the text of the first h1 on
-   * each page and carries it forward to the pages that have none, so a
-   * document with several h1s shows the one it is currently inside — chapter
-   * behaviour — and a document with none shows an empty head. Nothing in the
-   * markdown pipeline is involved.
-   */
+}
+
+/*
+ * Feeds the running head above.
+ *
+ * The class, not the tag, and the renderer decides which elements carry it.
+ * A document with a front-matter title marks that one, so every page after the
+ * first says what the document is called; a document without one marks every
+ * `h1`, and the head follows the chapter — which is what this rule did when it
+ * sat on `h1` directly.
+ *
+ * It has to be settled there rather than here: paged.js binds `string-set` to
+ * a selector and takes the last match on the page, so a second rule saying
+ * `string-set: none` would not undo this one — `none` is parsed as an
+ * identifier with no function, and quietly does nothing.
+ */
+.markdown-body.doc .running-head {
   string-set: doctitle content(text);
+}
+
+/*
+ * The title block: what `\maketitle` prints, in the same order.
+ *
+ * The title itself is an `h1`, so it inherits the size and the centring above;
+ * only the space around the block and the two lines under it are set here.
+ */
+.markdown-body.doc .doc-title-block {
+  margin: 0 0 2.2em;
+  text-align: center;
+  break-after: avoid;
+}
+
+.markdown-body.doc .doc-title-block .doc-title {
+  margin: 0 0 0.35em;
+}
+
+.markdown-body.doc .doc-author {
+  margin: 0;
+  font-size: 12pt;
+}
+
+.markdown-body.doc .doc-date {
+  margin: 0.3em 0 0;
+  font-size: 11pt;
 }
 
 .markdown-body.doc h2 {

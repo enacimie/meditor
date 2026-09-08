@@ -8,6 +8,7 @@
  * network access and no companion files.
  */
 import pagedCss from "./paged.css?inline";
+import { frontMatterValue } from "./frontMatter";
 import latexHighlightCss from "./latex-highlight.css?inline";
 import type { TranslationFn } from "./i18n/translations";
 import { renderContent } from "./previewRenderer";
@@ -28,12 +29,20 @@ export function escapeHtml(value: string): string {
 }
 
 /**
- * Title for the exported document: its first heading, else the file name.
+ * Title for the exported document: what the front-matter calls it, else its
+ * first heading, else the file name.
+ *
+ * The front-matter comes first because it is the one place a document says its
+ * own name rather than being read for one. A report whose first heading is
+ * "Introduction" is not called Introduction.
  *
  * Fenced blocks are skipped, so a shell comment like `# Install dependencies`
  * inside a ```bash block does not end up as the document's title.
  */
 export function documentTitle(markdown: string, fallback: string): string {
+  const declared = frontMatterValue(markdown, "title");
+  if (declared) return declared;
+
   let inFence = false;
   let fence = "";
   for (const line of markdown.split("\n")) {

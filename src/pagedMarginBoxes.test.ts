@@ -62,10 +62,22 @@ describe("the folio", () => {
 });
 
 describe("the running head", () => {
-  it("is fed by the first heading, not by the markdown pipeline", () => {
+  it("is fed by whatever the renderer marked, not by a tag", () => {
+    // It used to hang off `h1` directly. The class is what lets a document
+    // with a front-matter title put its name in the head while its chapters
+    // keep theirs — the renderer marks one element or every h1, and this rule
+    // does not have to know which.
     expect(pagedCss).toMatch(
-      /\.markdown-body\.doc h1\s*\{[^}]*string-set:\s*doctitle content\(text\)/s,
+      /\.markdown-body\.doc \.running-head\s*\{[^}]*string-set:\s*doctitle content\(text\)/s,
     );
+  });
+
+  it("no longer takes it from every h1 by tag", () => {
+    // Both rules at once would be worse than either: paged.js takes the last
+    // match on the page, so a chapter heading below the title block would
+    // quietly win.
+    const h1Block = pagedCss.match(/\.markdown-body\.doc h1\s*\{[^}]*\}/s)?.[0] ?? "";
+    expect(h1Block).not.toContain("string-set");
   });
 
   it("prints that string at the top centre", () => {

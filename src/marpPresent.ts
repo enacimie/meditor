@@ -17,6 +17,8 @@
  * attributes directly, and additionally honours the `fragment` / `fragment-list`
  * classes to opt arbitrary elements in.
  */
+
+import { frontMatterValue } from "./frontMatter";
 import { slideStartLines } from "./marpSlides";
 
 export const TRANSITION_TYPES = [
@@ -46,27 +48,16 @@ function strip(content: string): string {
 }
 
 /**
- * Read a top-level front-matter value. Keys must start at column zero so that
- * lines inside a block scalar (e.g. a `style: |` CSS payload that mentions
- * `transition:`) are never mistaken for directives.
+ * Read a top-level front-matter value.
+ *
+ * Kept as the name this module's callers and tests already use; the reading
+ * lives in `frontMatter.ts` now, shared with Marp detection and the markdown
+ * rule so the three cannot disagree about what front-matter is. Keys still have
+ * to start at column zero, so a `style: |` CSS payload that mentions
+ * `transition:` on an indented line is never mistaken for a directive.
  */
 export function frontmatterValue(content: string, key: string): string | null {
-  const lines = strip(content).split(/\r?\n/);
-  if (!lines.length || lines[0].trim() !== "---") return null;
-  const re = new RegExp(`^${key}[ \\t]*:[ \\t]+(.+)$`, "i");
-  for (let i = 1; i < lines.length; i++) {
-    const t = lines[i].trim();
-    if (t === "---" || t === "...") break;
-    const m = lines[i].match(re);
-    if (!m) continue;
-    const value = m[1]
-      .replace(/\s*#.*$/, "")
-      .trim()
-      .replace(/^["']|["']$/g, "")
-      .trim();
-    return value || null;
-  }
-  return null;
+  return frontMatterValue(content, key);
 }
 
 /** Split the deck into one source chunk per slide, aligned with the render. */

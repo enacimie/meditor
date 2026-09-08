@@ -1,4 +1,5 @@
 import MarkdownIt from "markdown-it";
+import { frontMatterValue } from "./frontMatter";
 import taskLists from "markdown-it-task-lists";
 import footnote from "markdown-it-footnote";
 import mark from "markdown-it-mark";
@@ -48,10 +49,15 @@ const mermaidNoop = () => ({
  * heading, so the whole block arrived in the preview — and in the PDF — as a
  * rule followed by the raw YAML set in heading type.
  *
- * meditor already reads front-matter in two places (`marpDetect` for
+ * meditor already reads front-matter in two other places (`marpDetect` for
  * `marp: true`, `marpPresent` for slide transitions), so a document that has
- * it is expected here. This rule only keeps it out of the rendered output;
- * nothing yet reads a title or an author from it.
+ * it is expected here. All three now read it through `frontMatter.ts` rather
+ * than each deciding for itself what front-matter is.
+ *
+ * A `title`, an `author` or a `date` becomes the block at the top of the
+ * document — what `\maketitle` prints in LaTeX and what Pandoc builds from the
+ * same three keys. Everything else in the block is still consumed and dropped:
+ * `marp: true` is an instruction, not something to print.
  *
  * Deliberately narrow, because a leading `---` is also a legitimate horizontal
  * rule. The fence must open on the very first line, must be closed, and the
@@ -89,8 +95,28 @@ function frontMatter(md: MarkdownIt) {
           .trim();
         if (text !== "---" && text !== "...") continue;
         if (silent) return true;
-        // Consumed and dropped: no token, so nothing renders and the
-        // `data-line` of everything below is untouched.
+
+        /*
+         * The block is read once here and its title, author and date kept on
+         * the parser env, where the core rule below can reach them. Everything
+         * else is consumed and dropped as before — no token, so nothing
+         * renders and the `data-line` of what follows is untouched.
+         */
+        const block = state.src.slice(state.bMarks[startLine], state.eMarks[line]);
+        const meta = {
+          title: frontMatterValue(block, "title"),
+          author: frontMatterValue(block, "author"),
+          date: frontMatterValue(block, "date"),
+        };
+        if (meta.title || meta.author || meta.date) {
+          const token = state.push("front_matter", "header", 0);
+          // Line zero, so a double-click on the title block lands at the top
+          // of the source rather than nowhere.
+          token.map = [startLine, line + 1];
+          token.block = true;
+          token.meta = meta;
+          state.env.docMeta = meta;
+        }
         state.line = line + 1;
         return true;
       }
@@ -99,6 +125,46 @@ function frontMatter(md: MarkdownIt) {
     },
     { alt: ["paragraph", "reference", "blockquote"] },
   );
+
+  md.renderer.rules.front_matter = (tokens, idx) => {
+    const { title, author, date } = tokens[idx].meta as {
+      title: string | null;
+      author: string | null;
+      date: string | null;
+    };
+    // `running-head` on the title, so the head at the top of every page after
+    // the first says what the document is called. Which element carries that
+    // class is decided in one place — see `runningHead` below — because
+    // paged.js binds `string-set` to a selector, and two elements answering to
+    // it would race.
+    const parts = [
+      title ? `<h1 class="doc-title running-head">${escapeHtml(title)}</h1>` : "",
+      author ? `<p class="doc-author">${escapeHtml(author)}</p>` : "",
+      date ? `<p class="doc-date">${escapeHtml(date)}</p>` : "",
+    ];
+    return `<header class="doc-title-block" data-line="0">${parts.join("")}</header>`;
+  };
+}
+
+/*
+ * Who feeds the running head.
+ *
+ * paged.js resolves `string-set` by selector, taking the value from the last
+ * matching element on the page — so the question is not which rule wins but
+ * which elements are marked. With a front-matter title there is exactly one,
+ * in the title block, and the head reads the document's name on every page.
+ * Without one, every `h1` is marked and the head follows the chapter, which is
+ * the behaviour this file has always had.
+ */
+function runningHead(md: MarkdownIt) {
+  md.core.ruler.push("running_head", (state) => {
+    if (state.env?.docMeta?.title) return;
+    for (const token of state.tokens) {
+      if (token.type === "heading_open" && token.tag === "h1") {
+        token.attrJoin("class", "running-head");
+      }
+    }
+  });
 }
 
 function addLineNumbers(md: MarkdownIt) {
@@ -437,6 +503,7 @@ export const md = new MarkdownIt({
   .use(markNumberedParagraphs)
   .use(headingAnchors)
   .use(pageBreaks)
+  .use(runningHead)
   .use(tocPlaceholder)
   .use(addLineNumbers);
 
