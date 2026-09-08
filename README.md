@@ -92,9 +92,9 @@ duplicated.
 
 ### Export & Distribution
 
-- **Export to PDF** vector (selectable text, vector KaTeX and Mermaid) via WebKitGTK printing, without system dialog. A4 format with 2.5 cm margins on Linux. Typst and LaTeX export use their WASM engines on supported desktop targets. Marp decks export one slide per page at the slide's own size.
+- **Export to PDF** vector (selectable text, vector KaTeX and Mermaid), printed by the webview with no system dialog: WebView2 on Windows, WebKitGTK on Linux and the BSDs. A4, and the paginated Document view already carries its own 2.5 cm margins, so no printer margin is added around them. Typst and LaTeX compile to PDF in their own WASM engines instead, which works anywhere the file dialog does — Android included. Marp decks export one slide per page at the slide's own size. macOS has no Markdown PDF export yet.
 - **Export to HTML**: a single self-contained file (styles embedded, Mermaid diagrams as inline SVG, KaTeX already expanded) that opens in any browser with no network access. Markdown documents and Marp decks.
-- Packaged as **AppImage**, **deb**, and **rpm** via `tauri build`.
+- Packaged by `tauri build` for every desktop: **AppImage**, **deb** and **rpm** on Linux, **NSIS** and **MSI** on Windows, a universal **dmg** and `.app` on macOS. A release also carries a debug **APK** for Android.
 
 ### File associations
 
@@ -120,7 +120,7 @@ Installers register meditor for `.md`/`.markdown` and `.typ`/`.typst` on all des
 ## Prerequisites
 
 - [Rust](https://rustup.rs) (cargo).
-- [Node.js](https://nodejs.org) 20+ and [pnpm](https://pnpm.io).
+- [Node.js](https://nodejs.org) 20.19+ or 22.12+ (what Vite 7 requires) and [pnpm](https://pnpm.io). CI builds on 22.
 - **Linux** (Ubuntu/Debian): system dependencies for Tauri/WebKitGTK:
 
   ```bash
@@ -281,7 +281,6 @@ meditor/
 │   ├── markdown.ts           # markdown-it config + data-line
 │   ├── paged.css             # Document view styles (A4)
 │   ├── sample.ts             # Sample document
-│   ├── session.ts            # Session serialization types/helpers
 │   ├── documentUtils.ts      # Document kind detection/normalization
 │   ├── sanitizeSvg.ts        # SVG allowlist sanitization
 │   ├── types.ts              # Shared types
@@ -295,21 +294,24 @@ meditor/
 │   ├── marpPresent.ts        # Parse `transition` presentation directives
 │   ├── i18n/                 # Internationalization
 │   │   ├── I18nProvider.tsx  # Language context, storage, browser detection
-│   │   └── translations/     # en.ts + 102 more language files (parity-tested)
+│   │   └── translations/     # en.ts + 103 more language files (parity-tested)
 │   ├── hooks/                # useThemeEffect, useSplitDivider, useKeyboardShortcuts…
 │   ├── components/           # Topbar, TabBar, dialogs, LanguagePicker, ShortcutsOverlay, PresentOverlay…
 │   └── assets/fonts/         # Latin Modern fonts (GUST)
 ├── src-tauri/
 │   ├── src/lib.rs            # Commands: read/save, session, and PDF export
 │   ├── src/locale.rs         # Localized backend error messages
+│   ├── src/recent.rs         # The recent documents, opened by position
 │   ├── tauri.conf.json
-│   ├── capabilities/         # Permissions (dialog, opener)
+│   ├── capabilities/         # Permissions (dialog, opener; updater and process on desktop)
 │   ├── gen/android/          # Android project (generated once, then committed)
 │   └── Cargo.toml
-├── scripts/                  # android-env.sh, android-build.sh
+├── scripts/                  # tauri.mjs (the CLI forwarder), android-env.sh, android-build.sh
 ├── docs/android.md           # Building and installing the Android app
 ├── docs/ios.md               # The iOS probe workflow
 ├── docs/testing.md           # Who tests which platform, and what is unreviewed
+├── docs/windows.md           # Smart App Control and the unsigned installer
+├── docs/texlive-ondemand.md  # The local TeX Live service for LaTeX
 ├── tests/e2e/                # CDP-driven E2E harness (cdp.mjs, run.mjs, specs)
 └── setup.sh                  # Install system dependencies (Linux)
 ```
