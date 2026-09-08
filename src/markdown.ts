@@ -212,6 +212,57 @@ const TOC_MARKER = /^\[toc\]$/i;
 /** How deep the list goes. Three, as LaTeX does by default. */
 const TOC_DEPTH = 3;
 
+/**
+ * A line that ends the page.
+ *
+ * Two spellings, both on a line of their own. Typora's and MarkText's `div` is
+ * the one a document is likely to arrive carrying, and it is the one that
+ * degrades best: GitHub strips the `style` attribute and shows nothing, which
+ * is what a page break should look like where there are no pages. `\newpage`
+ * is the one that is comfortable to type, and it is what Pandoc's LaTeX writer
+ * understands.
+ *
+ * The `div` is matched as a marker, not parsed as HTML — `html: false` is set
+ * on the parser and stays set. Nothing here opens a door for raw markup.
+ *
+ * `::: pagebreak` was the obvious third option and is deliberately not
+ * supported: markdown-it-container closes an unterminated block at the end of
+ * the document, so a lone `::: pagebreak` would wrap everything after it in a
+ * `div`, which breaks `keepHeadingsWithContent`'s walk over `root.children`
+ * and the `[data-line]` map the preview syncs with.
+ */
+const PAGE_BREAK = /^(?:\\newpage|<div\s+style\s*=\s*"page-break-(?:after|before)\s*:\s*always;?\s*"\s*>\s*<\/div>)$/i;
+
+function pageBreaks(md: MarkdownIt) {
+  md.block.ruler.before(
+    "reference",
+    "page_break",
+    (state, startLine, _endLine, silent) => {
+      const line = state.src
+        .slice(state.bMarks[startLine] + state.tShift[startLine], state.eMarks[startLine])
+        .trim();
+      if (!PAGE_BREAK.test(line)) return false;
+      if (silent) return true;
+
+      const token = state.push("page_break", "div", 0);
+      token.map = [startLine, startLine + 1];
+      token.block = true;
+      state.line = startLine + 1;
+      return true;
+    },
+    { alt: ["paragraph", "reference", "blockquote"] },
+  );
+
+  // `data-line` by hand, because `addLineNumbers` only tags `_open` tokens and
+  // this one is self-closing — the same reason the fence renderer below does
+  // it for itself. Without it a double-click on the break has nowhere to go.
+  md.renderer.rules.page_break = (tokens, idx) => {
+    const map = tokens[idx].map;
+    const line = map && map.length ? ` data-line="${map[0]}"` : "";
+    return `<div class="page-break"${line}></div>`;
+  };
+}
+
 function tocPlaceholder(md: MarkdownIt) {
   md.block.ruler.before(
     "reference",
@@ -385,6 +436,7 @@ export const md = new MarkdownIt({
   .use(container, "note")
   .use(markNumberedParagraphs)
   .use(headingAnchors)
+  .use(pageBreaks)
   .use(tocPlaceholder)
   .use(addLineNumbers);
 

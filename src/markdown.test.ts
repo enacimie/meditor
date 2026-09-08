@@ -330,3 +330,51 @@ describe("the [TOC] marker", () => {
     expect(nav).not.toContain("<img>");
   });
 });
+
+describe("an explicit page break", () => {
+  it("takes Typora's div, and keeps it out of the HTML it came from", () => {
+    const html = renderMarkdown(
+      ["Antes.", "", '<div style="page-break-after: always;"></div>', "", "Después.", ""].join(
+        "\n",
+      ),
+    );
+    expect(html).toMatch(/<div class="page-break" data-line="2"><\/div>/);
+    // The marker is matched, never parsed: `html: false` stays false, so a
+    // document that reaches here full of raw markup gains nothing from it.
+    expect(html).not.toContain("style=");
+  });
+
+  it("takes the same div written for page-break-before", () => {
+    const html = renderMarkdown('<div style="page-break-before: always;"></div>');
+    expect(html).toContain('<div class="page-break"');
+  });
+
+  it("takes a bare backslash-newpage, because it is what people type", () => {
+    const html = renderMarkdown(["Antes.", "", "\\newpage", "", "Después.", ""].join("\n"));
+    expect(html).toMatch(/<div class="page-break" data-line="2"><\/div>/);
+  });
+
+  it("carries the line, so a double-click in the preview lands on it", () => {
+    const html = renderMarkdown(["# Uno", "", "\\newpage", "", "# Dos", ""].join("\n"));
+    expect(html).toContain('data-line="2"');
+  });
+
+  it("leaves anything with company on the line as prose", () => {
+    // The whole point of the marker being a line rather than a token: a
+    // sentence that mentions it must read as a sentence.
+    const html = renderMarkdown("Escribe \\newpage para saltar de página.");
+    expect(html).not.toContain("page-break");
+    expect(html).toContain("newpage");
+  });
+
+  it("leaves an indented one alone, because four spaces are a code block", () => {
+    const html = renderMarkdown("    \\newpage");
+    expect(html).toContain("<pre");
+    expect(html).not.toContain('class="page-break"');
+  });
+
+  it("does not fall for a div that asks for something else", () => {
+    const html = renderMarkdown('<div style="page-break-after: avoid;"></div>');
+    expect(html).not.toContain('class="page-break"');
+  });
+});
