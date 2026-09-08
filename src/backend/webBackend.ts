@@ -1,4 +1,4 @@
-import { translations, type Language } from "../i18n/translations";
+import { translations, type Language, type TranslationKey } from "../i18n/translations";
 import type { Doc, DocKind } from "../types";
 import type { Backend, BackendDocument } from "./types";
 
@@ -78,8 +78,17 @@ function kindFromName(name: string): DocKind {
   return "markdown";
 }
 
-/** Localized message using the same tables the UI renders with. */
-function message(locale: string, key: string, args: unknown[] = []): string {
+/**
+ * Localized message using the same tables the UI renders with.
+ *
+ * The key is typed rather than left as a string, and that is the whole point
+ * of it being spelled out here: every other reader of the tables goes through
+ * `t`, which only accepts a key that exists, while this one looked a key up by
+ * hand. Deleting a message from `en.ts` that only this file asks for compiled
+ * cleanly and shipped a fallback of the key itself — `file.tooLarge` on
+ * screen, in place of the sentence. Now it does not compile.
+ */
+function message(locale: string, key: TranslationKey, args: unknown[] = []): string {
   const dict = translations[locale as Language] ?? translations.en;
   const value = (dict as Record<string, unknown>)[key];
   if (typeof value === "function") {
