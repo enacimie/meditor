@@ -166,6 +166,8 @@ export const en = {
   "prefs.focusModeHint": "Dim everything but the paragraph you are writing",
   "prefs.typewriterMode": "Typewriter mode",
   "prefs.typewriterModeHint": "Keep the line you are writing in the middle of the pane",
+  "prefs.autosave": "Save while I write",
+  "prefs.autosaveHint": "Write each document to its file a couple of seconds after you stop typing. A document that has never been saved still needs a name first.",
   "prefs.paperSize": "Paper size",
   "prefs.paperSizeHint": "The sheet the Document view lays out on, and prints to",
   "prefs.landscapeTables": "Landscape pages for wide tables",

@@ -99,6 +99,8 @@ describe("translations", () => {
     "prefs.focusModeHint",
     "prefs.typewriterMode",
     "prefs.typewriterModeHint",
+    "prefs.autosave",
+    "prefs.autosaveHint",
     "prefs.paperSize",
     "prefs.paperSizeHint",
     "prefs.landscapeTables",

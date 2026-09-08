@@ -59,7 +59,9 @@ import {
   DEFAULT_EDITOR_FONT_SIZE,
   type EditorPreferences,
   DEFAULT_PAPER_SIZE,
+  DEFAULT_AUTOSAVE,
   normalizePaperSize,
+  normalizeAutosave,
 } from "./editorPreferences";
 import { getTypst } from "./typstEngine";
 import { compileLatexToPdf } from "./latexEngine";
@@ -81,6 +83,15 @@ type Preferences = {
   layoutMode: LayoutMode;
 } & EditorPreferences;
 
+/**
+ * How long after the last edit an autosave writes.
+ *
+ * Long enough that a pause for thought mid-sentence does not write half a
+ * word to the file, short enough that the work is on disk before the writer
+ * has moved on. Two seconds is what VS Code and Typora settled on.
+ */
+const AUTOSAVE_DELAY_MS = 2000;
+
 const PREFERENCES_KEY = "meditor.preferences.v1";
 const DEFAULT_PREFERENCES: Preferences = {
   docView: true,
@@ -94,6 +105,7 @@ const DEFAULT_PREFERENCES: Preferences = {
   focusMode: DEFAULT_FOCUS_MODE,
   typewriterMode: DEFAULT_TYPEWRITER_MODE,
   paperSize: DEFAULT_PAPER_SIZE,
+  autosave: DEFAULT_AUTOSAVE,
 };
 /**
  * Whether a first run should open in the paginated A4 view.
@@ -147,6 +159,7 @@ function loadPreferences(): Preferences {
       focusMode: normalizeFocusMode(stored.focusMode),
       typewriterMode: normalizeTypewriterMode(stored.typewriterMode),
       paperSize: normalizePaperSize(stored.paperSize),
+      autosave: normalizeAutosave(stored.autosave),
     };
   } catch {
     return DEFAULT_PREFERENCES;
@@ -314,6 +327,7 @@ export default function App() {
     focusMode: INITIAL_PREFERENCES.focusMode,
     typewriterMode: INITIAL_PREFERENCES.typewriterMode,
     paperSize: INITIAL_PREFERENCES.paperSize,
+    autosave: INITIAL_PREFERENCES.autosave,
   });
   /*
    * The sheet everything paginated agrees on: the Document view, the
@@ -379,6 +393,9 @@ export default function App() {
   const statsRef = useRef<Map<string, DocumentStat>>(new Map());
   const watchInflightRef = useRef(false);
   const conflictBusyRef = useRef(false);
+  // "The standing notice on screen is an autosave failure", so a later write
+  // that works can take it down again.
+  const autosaveFailedRef = useRef(false);
   // Latest poll routine, so the once-scheduled interval always calls the
   // current render's version (fresh docs/lang) without re-registering.
   const checkExternalChangesRef = useRef<() => Promise<void>>(async () => {});
@@ -625,6 +642,87 @@ export default function App() {
   useEffect(() => {
     document.title = active?.name ?? "meditor";
   }, [active?.name]);
+
+  /*
+   * Autosave, when it is switched on.
+   *
+   * Every dirty document that has a file, not just the one on screen. Saving
+   * only the active tab would mean the answer to "was my work written?"
+   * depended on which tab happened to be in front when the writer stopped
+   * typing, which is not an answer anybody can hold in their head.
+   *
+   * It stays out of the way of the writer rather than competing with them:
+   *
+   * - `beginOperation` is deliberately not used. That guard is for the things
+   *   a person starts — it puts a notice up and blocks the others — and an
+   *   autosave that announced itself every two seconds would be worse than no
+   *   autosave. It waits for those operations instead.
+   * - Nothing is written while a conflict is on screen. The whole question
+   *   there is which version wins, and answering it by writing is answering it
+   *   for the writer.
+   * - Success is silent. The dirty dot going out is the feedback; a "Saved"
+   *   notice on a timer is noise.
+   *
+   * Writes go through the same ordered queue as Ctrl+S, so an autosave and a
+   * manual save cannot interleave, and the queue adopts the file's new
+   * fingerprint on the way out — without which the watcher would read this
+   * write back as somebody else's and raise a conflict over it every couple of
+   * seconds.
+   */
+  async function autosaveDirtyDocuments(): Promise<void> {
+    if (busyOperationRef.current !== null || conflictBusyRef.current) return;
+    let wrote = false;
+    for (const doc of docsRef.current) {
+      if (!doc.dirty || !doc.handle) continue;
+      const { id, handle } = doc;
+      const savedContent = doc.content;
+      try {
+        await writeFileOrdered(handle, savedContent);
+        wrote = true;
+        setDocs((prev) =>
+          prev.map((d) =>
+            // Only if the buffer is still what was written: the writer may
+            // have carried on while the write was in flight, and calling that
+            // clean would lose the difference.
+            d.id === id && d.content === savedContent ? { ...d, dirty: false } : d,
+          ),
+        );
+      } catch (error) {
+        /*
+         * Once per failure, and it stays up. A file that cannot be written —
+         * read-only, unplugged, gone — is worth knowing about, because the
+         * writer is relying on this now and nothing else is going to tell
+         * them; but a modal every two seconds would be unusable, and so would
+         * a notice per document, which is why the pass stops here.
+         *
+         * A notice with no timer needs somebody to take it down, and success
+         * is silent, so the next write that works does it (below). Left to
+         * itself it would still be claiming the file cannot be written long
+         * after the drive came back.
+         */
+        console.error("autosave failed:", error);
+        autosaveFailedRef.current = true;
+        showNotice(operationNoticeError(t, "save"), "error", 0);
+        return;
+      }
+    }
+    if (wrote && autosaveFailedRef.current) {
+      autosaveFailedRef.current = false;
+      dismissNotice();
+    }
+  }
+
+  useEffect(() => {
+    if (!ready || !editorPrefs.autosave) return;
+    // `docs` in the dependencies is the debounce: every keystroke replaces the
+    // document and restarts the clock, so this fires once the typing stops
+    // rather than once per edit.
+    const timer = window.setTimeout(() => {
+      void autosaveDirtyDocuments();
+    }, AUTOSAVE_DELAY_MS);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, editorPrefs.autosave, docs]);
 
   /*
    * Watch open files for edits made behind our back.
