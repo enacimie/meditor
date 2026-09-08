@@ -188,6 +188,32 @@ jobs:
             exit 1
           fi
 
+      # The only place a PDF is printed through WebKitGTK and then looked at.
+      #
+      # Everything else about that path is checked by reasoning, and reasoning
+      # missed a page box exactly as tall as the paper spilling onto a second,
+      # nearly blank sheet — the seven-page sample printed as fourteen, on
+      # every version that has shipped. Nobody saw it because nothing here had
+      # ever produced a page.
+      #
+      # Linux only, because it is the only place this engine exists. The test
+      # carries #[ignore] so `cargo test --lib` above stays the same on all
+      # three operating systems.
+      #
+      # LC_ALL=C: the printer is asked for by the name GTK translates, and the
+      # test asks for the untranslated one. GTK_PRINT_BACKENDS=file: never go
+      # looking for CUPS on a runner that has no printer.
+      - name: Print through WebKitGTK and count the pages
+        if: runner.os == 'Linux'
+        working-directory: src-tauri
+        env:
+          LC_ALL: C
+          GTK_PRINT_BACKENDS: file
+          WEBKIT_DISABLE_COMPOSITING_MODE: 1
+          WEBKIT_DISABLE_DMABUF_RENDERER: 1
+        run: |
+          xvfb-run -a cargo test --lib -- --ignored --test-threads=1 gtk_print
+
   # Android compiles from the same sources, and the ways it can break are ones
   # no desktop job would notice: a plugin that is an empty crate there, an
   # import left over once its only user is gated out. Building it here keeps
