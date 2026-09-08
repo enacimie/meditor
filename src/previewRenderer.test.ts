@@ -339,7 +339,7 @@ describe("fitWideTables", () => {
   /* ---- landscape opt-in ---- */
 
   it("never marks a landscape page without the opt-in", () => {
-    // 800 px fits landscape (933) but no portrait step (605): with the flag
+    // 800 px fits landscape (934) but no portrait step (605): with the flag
     // off it stays at the smallest step, clipped as before.
     const root = build(table(17));
     fitWideTables(root, fixed(800));
@@ -356,7 +356,7 @@ describe("fitWideTables", () => {
   });
 
   it("leaves a table too wide even for landscape alone", () => {
-    // 1200 px does not fit the 933 px landscape sheet either — splitting it is
+    // 1200 px does not fit the 934 px landscape sheet either — splitting it is
     // the author's decision, not the editor's.
     const root = build(table(40));
     fitWideTables(root, fixed(1200), true, "Landscape page");
