@@ -78,6 +78,31 @@ export function paperById(id: string | undefined): Paper {
 }
 
 /**
+ * The paper a *document* asks for, or null when it asks for nothing this
+ * build knows.
+ *
+ * Null rather than A4, and the difference is the whole reason this is not
+ * `paperById`. A document that says nothing, or says something unrecognised,
+ * must fall through to the preference the reader set; answering A4 here would
+ * override their choice with a default on the strength of a typo.
+ *
+ * The spellings come from the two toolchains a Markdown writer is likely to
+ * have met the key in: Pandoc's `papersize: a4` and `papersize: letter`, and
+ * LaTeX's `a4paper` and `letterpaper` from `\documentclass`. `us-letter` is
+ * accepted too, being what the PWG media name and several style guides call
+ * it. Case and surrounding space are ignored.
+ */
+export function paperByName(name: string | null | undefined): Paper | null {
+  if (!name) return null;
+  const key = name
+    .trim()
+    .toLowerCase()
+    .replace(/^us[-_ ]?/, "")
+    .replace(/[-_ ]?paper$/, "");
+  return PAPERS[key as PaperId] ?? null;
+}
+
+/**
  * The margin the Document view leaves around its content.
  *
  * One number, and the same on all four sides, which is what `paged.css` has
