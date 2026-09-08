@@ -176,8 +176,25 @@ pnpm test:e2e          # E2E specs in real headless Chrome (see tests/e2e)
 pnpm test:e2e:latex    # Opt-in: full LaTeX E2E (requires Docker TeX Live)
 pnpm test:all          # Unit + E2E, one shot
 pnpm verify            # Lint, typecheck, build, audit, tests, E2E, fmt, Clippy and Rust tests
-cargo test -p meditor  # Backend tests (Rust) alone
+cd src-tauri && cargo test --lib   # Backend tests (Rust) alone — what the gate runs
 ```
+
+The Rust suite has one test that is not in that run: it prints a document
+through WebKitGTK and counts the sheets, so it needs a display, a printer
+backend that writes to a file, and a thread of its own. It is `#[ignore]`d
+for that reason, and CI runs it on Linux as its own step. To repeat it
+locally on Linux:
+
+```bash
+cd src-tauri
+LC_ALL=C GTK_PRINT_BACKENDS=file xvfb-run -a \
+  cargo test --lib -- --ignored --test-threads=1 gtk_print
+```
+
+Under WSL with WSLg there is already a display, so `xvfb-run -a` comes out.
+That is where the defect it guards against was found: the Linux export was
+printing a blank sheet after every page, in every released version, and no
+unit test could see it.
 
 The **pre-commit hook** (husky) runs `pnpm verify` on every commit — nothing broken lands. Skip it in an emergency with `HUSKY=0 git commit ...`.
 
