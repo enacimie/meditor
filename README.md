@@ -29,6 +29,10 @@
 - **Drag & drop or paste images** into the editor. In a saved document they are written to an `assets/` folder beside it and linked, so the `.md` stays a text file; in one that has never been saved they are embedded, as they always were.
 - **Images beside the document**: `![](assets/shot.png)` in a saved document shows the file next to it, including one a level up (`../shared/logo.png`), and travels inside the HTML export. Only the desktop can do this: Android hands the app one document with no folder around it, and a browser file handle has no parent either.
 - **`[TOC]`** on a line of its own becomes a table of contents: links on screen, and in the Document view and its PDF each entry is followed by the page its heading is on, worked out after pagination rather than guessed. The marker is the one Typora and MarkText use, so the file still reads as a table of contents elsewhere.
+- **Explicit page break**: `\newpage` on a line of its own, or the `<div style="page-break-after: always;"></div>` Typora writes (`page-break-before` too), starts a new sheet in the Document view and in the PDF. Both are read as markers rather than as HTML, so raw HTML stays escaped as it always was, and the file still means the same thing in the tool it came from.
+- **Title, author and date** from the front-matter become a title block at the head of the document. With a title there, the running head carries the document's name on every page instead of the chapter it is in.
+- **Numbered headings** with `numbersections: true` in the front-matter — Pandoc's spelling for the same switch, and off unless it is there. The numbers reach the table of contents as well, and heading anchors are unchanged, so links into the document keep working.
+- **Figures with numbered captions**: an image alone in its paragraph and carrying a title — `![alt](shot.png "What it shows")` — becomes a `<figure>` with a numbered caption. The number is worked out once, in the renderer, so the Web view, the Document view and the HTML export cannot disagree about it.
 - **Recent documents** in the menu, freshest first, with the ones that have been moved or deleted dropped. The list is kept by the backend and clicked by position: the interface is handed names to draw, never a path it could ask to have opened. Desktop only — see [docs/android.md](docs/android.md).
 - **Persistence**: open/save real files and **session restoration** (tabs and content) between launches.
 
@@ -40,16 +44,16 @@
 - **Touch**: on a touch screen the workspace is one pane at a time (splitting a phone in half helps nobody), controls grow to a 44px target, tapping the preview marks a spot without dragging you into the editor, and on-screen undo/redo appear — a touch keyboard has no Ctrl.
 - **Zen mode** (F11): fullscreen distraction-free writing.
 - **Keyboard shortcuts overlay** (F1) and in-window dialogs for confirm/rename (fully themed and localized).
-- **Preferences** (Ctrl+,): editor font size and family, with a live sample, and the spell checker toggle. Wide tables that fit no portrait page can be allowed to claim a landscape one (off by default — a sideways page is opt-in, and the table says so on the sheet).
+- **Preferences** (Ctrl+,): editor font size and family, with a live sample, the spell checker toggle, and the **paper size** the Document view lays out on (A4 or US Letter). Wide tables that fit no portrait page can be allowed to claim a landscape one (off by default — a sideways page is opt-in, and the table says so on the sheet). Two writing aids are offered and both are off unless asked for: **focus mode** dims everything but the paragraph being written, and **typewriter mode** keeps that line in the middle of the pane.
 - **Spell checking** provided by the platform (Windows and macOS webviews; on Linux it also needs WebKitGTK's own setting), in the interface language.
-- **Status bar** with word/line/character counts and unsaved indicator.
+- **Status bar** with word, line and character counts, an estimated **reading time** (200 words a minute, the figure this kind of estimate is usually given at), the caret's line and column, and the unsaved indicator.
 - **Outline** (table of contents) from headings for quick navigation.
 
 ### Preview & Sync
 
 - Two preview modes:
   - **Web**: comfortable on-screen view.
-  - **Document**: **paginated A4 pages** with [paged.js](https://pagedjs.org) and LaTeX aesthetics (**Latin Modern** font, justified text, *booktabs*-style tables, page numbers and a running title from the second page on).
+  - **Document**: **paginated pages** with [paged.js](https://pagedjs.org) and LaTeX aesthetics (**Latin Modern** font, justified text, *booktabs*-style tables, page numbers and a running title from the second page on). A4 or US Letter, chosen in Preferences.
 - **Bidirectional sync** editor ↔ preview:
   - **Double-click** in preview → jumps to the corresponding line of code.
   - **"Go to preview"** and **"Go to code"** buttons in each panel.
@@ -92,7 +96,7 @@ duplicated.
 
 ### Export & Distribution
 
-- **Export to PDF** vector (selectable text, vector KaTeX and Mermaid), printed by the webview with no system dialog: WebView2 on Windows, WebKitGTK on Linux and the BSDs. A4, and the paginated Document view already carries its own 2.5 cm margins, so no printer margin is added around them. Typst and LaTeX compile to PDF in their own WASM engines instead, which works anywhere the file dialog does — Android included. Marp decks export one slide per page at the slide's own size. macOS has no Markdown PDF export yet.
+- **Export to PDF** vector (selectable text, vector KaTeX and Mermaid), printed by the webview with no system dialog: WebView2 on Windows, WebKitGTK on Linux and the BSDs. The sheet is the one the Document view laid out on, and it already carries its own 2.5 cm margins, so no printer margin is added around them. Typst and LaTeX compile to PDF in their own WASM engines instead, which works anywhere the file dialog does — Android included. Marp decks export one slide per page at the slide's own size. macOS has no Markdown PDF export yet.
 - **Export to HTML**: a single self-contained file (styles embedded, Mermaid diagrams as inline SVG, KaTeX already expanded) that opens in any browser with no network access. Markdown documents and Marp decks.
 - Packaged by `tauri build` for every desktop: **AppImage**, **deb** and **rpm** on Linux, **NSIS** and **MSI** on Windows, a universal **dmg** and `.app` on macOS. A release also carries a debug **APK** for Android.
 
@@ -279,7 +283,9 @@ meditor/
 │   ├── Editor.tsx            # CodeMirror 6 (per-tab state)
 │   ├── Preview.tsx           # Render + mermaid + pagination (paged.js)
 │   ├── markdown.ts           # markdown-it config + data-line
-│   ├── paged.css             # Document view styles (A4)
+│   ├── paged.css             # Document view styles (the printed page)
+│   ├── pageSetup.ts          # The paper and its margins, in one place
+│   ├── frontMatter.ts        # The YAML block at the top, read once
 │   ├── sample.ts             # Sample document
 │   ├── documentUtils.ts      # Document kind detection/normalization
 │   ├── sanitizeSvg.ts        # SVG allowlist sanitization
