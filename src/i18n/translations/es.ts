@@ -115,6 +115,7 @@ export const es = {
   "file.sessionUnavailable": "Un documento ya no está disponible",
   "menu.saveAs": "Guardar como",
   "menu.recent": "Documentos recientes",
+  "menu.recentEmpty": "Ningún documento reciente",
   "menu.recentGone": (name: string) => `${name} ya no está donde estaba`,
   "menu.exportPdf": "Exportar PDF",
   "menu.exportHtml": "Exportar HTML",

@@ -253,6 +253,25 @@
   max-width: 100%;
 }
 
+/*
+ * The row that stands in for an empty list. Dimmed like an unavailable menu
+ * item, but the styling has to be spelled out rather than inherited: this row
+ * is `aria-disabled`, not `disabled`, so `:disabled` never matches it — and
+ * `:disabled` in this panel means *busy* and carries a wait cursor, which is
+ * the wrong thing to say about a list that is simply empty.
+ */
+.menu-panel button.menu-recent-empty {
+  max-width: 100%;
+  opacity: 0.55;
+  cursor: default;
+}
+
+.menu-panel button.menu-recent-empty:hover {
+  border-color: var(--border);
+  background: transparent;
+  color: var(--fg);
+}
+
 .menu-panel .shortcut {
   margin-left: auto;
   color: var(--fg);

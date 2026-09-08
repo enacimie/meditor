@@ -1497,6 +1497,22 @@ export default function App() {
   const updateCheckAvailable =
     __UPDATER_ENABLED__ && isTauri() && !isMobilePlatform(platform);
 
+  /*
+   * Whether this build can have recent documents at all, which decides
+   * whether the menu shows the section — empty or not — or leaves it out.
+   *
+   * Only a real path can be reopened later, so only a real path is
+   * remembered (see `recent.rs`). A browser has file handles it cannot name,
+   * and Android hands the app a `content://` URI whose permission dies with
+   * the process, so on both the list is not merely empty today: it can never
+   * fill. Drawing "No recent documents" there would promise a door that does
+   * not open.
+   *
+   * Null platform counts as desktop for the same reason it does above: so a
+   * desktop does not flicker the section in and out while Rust answers.
+   */
+  const recentAvailable = isTauri() && !isMobilePlatform(platform);
+
   const sharingTheWorkspace = layoutMode === "split" && !zenMode;
   const paneFlex = (percent: number) =>
     sharingTheWorkspace ? `0 0 ${percent}%` : "1 1 100%";
@@ -1531,7 +1547,7 @@ export default function App() {
         onSave={save}
         onSaveAs={saveAs}
         recent={recent}
-        onOpenRecent={openRecent}
+        onOpenRecent={recentAvailable ? openRecent : undefined}
         onExportPdf={pdfExportAvailable ? exportPdf : undefined}
         onExportHtml={active?.kind === "markdown" ? exportHtml : undefined}
         onCloseAll={closeAllTabs}

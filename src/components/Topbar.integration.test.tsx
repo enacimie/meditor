@@ -130,12 +130,35 @@ describe("the recent documents in the menu", () => {
     expect(row?.getAttribute("title")).toBe("/home/e/work/notes.md");
   });
 
-  it("draws no section at all when there is nothing to reopen", () => {
-    // A fresh install, and the browser build. A menu that explains its own
-    // emptiness is worse than a menu that is simply shorter.
+  it("keeps the section in place when the list is empty", () => {
+    // A fresh install still has to show a writer where reopening lives. The
+    // row that stands in for the list says why it is empty.
     renderTopbar({ recent: [], onOpenRecentSpy: vi.fn() });
     fireEvent.click(getMenuToggle());
-    expect(screen.queryByText("Recent documents")).toBeNull();
+    expect(screen.getByText("Recent documents")).toBeDefined();
+    expect(screen.getByText("No recent documents")).toBeDefined();
+  });
+
+  it("marks the empty row unavailable without taking it out of the arrow walk", () => {
+    // `disabled` would be the obvious way and the wrong one: handleMenuKeyDown
+    // collects [role=menuitem] and calls focus() on what it finds, and a
+    // disabled button cannot take focus — the walk would stop dead here.
+    renderTopbar({ recent: [], onOpenRecentSpy: vi.fn() });
+    fireEvent.click(getMenuToggle());
+    const row = screen.getByText("No recent documents").closest("button");
+    expect(row?.getAttribute("aria-disabled")).toBe("true");
+    expect(row?.hasAttribute("disabled")).toBe(false);
+    row?.focus();
+    expect(document.activeElement).toBe(row);
+  });
+
+  it("does nothing when the empty row is clicked", () => {
+    const spy = vi.fn();
+    renderTopbar({ recent: [], onOpenRecentSpy: spy });
+    fireEvent.click(getMenuToggle());
+    fireEvent.click(screen.getByText("No recent documents"));
+    expect(spy).not.toHaveBeenCalled();
+    expect(screen.getByText("Recent documents")).toBeDefined();
   });
 
   it("draws no section where the backend cannot reopen anything", () => {

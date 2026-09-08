@@ -313,9 +313,33 @@ const Topbar = memo(function Topbar({
                 <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
                 {t("menu.saveAs")}<span className="shortcut">{t("menu.shortcut.saveAs")}</span>
               </button>
-              {onOpenRecent && recent.length > 0 && (
+              {/*
+                * The section is drawn whenever the host can reopen anything,
+                * empty or not. A menu whose rows come and go teaches nobody
+                * where the feature lives, and every editor this one is
+                * measured against keeps the entry in place and dims it — as
+                * Apple's guidance asks, and as Microsoft's does for a command
+                * a reader has reason to expect.
+                *
+                * `aria-disabled` and not `disabled`: the arrow keys above walk
+                * `[role=menuitem]` and call focus() on what they find, and a
+                * `disabled` button cannot take focus — the walk would stop
+                * dead on this row. This way it is announced as unavailable,
+                * and stepped over.
+                */}
+              {onOpenRecent && (
                 <>
                   <div className="menu-heading" role="presentation">{t("menu.recent")}</div>
+                  {recent.length === 0 && (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="menu-recent-empty"
+                      aria-disabled="true"
+                    >
+                      <span className="menu-recent-name">{t("menu.recentEmpty")}</span>
+                    </button>
+                  )}
                   {recent.map((entry, index) => (
                     <button
                       key={entry.path}
