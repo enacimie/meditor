@@ -44,6 +44,27 @@ fn promote(paths: &mut Vec<PathBuf>, path: PathBuf) {
     paths.truncate(MAX_RECENT);
 }
 
+/// Add `extra` behind what is already there, leaving the order alone.
+///
+/// For the documents a restored session brings back. They were opened at some
+/// point, so they belong in the list — but they were not opened *now*, and a
+/// restart that reshuffled the menu would move rows out from under a habit.
+/// So they go to the back, and only when they are not in it already.
+///
+/// Returns whether anything was added, so the caller can skip a write.
+fn backfill(paths: &mut Vec<PathBuf>, extra: impl IntoIterator<Item = PathBuf>) -> bool {
+    let before = paths.len();
+    for path in extra {
+        if paths.len() >= MAX_RECENT {
+            break;
+        }
+        if !paths.contains(&path) {
+            paths.push(path);
+        }
+    }
+    paths.len() != before
+}
+
 /// Drop what is no longer there, and any duplicate that slipped in.
 ///
 /// A recent list that offers a file which has been moved or deleted is worse
@@ -64,11 +85,28 @@ fn display_name(path: &Path) -> String {
 impl RecentFiles {
     /// Remember a path, and hand back the list to store.
     ///
-    /// Returns `None` when nothing changed in a way worth writing — which is
-    /// never, today, but keeps the caller from having to know that.
+    /// Returns `None` when nothing changed in a way worth writing: the path is
+    /// already at the front, so promoting it would rewrite the same list.
     pub fn remember(&self, path: PathBuf) -> Option<Vec<PathBuf>> {
         let mut paths = self.0.lock().ok()?;
+        if paths.first() == Some(&path) {
+            // Already where promoting would put it. Saving the document in
+            // front of you must not rewrite recent.json on every Ctrl+S.
+            return None;
+        }
         promote(&mut paths, path);
+        Some(paths.clone())
+    }
+
+    /// Take on the documents a restored session brought back.
+    ///
+    /// Hands back the list to store, or `None` when every one of them was
+    /// known already and nothing needs writing.
+    pub fn backfill(&self, extra: Vec<PathBuf>) -> Option<Vec<PathBuf>> {
+        let mut paths = self.0.lock().ok()?;
+        if !backfill(&mut paths, extra) {
+            return None;
+        }
         Some(paths.clone())
     }
 
@@ -259,6 +297,63 @@ mod tests {
         assert_eq!(entries[0].name, "Mi documento.md");
         assert_eq!(entries[0].path, path.to_string_lossy());
         std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn a_restored_session_goes_behind_what_is_already_there() {
+        // The point of backfilling rather than promoting: a restart must not
+        // move rows out from under someone who reaches for the second one.
+        let mut paths = vec![PathBuf::from("/opened-today")];
+        let added = backfill(
+            &mut paths,
+            [PathBuf::from("/restored-a"), PathBuf::from("/restored-b")],
+        );
+        assert!(added);
+        assert_eq!(
+            paths,
+            [
+                PathBuf::from("/opened-today"),
+                PathBuf::from("/restored-a"),
+                PathBuf::from("/restored-b")
+            ],
+        );
+    }
+
+    #[test]
+    fn backfilling_something_already_listed_changes_nothing() {
+        let mut paths = vec![PathBuf::from("/a"), PathBuf::from("/b")];
+        let added = backfill(&mut paths, [PathBuf::from("/b")]);
+        assert!(!added, "nothing was added, so nothing needs writing");
+        assert_eq!(paths, [PathBuf::from("/a"), PathBuf::from("/b")]);
+    }
+
+    #[test]
+    fn backfilling_never_pushes_past_the_cap() {
+        let mut paths: Vec<PathBuf> = (0..MAX_RECENT)
+            .map(|i| PathBuf::from(format!("/f{i}")))
+            .collect();
+        let added = backfill(&mut paths, [PathBuf::from("/late")]);
+        assert!(!added, "a full list has no room to backfill into");
+        assert_eq!(paths.len(), MAX_RECENT);
+        assert_eq!(paths[0], PathBuf::from("/f0"), "and the front is untouched");
+    }
+
+    #[test]
+    fn saving_the_document_already_at_the_front_writes_nothing() {
+        // Ctrl+S on the document you are looking at, over and over. The list
+        // does not change, so recent.json must not be rewritten each time.
+        let recent = RecentFiles::default();
+        assert!(recent.remember(PathBuf::from("/a")).is_some());
+        assert!(
+            recent.remember(PathBuf::from("/a")).is_none(),
+            "the second save of the same document has nothing to store",
+        );
+        assert!(
+            recent.remember(PathBuf::from("/b")).is_some(),
+            "but a different document still moves to the front",
+        );
+        assert_eq!(recent.path_at(0), Some(PathBuf::from("/b")));
+        assert_eq!(recent.path_at(1), Some(PathBuf::from("/a")));
     }
 
     #[test]
