@@ -42,6 +42,7 @@ const openMenu = () =>
 
 const page = await connect(CDP_PORT);
 let configId;
+let emptyConfigId;
 let shimId;
 try {
   configId = await page.addInitScript(CONFIG);
@@ -99,6 +100,55 @@ try {
     { timeout: 10000, message: "the document just opened should have moved to the top" },
   );
 
+  // ── With nothing to reopen, the section is still there ───────────────
+  // A fresh install has an empty list, and the section has to survive it:
+  // a menu whose rows appear only once they are populated never teaches
+  // anyone that reopening exists. Only the frontend can be caught getting
+  // this wrong — `recentAvailable` in App.tsx decides it, and no unit test
+  // sees that decision.
+  await page.removeInitScript(configId);
+  configId = undefined;
+  emptyConfigId = await page.addInitScript(
+    `window.__meditorShimConfig = ${JSON.stringify({ recent: [] })};`,
+  );
+  await page.freshPage(BASE_URL);
+  await page.waitFor("!!document.querySelector('.cm-content')", { timeout: 20000 });
+  assert(await openMenu(), "the menu should open on the empty run");
+  await page.waitFor(
+    `!!document.querySelector('[role="menu"] .menu-recent-empty')`,
+    { timeout: 10000, message: "the empty list should still draw its row" },
+  );
+  // Read structurally, never by the words: this browser is shared and picks
+  // up the machine's language, so the menu here is in Spanish. `.menu-heading`
+  // belongs to this section alone, which is what makes its presence an
+  // assertion rather than a guess. The wording is the unit tests' job.
+  const emptyState = await page.read(`({
+    headings: document.querySelectorAll('[role="menu"] .menu-heading').length,
+    headingText: document.querySelector('[role="menu"] .menu-heading')?.textContent ?? '',
+    rows: document.querySelectorAll('[role="menu"] .menu-recent').length,
+    emptyText: document.querySelector('[role="menu"] .menu-recent-empty').textContent,
+    ariaDisabled: document.querySelector('[role="menu"] .menu-recent-empty')
+      .getAttribute('aria-disabled'),
+    reallyDisabled: document.querySelector('[role="menu"] .menu-recent-empty')
+      .hasAttribute('disabled'),
+  })`);
+  assert(
+    emptyState.headings === 1 && emptyState.headingText.trim().length > 0,
+    `the section heading should stay when the list is empty, got ${JSON.stringify(emptyState)}`,
+  );
+  assert(
+    emptyState.emptyText.trim().length > 0,
+    `the empty row should say something, got ${JSON.stringify(emptyState.emptyText)}`,
+  );
+  assert(
+    emptyState.rows === 0,
+    `the empty row must not count as a document, got ${emptyState.rows}`,
+  );
+  assert(
+    emptyState.ariaDisabled === "true" && emptyState.reallyDisabled === false,
+    `the empty row should be aria-disabled and still focusable, got ${JSON.stringify(emptyState)}`,
+  );
+
   assert(
     page.consoleErrors.length === 0,
     `console errors while reopening: ${JSON.stringify(page.consoleErrors)}`,
@@ -106,10 +156,12 @@ try {
 
   console.log(
     "PASS: recent-files.spec — three rows in the backend's order, clicking the second " +
-      "opens the second by index, and the list reorders behind it",
+      "opens the second by index, the list reorders behind it, and an empty list " +
+      "still draws its section",
   );
 } finally {
   await page.removeInitScript(shimId);
-  await page.removeInitScript(configId);
+  if (configId) await page.removeInitScript(configId);
+  if (emptyConfigId) await page.removeInitScript(emptyConfigId);
   await page.close();
 }

@@ -148,6 +148,7 @@ export const en = {
   // Menu items
   "menu.saveAs": "Save as",
   "menu.recent": "Recent documents",
+  "menu.recentEmpty": "No recent documents",
   "menu.recentGone": (name: string) => `${name} is no longer where it was`,
   "menu.exportPdf": "Export PDF",
   "menu.exportHtml": "Export HTML",
