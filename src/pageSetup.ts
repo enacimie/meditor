@@ -103,6 +103,58 @@ export function paperByName(name: string | null | undefined): Paper | null {
 }
 
 /**
+ * The narrowest and widest margin a document may ask for, in millimetres.
+ *
+ * Wider than the list Preferences offers, because a document is quoting a
+ * house style rather than picking from a menu: half an inch and an inch and a
+ * half are both real answers and neither is on that list.
+ *
+ * The floor is not arbitrary. The folio and the running title are `@page`
+ * margin boxes and live in this white space; at 10 mm they still have room
+ * for an 11 pt line, and the E2E spec prints at 10 mm and checks every page
+ * still carries its number. Below that they start to be squeezed out, and a
+ * page that silently loses its numbering is worse than one that ignores the
+ * request.
+ */
+export const MIN_DOCUMENT_MARGIN_MM = 10;
+export const MAX_DOCUMENT_MARGIN_MM = 40;
+
+/**
+ * The margin a *document* asks for, in millimetres, or null.
+ *
+ * Null when the document says nothing, says something unparseable, or asks
+ * for a width outside the range above — and in each of those the reader's
+ * preference decides, for the same reason `paperByName` answers null.
+ *
+ * Units: `mm`, `cm`, `in` and `pt`, with a bare number read as millimetres.
+ * `in` because that is what Pandoc's `geometry: margin=1in` says and what a
+ * writer who has met this key before is likely to type; `pt` because LaTeX
+ * lengths are often written that way.
+ */
+export function marginByName(value: string | null | undefined): number | null {
+  if (!value) return null;
+  const match = value
+    .trim()
+    .toLowerCase()
+    .match(new RegExp("^([0-9]+(?:[.][0-9]+)?)[ ]*(mm|cm|in|pt)?$"));
+  if (!match) return null;
+  const amount = Number(match[1]);
+  if (!Number.isFinite(amount)) return null;
+  const mm =
+    match[2] === "cm"
+      ? amount * 10
+      : match[2] === "in"
+        ? amount * MM_PER_INCH
+        : match[2] === "pt"
+          ? (amount * MM_PER_INCH) / 72
+          : amount;
+  if (mm < MIN_DOCUMENT_MARGIN_MM || mm > MAX_DOCUMENT_MARGIN_MM) return null;
+  // Rounded to a tenth: an inch is 25.4 mm and there is no sense carrying
+  // more precision than the page can show.
+  return Math.round(mm * 10) / 10;
+}
+
+/**
  * The margin the Document view leaves around its content.
  *
  * One number, and the same on all four sides, which is what `paged.css` has
