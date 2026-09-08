@@ -170,7 +170,7 @@ pnpm test:coverage     # Unit tests + V8 coverage report in coverage/
 pnpm test:e2e          # E2E specs in real headless Chrome (see tests/e2e)
 pnpm test:e2e:latex    # Opt-in: full LaTeX E2E (requires Docker TeX Live)
 pnpm test:all          # Unit + E2E, one shot
-pnpm verify            # Lint, typecheck, audit, tests, E2E, fmt, Clippy and Rust tests
+pnpm verify            # Lint, typecheck, build, audit, tests, E2E, fmt, Clippy and Rust tests
 cargo test -p meditor  # Backend tests (Rust) alone
 ```
 
