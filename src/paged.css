@@ -528,3 +528,24 @@
 .markdown-body.doc figcaption .figure-label {
   font-weight: bold;
 }
+
+/*
+ * The number in front of a numbered heading.
+ *
+ * No margin of its own: the renderer emits a space after it, which is what
+ * LaTeX puts between `\thesection` and the title, and a margin here would
+ * add to that rather than replace it.
+ */
+.markdown-body.doc .heading-number {
+  font-weight: inherit;
+}
+
+/*
+ * And in the table of contents, where the number wants a column of its own so
+ * the titles line up under each other rather than starting wherever the
+ * number happened to end.
+ */
+.markdown-body.doc .markdown-toc .toc-number {
+  display: inline-block;
+  min-width: 2.4em;
+}

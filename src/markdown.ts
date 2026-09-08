@@ -1,5 +1,5 @@
 import MarkdownIt from "markdown-it";
-import { frontMatterValue } from "./frontMatter";
+import { frontMatterFlag, frontMatterValue } from "./frontMatter";
 import taskLists from "markdown-it-task-lists";
 import footnote from "markdown-it-footnote";
 import mark from "markdown-it-mark";
@@ -103,6 +103,9 @@ function frontMatter(md: MarkdownIt) {
          * renders and the `data-line` of what follows is untouched.
          */
         const block = state.src.slice(state.bMarks[startLine], state.eMarks[line]);
+        // The block itself, for the rules that ask it other questions —
+        // `numbersections` is not one of the three that print.
+        state.env.frontMatter = block;
         const meta = {
           title: frontMatterValue(block, "title"),
           author: frontMatterValue(block, "author"),
@@ -247,6 +250,69 @@ function figures(md: MarkdownIt) {
       `${escapeHtml(tokens[idx].content)}</figcaption>`
     );
   };
+}
+
+/**
+ * Numbered headings, when the document asks for them.
+ *
+ * `numbersections: true` in the front-matter, which is Pandoc's spelling for
+ * the same switch, and off unless it is there. Numbering every document by
+ * default would renumber every document that already exists.
+ *
+ * Every level is numbered, `h1` included, as Pandoc does. In a document with a
+ * front-matter title the `h1`s are chapters and reading "1 Introduction" is
+ * exactly right; in one without, the first `h1` is the title and gets a "1"
+ * it may not want. Starting the count at `h2` is the obvious knob and is
+ * deliberately not added until somebody wants it — one switch is easier to
+ * explain than two.
+ *
+ * The number is a token of a type of its own rather than text prepended to the
+ * heading, and that is what keeps the rest of the pipeline working.
+ * `heading_anchors` builds the ids from the `text` and `code_inline` children,
+ * and `toc_build` builds its entry text from the same, so neither of them sees
+ * this token: `#introducción` stays `#introducción` and the contents entry
+ * stays "Introducción".
+ *
+ * The ids happen to be protected twice over — this rule also runs after
+ * `heading_anchors`, so they are already computed. Measured, not assumed:
+ * making the token a `text` one breaks the contents entry on its own, and
+ * breaks the ids only when the order is reversed as well.
+ *
+ * The table of contents gets the number from `data-secnum` instead, where it
+ * can put it in a span of its own rather than inside the link's text.
+ */
+function headingNumbers(md: MarkdownIt) {
+  md.core.ruler.push("heading_numbers", (state) => {
+    const block = state.env?.frontMatter;
+    if (typeof block !== "string" || !frontMatterFlag(block, "numbersections")) return;
+
+    // One counter per level. Index 0 is unused so the level is the index.
+    const counters = [0, 0, 0, 0, 0, 0, 0];
+    for (let i = 0; i < state.tokens.length; i++) {
+      const open = state.tokens[i];
+      if (open.type !== "heading_open") continue;
+      const level = Number(open.tag.slice(1));
+      if (!Number.isInteger(level) || level < 1 || level > 6) continue;
+
+      counters[level] += 1;
+      // Everything below this heading starts again. Without this, a `##` after
+      // a second `#` carries on from where the first chapter's sections left
+      // off: 1.1, 1.2, then 2.3.
+      for (let deeper = level + 1; deeper <= 6; deeper++) counters[deeper] = 0;
+
+      const number = counters.slice(1, level + 1).join(".");
+      open.attrSet("data-secnum", number);
+
+      const inline = state.tokens[i + 1];
+      if (!inline || inline.type !== "inline") continue;
+      const token = new state.Token("heading_number", "span", 0);
+      token.content = number;
+      (inline.children ?? []).unshift(token);
+    }
+  });
+
+  md.renderer.rules.heading_number = (tokens, idx) =>
+    `<span class="heading-number">${escapeHtml(tokens[idx].content)}</span> `;
 }
 
 function addLineNumbers(md: MarkdownIt) {
@@ -446,7 +512,7 @@ function tocPlaceholder(md: MarkdownIt) {
     const markers = state.tokens.filter((token) => token.type === "toc");
     if (markers.length === 0) return;
 
-    const entries: Array<{ level: number; id: string; text: string }> = [];
+    const entries: Array<{ level: number; id: string; text: string; number?: string }> = [];
     for (let i = 0; i < state.tokens.length; i++) {
       const open = state.tokens[i];
       if (open.type !== "heading_open") continue;
@@ -460,7 +526,11 @@ function tocPlaceholder(md: MarkdownIt) {
         .map((child) => child.content)
         .join("")
         .trim();
-      if (text) entries.push({ level, id, text });
+      // The number, when the document asked to be numbered. Read from the
+      // attribute rather than the children so the entry text stays the
+      // heading's own words — which is also what the id was built from.
+      const number = open.attrGet("data-secnum") ?? undefined;
+      if (text) entries.push({ level, id, text, number });
     }
 
     for (const token of markers) {
@@ -483,7 +553,9 @@ function escapeHtml(text: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function renderToc(entries: Array<{ level: number; id: string; text: string }>): string {
+function renderToc(
+  entries: Array<{ level: number; id: string; text: string; number?: string }>,
+): string {
   // `role="doc-toc"` rather than a label of our own: the renderer has no
   // locale, and a hard-coded English label in a Spanish document would be
   // worse than the role a screen reader already knows how to announce.
@@ -491,7 +563,9 @@ function renderToc(entries: Array<{ level: number; id: string; text: string }>):
     .map(
       (entry) =>
         `<li class="toc-item toc-level-${entry.level}">` +
-        `<a href="#${encodeURIComponent(entry.id)}">${escapeHtml(entry.text)}</a>` +
+        `<a href="#${encodeURIComponent(entry.id)}">` +
+        (entry.number ? `<span class="toc-number">${escapeHtml(entry.number)}</span> ` : "") +
+        `${escapeHtml(entry.text)}</a>` +
         `</li>`,
     )
     .join("");
@@ -586,6 +660,7 @@ export const md = new MarkdownIt({
   .use(headingAnchors)
   .use(pageBreaks)
   .use(runningHead)
+  .use(headingNumbers)
   .use(tocPlaceholder)
   .use(figures)
   .use(addLineNumbers);

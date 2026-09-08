@@ -552,3 +552,76 @@ describe("an image alone in its paragraph is a figure", () => {
     expect(html).toContain('alt="Un gato"');
   });
 });
+
+describe("numbered headings", () => {
+  const numbered = (body: string) =>
+    renderMarkdown(["---", "numbersections: true", "---", "", body, ""].join("\n"));
+
+  /** The rendered number of each heading, in order. */
+  const numbers = (html: string) =>
+    [...html.matchAll(/class="heading-number">([^<]*)</g)].map((m) => m[1]);
+
+  it("does nothing unless the document asks", () => {
+    // The default has to stay the default: numbering every document would
+    // renumber every document that already exists.
+    const html = renderMarkdown("# Uno\n\n## Dos\n");
+    expect(html).not.toContain("heading-number");
+    expect(html).not.toContain("data-secnum");
+  });
+
+  it("numbers each level from one", () => {
+    expect(numbers(numbered("# Uno\n\n## Uno uno\n\n## Uno dos\n"))).toEqual([
+      "1",
+      "1.1",
+      "1.2",
+    ]);
+  });
+
+  it("starts the deeper counters again under each heading", () => {
+    // The failure this guards: without the reset, the second chapter's first
+    // section is 2.3 because it carries on from the first chapter's.
+    expect(
+      numbers(numbered("# Uno\n\n## A\n\n## B\n\n# Dos\n\n## C\n")),
+    ).toEqual(["1", "1.1", "1.2", "2", "2.1"]);
+  });
+
+  it("goes as deep as the heading does", () => {
+    expect(numbers(numbered("# A\n\n## B\n\n### C\n\n#### D\n"))).toEqual([
+      "1",
+      "1.1",
+      "1.1.1",
+      "1.1.1.1",
+    ]);
+  });
+
+  it("leaves the heading ids alone", () => {
+    // `#introducción` is what a link in the prose says and what the anchor has
+    // to stay. The number is a token of its own for exactly this reason.
+    const html = numbered("# Introducción\n");
+    expect(html).toMatch(/<h1[^>]*id="introducción"/);
+    expect(html).not.toContain('id="1-introducción"');
+  });
+
+  it("puts the number in the table of contents too", () => {
+    const html = numbered("[TOC]\n\n# Uno\n\n## Uno uno\n");
+    expect(html).toContain('<span class="toc-number">1</span> Uno');
+    expect(html).toContain('<span class="toc-number">1.1</span> Uno uno');
+  });
+
+  it("keeps the table of contents pointing where it did", () => {
+    const html = numbered("[TOC]\n\n# Introducción\n");
+    expect(html).toContain('href="#introducci%C3%B3n"');
+  });
+
+  it("is off for a document whose front-matter says so", () => {
+    const html = renderMarkdown(
+      ["---", "numbersections: false", "---", "", "# Uno", ""].join("\n"),
+    );
+    expect(html).not.toContain("heading-number");
+  });
+
+  it("is off for a document with front-matter that says nothing about it", () => {
+    const html = renderMarkdown(["---", "title: Informe", "---", "", "# Uno", ""].join("\n"));
+    expect(html).not.toContain("heading-number");
+  });
+});
