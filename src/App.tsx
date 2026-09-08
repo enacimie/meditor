@@ -18,6 +18,7 @@ const Editor = lazy(() => import("./Editor"));
 import Preview, { type PreviewHandle } from "./Preview";
 import { SAMPLE, TYPST_SAMPLE, LATEX_SAMPLE, MARP_SAMPLE } from "./sample";
 import { isMarpDocument } from "./marpDetect";
+import { frontMatterValue } from "./frontMatter";
 import Topbar from "./components/Topbar";
 import TabBar from "./components/TabBar";
 import StatusBar from "./components/StatusBar";
@@ -31,7 +32,7 @@ const PresentOverlay = lazy(() => import("./components/PresentOverlay"));
 import Outline from "./components/Outline";
 import { parseHeadings, type Heading } from "./components/outlineUtils";
 import { useTranslation } from "./i18n/I18nProvider";
-import { paperById, pageMetrics as metricsFor } from "./pageSetup";
+import { paperById, paperByName, pageMetrics as metricsFor } from "./pageSetup";
 import { isRtl } from "./i18n/translations";
 import { useThemeEffect } from "./hooks/useThemeEffect";
 import { useSplitDivider } from "./hooks/useSplitDivider";
@@ -316,17 +317,6 @@ export default function App() {
     paperSize: INITIAL_PREFERENCES.paperSize,
   });
   /*
-   * The sheet everything paginated agrees on: the Document view, the
-   * measuring passes behind it, the HTML export and the printer. One value,
-   * because a document laid out for one paper and printed on another does not
-   * shift, it spills.
-   */
-  const pageMetrics = useMemo(
-    () => metricsFor(paperById(editorPrefs.paperSize)),
-    [editorPrefs.paperSize],
-  );
-
-  /*
    * Where the caret is. The line has always been tracked, for the outline to
    * highlight the heading being written under; the column joins it so the
    * status bar can say the position the way an editor is expected to.
@@ -400,6 +390,41 @@ export default function App() {
   const isActiveMarp = useMemo(
     () => markdownSyncAvailable && isMarpDocument(activeContent),
     [markdownSyncAvailable, activeContent],
+  );
+
+  /*
+   * The paper this document asks for, if it asks.
+   *
+   * `papersize` in the front-matter, which is Pandoc's key and reaches this
+   * application by the same route `title` and `numbersections` already do.
+   * The document wins over the preference because the preference is about the
+   * reader — the paper in their printer — and this is about the document: a
+   * thesis submitted on Letter is on Letter wherever it is opened, and being
+   * repaginated by whoever opens it is the failure, not the feature.
+   *
+   * Markdown only. Typst and LaTeX describe their own page in their own
+   * syntax, and a YAML block is not part of either language.
+   */
+  const declaredPaper = useMemo(
+    () => (markdownSyncAvailable ? frontMatterValue(activeContent, "papersize") : null),
+    [markdownSyncAvailable, activeContent],
+  );
+
+  /*
+   * The sheet everything paginated agrees on: the Document view, the
+   * measuring passes behind it, the HTML export and the printer. One value,
+   * because a document laid out for one paper and printed on another does not
+   * shift, it spills.
+   *
+   * Two memos and not one, and that is deliberate: the inner one runs over
+   * the document on every keystroke, and the outer one depends on the *name*
+   * it found. So typing produces a new string only when the front-matter
+   * itself changes, and the metrics object — which repaginating keys off —
+   * stays identical through a paragraph.
+   */
+  const pageMetrics = useMemo(
+    () => metricsFor(paperByName(declaredPaper) ?? paperById(editorPrefs.paperSize)),
+    [declaredPaper, editorPrefs.paperSize],
   );
 
   // Switching away from the deck (another tab, or the front-matter removed)

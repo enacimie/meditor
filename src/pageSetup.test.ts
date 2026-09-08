@@ -12,6 +12,7 @@ import {
   mmToPx,
   pageMetrics,
   paperById,
+  paperByName,
 } from "./pageSetup";
 
 const read = (name: string) => readFileSync(new URL(name, import.meta.url), "utf8");
@@ -126,6 +127,39 @@ describe("Letter", () => {
     expect(paperById("a4")).toBe(A4);
     expect(paperById("foolscap")).toBe(A4);
     expect(paperById(undefined)).toBe(A4);
+  });
+});
+
+describe("the paper a document names", () => {
+  it("reads the spellings the two toolchains use", () => {
+    // Pandoc's `papersize:`, and LaTeX's `\documentclass` options, which is
+    // where a Markdown writer is likely to have met the word.
+    expect(paperByName("a4")).toBe(A4);
+    expect(paperByName("letter")).toBe(LETTER);
+    expect(paperByName("a4paper")).toBe(A4);
+    expect(paperByName("letterpaper")).toBe(LETTER);
+    expect(paperByName("us-letter")).toBe(LETTER);
+  });
+
+  it("ignores case and the space around it", () => {
+    expect(paperByName("  A4 ")).toBe(A4);
+    expect(paperByName("Letter")).toBe(LETTER);
+    expect(paperByName("US Letter")).toBe(LETTER);
+  });
+
+  it("answers nothing for what it does not know, rather than A4", () => {
+    /*
+     * The difference between this and `paperById`, and the reason both exist.
+     * Nothing here means "the document did not choose", and the reader's
+     * preference is what then decides. Answering A4 would let a typo in a
+     * document overrule a setting the reader made on purpose.
+     */
+    expect(paperByName("foolscap")).toBeNull();
+    expect(paperByName("a5")).toBeNull();
+    expect(paperByName("paper")).toBeNull();
+    expect(paperByName("")).toBeNull();
+    expect(paperByName(null)).toBeNull();
+    expect(paperByName(undefined)).toBeNull();
   });
 });
 
