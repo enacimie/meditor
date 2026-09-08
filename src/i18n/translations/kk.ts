@@ -100,10 +100,7 @@ export const kk = {
   "session.saveError": "Сессияны сақтау мүмкін емес",
   // Native
   // PDF
-  "pdf.emptyFile": "PDF экспорт бос файл жасады",
   "pdf.invalidPdf": "Экспорт жарамды PDF файлын жасамады",
-  "pdf.timeout": "PDF экспорт уақыты аяқталды",
-  "pdf.notSupported": "PDF экспорт әзірге тек Linux-та қолдау көрсетіледі",
   // File operations (Rust)
   "file.emptyPath": "Бос немесе жарамсыз файл жолы",
   "file.isDirectory": "Жол бумаға сілтейді",

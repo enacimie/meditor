@@ -101,10 +101,7 @@ export const fr = {
   "session.saveError": "Impossible d'enregistrer la session",
   // Native
   // PDF
-  "pdf.emptyFile": "L'export PDF a produit un fichier vide",
   "pdf.invalidPdf": "L'export n'a pas produit un fichier PDF valide",
-  "pdf.timeout": "L'export PDF a expiré",
-  "pdf.notSupported": "L'export PDF n'est supporté que sur Linux pour l'instant",
   // File operations (Rust)
   "file.emptyPath": "Chemin de fichier vide ou invalide",
   "file.isDirectory": "Le chemin pointe vers un dossier",

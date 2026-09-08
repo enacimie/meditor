@@ -101,10 +101,7 @@ export const te = {
   "session.saveError": "సెషన్‌ను సేవ్ చేయలేకపోయాము",
   // Native
   // PDF
-  "pdf.emptyFile": "PDF ఎగుమతి ఖాళీ ఫైల్‌ను ఉత్పత్తి చేసింది",
   "pdf.invalidPdf": "ఎగుమతి చెల్లుబాటు అయ్యే PDF ఫైల్‌ను ఉత్పత్తి చేయలేదు",
-  "pdf.timeout": "PDF ఎగుమతి సమయం ముగిసింది",
-  "pdf.notSupported": "PDF ఎగుమతి ప్రస్తుతం Linuxలో మాత్రమే మద్దతు ఉంది",
   // File operations (Rust)
   "file.emptyPath": "ఖాళీ లేదా చెల్లని ఫైల్ పాత్",
   "file.isDirectory": "పాత్ డైరెక్టరీని సూచిస్తోంది",

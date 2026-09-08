@@ -101,10 +101,7 @@ export const ta = {
   "session.saveError": "அமர்வைச் சேமிக்க முடியவில்லை",
   // Native
   // PDF
-  "pdf.emptyFile": "PDF ஏற்றுமதி வெற்றுக் கோப்பை உருவாக்கியது",
   "pdf.invalidPdf": "ஏற்றுமதி செல்லுபடியான PDF கோப்பை உருவாக்கவில்லை",
-  "pdf.timeout": "PDF ஏற்றுமதி நேரம் முடிந்தது",
-  "pdf.notSupported": "PDF ஏற்றுமதி தற்போது Linux-இல் மட்டுமே ஆதரிக்கப்படுகிறது",
   // File operations (Rust)
   "file.emptyPath": "வெற்று அல்லது செல்லாத கோப்புப் பாதை",
   "file.isDirectory": "பாதை ஒரு கோப்பகத்தைச் சுட்டுகிறது",

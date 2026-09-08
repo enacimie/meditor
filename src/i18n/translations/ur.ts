@@ -101,10 +101,7 @@ export const ur = {
   "session.saveError": "سیشن محفوظ نہیں ہو سکا",
   // Native
   // PDF
-  "pdf.emptyFile": "PDF برآمد نے خالی فائل بنائی",
   "pdf.invalidPdf": "برآمد نے درست PDF فائل نہیں بنائی",
-  "pdf.timeout": "PDF برآمد کا وقت ختم ہو گیا",
-  "pdf.notSupported": "PDF برآمد فی الحال صرف Linux پر تعاون یافتہ ہے",
   // File operations (Rust)
   "file.emptyPath": "خالی یا غلط فائل پاتھ",
   "file.isDirectory": "پاتھ ایک ڈائرکٹری کی طرف اشارہ کرتا ہے",

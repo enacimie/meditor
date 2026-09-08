@@ -100,10 +100,7 @@ export const ig = {
   "session.saveError": "Enweghị ike ichekwa seshọn",
   // Native
   // PDF
-  "pdf.emptyFile": "Ibupụ PDF mepụtara faịlụ efu",
   "pdf.invalidPdf": "Ibupụ emepụtaghị faịlụ PDF ziri ezi",
-  "pdf.timeout": "Oge ibupụ PDF agwụla",
-  "pdf.notSupported": "Ibupụ PDF na-akwado naanị na Linux ugbu a",
   // File operations (Rust)
   "file.emptyPath": "Ụzọ faịlụ efu ma ọ bụ na-ezighị ezi",
   "file.isDirectory": "Ụzọ na-arụtụ aka na faịlụ nchekwa",

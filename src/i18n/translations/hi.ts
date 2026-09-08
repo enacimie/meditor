@@ -101,10 +101,7 @@ export const hi = {
   "session.saveError": "सत्र सहेज नहीं सका",
   // Native
   // PDF
-  "pdf.emptyFile": "PDF निर्यात ने खाली फ़ाइल बनाई",
   "pdf.invalidPdf": "निर्यात ने मान्य PDF फ़ाइल नहीं बनाई",
-  "pdf.timeout": "PDF निर्यात का समय समाप्त",
-  "pdf.notSupported": "PDF निर्यात अभी केवल Linux पर समर्थित है",
   // File operations (Rust)
   "file.emptyPath": "खाली या अमान्य फ़ाइल पथ",
   "file.isDirectory": "पथ एक निर्देशिका की ओर इशारा करता है",

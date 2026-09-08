@@ -101,10 +101,7 @@ export const pt = {
   "session.saveError": "Não foi possível salvar a sessão",
   // Native
   // PDF
-  "pdf.emptyFile": "A exportação PDF produziu um arquivo vazio",
   "pdf.invalidPdf": "A exportação não produziu um arquivo PDF válido",
-  "pdf.timeout": "A exportação PDF expirou",
-  "pdf.notSupported": "A exportação PDF só é suportada no Linux por enquanto",
   // File operations (Rust)
   "file.emptyPath": "Caminho de arquivo vazio ou inválido",
   "file.isDirectory": "O caminho aponta para um diretório",

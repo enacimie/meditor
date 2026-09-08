@@ -101,10 +101,7 @@ export const tr = {
   "session.saveError": "Oturum kaydedilemedi",
   // Native
   // PDF
-  "pdf.emptyFile": "PDF dışa aktarma boş bir dosya oluşturdu",
   "pdf.invalidPdf": "Dışa aktarma geçerli bir PDF dosyası oluşturmadı",
-  "pdf.timeout": "PDF dışa aktarma zaman aşımına uğradı",
-  "pdf.notSupported": "PDF dışa aktarma şimdilik sadece Linux'ta destekleniyor",
   // File operations (Rust)
   "file.emptyPath": "Empty or invalid file path",
   "file.isDirectory": "Path points to a directory",

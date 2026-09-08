@@ -100,10 +100,7 @@ export const ht = {
   "session.saveError": "Pa ka anrejistre sesyon",
   // Native
   // PDF
-  "pdf.emptyFile": "Ekspòtasyon PDF te pwodui yon fichye vid",
   "pdf.invalidPdf": "Ekspòtasyon pa te pwodui yon fichye PDF ki valab",
-  "pdf.timeout": "Tan ekspòtasyon PDF ekspire",
-  "pdf.notSupported": "Ekspòtasyon PDF sèlman sipòte sou Linux pou kounye a",
   // File operations (Rust)
   "file.emptyPath": "Chemen fichye vid oswa ki pa valab",
   "file.isDirectory": "Chemen an pwente nan yon repèrtwa",

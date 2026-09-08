@@ -101,10 +101,7 @@ export const mr = {
   "session.saveError": "सत्र जतन करू शकलो नाही",
   // Native
   // PDF
-  "pdf.emptyFile": "PDF निर्यातीने रिकामी फाइल तयार केली",
   "pdf.invalidPdf": "निर्यातीने वैध PDF फाइल तयार केली नाही",
-  "pdf.timeout": "PDF निर्यातीची वेळ संपली",
-  "pdf.notSupported": "PDF निर्यात सध्या फक्त Linux वर समर्थित आहे",
   // File operations (Rust)
   "file.emptyPath": "रिकामा किंवा अवैध फाइल पथ",
   "file.isDirectory": "पथ डिरेक्टरीकडे निर्देशित करतो",

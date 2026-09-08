@@ -100,10 +100,7 @@ export const km = {
   "session.saveError": "មិនអាចរក្សាទុកសម័យបាន",
   // Native
   // PDF
-  "pdf.emptyFile": "ការនាំចេញ PDF បង្កើតឯកសារទទេ",
   "pdf.invalidPdf": "ការនាំចេញមិនបានបង្កើតឯកសារ PDF ត្រឹមត្រូវ",
-  "pdf.timeout": "ការនាំចេញ PDF អស់ពេល",
-  "pdf.notSupported": "ការនាំចេញ PDF បច្ចុប្បន្នគាំទ្រតែលើ Linux ប៉ុណ្ណោះ",
   // File operations (Rust)
   "file.emptyPath": "ផ្លូវឯកសារទទេ ឬមិនត្រឹមត្រូវ",
   "file.isDirectory": "ផ្លូវចង្អុលទៅថត",
