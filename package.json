@@ -17,7 +17,7 @@
     "tauri": "node scripts/tauri.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "verify": "pnpm lint && pnpm typecheck && pnpm audit --audit-level=high && pnpm test:run && pnpm test:e2e && cd src-tauri && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo check && cargo test --lib",
+    "verify": "pnpm lint && pnpm typecheck && pnpm build && pnpm audit --audit-level=high && pnpm test:run && pnpm test:e2e && cd src-tauri && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo check && cargo test --lib",
     "format": "prettier --write .",
     "prepare": "husky"
   },
