@@ -766,14 +766,25 @@ export default function App() {
    */
   const [recent, setRecent] = useState<RecentEntry[]>([]);
 
-  const refreshRecent = useCallback(async () => {
+  /**
+   * Re-read the list, and hand it back as well as storing it.
+   *
+   * Returned because the backend prunes the entries whose files have gone on
+   * the way out, so what comes back answers a question the caller cannot
+   * otherwise ask: whether the document somebody just clicked is still there.
+   * The state is a render behind at that point and cannot be consulted.
+   */
+  const refreshRecent = useCallback(async (): Promise<RecentEntry[]> => {
     try {
-      setRecent(await backend.recentFiles());
+      const entries = await backend.recentFiles();
+      setRecent(entries);
+      return entries;
     } catch (error) {
       // A menu section that fails to load is not worth interrupting anyone
       // over; the rest of the menu still works.
       console.error("could not read the recent documents:", error);
       setRecent([]);
+      return [];
     }
   }, []);
 
@@ -781,14 +792,37 @@ export default function App() {
     void refreshRecent();
   }, [refreshRecent]);
 
+  /**
+   * Open the nth remembered document.
+   *
+   * Both ways this can fail end in the same place, because to the person who
+   * clicked they are the same thing: the document is not there any more. The
+   * backend answers with nothing when the position has gone, and throws when
+   * the file has; either way the refreshed list no longer carries that entry,
+   * because reading it prunes what is missing.
+   *
+   * Which is worth checking rather than guessing, because the alternative
+   * message is bad: a file deleted since the menu was drawn fails inside
+   * `std::fs`, and what reaches the writer is the operating system's own
+   * words for it, in English, in a modal — "The system cannot find the file
+   * specified. (os error 2)". A permission error or a file grown too large
+   * still gets that route, and should: those are worth the details. A file
+   * that is simply gone is not.
+   */
   async function openRecent(index: number) {
     if (!beginOperation("open")) return;
+    // Captured before anything can refresh the list underneath it: this is
+    // the row the writer clicked, whatever the list says afterwards.
+    const clicked = recent[index];
+    /** The name to blame, or null when the entry is still on the list. */
+    const goneName = (remaining: RecentEntry[]): string | null =>
+      clicked && !remaining.some((entry) => entry.path === clicked.path) ? clicked.name : null;
     try {
       const payload = await backend.openRecent(index, lang);
       if (!payload) {
         // The position went away between the menu being drawn and clicked.
-        await refreshRecent();
-        showNotice(t("op.cancelled"), "info");
+        const gone = goneName(await refreshRecent());
+        showNotice(gone ? t("menu.recentGone", gone) : t("op.cancelled"), "info");
         return;
       }
       const opened = normalizeDoc(payload);
@@ -798,7 +832,11 @@ export default function App() {
     } catch (error) {
       // The usual reason is that the file has been moved or deleted since it
       // was listed, so the list is re-read before the message goes up.
-      await refreshRecent();
+      const gone = goneName(await refreshRecent());
+      if (gone) {
+        showNotice(t("menu.recentGone", gone), "error", 0);
+        return;
+      }
       showNotice(operationNoticeError(t, "open"), "error", 0);
       await showNativeAlert(operationErrorPrefix(t, "open") + String(error), lang);
     } finally {
