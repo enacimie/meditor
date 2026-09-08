@@ -1802,12 +1802,17 @@ async fn export_pdf(
     ))]
     {
         /*
-         * Left alone on purpose. The GTK page setup below asks for the same
-         * 25 mm margins the paginated preview already draws inside each of its
-         * pages, so this path very likely doubles them exactly as the Windows
-         * one did — but that could not be verified here, and changing print
-         * behaviour blind on the platform that has been shipping is worse than
-         * reporting it. Measured on Windows: 7 preview pages came out as 9.
+         * The double margin this used to warn about is gone. The page setup
+         * below asks `pdf_margin_mm` for its margin — the same rule Windows
+         * asks — so a document that already carries 2.5 cm inside every
+         * `.pagedjs_page` is not margined a second time around them. What was
+         * measured on Windows before that rule existed, 7 preview pages
+         * arriving as 9, is what its unit tests now hold in place.
+         *
+         * The sheet itself is still unseen. Nobody on the project has run this
+         * path and looked at the PDF that comes out: WebKitGTK is on no
+         * machine here, and CI compiles this branch and starts the binary
+         * without ever printing through it.
          */
         let url = url::Url::from_file_path(&path).map_err(|_| t(loc, "pdf.invalidPath"))?;
         let uri = url.as_str().to_string();
