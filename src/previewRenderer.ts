@@ -1,4 +1,5 @@
 import type { TranslationFn } from "./i18n/translations";
+import { DEFAULT_PAGE } from "./pageSetup";
 import { sanitizeSvg } from "./sanitizeSvg";
 import { resolveRelativeImages, type ImageSource } from "./documentImages";
 // Imported rather than inherited: this type used to resolve without an
@@ -37,8 +38,8 @@ export function splitLongFencedBlocks(md: string, maxLines = CODE_BLOCK_MAX_LINE
   });
 }
 
-/** A4's content box is 247 mm tall, which is about 934 px at 96 dpi. */
-const PAGE_CONTENT_PX = 934;
+/** How tall the content box is, in CSS pixels. A4 minus its margins: 934. */
+const PAGE_CONTENT_PX = DEFAULT_PAGE.contentHeightPx;
 
 /**
  * Past this, a heading group is not worth keeping in one piece: paged.js would
@@ -110,11 +111,17 @@ export function keepHeadingsWithContent(
   }
 }
 
-/** A4's content box is 160 mm wide, which is about 605 px at 96 dpi. */
-const PAGE_CONTENT_WIDTH_PX = 605;
+/** How wide the content box is, in CSS pixels. A4 minus its margins: 605. */
+const PAGE_CONTENT_WIDTH_PX = DEFAULT_PAGE.contentWidthPx;
 
-/** A4 landscape content box: 297 mm - 2×2.5 cm margins = 247 mm ≈ 933 px. */
-const LANDSCAPE_CONTENT_WIDTH_PX = 933;
+/**
+ * The same page on its side, which is what a wide table can be given.
+ *
+ * Derived rather than stated. As two constants these disagreed by a pixel —
+ * 934 for the portrait height and 933 for the landscape width, both of them
+ * 247 mm — which cost nothing but was the kind of thing that eventually does.
+ */
+const LANDSCAPE_CONTENT_WIDTH_PX = DEFAULT_PAGE.landscapeContentWidthPx;
 
 /**
  * The steps `paged.css` defines, smallest sacrifice first. Each one trades
@@ -150,7 +157,8 @@ const NEEDS_LANDSCAPE_CLASS = "needs-landscape";
  * lays nothing out and reports 0.
  * @param allowLandscape - when true, a table that fits on no portrait step but
  * would fit on an A4 landscape page is marked for one rather than left clipped.
- * paged.css assigns it `@page landscape-table` (933 px of content width).
+ * paged.css assigns it `@page landscape-table`, whose content box is as wide
+ * as a portrait page is tall.
  * @param landscapeNote - label the table carries so the reader sees the page
  * turned sideways coming (`paged.css ::before` reads it from a data attribute).
  */
