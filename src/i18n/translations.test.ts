@@ -101,6 +101,10 @@ describe("translations", () => {
     "prefs.typewriterModeHint",
     "prefs.landscapeTables",
     "prefs.landscapeTablesHint",
+    "statusbar.readingTime",
+    "statusbar.readingTimeTitle",
+    "statusbar.cursor",
+    "statusbar.cursorTitle",
     "preview.landscapeNote",
     // Marp presentations; en/es for now like the strings above.
     "topbar.newMarp",

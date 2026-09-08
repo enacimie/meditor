@@ -185,6 +185,10 @@ export const es = {
   "statusbar.wordsTitle": "Conteo de palabras",
   "statusbar.linesTitle": "Conteo de líneas",
   "statusbar.charsTitle": "Conteo de caracteres",
+  "statusbar.readingTime": (n: number) => `${n} min de lectura`,
+  "statusbar.readingTimeTitle": "Tiempo de lectura a 200 palabras por minuto",
+  "statusbar.cursor": (line: number, column: number) => `Lín ${line}, Col ${column}`,
+  "statusbar.cursorTitle": "Línea y columna del cursor",
   "statusbar.dirtyTitle": "Cambios sin guardar",
   // Language picker
   "lang.searchPlaceholder": "Buscar idioma…",

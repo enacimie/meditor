@@ -222,6 +222,10 @@ export const en = {
   "statusbar.wordsTitle": "Word count",
   "statusbar.linesTitle": "Line count",
   "statusbar.charsTitle": "Character count",
+  "statusbar.readingTime": (n: number) => `${n} min read`,
+  "statusbar.readingTimeTitle": "Reading time at 200 words a minute",
+  "statusbar.cursor": (line: number, column: number) => `Ln ${line}, Col ${column}`,
+  "statusbar.cursorTitle": "Line and column of the cursor",
   "statusbar.dirtyTitle": "Unsaved changes",
   // Language picker
   "lang.searchPlaceholder": "Search language…",
