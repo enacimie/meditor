@@ -1652,29 +1652,41 @@ async fn print_document(
     target_os = "openbsd",
     target_os = "windows"
 ))]
-/// The sheet a paper id names: its size in inches, and what GTK calls it.
-///
-/// The one table, so the size the document was laid out on and the size the
-/// printer is asked for cannot disagree. They must not: a page composed for
-/// one paper and printed on another does not shift, it spills, and every page
-/// takes two — which is the shape of the defect #89 measured on this very
-/// path.
-///
-/// Anything unknown is A4, the same fallback the frontend applies to a stored
-/// preference it does not recognise. A build that has never heard of a paper
-/// prints on the one it knows rather than refusing.
-fn paper_sheet(paper: Option<&str>) -> ((f64, f64), &'static str) {
-    match paper {
-        Some("letter") => ((8.5, 11.0), "na_letter"),
-        _ => ((8.267_716_5, 11.692_913_4), "iso_a4"),
-    }
-}
-
 fn pdf_margin_mm(custom_page: bool, paged: bool) -> f64 {
     if custom_page || paged {
         0.0
     } else {
         25.0
+    }
+}
+
+/// The sheet a paper id names: its size in inches, and what GTK calls it.
+///
+/// One table, so the size the document was laid out on and the size the printer
+/// is asked for cannot disagree. They must not: a page composed for one paper
+/// and printed on another does not shift, it spills, and every page takes two —
+/// the shape of the defect #89 measured on this very path.
+///
+/// Anything unknown is A4, the same fallback the frontend applies to a stored
+/// preference it does not recognise: a build that has never heard of a paper
+/// prints on the one it knows rather than refusing.
+///
+/// Gated like `pdf_margin_mm` above, and for the same reason. macOS and Android
+/// have no PDF path to call it from, and there `clippy -D warnings` is right
+/// that it is dead code — which is how this was found, on the one platform this
+/// project cannot build locally.
+#[cfg(any(
+    target_os = "linux",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd",
+    target_os = "windows"
+))]
+fn paper_sheet(paper: Option<&str>) -> ((f64, f64), &'static str) {
+    match paper {
+        Some("letter") => ((8.5, 11.0), "na_letter"),
+        _ => ((8.267_716_5, 11.692_913_4), "iso_a4"),
     }
 }
 
@@ -1752,7 +1764,7 @@ async fn export_pdf(
         target_os = "windows"
     )))]
     {
-        let _ = (app, window, default_name, loc, paged, custom_page);
+        let _ = (app, window, default_name, loc, paged, custom_page, paper);
         Err(t(loc, "pdf.notSupported"))
     }
 
@@ -2147,6 +2159,16 @@ mod tests {
         assert_eq!(pdf_margin_mm(false, false), 25.0);
     }
 
+    // Gated with the function they cover, like the margin tests above: on a
+    // platform with no PDF path there is no `paper_sheet` to call.
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "windows"
+    ))]
     #[test]
     fn a4_is_what_an_unknown_paper_falls_back_to() {
         // A build that has never heard of a paper prints on the one it knows,
@@ -2160,6 +2182,16 @@ mod tests {
         assert_eq!(paper_sheet(Some("")).1, "iso_a4");
     }
 
+    // Gated with the function they cover, like the margin tests above: on a
+    // platform with no PDF path there is no `paper_sheet` to call.
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "windows"
+    ))]
     #[test]
     fn letter_is_eight_and_a_half_by_eleven() {
         let ((w, h), name) = paper_sheet(Some("letter"));
@@ -2168,6 +2200,16 @@ mod tests {
         assert_eq!(h, 11.0);
     }
 
+    // Gated with the function they cover, like the margin tests above: on a
+    // platform with no PDF path there is no `paper_sheet` to call.
+    #[cfg(any(
+        target_os = "linux",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "windows"
+    ))]
     #[test]
     fn the_two_papers_are_not_the_same_sheet() {
         // The assertion that matters, because the failure it guards is a page
