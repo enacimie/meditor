@@ -135,6 +135,8 @@ export const es = {
   "prefs.focusModeHint": "Atenúa todo menos el párrafo que estás escribiendo",
   "prefs.typewriterMode": "Modo máquina de escribir",
   "prefs.typewriterModeHint": "Mantiene la línea que escribes en el centro del panel",
+  "prefs.autosave": "Guardar mientras escribo",
+  "prefs.autosaveHint": "Escribe cada documento en su fichero un par de segundos después de dejar de teclear. Un documento que nunca se ha guardado necesita un nombre antes.",
   "prefs.paperSize": "Tamaño del papel",
   "prefs.paperSizeHint": "La hoja sobre la que se compone la vista Documento, y sobre la que imprime",
   "prefs.landscapeTables": "Páginas apaisadas para tablas anchas",

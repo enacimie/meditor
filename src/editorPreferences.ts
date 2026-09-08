@@ -24,6 +24,9 @@ export const DEFAULT_LANDSCAPE_TABLES = false;
 /** A4, which is what the project has always laid out on. */
 export const DEFAULT_PAPER_SIZE: PaperId = "a4";
 
+/** Off. See the field’s comment for why that is a decision. */
+export const DEFAULT_AUTOSAVE = false;
+
 /**
  * Writing aids, both off unless asked for.
  *
@@ -53,6 +56,15 @@ export type EditorPreferences = {
    * changes between people.
    */
   paperSize: PaperId;
+  /**
+   * Write a document to its file on its own, shortly after the typing stops.
+   *
+   * Off by default, and that is the decision rather than an oversight. This
+   * editor’s model is an explicit save with a session that remembers the
+   * unsaved work, and turning that around for everyone would change what
+   * Ctrl+S means to people who already rely on it.
+   */
+  autosave: boolean;
 };
 
 /**
@@ -120,6 +132,11 @@ export function normalizeSpellcheck(value: unknown): boolean {
 /** Read a stored boolean, falling back to the default. */
 export function normalizeLandscapeTables(value: unknown): boolean {
   return typeof value === "boolean" ? value : DEFAULT_LANDSCAPE_TABLES;
+}
+
+/** A stored autosave flag, or off for anything that is not a boolean. */
+export function normalizeAutosave(value: unknown): boolean {
+  return typeof value === "boolean" ? value : DEFAULT_AUTOSAVE;
 }
 
 /** A stored paper id, or A4 for anything this build does not know. */

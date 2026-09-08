@@ -53,8 +53,9 @@ The MD editor supports HTML abbreviations.
 ## Custom Containers
 
 ::: warning
-Nothing reaches the file until you save it. Unsaved changes come back the
-next time meditor opens, but they are still not in the file.
+Nothing reaches the file until you save it, unless you turn autosave on in
+Preferences. Unsaved changes come back the next time meditor opens, but they
+are still not in the file.
 :::
 
 ::: note
@@ -297,9 +298,9 @@ And inline \`raw("print(42)", lang: "python")\` code.
   radius: 4pt,
   stroke: 0.5pt + rgb("#ffc107"),
   [
-    *⚠ Warning:* Nothing reaches the file until you save it. Unsaved
-    changes come back the next time meditor opens, but they are still
-    not in the file.
+    *⚠ Warning:* Nothing reaches the file until you save it, unless you
+    turn autosave on in Preferences. Unsaved changes come back the next
+    time meditor opens, but they are still not in the file.
   ],
 )
 
