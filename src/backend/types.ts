@@ -100,9 +100,17 @@ export type Backend = {
     defaultName: string,
     locale: string,
     paged: boolean,
-    /** Exact page size in inches — Marp slides — instead of the default A4. */
+    /** Exact page size in inches — Marp slides — instead of the chosen paper. */
     pageWidthIn?: number,
     pageHeightIn?: number,
+    /**
+     * The sheet to print on, by id (`a4`, `letter`).
+     *
+     * The one thing that must not disagree with the layout: a document
+     * composed for one paper and printed on another does not shift, it
+     * spills, and every page takes two.
+     */
+    paper?: string,
   ): Promise<void>;
   /**
    * Print what is on screen.
@@ -111,7 +119,7 @@ export type Backend = {
    * Document view and a Marp deck do — so the printer must not add margins of
    * its own on top. Same signal `exportPdf` takes, for the same reason.
    */
-  printDocument(locale: string, paged: boolean): Promise<void>;
+  printDocument(locale: string, paged: boolean, paper?: string): Promise<void>;
   writePdfBytes(
     pdfBytes: Uint8Array,
     defaultName: string,

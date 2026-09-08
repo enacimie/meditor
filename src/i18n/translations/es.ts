@@ -135,6 +135,8 @@ export const es = {
   "prefs.focusModeHint": "Atenúa todo menos el párrafo que estás escribiendo",
   "prefs.typewriterMode": "Modo máquina de escribir",
   "prefs.typewriterModeHint": "Mantiene la línea que escribes en el centro del panel",
+  "prefs.paperSize": "Tamaño del papel",
+  "prefs.paperSizeHint": "La hoja sobre la que se compone la vista Documento, y sobre la que imprime",
   "prefs.landscapeTables": "Páginas apaisadas para tablas anchas",
   "prefs.landscapeTablesHint": "Una tabla demasiado ancha para vertical puede ocupar una página horizontal",
   "preview.figureLabel": (n: number) => `Figura ${n}.`,

@@ -2,7 +2,17 @@ import { describe, it, expect } from "vitest";
 // @ts-expect-error node:fs carries no types here: the src project is kept
 // DOM-only on purpose, and vite.config.ts reaches for Node the same way.
 import { readFileSync } from "node:fs";
-import { A4, DEFAULT_MARGIN_MM, DEFAULT_PAGE, mmToInches, mmToPx, pageMetrics } from "./pageSetup";
+import {
+  A4,
+  DEFAULT_MARGIN_MM,
+  DEFAULT_PAGE,
+  LETTER,
+  buildPagedCss,
+  mmToInches,
+  mmToPx,
+  pageMetrics,
+  paperById,
+} from "./pageSetup";
 
 const read = (name: string) => readFileSync(new URL(name, import.meta.url), "utf8");
 
@@ -65,18 +75,27 @@ describe("the stylesheets agree with it", () => {
    */
   const cm = (mm: number) => `${Number((mm / 10).toFixed(2))}cm`;
 
-  it("the offscreen measuring container is as wide as the paper", () => {
-    // Not the content box: the container is the sheet, and the padding inside
-    // it is what leaves the margin.
+  it("the offscreen measuring container takes its width from the page", () => {
+    // It used to state `21cm` outright. Preview now sets `--doc-sheet-width`
+    // from the metrics, so a Letter document is measured against a Letter
+    // sheet — and the literal left here is the fallback, which still has to be
+    // the paper this file was written for.
     const css = read("./preview/document-view.css");
-    expect(css).toMatch(new RegExp(`width:\\s*${cm(A4.widthMm)}\\s*;`));
+    expect(css).toMatch(
+      new RegExp(`width:\\s*var\\(--doc-sheet-width,\\s*${cm(A4.widthMm)}\\)`),
+    );
   });
 
-  it("the HTML export frames the same sheet", () => {
+  it("the HTML export builds its frame from the page rather than stating it", () => {
+    // The assertion that survives templating: no hand-written sheet size may
+    // remain, because a document on Letter would then be framed as A4.
     const source = read("./exportHtml.ts");
-    expect(source).toContain(`max-width: ${cm(A4.widthMm)}`);
-    expect(source).toContain(`min-height: ${cm(A4.heightMm)}`);
-    expect(source).toContain(`padding: ${DEFAULT_PAGE.marginCss}`);
+    expect(source).toContain("max-width: ${metrics.widthCss}");
+    expect(source).toContain("min-height: ${metrics.heightCss}");
+    expect(source).toContain("padding: ${metrics.marginCss}");
+    // A physical length, specifically. `max-width: 100%` is not a sheet size
+    // and there are three of them in that stylesheet.
+    expect(source).not.toMatch(/max-width:\s*\d+(\.\d+)?(cm|mm|in)\b/);
   });
 });
 
@@ -84,5 +103,64 @@ describe("the defaults", () => {
   it("are A4 with 2.5 cm, which is what the project ships", () => {
     expect(DEFAULT_PAGE.paper).toBe(A4);
     expect(DEFAULT_MARGIN_MM).toBe(25);
+  });
+});
+
+describe("Letter", () => {
+  it("is 8.5 by 11 inches, in millimetres", () => {
+    expect(LETTER.widthMm).toBeCloseTo(mmToInches(LETTER.widthMm) * 25.4, 6);
+    expect(mmToInches(LETTER.widthMm)).toBeCloseTo(8.5, 3);
+    expect(mmToInches(LETTER.heightMm)).toBeCloseTo(11, 3);
+  });
+
+  it("is wider than A4 and shorter, which is the whole problem", () => {
+    // Not a detail of the print dialog: a sheet laid out for one and printed
+    // on the other does not shift, it spills.
+    const letter = pageMetrics(LETTER);
+    expect(letter.contentWidthPx).toBeGreaterThan(DEFAULT_PAGE.contentWidthPx);
+    expect(letter.contentHeightPx).toBeLessThan(DEFAULT_PAGE.contentHeightPx);
+  });
+
+  it("is what a stored id resolves to, and anything else is A4", () => {
+    expect(paperById("letter")).toBe(LETTER);
+    expect(paperById("a4")).toBe(A4);
+    expect(paperById("foolscap")).toBe(A4);
+    expect(paperById(undefined)).toBe(A4);
+  });
+});
+
+describe("writing the page into paged.css", () => {
+  const css = read("./paged.css");
+
+  it("leaves it alone for the paper it already describes", () => {
+    expect(buildPagedCss(css, DEFAULT_PAGE)).toBe(css);
+  });
+
+  it("rewrites both page sizes for Letter", () => {
+    const out = buildPagedCss(css, pageMetrics(LETTER));
+    expect(out).toContain("size: Letter;");
+    expect(out).toContain("size: Letter landscape;");
+    // The landscape block is the one that is easy to forget, and forgetting it
+    // gives a document whose wide tables print on a different sheet from the
+    // rest of it. Asserted on the declarations rather than on the whole file:
+    // the prose is allowed to mention A4 as an example, and once did.
+    const sizes = [...out.matchAll(/^\s*size:\s*(.+);$/gm)].map((m) => m[1]);
+    expect(sizes).toEqual(["Letter", "Letter landscape"]);
+  });
+
+  it("rewrites the margin", () => {
+    const out = buildPagedCss(css, pageMetrics(A4, 20));
+    expect(out).toContain("margin: 2cm;");
+    expect(out).not.toContain("margin: 2.5cm;");
+  });
+
+  it("refuses to work on a stylesheet that has stopped saying its size", () => {
+    // The failure this exists to prevent is silence: a replacement that
+    // matches nothing leaves the page A4 while the measuring, the export and
+    // the printer all move to Letter, and nothing looks wrong until the PDF
+    // has twice the pages.
+    expect(() => buildPagedCss("@page { margin: 2.5cm; }", pageMetrics(LETTER))).toThrow(
+      /page size/,
+    );
   });
 });

@@ -16,7 +16,12 @@
   position: absolute;
   left: -10000px;
   top: 0;
-  width: 21cm;
+  /*
+   * The sheet, as wide as the paper the document is laid out on. Set from
+   * Preview so a Letter document is measured against a Letter sheet; the
+   * fallback is the paper this file was written for.
+   */
+  width: var(--doc-sheet-width, 21cm);
   visibility: hidden;
   pointer-events: none;
 }

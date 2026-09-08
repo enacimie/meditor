@@ -31,6 +31,7 @@ const PresentOverlay = lazy(() => import("./components/PresentOverlay"));
 import Outline from "./components/Outline";
 import { parseHeadings, type Heading } from "./components/outlineUtils";
 import { useTranslation } from "./i18n/I18nProvider";
+import { paperById, pageMetrics as metricsFor } from "./pageSetup";
 import { isRtl } from "./i18n/translations";
 import { useThemeEffect } from "./hooks/useThemeEffect";
 import { useSplitDivider } from "./hooks/useSplitDivider";
@@ -57,6 +58,8 @@ import {
   DEFAULT_TYPEWRITER_MODE,
   DEFAULT_EDITOR_FONT_SIZE,
   type EditorPreferences,
+  DEFAULT_PAPER_SIZE,
+  normalizePaperSize,
 } from "./editorPreferences";
 import { getTypst } from "./typstEngine";
 import { compileLatexToPdf } from "./latexEngine";
@@ -90,6 +93,7 @@ const DEFAULT_PREFERENCES: Preferences = {
   landscapeTables: DEFAULT_LANDSCAPE_TABLES,
   focusMode: DEFAULT_FOCUS_MODE,
   typewriterMode: DEFAULT_TYPEWRITER_MODE,
+  paperSize: DEFAULT_PAPER_SIZE,
 };
 /**
  * Whether a first run should open in the paginated A4 view.
@@ -142,6 +146,7 @@ function loadPreferences(): Preferences {
       landscapeTables: normalizeLandscapeTables(stored.landscapeTables),
       focusMode: normalizeFocusMode(stored.focusMode),
       typewriterMode: normalizeTypewriterMode(stored.typewriterMode),
+      paperSize: normalizePaperSize(stored.paperSize),
     };
   } catch {
     return DEFAULT_PREFERENCES;
@@ -308,7 +313,19 @@ export default function App() {
     landscapeTables: INITIAL_PREFERENCES.landscapeTables,
     focusMode: INITIAL_PREFERENCES.focusMode,
     typewriterMode: INITIAL_PREFERENCES.typewriterMode,
+    paperSize: INITIAL_PREFERENCES.paperSize,
   });
+  /*
+   * The sheet everything paginated agrees on: the Document view, the
+   * measuring passes behind it, the HTML export and the printer. One value,
+   * because a document laid out for one paper and printed on another does not
+   * shift, it spills.
+   */
+  const pageMetrics = useMemo(
+    () => metricsFor(paperById(editorPrefs.paperSize)),
+    [editorPrefs.paperSize],
+  );
+
   /*
    * Where the caret is. The line has always been tracked, for the outline to
    * highlight the heading being written under; the column joins it so the
@@ -1125,11 +1142,19 @@ export default function App() {
         const heightIn = viewBox ? Number(viewBox[2]) / 96 : 720 / 96;
         await backend.exportPdf(`${base}.pdf`, lang, true, widthIn, heightIn);
       } else {
-        await backend.exportPdf(`${base}.pdf`, lang,
-          // The paginated preview already draws A4 pages with their own
+        await backend.exportPdf(
+          `${base}.pdf`,
+          lang,
+          // The paginated preview already draws its pages with their own
           // margins; asking the printer for margins too would inset every
           // page a second time and split it across two sheets.
-          docView);
+          docView,
+          undefined,
+          undefined,
+          // And the sheet it drew them on, which the printer has to agree
+          // with or every page spills onto the next.
+          pageMetrics.paper.id,
+        );
       }
       showNotice(operationNoticeDone(t, "export"), "success");
     } catch (e) {
@@ -1146,7 +1171,7 @@ export default function App() {
       // paginated view draws A4 pages with their own margins. Either way the
       // printer must not inset them a second time.
       const paged = docView || (!!active && isMarpDocument(active.content));
-      await backend.printDocument(lang, paged);
+      await backend.printDocument(lang, paged, pageMetrics.paper.id);
     } catch (e) {
       await showNativeAlert(String(e), lang);
     }
@@ -1178,6 +1203,7 @@ export default function App() {
             rtl: isRtl(lang),
             t,
             docHandle: active.handle ?? null,
+            metrics: pageMetrics,
           });
       const saved = await backend.writeHtmlFile(html, `${base}.html`, lang);
       // Cancelling the save dialog is not a failure, but it is not a success
@@ -1810,6 +1836,7 @@ export default function App() {
               docView={docView}
               kind={active?.kind ?? "markdown"}
               landscapeTables={editorPrefs.landscapeTables}
+              pageMetrics={pageMetrics}
               docHandle={active?.handle ?? null}
               theme={theme}
               onToggleTask={toggleTask}

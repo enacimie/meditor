@@ -25,6 +25,7 @@ import {
 import { isPaginatable } from "./pagedLifecycle";
 import { openExternal } from "./externalLinks";
 import { fitWideTables, keepHeadingsWithContent } from "./previewRenderer";
+import { DEFAULT_PAGE, buildPagedCss, type PageMetrics } from "./pageSetup";
 import { isMarpDocument } from "./marpDetect";
 import { LATEX_ENABLED } from "./latexSupport";
 
@@ -36,13 +37,24 @@ const TypstPreview = lazy(() => import("./TypstPreview"));
 const LatexPreview = lazy(() => import("./LatexPreview"));
 const MarpPreview = lazy(() => import("./MarpPreview"));
 
-const PAGED_STYLES: Array<Record<string, string>> = [
-  { "meditor-paged.css": pagedCss },
-  { "meditor-latex-highlight.css": latexHighlightCss },
-];
+/*
+ * The stylesheets paged.js is handed, one set per paper.
+ *
+ * Cached because the string rewrite is not free and the paper changes about
+ * as often as a preference does, while this runs on every repagination.
+ */
+const pagedStyleCache = new Map<string, Array<Record<string, string>>>();
 
-function collectStyles(): Array<Record<string, string>> {
-  return PAGED_STYLES;
+function collectStyles(metrics: PageMetrics): Array<Record<string, string>> {
+  const key = `${metrics.paper.id}:${metrics.marginMm}`;
+  const cached = pagedStyleCache.get(key);
+  if (cached) return cached;
+  const styles: Array<Record<string, string>> = [
+    { "meditor-paged.css": buildPagedCss(pagedCss, metrics) },
+    { "meditor-latex-highlight.css": latexHighlightCss },
+  ];
+  pagedStyleCache.set(key, styles);
+  return styles;
 }
 
 
@@ -58,6 +70,8 @@ type Props = {
   kind: DocKind;
   /** Allow tables too wide for portrait to claim a landscape page. */
   landscapeTables?: boolean;
+  /** The sheet the Document view lays out on, and prints to. */
+  pageMetrics?: PageMetrics;
   /**
    * The open document, so `![](assets/shot.png)` can be found beside it.
    * Null for a document that has never been saved, and for every document on
@@ -106,6 +120,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
     docView,
     kind,
     landscapeTables = false,
+    pageMetrics: metrics = DEFAULT_PAGE,
     docHandle = null,
     theme = "system",
     onToggleTask,
@@ -380,16 +395,16 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
         await document.fonts.ready;
         if (cancelled || myToken !== tokenRef.current) return;
         wrapCodeLines(source);
-        keepHeadingsWithContent(source);
+        keepHeadingsWithContent(source, undefined, metrics);
         // Last chance to measure: everything below this is a serialised string.
-        fitWideTables(source, undefined, landscapeTables, t("preview.landscapeNote"));
+        fitWideTables(source, undefined, landscapeTables, t("preview.landscapeNote"), metrics);
         paged.innerHTML = "";
         let previewer: Previewer;
         try {
           previewer = await getPreviewer();
           if (cancelled || myToken !== tokenRef.current) return;
           const html = `<div class="markdown-body doc">${source.innerHTML}</div>`;
-          await previewer.preview(html, collectStyles(), paged);
+          await previewer.preview(html, collectStyles(metrics), paged);
           if (cancelled || myToken !== tokenRef.current) {
             if (activePreviewerRef.current === previewer) {
               activePreviewerRef.current = undefined;
@@ -467,6 +482,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
     deferredValue,
     docView,
     landscapeTables,
+    metrics,
     retryToken,
     t,
     kind,
@@ -539,7 +555,11 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
 
   return (
     <>
-      <div ref={sourceRef} className="markdown-body doc preview-source" />
+      <div
+        ref={sourceRef}
+        className="markdown-body doc preview-source"
+        style={{ "--doc-sheet-width": metrics.widthCss } as React.CSSProperties}
+      />
       <div
         ref={webRef}
         className="markdown-body"

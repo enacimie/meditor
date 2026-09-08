@@ -1541,6 +1541,7 @@ async fn print_document(
     window: tauri::WebviewWindow,
     locale: Option<String>,
     paged: Option<bool>,
+    paper: Option<String>,
 ) -> Result<(), String> {
     #[cfg(not(any(
         target_os = "linux",
@@ -1551,15 +1552,16 @@ async fn print_document(
         target_os = "windows"
     )))]
     {
-        let _ = (&window, paged);
+        let _ = (&window, paged, &paper);
         Err(t(parse_locale(locale), "pdf.notSupported"))
     }
 
     #[cfg(target_os = "windows")]
     {
-        // `paged` goes unread here on purpose: this opens WebView2's own print
-        // dialog, and the margins in it belong to whoever is standing at it.
-        let _ = (&locale, paged);
+        // `paged` and `paper` go unread here on purpose: this opens WebView2's
+        // own print dialog, and both the margins and the sheet in it belong to
+        // whoever is standing at it.
+        let _ = (&locale, paged, &paper);
         let (tx, rx) = mpsc::channel::<Result<(), String>>();
         window
             .with_webview(move |webview| {
@@ -1594,7 +1596,7 @@ async fn print_document(
                     settings.set_print_backgrounds(true);
                 }
                 let print_settings = gtk::PrintSettings::new();
-                let page_setup = gtk_page_setup(None, paged.unwrap_or(true));
+                let page_setup = gtk_page_setup(None, paged.unwrap_or(true), paper.as_deref());
                 let operation = webkit2gtk::PrintOperation::new(&wv);
                 operation.set_print_settings(&print_settings);
                 operation.set_page_setup(&page_setup);
@@ -1650,6 +1652,24 @@ async fn print_document(
     target_os = "openbsd",
     target_os = "windows"
 ))]
+/// The sheet a paper id names: its size in inches, and what GTK calls it.
+///
+/// The one table, so the size the document was laid out on and the size the
+/// printer is asked for cannot disagree. They must not: a page composed for
+/// one paper and printed on another does not shift, it spills, and every page
+/// takes two — which is the shape of the defect #89 measured on this very
+/// path.
+///
+/// Anything unknown is A4, the same fallback the frontend applies to a stored
+/// preference it does not recognise. A build that has never heard of a paper
+/// prints on the one it knows rather than refusing.
+fn paper_sheet(paper: Option<&str>) -> ((f64, f64), &'static str) {
+    match paper {
+        Some("letter") => ((8.5, 11.0), "na_letter"),
+        _ => ((8.267_716_5, 11.692_913_4), "iso_a4"),
+    }
+}
+
 fn pdf_margin_mm(custom_page: bool, paged: bool) -> f64 {
     if custom_page || paged {
         0.0
@@ -1674,11 +1694,15 @@ fn pdf_margin_mm(custom_page: bool, paged: bool) -> f64 {
     target_os = "netbsd",
     target_os = "openbsd"
 ))]
-fn gtk_page_setup(custom_page: Option<(f64, f64)>, paged: bool) -> gtk::PageSetup {
+fn gtk_page_setup(
+    custom_page: Option<(f64, f64)>,
+    paged: bool,
+    paper_id: Option<&str>,
+) -> gtk::PageSetup {
     let page_setup = gtk::PageSetup::new();
     let paper = match custom_page {
         Some((w, h)) => gtk::PaperSize::new_custom("marp-slide", "Slide", w, h, gtk::Unit::Inch),
-        None => gtk::PaperSize::new(Some("iso_a4")),
+        None => gtk::PaperSize::new(Some(paper_sheet(paper_id).1)),
     };
     page_setup.set_paper_size_and_default_margins(&paper);
     let margin = pdf_margin_mm(custom_page.is_some(), paged);
@@ -1689,6 +1713,17 @@ fn gtk_page_setup(custom_page: Option<(f64, f64)>, paged: bool) -> gtk::PageSetu
     page_setup
 }
 
+/*
+ * Eight arguments, and clippy is right that it is a lot.
+ *
+ * They are not a parameter list, though: they are this command's IPC surface,
+ * the object the frontend sends. Folding four of them into a `PageRequest`
+ * struct would read better here and would change the shape of the message —
+ * `{ page: { paged, width, height, paper } }` — for one caller and one command.
+ * Worth doing when a second command wants the same group; not worth doing to
+ * quiet a lint.
+ */
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 async fn export_pdf(
     app: tauri::AppHandle,
@@ -1698,6 +1733,7 @@ async fn export_pdf(
     paged: Option<bool>,
     page_width: Option<f64>,
     page_height: Option<f64>,
+    paper: Option<String>,
 ) -> Result<(), String> {
     let loc = parse_locale(locale);
     // A caller that supplies both dimensions wants exactly that page — a Marp
@@ -1734,9 +1770,9 @@ async fn export_pdf(
     {
         // WebView2 measures in inches. A4 with the same 25 mm margins the GTK
         // path sets, so both platforms produce the same page.
-        const A4_WIDTH_IN: f64 = 8.268;
-        const A4_HEIGHT_IN: f64 = 11.693;
-        let (page_w, page_h) = custom_page.unwrap_or((A4_WIDTH_IN, A4_HEIGHT_IN));
+        // The sheet, from the same table the GTK path reads, so the two
+        // platforms cannot be asked for different paper.
+        let (page_w, page_h) = custom_page.unwrap_or(paper_sheet(paper.as_deref()).0);
         // WebView2 measures in inches; the decision itself is shared with the
         // GTK path so the two cannot drift again.
         let margin = pdf_margin_mm(custom_page.is_some(), paged.unwrap_or(true)) / 25.4;
@@ -1905,7 +1941,8 @@ async fn export_pdf(
                 print_settings.set_printer(&printer);
                 print_settings.set("output-file-format", Some("pdf"));
                 print_settings.set("output-uri", Some(uri.as_str()));
-                let page_setup = gtk_page_setup(custom_page, paged.unwrap_or(true));
+                let page_setup =
+                    gtk_page_setup(custom_page, paged.unwrap_or(true), paper.as_deref());
                 let operation = webkit2gtk::PrintOperation::new(&wv);
                 operation.set_print_settings(&print_settings);
                 operation.set_page_setup(&page_setup);
@@ -2108,6 +2145,38 @@ mod tests {
         // The one case that needs them: an unpaginated document is a run of
         // text with nothing around it.
         assert_eq!(pdf_margin_mm(false, false), 25.0);
+    }
+
+    #[test]
+    fn a4_is_what_an_unknown_paper_falls_back_to() {
+        // A build that has never heard of a paper prints on the one it knows,
+        // rather than refusing. The same fallback the frontend applies to a
+        // stored preference it does not recognise.
+        let ((w, h), name) = paper_sheet(None);
+        assert_eq!(name, "iso_a4");
+        assert!((w - 8.27).abs() < 0.01, "A4 is 210 mm wide, got {w} in");
+        assert!((h - 11.69).abs() < 0.01, "A4 is 297 mm tall, got {h} in");
+        assert_eq!(paper_sheet(Some("foolscap")).1, "iso_a4");
+        assert_eq!(paper_sheet(Some("")).1, "iso_a4");
+    }
+
+    #[test]
+    fn letter_is_eight_and_a_half_by_eleven() {
+        let ((w, h), name) = paper_sheet(Some("letter"));
+        assert_eq!(name, "na_letter");
+        assert_eq!(w, 8.5);
+        assert_eq!(h, 11.0);
+    }
+
+    #[test]
+    fn the_two_papers_are_not_the_same_sheet() {
+        // The assertion that matters, because the failure it guards is a page
+        // laid out for one and printed on the other: Letter is wider and
+        // shorter, so every page of an A4 document spills onto a second sheet.
+        let (a4, _) = paper_sheet(Some("a4"));
+        let (letter, _) = paper_sheet(Some("letter"));
+        assert!(letter.0 > a4.0, "Letter is wider");
+        assert!(letter.1 < a4.1, "and shorter");
     }
 
     #[test]
@@ -2610,15 +2679,20 @@ mod gtk_print_tests {
     /// inside the wrapper `print.css` selects on, under the `@page` rule it
     /// injects for the printer.
     fn paged_document(sheets: usize) -> String {
+        paged_document_on(sheets, "a4", "210mm", "297mm")
+    }
+
+    /// The same, on a named sheet — what `buildPagedCss` produces for a paper.
+    fn paged_document_on(sheets: usize, css_size: &str, width: &str, height: &str) -> String {
         let pages: String = (1..=sheets)
             .map(|n| format!("<div class=\"pagedjs_page\" id=\"page-{n}\">Page {n}</div>"))
             .collect();
         format!(
             "<!doctype html><html><head><meta charset=\"utf-8\"><style>\
-             @page {{ size: a4; margin: 0; }}\
+             @page {{ size: {css_size}; margin: 0; }}\
              html, body {{ margin: 0; padding: 0; }}\
              .pagedjs_page {{\
-               --pagedjs-width: 210mm; --pagedjs-height: 297mm;\
+               --pagedjs-width: {width}; --pagedjs-height: {height};\
                width: var(--pagedjs-width); height: var(--pagedjs-height);\
                break-after: page; overflow: hidden;\
              }}\
@@ -2670,6 +2744,10 @@ mod gtk_print_tests {
     /// Print `body` through the page setup the application uses, and hand back
     /// the PDF bytes.
     fn print_through_webkit(tag: &str, body: &str) -> Vec<u8> {
+        print_through_webkit_on(tag, body, None)
+    }
+
+    fn print_through_webkit_on(tag: &str, body: &str, paper: Option<&str>) -> Vec<u8> {
         gtk::init().expect("GTK should start; this test needs a display");
 
         let out = std::env::temp_dir().join(format!(
@@ -2708,7 +2786,7 @@ mod gtk_print_tests {
 
         let operation = webkit2gtk::PrintOperation::new(&view);
         operation.set_print_settings(&settings);
-        operation.set_page_setup(&gtk_page_setup(None, true));
+        operation.set_page_setup(&gtk_page_setup(None, true, paper));
 
         let settled = Rc::new(Cell::new(false));
         let failure = Rc::new(Cell::new(false));
@@ -2734,22 +2812,69 @@ mod gtk_print_tests {
         bytes
     }
 
+    /// Every claim about this print path, in one test, on one thread.
+    ///
+    /// One test and not three, and that is not tidiness. gtk-rs pins "the main
+    /// thread" to whichever thread calls `init` first, and libtest gives each
+    /// test function a thread of its own even under `--test-threads=1`: the
+    /// second test to run dies with "Attempted to initialize GTK from two
+    /// different threads" before it asserts anything. Measured, when this was
+    /// three tests.
+    ///
+    /// So the phases are numbered in the failure messages instead, which is
+    /// what a test name would have given.
     #[test]
     #[ignore = "needs a display and a GTK main loop; CI runs it on Linux only"]
-    fn gtk_print_lays_a_paginated_document_out_one_sheet_per_page() {
-        let pdf = print_through_webkit("three", &paged_document(3));
-        assert_eq!(&pdf[..5], b"%PDF-", "the printer should write a PDF");
+    fn gtk_print_lays_each_paper_out_one_sheet_per_page() {
+        // ── A4, the paper this project has always used ────────────────────
+        let pdf = print_through_webkit("a4", &paged_document(3));
+        assert_eq!(&pdf[..5], b"%PDF-", "A4: the printer should write a PDF");
         assert_eq!(
             page_count(&pdf),
             3,
-            "three paged.js pages should print as three sheets; six means each \
-             one spilled onto a blank second sheet, which is what this engine \
-             does to a page box exactly as tall as the paper",
+            "A4: three paged.js pages should print as three sheets; six means \
+             each one spilled onto a blank second sheet, which is what this \
+             engine does to a page box exactly as tall as the paper",
         );
-        let (width, height) = first_media_box(&pdf).expect("a page should declare its size");
+        let (width, height) = first_media_box(&pdf).expect("A4: a page should declare its size");
         assert!(
             (width - 595.0).abs() < 3.0 && (height - 842.0).abs() < 3.0,
-            "the sheet should still be A4 in points, got {width} x {height}",
+            "A4: the sheet should be 595 x 842 points, got {width} x {height}",
+        );
+
+        // ── Letter, laid out and printed on the same paper ────────────────
+        let pdf = print_through_webkit_on(
+            "letter",
+            &paged_document_on(3, "letter", "215.9mm", "279.4mm"),
+            Some("letter"),
+        );
+        assert_eq!(
+            page_count(&pdf),
+            3,
+            "Letter: three sheets should print as three pages, not six",
+        );
+        let (width, height) =
+            first_media_box(&pdf).expect("Letter: a page should declare its size");
+        assert!(
+            (width - 612.0).abs() < 3.0 && (height - 792.0).abs() < 3.0,
+            "Letter: the sheet should be 612 x 792 points, got {width} x {height}",
+        );
+
+        /*
+         * ── And the mismatch this pairing exists to prevent ───────────────
+         *
+         * Not something the application can produce: it is the claim the rest
+         * of the design rests on, that sending a layout to the wrong paper is
+         * not cosmetic. A Letter sheet is 17 mm shorter than A4, so it fits an
+         * A4 page — the spill goes the other way, and that is the direction
+         * worth pinning, because it is the one a wrong default would cause.
+         */
+        let pdf = print_through_webkit_on("a4-on-letter", &paged_document(3), Some("letter"));
+        assert!(
+            page_count(&pdf) > 3,
+            "an A4 layout on a Letter printer should spill onto more sheets; if \
+             it does not, threading the paper through to the printer buys \
+             nothing and half of this can go",
         );
     }
 }

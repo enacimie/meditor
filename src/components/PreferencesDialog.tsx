@@ -5,6 +5,7 @@ import {
   MAX_EDITOR_FONT_SIZE,
   MIN_EDITOR_FONT_SIZE,
   type EditorPreferences,
+  normalizePaperSize,
 } from "../editorPreferences";
 import "./PreferencesDialog.css";
 
@@ -173,6 +174,33 @@ const PreferencesDialog = memo(function PreferencesDialog({
               />
               <span className="prefs-hint" id="prefs-spellcheck-hint">
                 {t("prefs.spellcheckHint")}
+              </span>
+            </div>
+          </div>
+
+          <div className="prefs-row">
+            <label className="prefs-label" htmlFor="prefs-paper">
+              {t("prefs.paperSize")}
+            </label>
+            <div className="prefs-control">
+              <select
+                id="prefs-paper"
+                value={value.paperSize}
+                aria-describedby="prefs-paper-hint"
+                onChange={(e) =>
+                  onChange({ ...value, paperSize: normalizePaperSize(e.target.value) })
+                }
+              >
+                {/*
+                  Named, not translated: A4 and Letter are what the paper is
+                  called wherever it is sold, and a reader looking for the one
+                  in their printer is looking for that word.
+                */}
+                <option value="a4">A4</option>
+                <option value="letter">Letter</option>
+              </select>
+              <span className="prefs-hint" id="prefs-paper-hint">
+                {t("prefs.paperSizeHint")}
               </span>
             </div>
           </div>
