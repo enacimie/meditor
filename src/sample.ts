@@ -53,7 +53,8 @@ The MD editor supports HTML abbreviations.
 ## Custom Containers
 
 ::: warning
-Be careful when editing large documents — auto-save is enabled by default.
+Nothing reaches the file until you save it. Unsaved changes come back the
+next time meditor opens, but they are still not in the file.
 :::
 
 ::: note
@@ -296,8 +297,9 @@ And inline \`raw("print(42)", lang: "python")\` code.
   radius: 4pt,
   stroke: 0.5pt + rgb("#ffc107"),
   [
-    *⚠ Warning:* Be careful when editing large documents — auto-save
-    is enabled by default.
+    *⚠ Warning:* Nothing reaches the file until you save it. Unsaved
+    changes come back the next time meditor opens, but they are still
+    not in the file.
   ],
 )
 
