@@ -441,7 +441,32 @@ fn remember_recent(app: &tauri::AppHandle, locale: Locale, location: &Location) 
     let Some(paths) = state.remember(path.to_path_buf()) else {
         return;
     };
-    let stored = match serde_json::to_string(&paths) {
+    persist_recent(app, locale, &paths);
+}
+
+/// The paths a restored session can offer the recent list.
+///
+/// Only the documents that came back attached to their file. A handle is
+/// handed out by `restore_session_path` only when the path still resolves and
+/// the content still matches the snapshot, so this reuses that test rather
+/// than inventing a second one that could disagree with it — and it is what
+/// keeps a moved file, a deleted one, and an Android `content://` URI that
+/// never was a path out of a menu that promises to reopen things.
+fn restorable_paths(docs: &[NativeDocument]) -> Vec<PathBuf> {
+    docs.iter()
+        .filter(|doc| doc.handle.is_some())
+        .filter_map(|doc| doc.path.as_deref().map(PathBuf::from))
+        .collect()
+}
+
+/// Write the recent list out.
+///
+/// Split from `remember_recent` because the startup backfill produces the same
+/// list by a different route and has to store it the same way. Failures are
+/// reported and swallowed: losing the recent list must never be the reason an
+/// open, a save or a restore fails.
+fn persist_recent(app: &tauri::AppHandle, locale: Locale, paths: &[PathBuf]) {
+    let stored = match serde_json::to_string(paths) {
         Ok(stored) => stored,
         Err(error) => {
             eprintln!("could not encode the recent list: {error}");
@@ -691,7 +716,12 @@ fn save_document(
     if content.len() as u64 > MAX_FILE_BYTES {
         return Err(tf(loc, "file.contentTooLarge", &max_file_mib().to_string()));
     }
-    write_location(&app, loc, &location, content.as_bytes())
+    write_location(&app, loc, &location, content.as_bytes())?;
+    // Saving is the other way a document says it is the one being worked on.
+    // Without this a document opened once and edited all week slides off the
+    // end of the list while ten it was never touched sit above it.
+    remember_recent(&app, loc, &location);
+    Ok(())
 }
 
 /// A cheap fingerprint of the file behind an open document.
@@ -1141,6 +1171,31 @@ fn load_session(
             }
         })
         .collect::<Vec<_>>();
+
+    /*
+     * The documents a restored session brings back belong in the recent list.
+     * Until now nothing put them there: the list was only fed by the open
+     * dialog, the command line and Save as, so someone who never uses the
+     * dialog — because the session already reopens everything — had a menu
+     * section that stayed empty forever.
+     *
+     * `handle.is_some()` is the test, and deliberately not a second one of
+     * its own: `restore_session_path` hands back a handle only when the path
+     * still resolves and the file still matches the snapshot byte for byte.
+     * Anything else — moved, deleted, edited underneath us, or an Android
+     * `content://` URI that never was a path — is exactly what the list must
+     * not offer.
+     *
+     * They go behind whatever is already remembered, so a restart never
+     * reshuffles the menu under a habit.
+     */
+    let restored = restorable_paths(&docs);
+    if !restored.is_empty() {
+        if let Some(paths) = app.state::<recent::RecentFiles>().backfill(restored) {
+            persist_recent(&app, loc, &paths);
+        }
+    }
+
     let active_id = if docs.iter().any(|doc| doc.id == stored.active_id) {
         stored.active_id
     } else {
@@ -2427,6 +2482,44 @@ mod tests {
         write_atomic_bytes(Locale::En, &path, b"%PDF-1.7").unwrap();
         assert_eq!(std::fs::read(&path).unwrap(), b"%PDF-1.7");
         let _ = std::fs::remove_dir_all(root);
+    }
+
+    /// A document as the session restore builds them, with only the two
+    /// fields `restorable_paths` reads spelled out.
+    fn restored_doc(path: Option<&str>, handle: Option<&str>) -> NativeDocument {
+        NativeDocument {
+            id: "1".into(),
+            name: "document.md".into(),
+            path: path.map(str::to_owned),
+            content: String::new(),
+            dirty: false,
+            handle: handle.map(str::to_owned),
+            kind: DocumentKind::Markdown,
+        }
+    }
+
+    #[test]
+    fn only_a_document_still_attached_to_its_file_is_worth_remembering() {
+        // A restored tab whose file moved, changed or was deleted comes back
+        // without a handle. Offering it in a menu that promises to reopen
+        // things is offering a door that does not open.
+        let docs = [
+            restored_doc(Some("/work/attached.md"), Some("h1")),
+            restored_doc(Some("/work/moved.md"), None),
+            restored_doc(None, None),
+        ];
+        assert_eq!(
+            restorable_paths(&docs),
+            [PathBuf::from("/work/attached.md")],
+        );
+    }
+
+    #[test]
+    fn a_document_with_no_path_is_not_remembered_even_with_a_handle() {
+        // Belt and braces: a handle without a path cannot name a file, and
+        // unwrapping one would be the bug this asserts against.
+        let docs = [restored_doc(None, Some("h1"))];
+        assert!(restorable_paths(&docs).is_empty());
     }
 
     #[test]
