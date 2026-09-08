@@ -207,54 +207,57 @@ export function pageMetrics(
 export const DEFAULT_PAGE = pageMetrics();
 
 /**
- * `paged.css` with the page it should describe written into it.
+ * The `@page` rules for a given page, as text.
  *
- * A string rewrite, because there is no other way in. `paged.css` never
- * reaches the document: paged.js is handed it as text and runs it through a
- * parser of its own, which does not resolve `var()` inside `@page` and drops
- * quietly what it does not understand. So the size has to be a literal by the
- * time it gets there.
+ * Two blocks: the sheet everything is laid out on, and the sideways one a
+ * table too wide for it is given. Both from the same paper, because a
+ * document that printed its wide tables on a different sheet from the rest of
+ * itself would be worse than one that clipped them.
  *
- * Four lines, and each replacement is asserted to have matched exactly once.
- * A silent miss here does not look like a bug: the document paginates against
- * one page and prints on another, which is the failure #89 measured on Linux.
+ * Deliberately as plain as CSS gets. paged.js does not use the browser's
+ * parser — it runs the stylesheet through one of its own, which drops quietly
+ * what it does not understand and does not resolve `var()` inside `@page`.
+ * The lengths therefore have to be literals by the time they arrive, and
+ * nothing clever may creep in here.
+ */
+function pageRules(metrics: PageMetrics): string {
+  return [
+    "@page {",
+    `  size: ${metrics.paper.cssSize};`,
+    `  margin: ${metrics.marginCss};`,
+    "}",
+    "",
+    "@page landscape-table {",
+    `  size: ${metrics.paper.cssSize} landscape;`,
+    `  margin: ${metrics.marginCss};`,
+    "}",
+    "",
+  ].join("\n");
+}
+
+/**
+ * `paged.css` with the page it should describe in front of it.
+ *
+ * Generated and prepended, not written into the file. It used to be a string
+ * rewrite — three regular expressions anchored to the start of a line —
+ * and that was a bug that shipped: `paged.css` arrives here through
+ * `?inline`, which Vite serves verbatim in development and **minifies on
+ * build**, so in every built copy of the application the stylesheet was one
+ * long line, no pattern matched, the guard fired, and the Document view and
+ * the HTML export failed outright. Nothing caught it because the unit tests
+ * read the file from disk and the E2E harness runs the dev server.
+ *
+ * So there is no longer anything to match. `paged.css` states no page size
+ * and no page margin at all — deleting them is what stops somebody writing
+ * them back in — and paged.js merges two `@page` rules with the same selector
+ * (`modules/paged-media/atpage.js`: an existing selector reuses the page model
+ * and only overwrites `size` when the rule carries one), so the block below
+ * sizes the sheet and the one in the file adds its margin boxes to it.
+ *
+ * An empty `css` is not a special case any more: under vitest `?inline`
+ * resolves to `""`, and prepending the rules to nothing is still the right
+ * answer.
  */
 export function buildPagedCss(css: string, metrics: PageMetrics = DEFAULT_PAGE): string {
-  /*
-   * An empty stylesheet is not a stylesheet that lost its `@page`.
-   *
-   * `./paged.css?inline` resolves to an empty string under vitest, which does
-   * not process CSS — the same reason `pagedMarginBoxes.test.ts` reads the
-   * file from disk instead of importing it. Throwing there would fail tests
-   * over the test runner rather than over the code.
-   */
-  if (css.trim() === "") return css;
-
-  /**
-   * Replace every match, and refuse to carry on if there were none.
-   *
-   * Counted with `match` rather than `test`: a global regex carries its
-   * `lastIndex` between calls, and a guard that is sometimes right is worse
-   * than no guard.
-   */
-  const rewrite = (text: string, pattern: RegExp, replacement: string, what: string) => {
-    if ((text.match(pattern)?.length ?? 0) === 0) {
-      throw new Error(
-        `paged.css no longer declares ${what}: the page would silently stay A4 ` +
-          "while everything else moved to the chosen paper",
-      );
-    }
-    return text.replace(pattern, replacement);
-  };
-
-  let out = css;
-  out = rewrite(out, /^(\s*)size:\s*A4;$/gm, `$1size: ${metrics.paper.cssSize};`, "its page size");
-  out = rewrite(
-    out,
-    /^(\s*)size:\s*A4 landscape;$/gm,
-    `$1size: ${metrics.paper.cssSize} landscape;`,
-    "the landscape page size",
-  );
-  out = rewrite(out, /^(\s*)margin:\s*2\.5cm;$/gm, `$1margin: ${metrics.marginCss};`, "its margin");
-  return out;
+  return pageRules(metrics) + css;
 }
