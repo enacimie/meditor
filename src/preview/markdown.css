@@ -300,3 +300,24 @@
 .markdown-body .markdown-toc .toc-level-3 {
   padding-left: 3em;
 }
+
+/*
+ * The page break, on a screen that has no pages.
+ *
+ * A dashed rule rather than nothing: the author asked for something to happen
+ * here, and a marker that renders as emptiness reads as a marker that did not
+ * work. It says where the paper would end, in the one view that cannot show it.
+ *
+ * `:not(.doc)` rather than a second rule undoing this one for the Document
+ * view, and that is not a style preference. print.spec isolates paged.js by
+ * switching off every stylesheet whose text contains `markdown-body.doc`, so a
+ * rule spelled that way in this file takes the table metrics down with it and
+ * the offscreen measuring container stops matching the page. Written this way
+ * the substring never appears.
+ */
+.markdown-body:not(.doc) .page-break {
+  height: 0;
+  margin: 1.6em 0;
+  border: 0;
+  border-top: 1px dashed var(--border);
+}

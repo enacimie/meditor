@@ -447,3 +447,20 @@
 .markdown-body.doc .markdown-toc .toc-level-3 {
   padding-left: 3em;
 }
+
+/*
+ * A page break the author asked for.
+ *
+ * paged.js reads `break-after` itself — it has a hook for the property, which
+ * is why this works at all in a stylesheet its own parser handles. Simple
+ * selector, as everything in this file has to be: `:is()` here produces zero
+ * pages and says nothing about why.
+ *
+ * The element has no height of its own, so a break at the very end of a
+ * document costs an empty page rather than a stray blank line.
+ */
+.markdown-body.doc .page-break {
+  display: block;
+  height: 0;
+  break-after: page;
+}
