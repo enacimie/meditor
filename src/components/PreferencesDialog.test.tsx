@@ -19,6 +19,8 @@ import {
   MIN_EDITOR_FONT_SIZE,
   DEFAULT_PAPER_SIZE,
   DEFAULT_AUTOSAVE,
+  DEFAULT_PAGE_MARGIN_MM,
+  PAGE_MARGINS_MM,
 } from "../editorPreferences";
 import { translations } from "../i18n/translations";
 
@@ -37,6 +39,7 @@ const value = {
   typewriterMode: DEFAULT_TYPEWRITER_MODE,
   paperSize: DEFAULT_PAPER_SIZE,
   autosave: DEFAULT_AUTOSAVE,
+  pageMarginMm: DEFAULT_PAGE_MARGIN_MM,
 };
 
 beforeEach(() => {
@@ -94,6 +97,24 @@ describe("PreferencesDialog", () => {
     expect(checkbox.checked).toBe(false);
     fireEvent.click(checkbox);
     expect(onChange).toHaveBeenCalledWith({ ...value, landscapeTables: true });
+  });
+
+  it("offers the page margins in millimetres and reports the choice", () => {
+    const onChange = vi.fn();
+    render(<PreferencesDialog t={t} value={value} onChange={onChange} onClose={vi.fn()} />);
+    const select = document.getElementById("prefs-margin") as HTMLSelectElement;
+    expect(select).toBeTruthy();
+    expect([...select.options].map((o) => o.value)).toEqual(
+      PAGE_MARGINS_MM.map((mm) => String(mm)),
+    );
+    // The unit is on every row, not once in the hint: a bare number beside a
+    // paper size reads as a point size to about half the people who see it.
+    expect([...select.options].every((o) => /\bmm\b/.test(o.textContent ?? ""))).toBe(true);
+
+    fireEvent.change(select, { target: { value: "15" } });
+    // A number, not the string the DOM hands back: a margin stored as "15"
+    // would fail its own normalizer on the next launch and revert to 25.
+    expect(onChange).toHaveBeenCalledWith({ ...value, pageMarginMm: 15 });
   });
 
   it("previews the current choice", () => {
