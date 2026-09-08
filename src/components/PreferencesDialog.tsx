@@ -6,6 +6,8 @@ import {
   MIN_EDITOR_FONT_SIZE,
   type EditorPreferences,
   normalizePaperSize,
+  normalizePageMargin,
+  PAGE_MARGINS_MM,
 } from "../editorPreferences";
 import "./PreferencesDialog.css";
 
@@ -201,6 +203,36 @@ const PreferencesDialog = memo(function PreferencesDialog({
               </select>
               <span className="prefs-hint" id="prefs-paper-hint">
                 {t("prefs.paperSizeHint")}
+              </span>
+            </div>
+          </div>
+
+          <div className="prefs-row">
+            <label className="prefs-label" htmlFor="prefs-margin">
+              {t("prefs.pageMargin")}
+            </label>
+            <div className="prefs-control">
+              <select
+                id="prefs-margin"
+                value={String(value.pageMarginMm)}
+                aria-describedby="prefs-margin-hint"
+                onChange={(e) =>
+                  onChange({ ...value, pageMarginMm: normalizePageMargin(Number(e.target.value)) })
+                }
+              >
+                {/*
+                  Millimetres, and said so on every row rather than once in
+                  the hint: a bare "25" in a list beside a paper size reads as
+                  a point size to about half the people who see it.
+                */}
+                {PAGE_MARGINS_MM.map((mm) => (
+                  <option key={mm} value={String(mm)}>
+                    {t("prefs.pageMarginValue", mm)}
+                  </option>
+                ))}
+              </select>
+              <span className="prefs-hint" id="prefs-margin-hint">
+                {t("prefs.pageMarginHint")}
               </span>
             </div>
           </div>

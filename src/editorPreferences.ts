@@ -25,6 +25,22 @@ export const DEFAULT_LANDSCAPE_TABLES = false;
 export const DEFAULT_PAPER_SIZE: PaperId = "a4";
 
 /**
+ * The margins the Document view offers, in millimetres.
+ *
+ * A short list rather than a free number, and the range has a floor for a
+ * reason: the folio and the running title are `@page` margin boxes, so they
+ * live in this white space. Squeeze it much below 15 mm and there is nowhere
+ * for them to sit; at zero they have no box at all.
+ *
+ * 25 mm is where it has always been, and is what LaTeX's `geometry` package
+ * and every word processor offer as their normal.
+ */
+export const PAGE_MARGINS_MM = [15, 20, 25, 30, 35] as const;
+
+/** The margin the project has always laid out with. */
+export const DEFAULT_PAGE_MARGIN_MM = 25;
+
+/**
  * Writing aids, both off unless asked for.
  *
  * Dimming the page and moving it under the caret are strong opinions about
@@ -53,6 +69,15 @@ export type EditorPreferences = {
    * changes between people.
    */
   paperSize: PaperId;
+  /**
+   * The white space around the text, the same on all four sides.
+   *
+   * One number rather than four. A per-side margin is a bigger idea than this
+   * needs, and the one thing people actually reach for it for — binding room
+   * down one edge — wants a mirrored inner/outer margin, which is a different
+   * feature again and not this one wearing a disguise.
+   */
+  pageMarginMm: number;
 };
 
 /**
@@ -120,6 +145,13 @@ export function normalizeSpellcheck(value: unknown): boolean {
 /** Read a stored boolean, falling back to the default. */
 export function normalizeLandscapeTables(value: unknown): boolean {
   return typeof value === "boolean" ? value : DEFAULT_LANDSCAPE_TABLES;
+}
+
+/** A stored margin, or the usual one for anything not on the list. */
+export function normalizePageMargin(value: unknown): number {
+  return typeof value === "number" && (PAGE_MARGINS_MM as readonly number[]).includes(value)
+    ? value
+    : DEFAULT_PAGE_MARGIN_MM;
 }
 
 /** A stored paper id, or A4 for anything this build does not know. */

@@ -60,7 +60,9 @@ import {
   DEFAULT_EDITOR_FONT_SIZE,
   type EditorPreferences,
   DEFAULT_PAPER_SIZE,
+  DEFAULT_PAGE_MARGIN_MM,
   normalizePaperSize,
+  normalizePageMargin,
 } from "./editorPreferences";
 import { getTypst } from "./typstEngine";
 import { compileLatexToPdf } from "./latexEngine";
@@ -95,6 +97,7 @@ const DEFAULT_PREFERENCES: Preferences = {
   focusMode: DEFAULT_FOCUS_MODE,
   typewriterMode: DEFAULT_TYPEWRITER_MODE,
   paperSize: DEFAULT_PAPER_SIZE,
+  pageMarginMm: DEFAULT_PAGE_MARGIN_MM,
 };
 /**
  * Whether a first run should open in the paginated A4 view.
@@ -148,6 +151,7 @@ function loadPreferences(): Preferences {
       focusMode: normalizeFocusMode(stored.focusMode),
       typewriterMode: normalizeTypewriterMode(stored.typewriterMode),
       paperSize: normalizePaperSize(stored.paperSize),
+      pageMarginMm: normalizePageMargin(stored.pageMarginMm),
     };
   } catch {
     return DEFAULT_PREFERENCES;
@@ -315,6 +319,7 @@ export default function App() {
     focusMode: INITIAL_PREFERENCES.focusMode,
     typewriterMode: INITIAL_PREFERENCES.typewriterMode,
     paperSize: INITIAL_PREFERENCES.paperSize,
+    pageMarginMm: INITIAL_PREFERENCES.pageMarginMm,
   });
   /*
    * Where the caret is. The line has always been tracked, for the outline to
@@ -423,8 +428,12 @@ export default function App() {
    * stays identical through a paragraph.
    */
   const pageMetrics = useMemo(
-    () => metricsFor(paperByName(declaredPaper) ?? paperById(editorPrefs.paperSize)),
-    [declaredPaper, editorPrefs.paperSize],
+    () =>
+      metricsFor(
+        paperByName(declaredPaper) ?? paperById(editorPrefs.paperSize),
+        editorPrefs.pageMarginMm,
+      ),
+    [declaredPaper, editorPrefs.paperSize, editorPrefs.pageMarginMm],
   );
 
   // Switching away from the deck (another tab, or the front-matter removed)
