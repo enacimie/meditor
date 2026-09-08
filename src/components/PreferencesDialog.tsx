@@ -206,6 +206,24 @@ const PreferencesDialog = memo(function PreferencesDialog({
           </div>
 
           <div className="prefs-row">
+            <label className="prefs-label" htmlFor="prefs-autosave">
+              {t("prefs.autosave")}
+            </label>
+            <div className="prefs-control">
+              <input
+                id="prefs-autosave"
+                type="checkbox"
+                checked={value.autosave}
+                aria-describedby="prefs-autosave-hint"
+                onChange={(e) => onChange({ ...value, autosave: e.target.checked })}
+              />
+              <span className="prefs-hint" id="prefs-autosave-hint">
+                {t("prefs.autosaveHint")}
+              </span>
+            </div>
+          </div>
+
+          <div className="prefs-row">
             <label className="prefs-label" htmlFor="prefs-landscape">
               {t("prefs.landscapeTables")}
             </label>
