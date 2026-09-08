@@ -336,7 +336,11 @@ export async function renderContent(
 ): Promise<void> {
   const renderMarkdown = await getMarkdownRenderer();
   if (isStale()) return;
-  el.innerHTML = renderMarkdown(value);
+  // The renderer has no locale, so the one thing in the output that is prose
+  // rather than the author's own words is handed to it: the figure label.
+  el.innerHTML = renderMarkdown(value, {
+    figureLabel: (n: number) => t("preview.figureLabel", n),
+  });
 
   // Awaited here, before this function returns, because everything that
   // measures this container runs after it: paged.js decides where a page ends
