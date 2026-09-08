@@ -105,6 +105,7 @@ export const en = {
   "editor.undo": "Undo",
   "editor.redo": "Redo",
   // Preview
+  "preview.figureLabel": (n: number) => `Figure ${n}.`,
   "preview.unavailable": "Preview unavailable",
   "preview.retry": "Retry",
   "preview.renderError": "Could not generate preview:",

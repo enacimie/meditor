@@ -167,6 +167,88 @@ function runningHead(md: MarkdownIt) {
   });
 }
 
+/**
+ * An image alone in its paragraph is a figure.
+ *
+ * The rule Pandoc uses, and the one that matches how people already write:
+ * an image on a line of its own is being shown, not mentioned, and it wants a
+ * caption under it and a number to be referred to by.
+ *
+ * The caption is the image's `title`, the quoted part of
+ * `![alt](src "the caption")`, and **only** that. An image with alt text and
+ * no title stays an ordinary image.
+ *
+ * Pandoc promotes any lone image, taking the alt as the caption. That would be
+ * the wrong default here. Alt text is an accessibility description and people
+ * write it for every image, so a page of screenshots would silently acquire
+ * "Figure 1." through "Figure 9." — a change to how documents that already
+ * exist come out, made on their behalf. A `title` is nobody's habit: it is
+ * written when someone means to caption something, which is the same act as
+ * `\caption{}` in the LaTeX this view is modelled on.
+ *
+ * The caption is rendered as plain text, escaped. Markdown inside it would be
+ * a second inline pass over content that has already been parsed once, and the
+ * captions this is for are a sentence.
+ *
+ * Numbered here, in JavaScript, and deliberately not with a CSS counter.
+ * paged.js emulates counters by rewriting `counter-increment` into
+ * `data-counter-*` attributes per chunk while it paginates, so the Document
+ * view and the Web view would be running two different implementations of the
+ * same numbering — and could disagree about it. One number, decided once,
+ * appears identically in both and in the HTML export.
+ */
+function figures(md: MarkdownIt) {
+  md.core.ruler.push("figures", (state) => {
+    let count = 0;
+    for (let i = 0; i + 2 < state.tokens.length; i++) {
+      const open = state.tokens[i];
+      const inline = state.tokens[i + 1];
+      const close = state.tokens[i + 2];
+      if (
+        open.type !== "paragraph_open" ||
+        inline.type !== "inline" ||
+        close.type !== "paragraph_close"
+      ) {
+        continue;
+      }
+      // Whitespace between the image and the end of the line is not company.
+      const children = (inline.children ?? []).filter(
+        (child) => !(child.type === "text" && child.content.trim() === ""),
+      );
+      if (children.length !== 1 || children[0].type !== "image") continue;
+
+      const image = children[0];
+      const caption = (image.attrGet("title") ?? "").trim();
+      if (!caption) continue;
+
+      // The tag changes and the type does not, which is the smallest change
+      // that produces a `<figure>`: markdown-it renders an unknown block token
+      // from its tag anyway. It is not what keeps the `data-line` — that rule
+      // marks any token whose type ends in `_open`, so a renamed type would
+      // keep it too. Leaving the type alone is simply not asking every other
+      // rule that looks for paragraphs to learn a new name.
+      open.tag = "figure";
+      close.tag = "figure";
+      open.attrJoin("class", "figure");
+
+      const captionToken = new state.Token("figure_caption", "figcaption", 0);
+      captionToken.content = caption;
+      captionToken.meta = { number: ++count };
+      (inline.children ?? []).push(captionToken);
+    }
+  });
+
+  md.renderer.rules.figure_caption = (tokens, idx, _options, env) => {
+    const number = (tokens[idx].meta as { number: number }).number;
+    const label = (env as { figureLabel?: (n: number) => string })?.figureLabel;
+    const text = label ? label(number) : `Figure ${number}.`;
+    return (
+      `<figcaption><span class="figure-label">${escapeHtml(text)}</span> ` +
+      `${escapeHtml(tokens[idx].content)}</figcaption>`
+    );
+  };
+}
+
 function addLineNumbers(md: MarkdownIt) {
   md.core.ruler.push("add_line_numbers", (state) => {
     for (const token of state.tokens) {
@@ -505,6 +587,7 @@ export const md = new MarkdownIt({
   .use(pageBreaks)
   .use(runningHead)
   .use(tocPlaceholder)
+  .use(figures)
   .use(addLineNumbers);
 
 const highlightFence = md.renderer.rules.fence;
@@ -522,6 +605,19 @@ md.renderer.rules.fence = (tokens, idx, options, env, self) => {
   return html;
 };
 
-export function renderMarkdown(src: string): string {
-  return md.render(src);
+/** What the caller can tell the renderer about the document it is rendering. */
+export type RenderOptions = {
+  /**
+   * How to label figure `n`, in the interface language.
+   *
+   * The renderer has no locale of its own, and a hard-coded "Figure" in a
+   * Spanish document would be worse than asking. Absent, the label is the
+   * English one — which is what the unit tests and any caller that does not
+   * care will see.
+   */
+  figureLabel?: (n: number) => string;
+};
+
+export function renderMarkdown(src: string, options: RenderOptions = {}): string {
+  return md.render(src, { ...options });
 }

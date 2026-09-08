@@ -468,3 +468,87 @@ describe("who feeds the running head", () => {
     expect(html).toMatch(/<h1[^>]*class="[^"]*running-head/);
   });
 });
+
+describe("an image alone in its paragraph is a figure", () => {
+  it("wraps it, captions it from the title, and numbers it", () => {
+    const html = renderMarkdown('![Un gato](gato.png "Un gato al sol")');
+    expect(html).toMatch(/<figure[^>]*class="[^"]*figure"/);
+    expect(html).toContain("<figcaption>");
+    expect(html).toContain('<span class="figure-label">Figure 1.</span> Un gato al sol');
+  });
+
+  it("leaves an image with alt text but no title as an image", () => {
+    // Pandoc promotes this one and meditor deliberately does not. Alt text is
+    // an accessibility description that people write for every image; taking
+    // it as a caption would number every screenshot in every document that
+    // already exists.
+    const html = renderMarkdown("![Un gato al sol](gato.png)");
+    expect(html).not.toContain("<figure");
+    expect(html).toContain('alt="Un gato al sol"');
+  });
+
+  it("numbers them in the order they appear", () => {
+    const html = renderMarkdown(
+      '![a](a.png "Uno")\n\n![b](b.png "Dos")\n\n![c](c.png "Tres")\n',
+    );
+    const labels = [...html.matchAll(/class="figure-label">([^<]*)</g)].map((m) => m[1]);
+    expect(labels).toEqual(["Figure 1.", "Figure 2.", "Figure 3."]);
+  });
+
+  it("takes the label from the caller, so it reads in the document's language", () => {
+    const html = renderMarkdown('![Un gato](gato.png "Al sol")', {
+      figureLabel: (n) => `Figura ${n}.`,
+    });
+    expect(html).toContain("Figura 1.");
+    expect(html).not.toContain("Figure 1.");
+  });
+
+  it("leaves an image with company in the paragraph alone", () => {
+    // An image mentioned mid-sentence is not being presented; it is being
+    // used. Numbering it would number the sentence.
+    const html = renderMarkdown('Mira ![este gato](gato.png "Al sol") de cerca.');
+    expect(html).not.toContain("<figure");
+    expect(html).toContain("<img");
+  });
+
+  it("leaves it alone when the image opens the paragraph and text follows", () => {
+    // The case that separates "the only child" from "the first child". With
+    // the looser check this reads as a figure and swallows the sentence after
+    // it into the caption's paragraph.
+    const html = renderMarkdown('![Un gato](gato.png "Al sol") y a su lado la ventana.');
+    expect(html).not.toContain("<figure");
+    expect(html).toContain("y a su lado la ventana");
+  });
+
+  it("leaves an image with nothing to say alone", () => {
+    // No title and no alt: a label over nothing.
+    const html = renderMarkdown("![](gato.png)");
+    expect(html).not.toContain("<figure");
+    expect(html).not.toContain("figure-label");
+  });
+
+  it("does not number an image it did not turn into a figure", () => {
+    // The uncaptioned one is skipped entirely, so the captioned one below it
+    // is still Figure 1 — the count follows the figures, not the images.
+    const html = renderMarkdown('![sin pie](sin-pie.png)\n\n![alt](otro.png "Con pie")\n');
+    const labels = [...html.matchAll(/class="figure-label">([^<]*)</g)].map((m) => m[1]);
+    expect(labels).toEqual(["Figure 1."]);
+  });
+
+  it("escapes the caption, which comes from a file like any other text", () => {
+    const html = renderMarkdown('![alt](x.png "<script>alert(1)</script>")');
+    expect(html).not.toContain("<script>");
+    expect(html).toContain("&lt;script&gt;");
+  });
+
+  it("keeps the line, so a double-click on the figure finds its source", () => {
+    const html = renderMarkdown('# Título\n\n![Un gato](gato.png "Al sol")\n');
+    expect(html).toMatch(/<figure[^>]*data-line="2"/);
+  });
+
+  it("keeps the image itself, alt and all", () => {
+    const html = renderMarkdown('![Un gato](gato.png "Al sol")');
+    expect(html).toContain('src="gato.png"');
+    expect(html).toContain('alt="Un gato"');
+  });
+});

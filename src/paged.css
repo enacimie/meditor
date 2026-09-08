@@ -500,3 +500,31 @@
   height: 0;
   break-after: page;
 }
+
+/*
+ * A figure: the image, and under it the caption that names it.
+ *
+ * `break-inside: avoid` for the reason headings have it — a caption on the
+ * page after its image is worse than a gap. A figure taller than the page
+ * breaks anyway; the browser has nowhere else to put it.
+ */
+.markdown-body.doc figure {
+  margin: 1.4em 0;
+  text-align: center;
+  break-inside: avoid;
+}
+
+.markdown-body.doc figure img {
+  max-width: 100%;
+}
+
+.markdown-body.doc figcaption {
+  margin-top: 0.5em;
+  font-size: 9.5pt;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.markdown-body.doc figcaption .figure-label {
+  font-weight: bold;
+}

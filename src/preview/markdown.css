@@ -321,3 +321,26 @@
   border: 0;
   border-top: 1px dashed var(--border);
 }
+
+/*
+ * The same figure on screen, where the type is the interface's rather than the
+ * paper's. No `.doc` in the selector: print.spec isolates paged.js by switching
+ * off every stylesheet whose text contains that pair, and this file styles the
+ * container the table measurements come from.
+ */
+.markdown-body figure {
+  margin: 1.4em 0;
+  text-align: center;
+}
+
+.markdown-body figcaption {
+  margin-top: 0.5em;
+  font-size: 0.9em;
+  line-height: 1.4;
+  opacity: 0.85;
+}
+
+.markdown-body figcaption .figure-label {
+  font-weight: 600;
+  opacity: 1;
+}
