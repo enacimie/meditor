@@ -344,3 +344,13 @@
   font-weight: 600;
   opacity: 1;
 }
+
+/* The heading number on screen, where there are no pages but the same rules. */
+.markdown-body .heading-number {
+  font-weight: inherit;
+}
+
+.markdown-body .markdown-toc .toc-number {
+  display: inline-block;
+  min-width: 2.4em;
+}
