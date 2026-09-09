@@ -21,6 +21,16 @@ const h = vi.hoisted(() => ({
   disk: "v1",
   /** The document the session restores: with a file, or one never saved. */
   handle: "h-1" as string | null,
+  /**
+   * A second document, already dirty, behind the first.
+   *
+   * Off for every test that is about one document, so their write counts stay
+   * about the thing they name.
+   */
+  secondDoc: false,
+  /** The second document's file, so the watcher finds it in agreement. */
+  stat2: { modifiedMs: 1000, size: 2 },
+  disk2: "w1",
 }));
 
 vi.mock("@tauri-apps/api/core", () => ({
@@ -55,25 +65,47 @@ function resetInvoke() {
               name: "notes.md",
               path: h.handle ? "/tmp/notes.md" : null,
               content: "v1",
-              dirty: false,
+              dirty: h.secondDoc,
               handle: h.handle,
               kind: "markdown",
             },
+            ...(h.secondDoc
+              ? [
+                  {
+                    id: "doc-2",
+                    name: "other.md",
+                    path: "/tmp/other.md",
+                    content: "w1",
+                    dirty: true,
+                    handle: "h-2",
+                    kind: "markdown",
+                  },
+                ]
+              : []),
           ],
           activeId: "doc-1",
           split: 50,
         };
       case "document_stat":
-        return h.stat;
+        return args?.handle === "h-2" ? h.stat2 : h.stat;
       case "read_document":
-        return h.disk;
+        // The second document has a file of its own. Answering the first
+        // one's bytes for both would make the watcher find a difference it
+        // has to ask about, and a conflict dialog stops autosave dead —
+        // which is a fixture raising the very guard the test is not about.
+        return args?.handle === "h-2" ? h.disk2 : h.disk;
       case "save_document":
         h.writes.push({
           handle: String(args?.handle ?? ""),
           content: String(args?.content ?? ""),
         });
-        h.disk = String(args?.content ?? "");
-        h.stat = { modifiedMs: h.stat.modifiedMs + 500, size: h.disk.length };
+        if (args?.handle === "h-2") {
+          h.disk2 = String(args?.content ?? "");
+          h.stat2 = { modifiedMs: h.stat2.modifiedMs + 500, size: h.disk2.length };
+        } else {
+          h.disk = String(args?.content ?? "");
+          h.stat = { modifiedMs: h.stat.modifiedMs + 500, size: h.disk.length };
+        }
         return null;
       default:
         return null;
@@ -214,6 +246,9 @@ beforeEach(() => {
   h.stat = { modifiedMs: 1000, size: 2 };
   h.disk = "v1";
   h.handle = "h-1";
+  h.secondDoc = false;
+  h.stat2 = { modifiedMs: 1000, size: 2 };
+  h.disk2 = "w1";
   resetInvoke();
 });
 
@@ -385,6 +420,42 @@ describe("autosave", () => {
       document.querySelector(".conflict-overlay"),
       "the file changed because autosave wrote it; that is not a conflict",
     ).toBeNull();
+  });
+
+  it("keeps saving the other documents when one of them cannot be written", async () => {
+    /*
+     * The failure that costs somebody their work quietly.
+     *
+     * The pass used to stop at the first document it could not write. The
+     * documents are walked in tab order and a failed one stays dirty and
+     * stays first, so every following pass died in the same place and every
+     * tab behind it went unsaved — for as long as that one file was
+     * read-only, with a notice that did not even say which file it meant.
+     */
+    h.secondDoc = true;
+    await mountApp();
+    await enableAutosave();
+
+    const inner = h.invoke.getMockImplementation()!;
+    h.invoke.mockImplementation(async (cmd: string, args?: Record<string, unknown>) => {
+      if (cmd === "save_document" && args?.handle === "h-1") throw new Error("read-only");
+      return inner(cmd, args);
+    });
+
+    // Both are dirty from the restored session; nudge the clock rather than
+    // typing, so the failure is the only thing under test.
+    type(" edited");
+    await settle();
+
+    expect(
+      h.writes.map((w) => w.handle),
+      "the second document is behind the unwritable one, not hostage to it",
+    ).toContain("h-2");
+
+    const notice = document.querySelector(".app-notice.error")?.textContent ?? "";
+    expect(notice, "the writer cannot act on a message with no file in it").toContain(
+      "notes.md",
+    );
   });
 
   it("takes its failure notice down once a write works again", async () => {

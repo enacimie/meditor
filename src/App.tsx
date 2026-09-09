@@ -722,6 +722,7 @@ export default function App() {
   async function autosaveDirtyDocuments(): Promise<void> {
     if (busyOperationRef.current !== null || conflictBusyRef.current) return;
     let wrote = false;
+    const unwritable: string[] = [];
     for (const doc of docsRef.current) {
       if (!doc.dirty || !doc.handle) continue;
       const { id, handle } = doc;
@@ -739,24 +740,37 @@ export default function App() {
         );
       } catch (error) {
         /*
-         * Once per failure, and it stays up. A file that cannot be written —
-         * read-only, unplugged, gone — is worth knowing about, because the
-         * writer is relying on this now and nothing else is going to tell
-         * them; but a modal every two seconds would be unusable, and so would
-         * a notice per document, which is why the pass stops here.
+         * Remembered, and the pass carries on to the next document.
          *
-         * A notice with no timer needs somebody to take it down, and success
-         * is silent, so the next write that works does it (below). Left to
-         * itself it would still be claiming the file cannot be written long
-         * after the drive came back.
+         * It used to return here, and that was worse than it looks: the
+         * documents are walked in tab order, a file that cannot be written
+         * stays dirty and stays first, so the next pass died in the same
+         * place — and every tab behind it went unsaved for as long as that
+         * one file was read-only, with nothing on screen to say so.
          */
         console.error("autosave failed:", error);
-        autosaveFailedRef.current = true;
-        showNotice(operationNoticeError(t, "save"), "error", 0);
-        return;
+        unwritable.push(doc.name);
       }
     }
-    if (wrote && autosaveFailedRef.current) {
+
+    /*
+     * Said once for the whole pass, with a name, and it stays up.
+     *
+     * A file that cannot be written — read-only, unplugged, gone — is worth
+     * knowing about, because the writer is relying on this now and nothing
+     * else is going to tell them. A modal every two seconds would be
+     * unusable, and so would a notice per document; naming the first and
+     * counting the rest fits the one line the notice has.
+     *
+     * A notice with no timer needs somebody to take it down, and success is
+     * silent, so the next pass that writes everything it tried does it. Left
+     * to itself this would still be claiming a file cannot be written long
+     * after the drive came back.
+     */
+    if (unwritable.length > 0) {
+      autosaveFailedRef.current = true;
+      showNotice(t("autosave.failed", unwritable[0], unwritable.length - 1), "error", 0);
+    } else if (wrote && autosaveFailedRef.current) {
       autosaveFailedRef.current = false;
       dismissNotice();
     }

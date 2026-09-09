@@ -166,6 +166,10 @@ export const en = {
   "prefs.focusModeHint": "Dim everything but the paragraph you are writing",
   "prefs.typewriterMode": "Typewriter mode",
   "prefs.typewriterModeHint": "Keep the line you are writing in the middle of the pane",
+  "autosave.failed": (name: string, others: number) =>
+    others > 0
+      ? `Could not save ${name}, or ${others} other document${others === 1 ? "" : "s"}`
+      : `Could not save ${name}`,
   "prefs.autosave": "Save while I write",
   "prefs.autosaveHint": "Write each document to its file a couple of seconds after you stop typing. A document that has never been saved still needs a name first.",
   "prefs.paperSize": "Paper size",
