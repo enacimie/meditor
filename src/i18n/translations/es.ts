@@ -135,6 +135,10 @@ export const es = {
   "prefs.focusModeHint": "Atenúa todo menos el párrafo que estás escribiendo",
   "prefs.typewriterMode": "Modo máquina de escribir",
   "prefs.typewriterModeHint": "Mantiene la línea que escribes en el centro del panel",
+  "autosave.failed": (name: string, others: number) =>
+    others > 0
+      ? `No se pudo guardar ${name}, ni ${others} documento${others === 1 ? "" : "s"} más`
+      : `No se pudo guardar ${name}`,
   "prefs.autosave": "Guardar mientras escribo",
   "prefs.autosaveHint": "Escribe cada documento en su fichero un par de segundos después de dejar de teclear. Un documento que nunca se ha guardado necesita un nombre antes.",
   "prefs.paperSize": "Tamaño del papel",

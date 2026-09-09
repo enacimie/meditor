@@ -99,6 +99,7 @@ describe("translations", () => {
     "prefs.focusModeHint",
     "prefs.typewriterMode",
     "prefs.typewriterModeHint",
+    "autosave.failed",
     "prefs.autosave",
     "prefs.autosaveHint",
     "prefs.paperSize",
