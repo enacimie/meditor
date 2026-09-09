@@ -8,7 +8,7 @@
  * that has no file and would be saved somewhere they never chose.
  */
 import { describe, it, expect, vi, beforeEach, afterEach, beforeAll } from "vitest";
-import { render, cleanup, act, fireEvent } from "@testing-library/react";
+import { render, screen, cleanup, act, fireEvent } from "@testing-library/react";
 import { EditorView } from "@codemirror/view";
 import { I18nProvider } from "./i18n/I18nProvider";
 import App from "./App";
@@ -312,20 +312,29 @@ describe("autosave", () => {
     expect(h.writes, "a clean document has nothing to save").toHaveLength(1);
   });
 
-  it("waits for an operation the writer started rather than cutting in", async () => {
+  it("waits for an operation the writer started, and comes back after it", async () => {
     /*
      * A file dialog is open and the writer is standing at it. Autosave takes
      * the same lock every other file operation takes, and waits.
      *
-     * Held open with a picker that never answers, which is what an open dialog
-     * is from the application's side.
+     * Both halves in one test on purpose. "Waits" and "never comes back" look
+     * identical from the first assertion alone, and this test used to make
+     * only that one: it held a picker open forever and checked nothing was
+     * written. It passed for a year of the second meaning — a skipped pass
+     * changes no document, so nothing rearmed the timer, and the edits made
+     * while the dialog was up were never written at all.
      */
+    let answerPicker: (files: unknown[]) => void = () => {};
     await mountApp();
     await enableAutosave();
 
     const inner = h.invoke.getMockImplementation()!;
     h.invoke.mockImplementation(async (cmd: string, args?: Record<string, unknown>) => {
-      if (cmd === "open_files") return new Promise(() => {});
+      if (cmd === "open_files") {
+        return new Promise((resolve) => {
+          answerPicker = resolve as (files: unknown[]) => void;
+        });
+      }
       return inner(cmd, args);
     });
 
@@ -337,6 +346,19 @@ describe("autosave", () => {
     await settle();
     await settle();
     expect(h.writes, "the writer is in a dialog; this is not the moment").toEqual([]);
+
+    // The writer cancels: the dialog closes with nothing chosen, which is the
+    // ordinary ending and the one that changes no document.
+    await act(async () => {
+      answerPicker([]);
+      await vi.advanceTimersByTimeAsync(50);
+    });
+    await settle();
+
+    expect(
+      h.writes.map((w) => w.content),
+      "the moment has passed, and the edit is still unsaved",
+    ).toEqual(["v1 typed while the picker is up"]);
   });
 
   it("writes nothing while a conflict is waiting to be answered", async () => {
@@ -383,6 +405,25 @@ describe("autosave", () => {
       h.writes,
       "a document whose fate the writer has not decided must not be written",
     ).toEqual([]);
+
+    /*
+     * And once they have decided, it is written.
+     *
+     * "Keep mine" is the answer that leaves work at risk: it defends the
+     * buffer and changes no document, so nothing rearmed the autosave timer
+     * and the very version the writer had just chosen to keep was the one
+     * that never reached the disk.
+     */
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Keep mine" }));
+      await vi.advanceTimersByTimeAsync(300);
+    });
+    await settle();
+
+    expect(
+      h.writes.map((w) => w.content),
+      "the version the writer chose to keep is the one to save",
+    ).toEqual(["v1 mine more"]);
   });
 
   it("does not raise a conflict over its own writing", async () => {
