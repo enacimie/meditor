@@ -65,6 +65,8 @@ function resetInvoke() {
         };
       case "recent_files":
         return h.entries;
+      case "save_document":
+        return null;
       case "open_recent":
         if (h.open === "nothing") return null;
         throw new Error(OS_ERROR);
@@ -118,6 +120,16 @@ beforeEach(() => {
   localStorage.clear();
   h.entries = [{ name: "notes.md", path: "/tmp/notes.md" }];
   h.open = "throws";
+  /*
+   * Cleared, not just re-implemented.
+   *
+   * `vi.restoreAllMocks` undoes spies and leaves a `vi.fn()` alone, and
+   * `resetInvoke` only reinstalls the implementation — so the call log
+   * accumulates across the file. The tests below count calls, and a count
+   * carried over from the test before is a test that passes for the wrong
+   * reason.
+   */
+  h.invoke.mockClear();
   resetInvoke();
 });
 
@@ -181,5 +193,54 @@ describe("reopening a recent document", () => {
     fireEvent.click(row);
 
     await waitFor(() => expect(noticeText()).toContain("notes.md"));
+  });
+});
+
+describe("the list after a save", () => {
+  /** How many times the app has asked the backend for the list. */
+  const reads = () => h.invoke.mock.calls.filter(([cmd]) => cmd === "recent_files").length;
+
+  async function mountAndSettle() {
+    mountApp();
+    await screen.findByRole("button", { name: /more options/i });
+    await waitFor(() => expect(reads()).toBeGreaterThan(0));
+  }
+
+  it("re-reads it when the save moved the document to the front", async () => {
+    /*
+     * Saving promotes the document in the backend's list, and the menu is
+     * clicked by *position*. A stale copy therefore does not merely look out
+     * of date: click the row labelled `notes.md` after saving `open.md`, and
+     * the index that travels is the one `open.md` now occupies.
+     */
+    h.entries = [
+      { name: "notes.md", path: "/tmp/notes.md" },
+      { name: "open.md", path: "/tmp/open.md" },
+    ];
+    await mountAndSettle();
+    const before = reads();
+
+    fireEvent.keyDown(window, { key: "s", ctrlKey: true });
+
+    await waitFor(() =>
+      expect(reads(), "the menu is about to disagree with the backend").toBeGreaterThan(before),
+    );
+  });
+
+  it("leaves it alone when the document is already at the front", async () => {
+    // `remember` returns early in that case and rewrites nothing, so a read
+    // here would be a round trip for no change — every couple of seconds,
+    // once autosave is on.
+    h.entries = [
+      { name: "open.md", path: "/tmp/open.md" },
+      { name: "notes.md", path: "/tmp/notes.md" },
+    ];
+    await mountAndSettle();
+    const before = reads();
+
+    fireEvent.keyDown(window, { key: "s", ctrlKey: true });
+    await waitFor(() => expect(document.querySelector(".app-notice")).not.toBeNull());
+
+    expect(reads(), "nothing moved, so there was nothing to re-read").toBe(before);
   });
 });
