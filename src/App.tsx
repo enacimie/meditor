@@ -1477,10 +1477,23 @@ export default function App() {
   async function printDocument() {
     try {
       // A Marp deck is a stack of slides, each already its own page; the
-      // paginated view draws A4 pages with their own margins. Either way the
+      // paginated view draws pages with their own margins. Either way the
       // printer must not inset them a second time.
       const paged = docView || (!!active && isMarpDocument(active.content));
-      await backend.printDocument(lang, paged, pageMetrics.paper.id);
+      /*
+       * The paper only for the documents this application lays out.
+       *
+       * `pageMetrics` describes the Document view's sheet, and a Typst or
+       * LaTeX document is not on it: those compose their own page, from their
+       * own `#set page` or `geometry`, and the preview shows what the engine
+       * produced. Handing the printer a paper the document never chose is how
+       * a Typst file written for A4 came to be printed on Letter — 17 mm
+       * shorter, so every page spilled onto a second. On Linux, at least;
+       * Windows shows its own dialog and ignores what it is told here, which
+       * is why this went unnoticed.
+       */
+      const paper = (active?.kind ?? "markdown") === "markdown" ? pageMetrics.paper.id : undefined;
+      await backend.printDocument(lang, paged, paper);
     } catch (e) {
       await showNativeAlert(String(e), lang);
     }
