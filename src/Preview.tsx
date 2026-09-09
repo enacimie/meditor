@@ -558,7 +558,12 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
       <div
         ref={sourceRef}
         className="markdown-body doc preview-source"
-        style={{ "--doc-sheet-width": metrics.widthCss } as React.CSSProperties}
+        style={
+          {
+            "--doc-sheet-width": metrics.widthCss,
+            "--doc-sheet-margin": metrics.marginCss,
+          } as React.CSSProperties
+        }
       />
       <div
         ref={webRef}

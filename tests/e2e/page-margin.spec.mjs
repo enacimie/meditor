@@ -73,6 +73,22 @@ async function measurePages(label) {
       // that says the margin was applied before the text was laid out: a
       // frame that moves after the fact insets the same words.
       firstPageChars: area.textContent.replace(/\\s+/g, ' ').trim().length,
+      /*
+       * And the offscreen box the layout passes measure in.
+       *
+       * \`keepHeadingsWithContent\` reads block heights out of it and compares
+       * them against a share of the page. A height depends on the width the
+       * text wraps in, so that box has to be the text column: measured in the
+       * whole sheet, every block came out shorter than it would really be,
+       * and the error grew with the margin.
+       */
+      measuringWidth: (() => {
+        const source = document.querySelector('.preview-source');
+        if (!source) return null;
+        const box = source.getBoundingClientRect();
+        const style = getComputedStyle(source);
+        return box.width - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+      })(),
     };
   })()`);
 }
@@ -120,6 +136,7 @@ try {
   closeTo(normal.top, 25, "the default top margin");
   closeTo(normal.width, A4_WIDTH_MM - 50, "the default text box");
   closeTo(normal.height, A4_HEIGHT_MM - 50, "the default text box");
+  closeTo(normal.measuringWidth, A4_WIDTH_MM - 50, "the default measuring box");
 
   // ── A wider margin: less room, so more pages ──────────────────────
   const wide = await useMargin(35);
@@ -127,6 +144,9 @@ try {
   closeTo(wide.top, 35, "the wide top margin");
   closeTo(wide.width, A4_WIDTH_MM - 70, "the wide text box");
   closeTo(wide.height, A4_HEIGHT_MM - 70, "the wide text box");
+  // The one that used to be wrong, and wrong by more the wider the margin:
+  // the box the layout passes measure in has to be the column, not the sheet.
+  closeTo(wide.measuringWidth, A4_WIDTH_MM - 70, "the wide measuring box");
   assert(
     wide.width < normal.width && wide.height < normal.height,
     `a wider margin has to leave a smaller text box, got ` +
@@ -139,6 +159,7 @@ try {
   closeTo(narrow.top, 15, "the narrow top margin");
   closeTo(narrow.width, A4_WIDTH_MM - 30, "the narrow text box");
   closeTo(narrow.height, A4_HEIGHT_MM - 30, "the narrow text box");
+  closeTo(narrow.measuringWidth, A4_WIDTH_MM - 30, "the narrow measuring box");
   /*
    * And the document was actually laid out against that box rather than
    * merely framed by it. Checked between 15 mm and 25 mm and not between 25

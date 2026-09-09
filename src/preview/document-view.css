@@ -17,11 +17,23 @@
   left: -10000px;
   top: 0;
   /*
-   * The sheet, as wide as the paper the document is laid out on. Set from
-   * Preview so a Letter document is measured against a Letter sheet; the
-   * fallback is the paper this file was written for.
+   * The sheet, as wide as the paper the document is laid out on, inset by its
+   * margins. Both set from Preview so a Letter document is measured against a
+   * Letter sheet; the fallbacks are the page this file was written for.
+   *
+   * The padding is not decoration. What is measured in here are block heights,
+   * and a height depends on the width the text has to wrap in — which is the
+   * text column, not the paper. Without it every block was measured in a box
+   * 189 px wider than the one it would be laid out in, so it came out shorter
+   * than the truth, and `keepHeadingsWithContent` grouped runs that then did
+   * not fit: paged.js honours `break-inside: avoid` by pushing the whole group
+   * to the next sheet, and the reader gets a page-sized gap before a section.
+   * The error grew with the margin, because the threshold moved with it and
+   * the measuring box did not.
    */
   width: var(--doc-sheet-width, 21cm);
+  padding: 0 var(--doc-sheet-margin, 2.5cm);
+  box-sizing: border-box;
   visibility: hidden;
   pointer-events: none;
 }
