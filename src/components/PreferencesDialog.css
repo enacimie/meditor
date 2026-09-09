@@ -27,7 +27,25 @@
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 24px 28px;
-  width: min(460px, calc(100vw - 48px));
+  /*
+   * Wide enough for a control and its explanation side by side.
+   *
+   * At 460 px the hint got 94 px of the row — a column narrow enough that
+   * "the sheet the Document view lays out on, and prints to" came out five
+   * lines tall. The rows grew to 162 px each, the dialog to 836 px, and it
+   * scrolled inside a 900 px window: everything you needed to read was there,
+   * in a shape that made you scroll to read it.
+   *
+   * Measured rather than guessed, on the dialog as it stands: 560 px leaves a
+   * 129 px hint and a 126 px row, 640 px leaves 153 and 90, and 720 px leaves
+   * 177 and 72 — where it stops improving, since 800 px gives the same 72.
+   * So 720, and the whole dialog is 641 px tall with nothing to scroll.
+   *
+   * `min` with the viewport, as before, so this can only ever be wider than
+   * it was and never narrower: a window too small for 720 px gets what it
+   * always got, and below 520 px the rows still stack.
+   */
+  width: min(720px, calc(100vw - 48px));
   max-height: calc(100vh - 64px);
   overflow-y: auto;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
