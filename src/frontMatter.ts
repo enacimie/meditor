@@ -29,12 +29,48 @@ function withoutBom(content: string): string {
  * with a rule from being read as configuration.
  */
 export function frontMatterLines(content: string): string[] | null {
-  const lines = withoutBom(content).split(/\r?\n/);
-  if (!lines.length || lines[0].trim() !== "---") return null;
-  for (let i = 1; i < lines.length; i++) {
-    const trimmed = lines[i].trim();
-    if (trimmed === "---" || trimmed === "...") return lines.slice(1, i);
+  /*
+   * Walked line by line rather than split.
+   *
+   * It used to `split(/\r?\n/)` the whole document before looking at even the
+   * first line, and this is called four times on every keystroke — twice for
+   * the page geometry, once for Marp detection in App and once more in
+   * Preview. On a small document that is nothing; measured on a 5.75 MB one
+   * it was 17 ms a call, so 67 ms of every keypress went on cutting up text
+   * that was going to be thrown away. `App.tsx` states the rule twenty lines
+   * above the callers — parsing the whole document belongs off the keystroke
+   * path — and this was quietly breaking it.
+   *
+   * Now the work is proportional to the front-matter rather than to the
+   * document: a file that does not open with `---` costs one `indexOf`.
+   */
+  const text = withoutBom(content);
+  const lines: string[] = [];
+  let start = 0;
+  let firstLine = true;
+
+  for (;;) {
+    const lineBreak = text.indexOf("\n", start);
+    const end = lineBreak < 0 ? text.length : lineBreak;
+    // The `\r` of a CRLF file belongs to the break, not to the line. `split`
+    // took it off; taking it off here keeps every caller's regexes anchored
+    // where they were.
+    const line = text.slice(start, end > start && text[end - 1] === "\r" ? end - 1 : end);
+    const trimmed = line.trim();
+
+    if (firstLine) {
+      if (trimmed !== "---") return null;
+      firstLine = false;
+    } else if (trimmed === "---" || trimmed === "...") {
+      return lines;
+    } else {
+      lines.push(line);
+    }
+
+    if (lineBreak < 0) break;
+    start = lineBreak + 1;
   }
+  // Never closed, so it was a horizontal rule after all.
   return null;
 }
 
