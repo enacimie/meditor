@@ -1151,6 +1151,20 @@ export default function App() {
         return;
       }
       const saved = normalizeDoc(savedPayload);
+      /*
+       * The same adoption Ctrl+S does, for the same reason.
+       *
+       * The file is new to the watcher, so without this its first poll finds
+       * no baseline for the handle, reads the disk, and compares it to the
+       * buffer. Type anything in the seconds after choosing a name and the
+       * two differ with the document dirty — which the watcher calls a
+       * conflict, and puts a "changed on disk" dialog in front of a file the
+       * writer created a moment ago.
+       *
+       * Awaited inside the operation, so it is settled before `endOperation`
+       * lets the poll run at all.
+       */
+      if (saved.handle) await adoptOwnWrite(saved.handle);
       void refreshRecent();
       setDocs((prev) =>
         prev.map((d) =>
