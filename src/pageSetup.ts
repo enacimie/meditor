@@ -1,21 +1,24 @@
 /**
  * What the page is, in one place.
  *
- * The paper's dimensions are currently spelled out in five: the `@page` rules
- * in `paged.css`, the offscreen measuring container in `document-view.css`,
+ * The paper and its margins used to be written out separately in five: the
+ * `@page` rules, the offscreen measuring container in `document-view.css`,
  * the page frame in `exportHtml.ts`, three pixel constants in
  * `previewRenderer.ts`, and the paper name the Rust print paths ask for. They
- * all mean A4 with 2.5 cm margins, and they say it in five different units.
+ * all meant A4 with 2.5 cm margins, and they said it in five different units.
  *
- * That repetition already has a test guarding it — `tableFitMetrics.test.ts`
- * exists because two of those blocks are one file and two hundred lines apart,
- * and its docblock spells out what happens when they drift: tables measured
- * against one set of numbers and printed with another, columns clipped off the
- * sheet and missing from the PDF with nothing to say so.
+ * They now derive from here instead, and the `@page` rules are built by
+ * `buildPagedCss` rather than living in a file at all. So this is no longer a
+ * description of what those five agree on — it is where the answer is, and
+ * changing a number here moves the Document view, the measuring pass, the
+ * HTML export and the sheet the printer is asked for together.
  *
- * This module is the arithmetic they should all be doing. It changes nothing
- * on its own — the numbers it produces are the numbers that are there today —
- * and it is what a second paper size can be added to without hunting.
+ * The drift it exists to prevent is still worth stating, because it is silent:
+ * a document measured against one page and printed on another loses the right
+ * edge of its tables, and nothing says so. `tableFitMetrics.test.ts` guards
+ * the half of it that is still written out by hand — the table metrics that
+ * `document-view.css` repeats from `paged.css` — and `pageSetup.test.ts`
+ * guards the rest by asserting each file derives its page from here.
  */
 
 /** CSS pixels per inch, and per millimetre. The web's fixed conversion. */
