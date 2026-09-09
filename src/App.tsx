@@ -1029,15 +1029,26 @@ export default function App() {
     // Captured before anything can refresh the list underneath it: this is
     // the row the writer clicked, whatever the list says afterwards.
     const clicked = recent[index];
-    /** The name to blame, or null when the entry is still on the list. */
-    const goneName = (remaining: RecentEntry[]): string | null =>
-      clicked && !remaining.some((entry) => entry.path === clicked.path) ? clicked.name : null;
     try {
       const payload = await backend.openRecent(index, lang);
       if (!payload) {
-        // The position went away between the menu being drawn and clicked.
-        const gone = goneName(await refreshRecent());
-        showNotice(gone ? t("menu.recentGone", gone) : t("op.cancelled"), "info");
+        /*
+         * Nothing to open: either the position went away between the menu
+         * being drawn and the click, or the file itself has. The backend
+         * answers the same way for both, and to the person who clicked they
+         * are the same event — the row they aimed at is not there.
+         *
+         * It used to be decided here instead, by re-reading the list and
+         * seeing whether the entry survived the pruning. That read every
+         * failure as an absence: a file on a disconnected share or one whose
+         * permissions changed is pruned too, and the writer was told it "is
+         * no longer where it was" while the real reason went in the console.
+         */
+        await refreshRecent();
+        showNotice(
+          clicked ? t("menu.recentGone", clicked.name) : t("op.cancelled"),
+          "info",
+        );
         return;
       }
       const opened = normalizeDoc(payload);
@@ -1045,13 +1056,10 @@ export default function App() {
       await refreshRecent();
       showNotice(t("op.filesOpened", 1), "success");
     } catch (error) {
-      // The usual reason is that the file has been moved or deleted since it
-      // was listed, so the list is re-read before the message goes up.
-      const gone = goneName(await refreshRecent());
-      if (gone) {
-        showNotice(t("menu.recentGone", gone), "error", 0);
-        return;
-      }
+      // Everything that reaches here is a file that is present and would not
+      // open — locked, unreadable, too large — and for those the details are
+      // the whole of the help.
+      await refreshRecent();
       showNotice(operationNoticeError(t, "open"), "error", 0);
       await showNativeAlert(operationErrorPrefix(t, "open") + String(error), lang);
     } finally {

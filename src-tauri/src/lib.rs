@@ -680,8 +680,13 @@ fn recent_files(recent: tauri::State<'_, recent::RecentFiles>) -> Vec<recent::Re
 /// allow. What this grants instead is reopening something the user opened
 /// before, from a list the backend keeps.
 ///
-/// `Ok(None)` when the position no longer exists — the list was pruned between
-/// the menu being drawn and being clicked.
+/// `Ok(None)` when there is nothing to open: the position no longer exists —
+/// the list was pruned between the menu being drawn and being clicked — or the
+/// file itself has gone. Both are the same event to the person who clicked, and
+/// the frontend says so by name.
+///
+/// An error, by contrast, means the file is there and would not open, and the
+/// frontend hands those details over rather than guessing.
 #[tauri::command]
 fn open_recent(
     app: tauri::AppHandle,
@@ -694,7 +699,24 @@ fn open_recent(
     let Some(path) = recent.path_at(index) else {
         return Ok(None);
     };
+    if path_is_missing(&path) {
+        return Ok(None);
+    }
     document_from_location(&app, loc, Location::Path(path), &registry).map(Some)
+}
+
+/// Whether a path is gone, as opposed to merely unreadable.
+///
+/// `Path::is_file` cannot tell the two apart: it answers false for a file that
+/// has been deleted and for one on a share that is not mounted this morning,
+/// and treating those alike is what made a permission problem report itself as
+/// "no longer where it was". `NotFound` is the one answer that means the row
+/// has gone.
+fn path_is_missing(path: &Path) -> bool {
+    matches!(
+        std::fs::metadata(path),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound
+    )
 }
 
 #[tauri::command]
@@ -2575,6 +2597,33 @@ mod tests {
         let (document, root) = image_fixture("case");
         std::fs::write(document.parent().unwrap().join("Shot.PNG"), b"\x89PNG").unwrap();
         assert!(resolve_image_path(Locale::En, &document, "Shot.PNG").is_ok());
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn a_missing_path_is_missing_and_a_present_one_is_not() {
+        // The distinction the recent list rests on: a row that has gone is
+        // said by name, and anything else keeps its own error. `is_file` was
+        // the old test and answers false for both.
+        let root = std::env::temp_dir().join(format!("meditor-missing-{}", std::process::id()));
+        std::fs::create_dir_all(&root).unwrap();
+        let there = root.join("there.md");
+        std::fs::write(&there, "x").unwrap();
+        assert!(
+            !path_is_missing(&there),
+            "a file that exists is not missing"
+        );
+        assert!(
+            path_is_missing(&root.join("never-written.md")),
+            "a path with nothing at it is missing"
+        );
+        // A directory is not missing either — it is the wrong kind of thing,
+        // which `normalize_path` refuses further along with a message of its
+        // own rather than a name and a shrug.
+        assert!(
+            !path_is_missing(&root),
+            "a directory is present, just not a file"
+        );
         let _ = std::fs::remove_dir_all(root);
     }
 

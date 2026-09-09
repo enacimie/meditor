@@ -149,16 +149,15 @@ function mountApp() {
 describe("reopening a recent document", () => {
   it("names the document that has gone instead of quoting the operating system", async () => {
     /*
-     * The backend prunes the list on the way out, so the entry disappearing
-     * from the refreshed list is what says the file has gone. That is the
-     * signal, and it is checked rather than assumed: an error alone could be
-     * a permission problem or a file grown too large, and those deserve their
-     * details.
+     * The backend answers with nothing when there is nothing to open —
+     * whether the position went away between the menu being drawn and the
+     * click, or the file itself did. Both are the same event to the person
+     * who clicked, and both deserve the document's name rather than the
+     * operating system's words for it.
      */
+    h.open = "nothing";
     mountApp();
     const row = await openRecentMenu();
-    // Gone from the list on the re-read, which is what the backend does: it
-    // prunes what is missing every time the entries are read.
     h.entries = [];
     fireEvent.click(row);
 
@@ -179,20 +178,28 @@ describe("reopening a recent document", () => {
     expect(noticeText()).not.toContain("notes.md");
   });
 
-  it("says the document is gone when its position went away too", async () => {
+  it("hands them over even when the entry has vanished from the list", async () => {
     /*
-     * The other way this fails. The list is re-read between the menu being
-     * drawn and the click landing, the entry is no longer in it, and the
-     * backend answers with nothing rather than an error. To the person who
-     * clicked, that is the same event.
+     * The mislabel this replaced. The decision used to be made here, by
+     * re-reading the list and seeing whether the entry survived — and the
+     * pruning drops a path on *any* metadata error, not only on absence. A
+     * share that is not mounted and a permission that changed were both
+     * reported as "no longer where it was", with the real reason going to
+     * the console where nobody would look.
+     *
+     * The backend decides now, and an error means the file is there and
+     * would not open, whatever the list says afterwards.
      */
-    h.open = "nothing";
     mountApp();
     const row = await openRecentMenu();
     h.entries = [];
     fireEvent.click(row);
 
-    await waitFor(() => expect(noticeText()).toContain("notes.md"));
+    await waitFor(() => expect(nativeAlerts()).toHaveLength(1));
+    expect(
+      nativeAlerts()[0],
+      "an error is an error even if the row is gone from the menu",
+    ).toContain(OS_ERROR);
   });
 });
 
