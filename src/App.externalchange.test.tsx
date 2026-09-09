@@ -14,6 +14,9 @@ const h = vi.hoisted(() => ({
   invoke: vi.fn(),
   stat: { modifiedMs: 1000, size: 10 },
   disk: "v2",
+  /** The same, for the file Save As writes. */
+  stat2: { modifiedMs: 5000, size: 20 },
+  disk2: "",
   dirty: false,
 }));
 
@@ -56,9 +59,12 @@ function resetInvoke() {
       case "load_session":
         return { docs: [sessionDoc()], activeId: "doc-1", split: 50 };
       case "document_stat":
-        return h.stat;
+        // The file Save As creates is a different file, with a fingerprint of
+        // its own; answering the original's for both would hide the very
+        // thing the Save As test is about.
+        return args?.handle === "h-2" ? h.stat2 : h.stat;
       case "read_document":
-        return h.disk;
+        return args?.handle === "h-2" ? h.disk2 : h.disk;
       case "save_as":
         return {
           id: "doc-new",
@@ -166,6 +172,8 @@ beforeEach(() => {
   h.stat = { modifiedMs: 1000, size: 10 };
   // The disk matches the open buffer until a test simulates an external edit.
   h.disk = "v1";
+  h.stat2 = { modifiedMs: 5000, size: 20 };
+  h.disk2 = "";
   h.dirty = false;
   resetInvoke();
 });
@@ -323,5 +331,37 @@ describe("saving is not an external change", () => {
     await tick();
 
     expect(conflictDialog(), "a real outside change still has to be asked about").not.toBeNull();
+  });
+
+  it("does not raise a conflict over the file Save As has just created", async () => {
+    /*
+     * The other half of the same fix, in the other half of the code. Ctrl+S
+     * went through the write queue, which adopts the fingerprint; Save As
+     * wrote through the file dialog and never did, so the watcher met the new
+     * file with no baseline at all — read the disk, compared it to a buffer
+     * the writer had carried on typing into, and called that a conflict about
+     * a file created three seconds earlier.
+     */
+    await mountApp();
+
+    // The dialog writes the buffer under a new name, and that file has a
+    // fingerprint of its own.
+    h.disk2 = "v1 saved elsewhere";
+    h.stat2 = { modifiedMs: 9000, size: h.disk2.length };
+    type(" saved elsewhere");
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "s", ctrlKey: true, shiftKey: true });
+      await vi.advanceTimersByTimeAsync(200);
+    });
+
+    // The writer carries on, inside the poll window, as they would.
+    type(" and more");
+    await tick();
+
+    expect(
+      conflictDialog(),
+      "this application wrote that file itself, a moment ago",
+    ).toBeNull();
   });
 });
