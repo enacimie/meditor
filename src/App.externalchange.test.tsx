@@ -277,7 +277,9 @@ describe("saving is not an external change", () => {
       if (cmd === "save_document") {
         h.disk = String(args?.content ?? "");
         h.stat = { modifiedMs: h.stat.modifiedMs + 500, size: h.disk.length };
-        return null;
+        // The write hands its own fingerprint back, which is what the command
+        // does now: taken beside the write rather than fetched afterwards.
+        return h.stat;
       }
       return original(cmd, args);
     });
@@ -363,5 +365,57 @@ describe("saving is not an external change", () => {
       conflictDialog(),
       "this application wrote that file itself, a moment ago",
     ).toBeNull();
+  });
+
+  it("still notices a write that landed between the save and its fingerprint", async () => {
+    /*
+     * The window the fingerprint travelling back with the write closes.
+     *
+     * The frontend used to save and then ask for the file's fingerprint in a
+     * second call. Another process writing in between meant *their*
+     * fingerprint was adopted as ours — and from then on the watcher believed
+     * the disk matched a buffer it no longer did. Not a conflict raised
+     * wrongly: a real change never noticed at all, until something moved the
+     * file again.
+     *
+     * The fixture is that ordering exactly. `save_document` answers with the
+     * fingerprint of what it wrote, and the disk moves on immediately
+     * afterwards, which is what a `document_stat` a round trip later would
+     * have picked up instead.
+     */
+    await mountApp();
+
+    // The disk takes our write, answers with its fingerprint — and somebody
+    // else writes the same file immediately afterwards. Any `document_stat`
+    // from here on sees theirs, which is precisely what the second call used
+    // to pick up and adopt as ours.
+    const original = h.invoke.getMockImplementation()!;
+    h.invoke.mockImplementation(async (cmd: string, args?: Record<string, unknown>) => {
+      if (cmd === "save_document") {
+        const ours = {
+          modifiedMs: h.stat.modifiedMs + 500,
+          size: String(args?.content ?? "").length,
+        };
+        h.disk = "theirs";
+        h.stat = { modifiedMs: ours.modifiedMs + 1, size: 6 };
+        return ours;
+      }
+      return original(cmd, args);
+    });
+
+    type(" edited");
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "s", ctrlKey: true });
+      await vi.advanceTimersByTimeAsync(100);
+    });
+
+    // The writer carries on, so there is something to lose.
+    type(" mine");
+    await tick();
+
+    expect(
+      conflictDialog(),
+      "their write happened; adopting their fingerprint as ours would bury it",
+    ).not.toBeNull();
   });
 });

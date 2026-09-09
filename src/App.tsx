@@ -1120,17 +1120,23 @@ export default function App() {
    * Rare with Ctrl+S, which needs the writer to type inside the three-second
    * poll window. Constant with an autosave.
    *
-   * There is a window of its own here: another process could write between our
-   * save and this stat, and we would adopt its fingerprint and never notice
-   * its change. It is microseconds wide and the honest fix is for
-   * `save_document` to hand the fingerprint back from Rust, atomically —
-   * a change to the command's contract, worth making when something else needs
-   * it too.
+   * The fingerprint comes back from the write itself, taken beside it rather
+   * than fetched afterwards. Asking for it in a second call left a window in
+   * which another process could write the same file: its fingerprint would be
+   * adopted as ours, and the watcher would then believe the disk matched a
+   * buffer it no longer does — silently, and until the file moved again.
+   *
+   * `stat` is null only where a backend cannot answer at all, and there the
+   * fallback is what this used to do all the time.
    */
-  async function adoptOwnWrite(handle: string): Promise<void> {
+  async function adoptOwnWrite(handle: string, stat: DocumentStat): Promise<void> {
+    if (stat) {
+      statsRef.current.set(handle, stat);
+      return;
+    }
     try {
-      const stat = await backend.documentStat(handle, lang);
-      if (stat) statsRef.current.set(handle, stat);
+      const fetched = await backend.documentStat(handle, lang);
+      if (fetched) statsRef.current.set(handle, fetched);
     } catch {
       // A fingerprint that cannot be read back is a missed nicety, not a
       // failed save. The next poll will treat the file as changed and, since
@@ -1141,7 +1147,7 @@ export default function App() {
   function writeFileOrdered(handle: string, content: string): Promise<void> {
     const next = saveQueueRef.current
       .then(() => backend.saveDocument(handle, content, lang))
-      .then(() => adoptOwnWrite(handle));
+      .then((stat) => adoptOwnWrite(handle, stat));
     saveQueueRef.current = next.catch(() => undefined);
     return next;
   }
@@ -1258,7 +1264,9 @@ export default function App() {
        * Awaited inside the operation, so it is settled before `endOperation`
        * lets the poll run at all.
        */
-      if (saved.handle) await adoptOwnWrite(saved.handle);
+      // Nothing to pass: the file dialog wrote this one, so there is no
+      // fingerprint travelling back with it and the stat has to be asked for.
+      if (saved.handle) await adoptOwnWrite(saved.handle, null);
       void refreshRecent();
       setDocs((prev) =>
         prev.map((d) =>

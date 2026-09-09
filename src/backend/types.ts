@@ -63,7 +63,17 @@ export type Backend = {
    * Null when that position is no longer there.
    */
   openRecent(index: number, locale: string): Promise<Doc | null>;
-  saveDocument(handle: string, content: string, locale: string): Promise<void>;
+  /**
+   * Write a document, and hand back the file's fingerprint as it now is.
+   *
+   * Returned rather than fetched afterwards, and that is the whole point of
+   * it: between a write and a separate `documentStat` another process can
+   * write the same file, and adopting *that* fingerprint would leave the
+   * watcher believing the disk matched a buffer it no longer does — quietly,
+   * and until the file moves again. A backend that cannot answer says `null`,
+   * and the caller falls back to asking.
+   */
+  saveDocument(handle: string, content: string, locale: string): Promise<DocumentStat>;
   /** Native picker; null when cancelled. */
   saveAs(
     content: string,
