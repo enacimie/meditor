@@ -726,7 +726,7 @@ fn save_document(
     content: String,
     registry: tauri::State<'_, DocumentRegistry>,
     locale: Option<String>,
-) -> Result<(), String> {
+) -> Result<Option<DocumentStat>, String> {
     let loc = parse_locale(locale);
     let location = registry
         .0
@@ -739,11 +739,25 @@ fn save_document(
         return Err(tf(loc, "file.contentTooLarge", &max_file_mib().to_string()));
     }
     write_location(&app, loc, &location, content.as_bytes())?;
+    /*
+     * The fingerprint of what was just written, taken here.
+     *
+     * The frontend used to ask for it in a second command, and between the
+     * two another process could write the same file: its fingerprint would be
+     * adopted as ours, and the watcher would then believe the disk matched a
+     * buffer it no longer does — silently, until the file moved again. Taken
+     * in the same function the window is a syscall wide instead of a round
+     * trip through the webview's event loop.
+     *
+     * `None` when the location cannot be stat'ed at all, which some Android
+     * content providers cannot; the frontend falls back to asking.
+     */
+    let stat = location_stat(&app, &location);
     // Saving is the other way a document says it is the one being worked on.
     // Without this a document opened once and edited all week slides off the
     // end of the list while ten it was never touched sit above it.
     remember_recent(&app, loc, &location);
-    Ok(())
+    Ok(stat)
 }
 
 /// A cheap fingerprint of the file behind an open document.

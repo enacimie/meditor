@@ -46,8 +46,8 @@ export const tauriBackend: Backend = {
     return invoke<Doc | null>("open_recent", { index, locale });
   },
 
-  saveDocument(handle: string, content: string, locale: string): Promise<void> {
-    return invoke<void>("save_document", { handle, content, locale });
+  saveDocument(handle: string, content: string, locale: string): Promise<DocumentStat> {
+    return invoke<DocumentStat>("save_document", { handle, content, locale });
   },
 
   saveAs(content: string, defaultName: string, locale: string) {

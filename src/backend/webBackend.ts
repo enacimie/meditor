@@ -299,6 +299,10 @@ export const webBackend: Backend = {
     }
     guardSize(content.length, locale);
     await writeThrough(target, content);
+    // The same file, read straight back. A browser handle has no cheaper
+    // fingerprint than the File it hands out.
+    const file = await target.getFile();
+    return { modifiedMs: file.lastModified, size: file.size };
   },
 
   async saveAs(content, defaultName, locale) {
