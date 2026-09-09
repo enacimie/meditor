@@ -1676,6 +1676,14 @@ async fn print_document(
 /// export came out with 25 mm of extra margin on one platform and not the
 /// other — while the comment on the Windows side said they matched.
 ///
+/// The 25 mm is fixed on purpose, and is not the page margin the reader chose.
+/// That one belongs to the Document view, which carries it inside each sheet;
+/// the web view is a different layout with no pages in it, and giving it the
+/// same number would be borrowing a measurement from a page it does not have.
+/// So an export from the web view uses the paper that was chosen and a margin
+/// that was not — half of the geometry travelling, which is worth knowing
+/// rather than discovering.
+///
 /// Limited to the platforms that have a PDF path at all — the same list the
 /// two branches of `export_pdf` are written against. macOS and Android have
 /// neither and answer `pdf.notSupported`, where an ungated helper is dead code
