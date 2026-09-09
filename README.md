@@ -173,11 +173,19 @@ loads, but package resolution depends on the historical public endpoint.
 pnpm test:run          # Frontend unit tests (Vitest)
 pnpm test:coverage     # Unit tests + V8 coverage report in coverage/
 pnpm test:e2e          # E2E specs in real headless Chrome (see tests/e2e)
+pnpm test:e2e:built    # The paginated specs again, against a production build
 pnpm test:e2e:latex    # Opt-in: full LaTeX E2E (requires Docker TeX Live)
 pnpm test:all          # Unit + E2E, one shot
 pnpm verify            # Lint, typecheck, build, audit, tests, E2E, fmt, Clippy and Rust tests
 cd src-tauri && cargo test --lib   # Backend tests (Rust) alone — what the gate runs
 ```
+
+`test:e2e` runs against the dev server, which is not what anybody installs.
+`test:e2e:built` builds the application and runs the paginated specs against
+`dist/` instead, and it exists because those two are not the same thing: Vite
+serves an `?inline` stylesheet verbatim while developing and minifies it on
+build, and a change that reads that stylesheet can work in one and fail
+completely in the other. CI runs both.
 
 The Rust suite has one test that is not in that run: it prints a document
 through WebKitGTK and counts the sheets, so it needs a display, a printer

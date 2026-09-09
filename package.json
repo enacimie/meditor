@@ -13,6 +13,7 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "node tests/e2e/run.mjs",
     "test:e2e:latex": "node tests/e2e/run.mjs --latex",
+    "test:e2e:built": "node tests/e2e/run.mjs --built",
     "test:all": "vitest run && node tests/e2e/run.mjs",
     "tauri": "node scripts/tauri.mjs",
     "lint": "eslint .",
