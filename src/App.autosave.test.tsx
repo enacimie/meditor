@@ -249,6 +249,15 @@ beforeEach(() => {
   h.secondDoc = false;
   h.stat2 = { modifiedMs: 1000, size: 2 };
   h.disk2 = "w1";
+  /*
+   * The call log too, not only the hand-rolled `writes` array.
+   *
+   * `vi.restoreAllMocks` undoes spies and leaves a `vi.fn()` alone, and
+   * `resetInvoke` only reinstalls the implementation, so the log accumulates
+   * across the file. This file reads it in two places now, and a call carried
+   * over from the test before is a test passing on its neighbour's evidence.
+   */
+  h.invoke.mockClear();
   resetInvoke();
 });
 
@@ -385,7 +394,18 @@ describe("autosave", () => {
 
     type(" mine");
     await settle();
-    expect(h.writes, "the failed write never reached the disk").toEqual([]);
+    /*
+     * Counted at the boundary, not in `h.writes`.
+     *
+     * The wrapper above throws before the mock's own `h.writes.push`, so
+     * `h.writes` is empty whether the application attempted a save, ten
+     * saves, or none at all — the fixture guarantees the result, and the
+     * assertion that used to be here could not fail. What is worth knowing is
+     * that autosave *tried* and the disk refused it.
+     */
+    const attempts = h.invoke.mock.calls.filter(([cmd]) => cmd === "save_document");
+    expect(attempts.length, "autosave should have tried to write").toBeGreaterThan(0);
+    expect(h.writes, "and the write it tried was refused").toEqual([]);
 
     // Somebody else writes the file while this one is still unsaved.
     h.disk = "theirs";

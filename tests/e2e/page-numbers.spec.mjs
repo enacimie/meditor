@@ -34,6 +34,18 @@ const page = await connect(CDP_PORT);
 
 try {
   await page.freshPage(BASE_URL);
+  /*
+   * Start from no stored preference, and reload so the absence is read.
+   *
+   * Everything below is measured against the 2.5 cm margin and the A4 sheet
+   * this spec was written for, and it runs directly after `page-margin.spec`,
+   * which stores other values and removes them on the way out. That cleanup
+   * is thorough, but it cannot survive the runner killing a spec on its
+   * timeout — and then this one would measure a page it never asked for and
+   * report the difference as a defect in the margin boxes.
+   */
+  await page.evaluate('localStorage.removeItem("meditor.preferences.v1"); true');
+  await page.reload();
   await page.waitFor("!!document.querySelector('.cm-content')", { timeout: 20000 });
   await page.waitFor("document.querySelectorAll('.pagedjs_page').length > 1", {
     timeout: 40000,

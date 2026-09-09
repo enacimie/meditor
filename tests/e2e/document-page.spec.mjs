@@ -88,6 +88,24 @@ try {
   await page.freshPage(BASE_URL);
   await page.waitFor("!!document.querySelector('.cm-content')", { timeout: 20000 });
 
+  /*
+   * Read the contrary preference back before believing in it.
+   *
+   * It is seeded by an init script wrapped in `try {} catch {}`, so a storage
+   * that refused the write would fail silently and the application would boot
+   * on the defaults — A4 and 25 mm. Every assertion below would still pass,
+   * because they discriminate Letter from A4 and 10 mm from 25 either way,
+   * and the spec would go on printing "beat a preference set to A4 and 35 mm"
+   * having proved only "beat the default".
+   */
+  const stored = await page.evaluate(
+    `JSON.parse(localStorage.getItem(${JSON.stringify(PREFS_KEY)}) || "null")`,
+  );
+  assert(
+    stored && stored.paperSize === "a4" && stored.pageMarginMm === 35,
+    `the contrary preference should be stored, got ${JSON.stringify(stored)}`,
+  );
+
   // Settled, not merely plural: paged.js lays the pages out one at a time.
   await page.waitFor(
     `(() => {
