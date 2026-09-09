@@ -396,6 +396,19 @@ export default function App() {
   // "The standing notice on screen is an autosave failure", so a later write
   // that works can take it down again.
   const autosaveFailedRef = useRef(false);
+  /**
+   * Ask autosave to look again.
+   *
+   * Its timer is armed by `docs` changing, which is the debounce and is right
+   * for typing — but a pass that *declines* to run changes no document, so on
+   * its own nothing would ever ask a second time. Waiting out a file dialog,
+   * an export, or a conflict dialog therefore meant the edits behind it were
+   * never written at all: not late, never. Answering "keep mine" to a
+   * conflict was the worst of them, because the buffer the writer had just
+   * chosen to defend was the one left unsaved.
+   */
+  const [autosaveNudge, setAutosaveNudge] = useState(0);
+  const nudgeAutosave = () => setAutosaveNudge((n) => n + 1);
   // Latest poll routine, so the once-scheduled interval always calls the
   // current render's version (fresh docs/lang) without re-registering.
   const checkExternalChangesRef = useRef<() => Promise<void>>(async () => {});
@@ -781,12 +794,16 @@ export default function App() {
     // `docs` in the dependencies is the debounce: every keystroke replaces the
     // document and restarts the clock, so this fires once the typing stops
     // rather than once per edit.
+    //
+    // `autosaveNudge` is the other way in, for the passes that decline to run:
+    // a skipped pass changes nothing, so without it nothing would ever ask
+    // again. See `nudgeAutosave`.
     const timer = window.setTimeout(() => {
       void autosaveDirtyDocuments();
     }, AUTOSAVE_DELAY_MS);
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, editorPrefs.autosave, docs]);
+  }, [ready, editorPrefs.autosave, docs, autosaveNudge]);
 
   /*
    * Watch open files for edits made behind our back.
@@ -824,6 +841,9 @@ export default function App() {
     if (busyOperationRef.current !== operation) return;
     busyOperationRef.current = null;
     setBusyOperation(null);
+    // Whatever was in the way has gone, so anything autosave declined to
+    // write while it was there can be asked for again.
+    nudgeAutosave();
     const pending = pendingOpenDocsRef.current.splice(0);
     if (pending.length) void openPaths(pending);
   }
@@ -1343,6 +1363,9 @@ export default function App() {
   function resolveConflictKeep() {
     conflictBusyRef.current = false;
     setConflictRequest(null);
+    // The buffer the writer has just chosen to defend is still unsaved, and
+    // keeping it changes no document, so nothing else would ask for it.
+    nudgeAutosave();
   }
 
   function resolveConflictSaveAs() {
