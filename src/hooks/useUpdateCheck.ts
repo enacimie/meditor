@@ -56,6 +56,9 @@ type Loaders = {
  * @param notice - the app's notice banner, for progress and failures.
  * @param loaders - injectable module loaders; the tests pass fakes.
  */
+/** Who the update check says it is; see `AUTOSAVE_NOTICE` in App.tsx. */
+const UPDATE_NOTICE = "update";
+
 export function useUpdateCheck(
   t: TranslationFn,
   notice: Pick<NoticeAPI, "showNotice" | "dismissNotice">,
@@ -89,7 +92,7 @@ export function useUpdateCheck(
     setBusy(true);
     // Persistent: a check crosses the network and can take a moment, and a
     // banner that vanishes mid-wait reads as though nothing happened.
-    showNotice(t("update.checking"), "info", 0);
+    showNotice(t("update.checking"), "info", 0, UPDATE_NOTICE);
     try {
       const { check } = await loadUpdater();
       const update = await check();
@@ -97,7 +100,7 @@ export function useUpdateCheck(
         showNotice(t("update.upToDate", await getVersion()), "info");
         return;
       }
-      dismissNotice();
+      dismissNotice(UPDATE_NOTICE);
       setOffer({
         version: update.version,
         current: update.currentVersion,
@@ -105,7 +108,7 @@ export function useUpdateCheck(
           if (busyRef.current) return;
           busyRef.current = true;
           setBusy(true);
-          showNotice(t("update.downloading"), "info", 0);
+          showNotice(t("update.downloading"), "info", 0, UPDATE_NOTICE);
           try {
             await update.downloadAndInstall();
             const { relaunch } = await loadProcess();

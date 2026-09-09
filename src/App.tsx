@@ -100,6 +100,17 @@ type Preferences = {
  */
 const AUTOSAVE_DELAY_MS = 2000;
 
+/**
+ * Who autosave says it is when it puts a notice up.
+ *
+ * Its failure message has no timer, so somebody has to take it down, and the
+ * one that does must be able to prove the message was autosave's. The update
+ * check also shows a notice with no timer — "Downloading…" — and a successful
+ * autosave used to clear that one too, leaving a download running with
+ * nothing on screen to say so.
+ */
+const AUTOSAVE_NOTICE = "autosave";
+
 const PREFERENCES_KEY = "meditor.preferences.v1";
 const DEFAULT_PREFERENCES: Preferences = {
   docView: true,
@@ -783,10 +794,18 @@ export default function App() {
      */
     if (unwritable.length > 0) {
       autosaveFailedRef.current = true;
-      showNotice(t("autosave.failed", unwritable[0], unwritable.length - 1), "error", 0);
+      showNotice(
+        t("autosave.failed", unwritable[0], unwritable.length - 1),
+        "error",
+        0,
+        AUTOSAVE_NOTICE,
+      );
     } else if (wrote && autosaveFailedRef.current) {
       autosaveFailedRef.current = false;
-      dismissNotice();
+      // Only if what is on screen is still autosave's own message. An update
+      // download puts a notice up with no timer too, and clearing that one
+      // would leave a download running with nothing to show for it.
+      dismissNotice(AUTOSAVE_NOTICE);
     }
   }
 
