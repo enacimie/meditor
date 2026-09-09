@@ -17,6 +17,8 @@ const h = vi.hoisted(() => ({
   invoke: vi.fn(),
   /** The body of the one open document, front-matter and all. */
   content: "# Notes\n",
+  /** What the session says it is. Typst and LaTeX compose their own page. */
+  kind: "markdown" as "markdown" | "typst" | "latex",
 }));
 
 vi.mock("@tauri-apps/api/core", () => ({
@@ -53,7 +55,7 @@ function resetInvoke() {
               content: h.content,
               dirty: false,
               handle: "h-1",
-              kind: "markdown",
+              kind: h.kind,
             },
           ],
           activeId: "doc-1",
@@ -141,6 +143,7 @@ beforeEach(() => {
   Element.prototype.scrollIntoView = vi.fn();
   localStorage.clear();
   h.content = "# Notes\n";
+  h.kind = "markdown";
   // Cleared, not just re-implemented: the assertions read the call history,
   // and a print from the previous test would answer for this one.
   h.invoke.mockClear();
@@ -182,5 +185,23 @@ describe("the paper a document asks for", () => {
     await mountApp();
     await preferLetter();
     expect(await paperUsedForPrinting()).toBe("letter");
+  });
+
+  it("says nothing about paper for a document that composes its own page", async () => {
+    /*
+     * A Typst or LaTeX document is not on this sheet. It sets its own page —
+     * `#set page(...)`, `\usepackage[...]{geometry}` — and the preview shows
+     * what the engine produced. Handing the printer the reader's preference
+     * printed a Typst file written for A4 onto Letter, which is 17 mm
+     * shorter, so every page spilled onto a second.
+     *
+     * Only on Linux: WebView2 shows its own print dialog and ignores what it
+     * is told here, which is why nobody saw it.
+     */
+    h.kind = "typst";
+    h.content = "#set page(paper: \"a4\")\n= Notes\n";
+    await mountApp();
+    await preferLetter();
+    expect(await paperUsedForPrinting()).toBeNull();
   });
 });
