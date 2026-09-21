@@ -407,6 +407,21 @@ export default function App() {
   const statsRef = useRef<Map<string, DocumentStat>>(new Map());
   const watchInflightRef = useRef(false);
   const conflictBusyRef = useRef(false);
+  /**
+   * "A question about unsaved work is on screen."
+   *
+   * Every "close anyway?" states an outcome — these changes are not on disk,
+   * and going ahead loses them. Autosave writes two seconds after the last
+   * edit and opening a dialog changes no document, so the timer that was
+   * already running keeps running: a pass lands while the question is up, the
+   * edits become the file, and the writer who answered "close anyway" keeps
+   * them after all. The dialog said one thing and another happened.
+   *
+   * A ref rather than the `confirmRequest` state because the reader is a
+   * timer callback, holding the closure from the render its effect last ran
+   * on — and that effect does not list the dialog among its dependencies.
+   */
+  const confirmBusyRef = useRef(false);
   // "The standing notice on screen is an autosave failure", so a later write
   // that works can take it down again.
   const autosaveFailedRef = useRef(false);
@@ -748,7 +763,13 @@ export default function App() {
    * seconds.
    */
   async function autosaveDirtyDocuments(): Promise<void> {
-    if (busyOperationRef.current !== null || conflictBusyRef.current) return;
+    if (
+      busyOperationRef.current !== null ||
+      conflictBusyRef.current ||
+      confirmBusyRef.current
+    ) {
+      return;
+    }
     let wrote = false;
     const unwritable: string[] = [];
     for (const doc of docsRef.current) {
@@ -947,9 +968,33 @@ export default function App() {
   // identity so the once-registered close guard can reference it safely.
   const confirmDialog = useCallback((message: string): Promise<boolean> => {
     return new Promise((resolve) => {
+      // The single place every "are you sure?" passes through, which is why
+      // the flag is raised here rather than in each of the four callers.
+      confirmBusyRef.current = true;
       setConfirmRequest({ message, resolve });
     });
   }, []);
+
+  /**
+   * Hand back the answer and put the application back in motion.
+   *
+   * One function for both buttons so that lowering the flag and asking for
+   * the autosave pass that stood down cannot be done on one branch and
+   * forgotten on the other.
+   *
+   * The nudge is not decoration. The autosave effect rearms when `docs`
+   * changes, and answering a question changes no document: after a "no" the
+   * tab is still dirty, still open, and nothing else would ever ask for it
+   * again — the document would go unsaved until the next keystroke. That is
+   * the same hole a skipped pass left behind a file dialog, and it is the
+   * half of this that rots quietly.
+   */
+  function answerConfirm(answer: boolean): void {
+    confirmBusyRef.current = false;
+    confirmRequest?.resolve(answer);
+    setConfirmRequest(null);
+    nudgeAutosave();
+  }
 
   // In-window rename dialog (replaces the native window.prompt).
   const renameDialog = useCallback(
@@ -2315,12 +2360,10 @@ export default function App() {
           confirmLabel={t("confirm.yes")}
           cancelLabel={t("confirm.no")}
           onConfirm={() => {
-            confirmRequest.resolve(true);
-            setConfirmRequest(null);
+            answerConfirm(true);
           }}
           onCancel={() => {
-            confirmRequest.resolve(false);
-            setConfirmRequest(null);
+            answerConfirm(false);
           }}
         />
       )}
