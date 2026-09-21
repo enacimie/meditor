@@ -18,7 +18,10 @@ export type RecentEntry = {
 /** What save_session sends up; handles ride along untouched. */
 export type SessionInput = {
   docs: Array<
-    Pick<Doc, "id" | "name" | "path" | "content" | "dirty" | "handle" | "kind">
+    Pick<
+      Doc,
+      "id" | "name" | "path" | "content" | "dirty" | "handle" | "kind" | "stat"
+    >
   >;
   activeId: string;
   split: number;

@@ -123,6 +123,10 @@ async function documentFromFile(
     dirty: false,
     handle: null,
     kind: kindFromName(file.name),
+    // The same File these bytes came from, which is the only fingerprint a
+    // browser handle has. It lets the watch start from a line it knows rather
+    // than reading the file again on its first tick.
+    stat: { modifiedMs: file.lastModified, size: file.size },
   };
   if (handle) doc.handle = registerHandle(handle);
   return doc;

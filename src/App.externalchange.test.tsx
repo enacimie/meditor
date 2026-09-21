@@ -18,6 +18,8 @@ const h = vi.hoisted(() => ({
   stat2: { modifiedMs: 5000, size: 20 },
   disk2: "",
   dirty: false,
+  /** The fingerprint the session carries back for the restored document. */
+  sessionStat: null as { modifiedMs: number; size: number } | null,
 }));
 
 vi.mock("@tauri-apps/api/core", () => ({
@@ -46,6 +48,9 @@ function sessionDoc() {
     dirty: h.dirty,
     handle: "h-1",
     kind: "markdown",
+    // What the session recorded of the file when it was written. `null` is a
+    // session from a build that did not keep one.
+    stat: h.sessionStat,
   };
 }
 
@@ -175,6 +180,7 @@ beforeEach(() => {
   h.stat2 = { modifiedMs: 5000, size: 20 };
   h.disk2 = "";
   h.dirty = false;
+  h.sessionStat = null;
   resetInvoke();
 });
 
@@ -182,6 +188,111 @@ afterEach(() => {
   cleanup();
   vi.useRealTimers();
   vi.restoreAllMocks();
+});
+
+describe("a file that changed while meditor was closed", () => {
+  /*
+   * The report this came from: a document open in meditor, edited by another
+   * program, and meditor never showing it — not after three seconds, not
+   * after restarting the application, and not after restarting it again. The
+   * only way out was closing the tab and opening the file afresh.
+   *
+   * The session used to reattach a document to its file only when the bytes
+   * on disk still matched the snapshot it had saved. Anything else wrote the
+   * file and the document came back with its path and no handle: the tab
+   * looked attached and was not, and the watch skips a document with no
+   * handle, so nothing ever looked at that file again. Restarting repeated
+   * the same failed comparison, which is why it never recovered.
+   */
+  it("reloads it, rather than sitting on the old text for ever", async () => {
+    // The file moved on while the app was shut: the session's fingerprint is
+    // the old one, the disk has somebody else's bytes.
+    h.sessionStat = { modifiedMs: 1000, size: 10 };
+    h.stat = { modifiedMs: 7000, size: 24 };
+    h.disk = "written by something else";
+
+    await mountApp();
+
+    expect(editorText(), "the buffer should have caught up with the file").toContain(
+      "written by something else",
+    );
+    expect(conflictDialog(), "nothing to ask about: the buffer was clean").toBeNull();
+  });
+
+  it("asks, when the writer had unsaved work of their own", async () => {
+    // Both changed: the writer left unsaved work and the file moved too. That
+    // is the one case worth a question, and the dialog already exists for it.
+    h.dirty = true;
+    h.sessionStat = { modifiedMs: 1000, size: 10 };
+    h.stat = { modifiedMs: 7000, size: 24 };
+    h.disk = "written by something else";
+
+    await mountApp();
+
+    expect(conflictDialog(), "two edits, one file — this one has to be asked").toBeTruthy();
+    expect(editorText(), "and nothing is thrown away before the answer").toContain("my edit");
+  });
+
+  it("writes the fingerprint it is watching into the session", async () => {
+    /*
+     * The other end of the same wire, and the half a reader would assume.
+     *
+     * Everything above starts from a session that already carries a
+     * fingerprint. If the app stopped putting one there, every launch would
+     * behave like a session from an older build — and for a buffer with
+     * unsaved work that means being asked about a conflict that is only the
+     * writer's own typing.
+     */
+    h.sessionStat = { modifiedMs: 1000, size: 10 };
+    await mountApp();
+
+    // The file moves; the watch adopts it, and that is what should be stored.
+    h.stat = { modifiedMs: 4242, size: 17 };
+    h.disk = "moved on";
+    await tick();
+    await advance(1000);
+
+    const saved = h.invoke.mock.calls.filter(([cmd]) => cmd === "save_session");
+    expect(saved.length, "the session should have been written").toBeGreaterThan(0);
+    // The command takes the session under an `input` key, not at the top.
+    const last = saved[saved.length - 1][1] as {
+      input: {
+        docs: Array<{
+          handle: string | null;
+          stat: { modifiedMs: number; size: number } | null;
+        }>;
+      };
+    };
+    const doc = last.input.docs.find((d) => d.handle === "h-1");
+    expect(doc?.stat, "and it should carry the file as the watch last saw it").toEqual({
+      modifiedMs: 4242,
+      size: 17,
+    });
+  });
+
+  it("leaves unsaved work alone when the file did not move", async () => {
+    /*
+     * The other half, and the reason the fingerprint is stored at all.
+     *
+     * A buffer that differs from its file is the normal way to come back to
+     * unsaved work — the session has always restored it. Only the fingerprint
+     * says whether the *file* moved as well, and when it has not, there is
+     * nothing to report and nothing to ask.
+     */
+    h.dirty = true;
+    h.sessionStat = { modifiedMs: 1000, size: 10 };
+    h.stat = { modifiedMs: 1000, size: 10 };
+    h.disk = "v1";
+
+    await mountApp();
+
+    expect(conflictDialog(), "the file is untouched; there is nothing to ask").toBeNull();
+    expect(editorText(), "and the unsaved work is still there").toContain("my edit");
+    expect(
+      document.querySelector(".tab.active .tab-dirty"),
+      "still unsaved, and still saying so",
+    ).toBeTruthy();
+  });
 });
 
 describe("external file changes", () => {

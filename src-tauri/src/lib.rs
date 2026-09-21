@@ -220,6 +220,11 @@ struct NativeDocument {
     dirty: bool,
     handle: Option<String>,
     kind: DocumentKind,
+    /// The file as it was when these bytes were read, so the frontend's
+    /// external-change watch starts from a line it knows rather than from
+    /// nothing. `None` where there is no file to fingerprint.
+    #[serde(default)]
+    stat: Option<DocumentStat>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -232,6 +237,15 @@ struct StoredDocument {
     dirty: bool,
     #[serde(default)]
     kind: Option<DocumentKind>,
+    /// The file as it was when this session was written.
+    ///
+    /// This is what tells a buffer that differs from its file because the
+    /// writer had unsaved work from one that differs because something else
+    /// wrote the file while meditor was closed. Optional, so a session saved
+    /// by an older build still loads; it comes back as "no line to compare
+    /// against", and the first watch tick reads the file and decides.
+    #[serde(default)]
+    stat: Option<DocumentStat>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -255,6 +269,8 @@ struct SessionDocumentInput {
     handle: Option<String>,
     #[serde(default)]
     kind: Option<DocumentKind>,
+    #[serde(default)]
+    stat: Option<DocumentStat>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -358,6 +374,9 @@ fn document_from_location(
     let name = location_name(app, locale, &normalized);
     let handle = register_normalized(locale, registry, normalized.clone())?;
     remember_recent(app, locale, &normalized);
+    // Taken beside the read, so the watch begins from the file these bytes
+    // came from rather than from whatever it is by the first tick.
+    let stat = location_stat(app, &normalized);
     Ok(NativeDocument {
         id: next_handle(),
         // The extension is read off the name rather than the location: a
@@ -367,6 +386,7 @@ fn document_from_location(
         path: Some(location_display(&normalized)),
         content,
         dirty: false,
+        stat,
         handle: Some(handle),
     })
 }
@@ -559,6 +579,7 @@ fn saved_document(
     // "Save as" is how a document gets a path in the first place, so it counts
     // as having been opened from there.
     remember_recent(app, locale, &normalized);
+    let stat = location_stat(app, &normalized);
     Ok(NativeDocument {
         id: next_handle(),
         kind: kind_from_path(Path::new(&name)),
@@ -567,6 +588,7 @@ fn saved_document(
         content,
         dirty: false,
         handle: Some(handle),
+        stat,
     })
 }
 
@@ -574,22 +596,34 @@ fn parse_locale(raw: Option<String>) -> Locale {
     raw.as_deref().map(Locale::from_str).unwrap_or(Locale::En)
 }
 
-/// Reattach a session document to its native save handle only when the path
-/// still resolves to a regular file whose bytes match the session snapshot.
-/// If the file changed or disappeared, keep the path for display but leave the
-/// handle empty so the frontend routes the next save through Save As instead
-/// of silently overwriting an external edit.
+/// Reattach a session document to its native save handle whenever the path
+/// still resolves to a regular file. A path that no longer resolves keeps its
+/// display value and comes back with no handle, so the next save routes
+/// through Save As rather than writing somewhere that is not there.
+///
+/// It used to reattach only when the file's bytes still matched the session
+/// snapshot, and that was worse than it sounds. A file edited by anything else
+/// while meditor was closed came back with its path but no handle: the tab
+/// looked attached and was not, and the external-change watch skips a document
+/// with no handle — so it was never watched again. Not for three seconds, not
+/// for an hour, not after a restart, because the same comparison failed every
+/// time. The only way out was to close the tab and open the file afresh.
+///
+/// The reason for it is sound and is now somebody else's job. It was written
+/// to avoid silently overwriting an edit made behind the app's back; the watch
+/// that arrived later does that properly, by reading the file and either
+/// reloading a clean buffer or asking. Dropping the handle put the document
+/// somewhere neither could help it.
 ///
 /// Paths only, deliberately. A stored `content://` URI is not reattachable:
 /// the picker grants access for the life of the process, so after a restart
 /// the URI is a string the app is no longer allowed to open. It comes back as
-/// a display value with no handle, which is exactly the "save routes through
-/// Save As" behaviour this function already has for a file that moved.
+/// a display value with no handle, which is the same "save routes through
+/// Save As" behaviour a file that moved gets.
 fn restore_session_path(
     locale: Locale,
     registry: &DocumentRegistry,
     raw_path: Option<&str>,
-    expected_content: &str,
 ) -> (Option<String>, Option<String>) {
     let Some(raw_path) = raw_path else {
         return (None, None);
@@ -599,10 +633,7 @@ fn restore_session_path(
         Err(_) => return (Some(raw_path.to_owned()), None),
     };
     let path_string = path.to_string_lossy().into_owned();
-    let matches_snapshot = read_path(locale, &path)
-        .map(|content| content == expected_content)
-        .unwrap_or(false);
-    if !matches_snapshot {
+    if !path.is_file() {
         return (Some(path_string), None);
     }
     let handle = register_normalized(locale, registry, FilePath::Path(path)).ok();
@@ -765,7 +796,7 @@ fn save_document(
 /// Both fields are optional because not every filesystem answers every
 /// question: some Android content providers report a size but a zeroed
 /// timestamp, and either alone still detects the edits this exists for.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct DocumentStat {
     modified_ms: Option<u64>,
@@ -1186,6 +1217,7 @@ fn load_session(
                 content,
                 dirty,
                 kind: raw_kind,
+                stat,
             } = document;
             let kind = raw_kind.unwrap_or_else(|| {
                 raw_path
@@ -1194,8 +1226,7 @@ fn load_session(
                     .map(kind_from_path)
                     .unwrap_or_default()
             });
-            let (path, handle) =
-                restore_session_path(loc, &registry, raw_path.as_deref(), &content);
+            let (path, handle) = restore_session_path(loc, &registry, raw_path.as_deref());
             NativeDocument {
                 id,
                 name,
@@ -1204,6 +1235,10 @@ fn load_session(
                 dirty,
                 handle,
                 kind,
+                // The file as this session last saw it, handed back so the
+                // watch can tell "the writer had unsaved work" from "something
+                // else wrote this file while we were away".
+                stat,
             }
         })
         .collect::<Vec<_>>();
@@ -1292,6 +1327,11 @@ fn save_session(
                     .map(kind_from_path)
                     .unwrap_or_default()
             })),
+            // Whatever the frontend last saw of the file. It is the frontend's
+            // to keep — the watch is there — so it travels through rather than
+            // being taken again here, which would record the file as it is at
+            // shutdown instead of as the buffer knew it.
+            stat: document.stat,
         });
     }
     let stored = StoredSession {
@@ -2681,6 +2721,7 @@ mod tests {
             dirty: false,
             handle: handle.map(str::to_owned),
             kind: DocumentKind::Markdown,
+            stat: None,
         }
     }
 
@@ -2709,7 +2750,49 @@ mod tests {
     }
 
     #[test]
-    fn restores_a_handle_only_for_an_unchanged_file() {
+    fn a_session_carries_the_file_fingerprint_both_ways() {
+        /*
+         * The join between the two halves of the fix.
+         *
+         * Reattaching the file is what lets the watch see it at all; the
+         * fingerprint is what lets the watch tell "the writer had unsaved
+         * work" from "something else wrote this while we were away". The
+         * second only works if it survives the session file, and nothing else
+         * here would notice if it stopped.
+         */
+        let stat = DocumentStat {
+            modified_ms: Some(1_726_000_000_000),
+            size: Some(4096),
+        };
+        let stored = StoredSession {
+            version: default_session_version(),
+            docs: vec![StoredDocument {
+                id: "1".into(),
+                name: "document.md".into(),
+                path: Some("/tmp/document.md".into()),
+                content: "hello".into(),
+                dirty: true,
+                kind: Some(DocumentKind::Markdown),
+                stat: Some(stat.clone()),
+            }],
+            active_id: "1".into(),
+            split: 50.0,
+        };
+
+        let json = serde_json::to_string(&stored).unwrap();
+        let back: StoredSession = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.docs[0].stat, Some(stat));
+
+        // And a session written by a build that kept none still loads, with
+        // nothing to compare against rather than a refusal.
+        let older = r#"{"version":1,"docs":[{"id":"1","name":"d.md","path":null,
+            "content":"hello","dirty":false}],"activeId":"1","split":50.0}"#;
+        let older: StoredSession = serde_json::from_str(older).unwrap();
+        assert_eq!(older.docs[0].stat, None);
+    }
+
+    #[test]
+    fn restores_a_handle_for_a_file_that_is_there_however_it_changed() {
         let root =
             std::env::temp_dir().join(format!("meditor-session-test-{}", std::process::id()));
         std::fs::create_dir_all(&root).unwrap();
@@ -2717,18 +2800,48 @@ mod tests {
         std::fs::write(&path, "same").unwrap();
         let registry = DocumentRegistry(Mutex::new(HashMap::new()));
 
-        let (restored_path, handle) =
-            restore_session_path(Locale::En, &registry, path.to_str(), "same");
+        let (restored_path, handle) = restore_session_path(Locale::En, &registry, path.to_str());
         // `normalize_path` canonicalizes existing files, which resolves
         // symlinks (macOS /var → /private/var) and Windows `\\?\` prefixes.
         let expected = std::fs::canonicalize(&path).unwrap();
         assert_eq!(restored_path, Some(expected.to_string_lossy().into_owned()));
         assert!(handle.is_some());
 
-        std::fs::write(&path, "changed").unwrap();
-        let (_, changed_handle) =
-            restore_session_path(Locale::En, &registry, path.to_str(), "same");
-        assert!(changed_handle.is_none());
+        /*
+         * The assertion that used to say the opposite, and is the whole of
+         * this change.
+         *
+         * A file edited by something else while meditor was closed came back
+         * with its path and no handle — and the external-change watch skips a
+         * document that has none, so it was never watched again. Not after
+         * three seconds, not after a restart, because the comparison that
+         * dropped the handle failed identically every time. Reattaching is
+         * what lets the watch see the file and either reload it or ask.
+         */
+        std::fs::write(&path, "changed by somebody else").unwrap();
+        let (_, changed_handle) = restore_session_path(Locale::En, &registry, path.to_str());
+        assert!(
+            changed_handle.is_some(),
+            "a file that is still there is still ours to watch"
+        );
+
+        // Gone is a different thing: there is nothing to attach to, and the
+        // next save has to ask where to put it.
+        std::fs::remove_file(&path).unwrap();
+        let (gone_path, gone_handle) = restore_session_path(Locale::En, &registry, path.to_str());
+        assert!(
+            gone_handle.is_none(),
+            "a file that is gone cannot be saved to"
+        );
+        assert!(gone_path.is_some(), "but its name is still worth showing");
+
+        // A directory is not a document either, however well it resolves.
+        let (_, dir_handle) = restore_session_path(Locale::En, &registry, root.to_str());
+        assert!(
+            dir_handle.is_none(),
+            "a directory is not a file to reattach"
+        );
+
         let _ = std::fs::remove_dir_all(root);
     }
 
