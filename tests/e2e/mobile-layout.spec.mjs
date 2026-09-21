@@ -267,12 +267,57 @@ try {
     },
   );
 
+  // ── Preferences: an explanation is readable on a phone ───────────
+  /*
+   * Stacking the row puts the label above the control, and that used to be
+   * the whole of the narrow layout — the control and its explanation stayed
+   * side by side inside it, so a dropdown left about 120 px for the sentence
+   * and it came out four lines tall in a sliver.
+   *
+   * Both halves are asserted, because the fix is a distinction rather than a
+   * blanket: a hint after a dropdown goes to its own line, and a hint after a
+   * checkbox stays beside it, where a tick and its meaning read as one line.
+   */
+  await page.evaluate(`(() => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: ',', ctrlKey: true, bubbles: true }));
+    return true;
+  })()`);
+  await page.waitFor("!!document.querySelector('.prefs-panel')", {
+    message: "Ctrl+, should open preferences on a phone too",
+  });
+
+  const hints = await page.evaluate(`(() => {
+    const read = (id) => {
+      const control = document.getElementById(id);
+      const row = control.closest('.prefs-row');
+      const c = control.getBoundingClientRect();
+      const hint = row.querySelector('.prefs-hint').getBoundingClientRect();
+      return { width: Math.round(hint.width), ownLine: hint.top > c.top + 6 };
+    };
+    return { afterSelect: read('prefs-paper'), afterCheckbox: read('prefs-spellcheck') };
+  })()`);
+
+  assert(
+    hints.afterSelect.ownLine,
+    "a hint after a dropdown should take its own line on a phone, " +
+      `got ${JSON.stringify(hints.afterSelect)}`,
+  );
+  assert(
+    hints.afterSelect.width >= 200,
+    `and use the width that gives it, got ${hints.afterSelect.width}px`,
+  );
+  assert(
+    !hints.afterCheckbox.ownLine,
+    "a hint after a checkbox is that checkbox's own words and belongs beside " +
+      `it, got ${JSON.stringify(hints.afterCheckbox)}`,
+  );
+
   assert(
     page.consoleErrors.length === 0,
     "console errors: " + page.consoleErrors.join(" | "),
   );
   console.log(
-    "PASS: mobile-layout.spec — two-pane switch, 44px targets, web preview, tap-safe reading, undo/redo, scrollable menu, background flush",
+    "PASS: mobile-layout.spec — two-pane switch, 44px targets, web preview, tap-safe reading, undo/redo, scrollable menu, background flush, readable preference hints",
   );
 } finally {
   // Later specs share this browser and expect a desktop again.
