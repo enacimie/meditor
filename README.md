@@ -333,6 +333,7 @@ meditor/
 │   └── assets/fonts/         # Latin Modern fonts (GUST)
 ├── src-tauri/
 │   ├── src/lib.rs            # Commands: read/save, session, and PDF export
+│   ├── src/document.rs       # The document the frontend sees; open and save
 │   ├── src/export.rs         # Print and PDF/HTML export: WebView2 and WebKitGTK
 │   ├── src/locale.rs         # Localized backend error messages
 │   ├── src/location.rs       # Paths, content URIs, the handle registry, atomic writes
