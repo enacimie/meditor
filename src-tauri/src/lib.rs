@@ -759,13 +759,7 @@ fn save_document(
     locale: Option<String>,
 ) -> Result<Option<DocumentStat>, String> {
     let loc = parse_locale(locale);
-    let location = registry
-        .0
-        .lock()
-        .map_err(|_| t(loc, "file.registryLock"))?
-        .get(&handle)
-        .cloned()
-        .ok_or_else(|| t(loc, "file.documentUnavailable"))?;
+    let location = document_location(&registry, loc, &handle)?;
     if content.len() as u64 > MAX_FILE_BYTES {
         return Err(tf(loc, "file.contentTooLarge", &max_file_mib().to_string()));
     }
@@ -1154,13 +1148,7 @@ fn document_stat(
     locale: Option<String>,
 ) -> Result<Option<DocumentStat>, String> {
     let loc = parse_locale(locale);
-    let location = registry
-        .0
-        .lock()
-        .map_err(|_| t(loc, "file.registryLock"))?
-        .get(&handle)
-        .cloned()
-        .ok_or_else(|| t(loc, "file.documentUnavailable"))?;
+    let location = document_location(&registry, loc, &handle)?;
     Ok(location_stat(&app, &location))
 }
 
@@ -1174,13 +1162,7 @@ fn read_document(
     locale: Option<String>,
 ) -> Result<String, String> {
     let loc = parse_locale(locale);
-    let location = registry
-        .0
-        .lock()
-        .map_err(|_| t(loc, "file.registryLock"))?
-        .get(&handle)
-        .cloned()
-        .ok_or_else(|| t(loc, "file.documentUnavailable"))?;
+    let location = document_location(&registry, loc, &handle)?;
     read_location(&app, loc, &location)
 }
 
@@ -1303,6 +1285,10 @@ fn save_session(
         let document_path = document.path.clone();
         let path = match document.handle {
             Some(handle) => {
+                // Not `document_location`: this one answers with
+                // `file.sessionUnavailable`, which is different text in every
+                // locale and is pinned by `all_file_keys_translate`. Folding it
+                // into the helper would change a message a reader sees.
                 let location = registry
                     .0
                     .lock()
@@ -1695,12 +1681,6 @@ async fn print_document(
     }
 }
 
-/// Print the live webview to a PDF the user picks.
-///
-/// `paged` is true when the preview is the paginated document view, which lays
-/// out its own A4 pages complete with margins. Asking the printer for margins
-/// on top of that insets every page twice and spills each one onto a second
-/// sheet, so the export gains a blank page for every real one.
 /// The margin to leave around an exported page, in millimetres.
 ///
 /// Zero for anything that arrives already laid out. A Marp slide brings its
@@ -1809,6 +1789,12 @@ fn gtk_page_setup(
     page_setup
 }
 
+/// Print the live webview to a PDF the user picks.
+///
+/// `paged` is true when the preview is the paginated document view, which lays
+/// out its own A4 pages complete with margins. Asking the printer for margins
+/// on top of that insets every page twice and spills each one onto a second
+/// sheet, so the export gains a blank page for every real one.
 /*
  * Eight arguments, and clippy is right that it is a lot.
  *
@@ -1969,46 +1955,25 @@ async fn export_pdf(
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
-    let path = {
-        let selected = app
-            .dialog()
-            .file()
-            .set_file_name(default_name)
-            .add_filter("PDF", &["pdf"])
-            .blocking_save_file();
-        match selected {
-            Some(path) => path.into_path().map_err(|e| e.to_string())?,
-            None => return Ok(()),
-        }
-    };
-    #[cfg(any(
-        target_os = "linux",
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ))]
-    let path = normalize_path(loc, &path)?;
-    #[cfg(any(
-        target_os = "linux",
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ))]
-    if let Some(parent) = path.parent() {
-        if !parent.exists() {
-            return Err(t(loc, "pdf.directoryMissing"));
-        }
-    }
-    #[cfg(any(
-        target_os = "linux",
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd"
-    ))]
     {
+        let path = {
+            let selected = app
+                .dialog()
+                .file()
+                .set_file_name(default_name)
+                .add_filter("PDF", &["pdf"])
+                .blocking_save_file();
+            match selected {
+                Some(path) => path.into_path().map_err(|e| e.to_string())?,
+                None => return Ok(()),
+            }
+        };
+        let path = normalize_path(loc, &path)?;
+        if let Some(parent) = path.parent() {
+            if !parent.exists() {
+                return Err(t(loc, "pdf.directoryMissing"));
+            }
+        }
         /*
          * The double margin this used to warn about is gone. The page setup
          * below asks `pdf_margin_mm` for its margin — the same rule Windows
