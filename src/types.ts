@@ -1,3 +1,5 @@
+import type { DocumentStat } from "./externalChange";
+
 /** Supported document languages. */
 export type DocKind = "markdown" | "typst" | "latex";
 
@@ -24,4 +26,13 @@ export type Doc = {
   dirty: boolean;
   handle?: string | null;
   kind: DocKind;
+  /**
+   * The file as it was when this content was read, where a backend can say.
+   *
+   * It only ever travels: the backend hands it over when a document is opened
+   * or restored, App seeds the external-change watch with it, and the session
+   * carries it back so a restart knows which file the buffer came from. It is
+   * deliberately not kept up to date here — the watch owns that, in a ref.
+   */
+  stat?: DocumentStat;
 };

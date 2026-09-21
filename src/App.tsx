@@ -569,6 +569,7 @@ export default function App() {
       }
       if (cancelled) return;
       if (cliActive) startActive = cliActive;
+      seedWatchBaselines(base);
       setDocs(base);
       if (!startActive || !base.some((d) => d.id === startActive)) {
         startActive = base[0]?.id ?? "";
@@ -1109,6 +1110,27 @@ export default function App() {
   }
 
   /**
+   * Start watching a document from the file its bytes came from.
+   *
+   * A backend hands the fingerprint over with the document — when it is
+   * opened, and when a session restores it — and this is where the watch
+   * learns it. It matters most on a restart: the file may have been written
+   * by something else while meditor was closed, and the stored fingerprint is
+   * the only thing that says so. Without it the first tick sees a buffer that
+   * differs from the disk and cannot tell whose change it is.
+   *
+   * Documents already being watched are left alone: a live fingerprint is
+   * newer than anything a payload carries.
+   */
+  function seedWatchBaselines(documents: Doc[]): void {
+    for (const doc of documents) {
+      if (!doc.handle || !doc.stat) continue;
+      if (statsRef.current.has(doc.handle)) continue;
+      statsRef.current.set(doc.handle, doc.stat);
+    }
+  }
+
+  /**
    * Adopt the fingerprint of a file this application has just written.
    *
    * Without this, saving looks exactly like somebody else editing the file.
@@ -1168,6 +1190,18 @@ export default function App() {
             dirty,
             handle: handle ?? null,
             kind,
+            /*
+             * The file as the watch last saw it, not as the document was born.
+             *
+             * This is what a restart needs to tell two identical-looking
+             * situations apart: a buffer that differs from its file because
+             * the writer had unsaved work, which comes back quietly, and one
+             * that differs because something else wrote the file while
+             * meditor was closed, which has to be reloaded or asked about.
+             * Without it the next launch can only guess, and it used to guess
+             * by dropping the file altogether.
+             */
+            stat: handle ? (statsRef.current.get(handle) ?? null) : null,
           })),
           activeId: currentActiveId,
           split: ratio,
