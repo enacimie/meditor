@@ -163,7 +163,7 @@ try {
    * through the browser's own `@page` handling.
    */
   const printedWide = await printSheets(page);
-  assertPaper(assert, printedWide.boxes, A4_PT, "the wide margin's sheets");
+  assertPaper(printedWide.boxes, A4_PT, "the wide margin's sheets");
   assert(
     printedWide.sheets === wide.pages,
     "one printed sheet per paginated page at 35 mm " +
@@ -210,7 +210,7 @@ try {
   );
 
   const printedNarrow = await printSheets(page);
-  assertPaper(assert, printedNarrow.boxes, A4_PT, "the narrow margin's sheets");
+  assertPaper(printedNarrow.boxes, A4_PT, "the narrow margin's sheets");
   assert(
     printedNarrow.sheets === narrow.pages,
     "one printed sheet per paginated page at 15 mm " +

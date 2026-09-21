@@ -193,17 +193,26 @@ try {
    * over. Until now nothing in the suite printed anything but A4.
    */
   const printed = await printSheets(page);
-  assertPaper(assert, printed.boxes, LETTER_PT, "the printed sheet");
+  assertPaper(printed.boxes, LETTER_PT, "the printed sheet");
   assert(
     printed.sheets === measured.pages,
     "the printer should produce one sheet per paginated page " +
       `(${measured.pages}), got ${printed.sheets}`,
   );
 
-  // ── The same browser, a document that asks for the other paper ─────
-  // Which is what makes the assertion above mean what it says; see A4_CONFIG.
-  // Re-added in the original order: the shim reads `__meditorShimConfig`, so
-  // the config has to be evaluated before it, not appended after it.
+  /*
+   * ── The same browser, a document that asks for the other paper ─────
+   *
+   * Which is what makes the assertion above mean what it says; see A4_CONFIG.
+   *
+   * There is deliberately no third assertion comparing the two boxes. With
+   * both papers pinned to within three points, they are seventeen apart and
+   * such a line could never go red — the pair is the argument, and one more
+   * assert would only look like it carried it.
+   *
+   * Re-added in the original order: the shim reads `__meditorShimConfig`, so
+   * the config has to be evaluated before it, not appended after it.
+   */
   for (const id of [configId, prefsId, shimId]) await page.removeInitScript(id);
   configId = await page.addInitScript(A4_CONFIG);
   prefsId = await page.addInitScript(CONTRARY_PREFERENCES);
@@ -212,13 +221,7 @@ try {
   await page.waitFor("!!document.querySelector('.cm-content')", { timeout: 20000 });
   await settled();
   const printedA4 = await printSheets(page);
-  assertPaper(assert, printedA4.boxes, A4_PT, "the A4 twin");
-  assert(
-    Math.abs(printed.boxes[0][0] - printedA4.boxes[0][0]) > 3,
-    "two documents asking for different papers printed the same sheet, so the " +
-      "paper is the printer's own and not the document's: " +
-      `${JSON.stringify(printed.boxes[0])} and ${JSON.stringify(printedA4.boxes[0])}`,
-  );
+  assertPaper(printedA4.boxes, A4_PT, "the A4 twin");
 
   assert(
     page.consoleErrors.length === 0,

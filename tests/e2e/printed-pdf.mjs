@@ -13,6 +13,8 @@
  * assertion. This is the other half.
  */
 
+import { assert } from "./cdp.mjs";
+
 /** A4 and Letter in PostScript points, which is what a `/MediaBox` is in. */
 export const A4_PT = [595, 842];
 export const LETTER_PT = [612, 792];
@@ -49,7 +51,7 @@ export async function printSheets(page) {
  * it was written: enough for the conversion, far short of the 17 mm that
  * separates A4 from Letter.
  */
-export function assertPaper(assert, boxes, [widthPt, heightPt], label) {
+export function assertPaper(boxes, [widthPt, heightPt], label) {
   assert(
     boxes.length > 0 &&
       boxes.every(
