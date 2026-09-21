@@ -519,6 +519,70 @@ describe("autosave", () => {
     );
   });
 
+  it("writes nothing while a question about unsaved work is on screen", async () => {
+    /*
+     * Closing a dirty tab asks "X has unsaved changes. Close anyway?", and
+     * answering yes means losing them -- that is what the question says. But
+     * autosave writes two seconds after the last edit and opening a dialog
+     * changes no document, so the timer that was already running keeps
+     * running. It lands while the question is still on screen, the edits
+     * become the file, and the writer who answered "close anyway" keeps them
+     * after all. The dialog stated one outcome and another one happened.
+     *
+     * The second assertion is the one that rots, exactly as it did for the
+     * file picker above: a pass that stands down has to be asked for again.
+     * Saying no leaves the tab dirty and changes no document, so nothing else
+     * would rearm the timer and that document would never be autosaved again.
+     */
+    // The close button is only drawn when there is more than one tab.
+    h.secondDoc = true;
+    await mountApp();
+    await enableAutosave();
+    // Both documents start dirty so that the second one exists at all, and
+    // `enableAutosave` stops well short of the delay. Let them be written, so
+    // what follows is about one document.
+    await settle();
+    h.writes.length = 0;
+
+    type(" mine");
+    const close = screen.getByRole("button", { name: "Close notes.md" });
+    await act(async () => {
+      fireEvent.click(close);
+      // No clock: the edit has to still be inside the autosave delay when the
+      // question goes up, which is the whole situation being tested.
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(
+      screen.queryByText(/has unsaved changes/i),
+      "closing a dirty tab should ask",
+    ).not.toBeNull();
+
+    await settle();
+    await settle();
+    expect(
+      h.writes,
+      "the writer has been asked whether to lose this; a timer must not answer",
+    ).toEqual([]);
+
+    // They keep the tab. The edits are theirs again, and autosave owns them.
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "No" }));
+      // Past the dialog's own exit transition, which is when the answer is
+      // actually delivered.
+      await vi.advanceTimersByTimeAsync(300);
+    });
+    expect(
+      screen.queryByText(/has unsaved changes/i),
+      "the question should be gone once it is answered",
+    ).toBeNull();
+    await settle();
+
+    expect(
+      h.writes.map((w) => w.content),
+      "the moment has passed, and the edit is still unsaved",
+    ).toEqual(["v1 mine"]);
+  });
+
   it("takes its failure notice down once a write works again", async () => {
     /*
      * The notice has no timer and nothing else clears it, because a message
