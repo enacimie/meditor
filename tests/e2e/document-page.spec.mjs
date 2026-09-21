@@ -16,6 +16,7 @@
  * instead of over it.
  */
 import { connect, assert } from "./cdp.mjs";
+import { printSheets, assertPaper, A4_PT, LETTER_PT } from "./printed-pdf.mjs";
 import { TAURI_SHIM } from "./tauri-shim.mjs";
 
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:1420";
@@ -58,6 +59,19 @@ const DOCUMENT = [
 const CONFIG = `window.__meditorShimConfig = ${JSON.stringify({ docContent: DOCUMENT })};`;
 
 /*
+ * The same document asking for the other paper, printed at the end.
+ *
+ * One paper assertion cannot fail on a machine whose default paper happens to
+ * match it: with the geometry never reaching the printer at all, the browser
+ * prints on its own, and this Chromium's own is Letter — measured, by
+ * printing with `preferCSSPageSize` off and getting 612x792 out of a Letter
+ * document. Two documents asking for different papers cannot both be
+ * satisfied by one default, and that is what makes either of them decisive.
+ */
+const A4_DOCUMENT = DOCUMENT.replace("papersize: letter", "papersize: a4");
+const A4_CONFIG = `window.__meditorShimConfig = ${JSON.stringify({ docContent: A4_DOCUMENT })};`;
+
+/*
  * The opposite of everything the document says: the widest margin the dialog
  * offers, on the other paper.
  */
@@ -67,6 +81,29 @@ const CONTRARY_PREFERENCES = `try {
     pageMarginMm: 35,
   }));
 } catch {}`;
+
+/**
+ * Wait for pagination to finish, not merely to begin.
+ *
+ * Settled, not plural: paged.js lays the pages out one at a time, and a count
+ * read the moment the document becomes plural is not the count the printer
+ * will see. The counter lives on `window`, so every load starts it again.
+ */
+async function settled() {
+  await page.waitFor(
+    `(() => {
+      const n = document.querySelectorAll('.pagedjs_page').length;
+      const previous = window.__documentPagePages ?? -1;
+      window.__documentPagePages = n;
+      return n > 1 && n === previous;
+    })()`,
+    {
+      timeout: 40000,
+      interval: 500,
+      message: "the document should paginate onto more than one sheet and settle",
+    },
+  );
+}
 
 /** Within a pixel and a half of the millimetres asked for. */
 function closeTo(px, mm, what) {
@@ -106,20 +143,7 @@ try {
     `the contrary preference should be stored, got ${JSON.stringify(stored)}`,
   );
 
-  // Settled, not merely plural: paged.js lays the pages out one at a time.
-  await page.waitFor(
-    `(() => {
-      const n = document.querySelectorAll('.pagedjs_page').length;
-      const previous = window.__documentPagePages ?? -1;
-      window.__documentPagePages = n;
-      return n > 1 && n === previous;
-    })()`,
-    {
-      timeout: 40000,
-      interval: 500,
-      message: "the document should paginate onto more than one sheet and settle",
-    },
-  );
+  await settled();
 
   const measured = await page.evaluate(`(() => {
     const pages = [...document.querySelectorAll('.pagedjs_page')];
@@ -157,6 +181,45 @@ try {
       `got ${JSON.stringify(measured.folio)}`,
   );
 
+  // ── And the sheet that came out of the printer ──────────────────
+  /*
+   * Measuring the sheet in the DOM is half the claim. The browser prints from
+   * the `@page` rules it finds, and `preferCSSPageSize` is what makes it take
+   * the size `buildPagedCss` generated rather than its own default paper. If
+   * that word were wrong, everything above would still pass — paged.js
+   * computes its layout with a parser of its own — and only the PDF would
+   * come out on A4. That is the exact shape of the fault that shipped in
+   * every built copy before #110: right in the view, wrong in what is handed
+   * over. Until now nothing in the suite printed anything but A4.
+   */
+  const printed = await printSheets(page);
+  assertPaper(assert, printed.boxes, LETTER_PT, "the printed sheet");
+  assert(
+    printed.sheets === measured.pages,
+    "the printer should produce one sheet per paginated page " +
+      `(${measured.pages}), got ${printed.sheets}`,
+  );
+
+  // ── The same browser, a document that asks for the other paper ─────
+  // Which is what makes the assertion above mean what it says; see A4_CONFIG.
+  // Re-added in the original order: the shim reads `__meditorShimConfig`, so
+  // the config has to be evaluated before it, not appended after it.
+  for (const id of [configId, prefsId, shimId]) await page.removeInitScript(id);
+  configId = await page.addInitScript(A4_CONFIG);
+  prefsId = await page.addInitScript(CONTRARY_PREFERENCES);
+  shimId = await page.addInitScript(TAURI_SHIM);
+  await page.freshPage(BASE_URL);
+  await page.waitFor("!!document.querySelector('.cm-content')", { timeout: 20000 });
+  await settled();
+  const printedA4 = await printSheets(page);
+  assertPaper(assert, printedA4.boxes, A4_PT, "the A4 twin");
+  assert(
+    Math.abs(printed.boxes[0][0] - printedA4.boxes[0][0]) > 3,
+    "two documents asking for different papers printed the same sheet, so the " +
+      "paper is the printer's own and not the document's: " +
+      `${JSON.stringify(printed.boxes[0])} and ${JSON.stringify(printedA4.boxes[0])}`,
+  );
+
   assert(
     page.consoleErrors.length === 0,
     "console errors: " + page.consoleErrors.join(" | "),
@@ -164,7 +227,9 @@ try {
   console.log(
     `PASS: document-page.spec — the front-matter's Letter and ${DOC_MARGIN_MM} mm ` +
       `beat a preference set to A4 and 35 mm across ${measured.pages} sheets, ` +
-      "and every one of them is numbered",
+      `every one of them numbered, and the printer returned ${printed.sheets} ` +
+      `Letter sheets (${printed.boxes[0][0]}x${printed.boxes[0][1]} pt) against ` +
+      `${printedA4.boxes[0][0]}x${printedA4.boxes[0][1]} for the same document on A4`,
   );
 } finally {
   /*

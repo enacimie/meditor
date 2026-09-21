@@ -16,6 +16,7 @@
  * on the way out, so it leaves the session as it found it.
  */
 import { connect, assert } from "./cdp.mjs";
+import { printSheets, assertPaper, A4_PT } from "./printed-pdf.mjs";
 
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:1420";
 const CDP_PORT = Number(process.env.CDP_PORT);
@@ -153,6 +154,22 @@ try {
       `${wide.width}x${wide.height} against ${normal.width}x${normal.height}`,
   );
 
+  /*
+   * And what the printer makes of it, taken here while 35 mm is still what
+   * is on screen. The margin does not move the sheet — A4 is A4 — so the
+   * witness is how many sheets it takes, compared below against the narrow
+   * one. Measuring the view says the margin reached the layout; this says it
+   * reached the thing handed to the printer, which is a separate journey
+   * through the browser's own `@page` handling.
+   */
+  const printedWide = await printSheets(page);
+  assertPaper(assert, printedWide.boxes, A4_PT, "the wide margin's sheets");
+  assert(
+    printedWide.sheets === wide.pages,
+    "one printed sheet per paginated page at 35 mm " +
+      `(${wide.pages}), got ${printedWide.sheets}`,
+  );
+
   // ── A narrower one: more room, so fewer ───────────────────────────
   const narrow = await useMargin(15);
   closeTo(narrow.left, 15, "the narrow left margin");
@@ -192,6 +209,24 @@ try {
     `every page should still carry its number at 15 mm, got ${JSON.stringify(folio)}`,
   );
 
+  const printedNarrow = await printSheets(page);
+  assertPaper(assert, printedNarrow.boxes, A4_PT, "the narrow margin's sheets");
+  assert(
+    printedNarrow.sheets === narrow.pages,
+    "one printed sheet per paginated page at 15 mm " +
+      `(${narrow.pages}), got ${printedNarrow.sheets}`,
+  );
+  /*
+   * The one that says the margin reached the printer rather than only the
+   * screen. Print on a geometry the browser decided for itself and both
+   * runs come out the same length, however different the two views were.
+   */
+  assert(
+    printedNarrow.sheets < printedWide.sheets,
+    "15 mm has to print on fewer sheets than 35 mm: " +
+      `${printedNarrow.sheets} against ${printedWide.sheets}`,
+  );
+
   assert(
     page.consoleErrors.length === 0,
     "console errors: " + page.consoleErrors.join(" | "),
@@ -200,8 +235,9 @@ try {
     `PASS: page-margin.spec — the sheet is inset by the millimetres asked for ` +
       `and the text reflows: first page holds ${narrow.firstPageChars} characters ` +
       `at 15 mm, ${normal.firstPageChars} at 25, ${wide.firstPageChars} at 35 ` +
-      `(${narrow.pages}/${normal.pages}/${wide.pages} pages), and the folio ` +
-      `survives the narrowest`,
+      `(${narrow.pages}/${normal.pages}/${wide.pages} pages), the folio ` +
+      `survives the narrowest, and the printer returned ` +
+      `${printedNarrow.sheets} sheets against ${printedWide.sheets}`,
   );
 } finally {
   /*
