@@ -417,9 +417,14 @@ export default function App() {
    * edits become the file, and the writer who answered "close anyway" keeps
    * them after all. The dialog said one thing and another happened.
    *
-   * A ref rather than the `confirmRequest` state because the reader is a
-   * timer callback, holding the closure from the render its effect last ran
-   * on — and that effect does not list the dialog among its dependencies.
+   * The external-change watch reads it too, for a milder reason: no work is
+   * lost, but its conflict modal would land on top of the question, about the
+   * same unsaved work, and answering one would change what the other was
+   * asked about.
+   *
+   * A ref rather than the `confirmRequest` state because both readers are
+   * timer callbacks, holding the closure from the render their effect last
+   * ran on — and neither effect lists the dialog among its dependencies.
    */
   const confirmBusyRef = useRef(false);
   // "The standing notice on screen is an autosave failure", so a later write
@@ -1466,14 +1471,21 @@ export default function App() {
 
   /**
    * One poll tick over every file-backed document. Serialized against
-   * itself, skipped while a native dialog owns the UI or a conflict modal is
-   * up, and stopped at the first conflict so documents resolve one at a time.
+   * itself, skipped while a native dialog owns the UI, a conflict modal is up
+   * or a question about unsaved work is waiting to be answered, and stopped
+   * at the first conflict so documents resolve one at a time.
    */
   async function checkExternalChanges() {
     if (
       watchInflightRef.current ||
       busyOperationRef.current !== null ||
-      conflictBusyRef.current
+      conflictBusyRef.current ||
+      // A question about unsaved work is already on screen, and the conflict
+      // this could raise would be about the same unsaved work: two modals,
+      // each trapping the focus, and answering one changes what the other
+      // was asked about. Nothing rearms this — it is an interval, so the tick
+      // that stands down is followed by another one three seconds later.
+      confirmBusyRef.current
     ) {
       return;
     }
