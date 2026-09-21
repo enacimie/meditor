@@ -12,8 +12,8 @@ use crate::location::{
     location_display, normalize_path, register_normalized, write_atomic, DocumentRegistry,
     MAX_FILE_BYTES,
 };
-// Both still in lib.rs until the recent-list glue gets its own module.
-use crate::{persist_recent, recent};
+use crate::recent;
+use crate::recent_menu::persist_recent;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use tauri::Manager;

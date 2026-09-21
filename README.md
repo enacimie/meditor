@@ -340,6 +340,7 @@ meditor/
 │   ├── src/location.rs       # Paths, content URIs, the handle registry, atomic writes
 │   ├── src/paper.rs          # The sheet and the margin both print paths agree on
 │   ├── src/recent.rs         # The recent documents, opened by position
+│   ├── src/recent_menu.rs    # recent.json and the two commands that read it
 │   ├── src/session.rs        # session.json: the tabs that come back, and their fingerprints
 │   ├── src/system.rs         # Platform name, exit, and the native alert dialog
 │   ├── tauri.conf.json
