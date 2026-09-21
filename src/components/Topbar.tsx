@@ -30,6 +30,15 @@ type Props = {
   onSave: () => void;
   onSaveAs: () => void;
   /**
+   * Read the open document's file again, discarding the buffer.
+   *
+   * Undefined when there is nothing to read it from — a document that has
+   * never been saved, or a web handle that did not survive — and the row is
+   * then left out rather than dimmed. A dimmed "Reload from disk" on an
+   * untitled document would be answering a question nobody asked.
+   */
+  onReload?: () => void;
+  /**
    * The documents opened lately, freshest first. Empty where there is nothing
    * to reopen, and the section is then not drawn at all rather than drawn
    * saying so — an empty list is the normal state of a fresh install, and a
@@ -118,6 +127,7 @@ const Topbar = memo(function Topbar({
   onOpen,
   onSave,
   onSaveAs,
+  onReload,
   recent = [],
   onOpenRecent,
   onExportPdf,
@@ -313,6 +323,12 @@ const Topbar = memo(function Topbar({
                 <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
                 {t("menu.saveAs")}<span className="shortcut">{t("menu.shortcut.saveAs")}</span>
               </button>
+              {onReload && (
+                <button type="button" role="menuitem" disabled={busy} onClick={() => { onReload(); setMenuOpen(false); menuToggleRef.current?.focus(); }}>
+                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
+                  {t("menu.reload")}
+                </button>
+              )}
               {/*
                 * The section is drawn whenever the host can reopen anything,
                 * empty or not. A menu whose rows come and go teaches nobody
