@@ -342,6 +342,7 @@ meditor/
 │   ├── src/recent.rs         # The recent documents, opened by position
 │   ├── src/recent_menu.rs    # recent.json and the two commands that read it
 │   ├── src/session.rs        # session.json: the tabs that come back, and their fingerprints
+│   ├── src/startup.rs        # Files arriving from argv, a second launch, or the Finder
 │   ├── src/system.rs         # Platform name, exit, and the native alert dialog
 │   ├── tauri.conf.json
 │   ├── capabilities/         # Permissions (dialog, opener; updater and process on desktop)
