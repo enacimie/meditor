@@ -40,6 +40,10 @@ export const en = {
   "op.pdfExported": "PDF exported",
   "op.htmlExported": "HTML exported",
   "op.openError": "Could not open files",
+  "op.reloading": "Reloading…",
+  "op.reloadError": "Could not reload the document",
+  "op.reloadErrorPrefix": "Could not reload: ",
+  "op.reloaded": (name: string) => `${name} reloaded from disk`,
   "op.saveError": "Could not save document",
   "op.exportError": "Could not export PDF",
   "op.exportHtmlError": "Could not export HTML",
@@ -53,6 +57,8 @@ export const en = {
   "confirm.unsavedClose": "There are unsaved documents. Exit anyway?",
   "confirm.unsavedTab": (name: string) =>
     `"${name}" has unsaved changes. Close anyway?`,
+  "confirm.reloadDiscards": (name: string) =>
+    `"${name}" has unsaved changes. Reloading takes the file as it is on disk and throws them away. Reload anyway?`,
   "confirm.title": "Confirm",
   "confirm.yes": "Yes",
   "confirm.no": "No",
@@ -144,6 +150,7 @@ export const en = {
   "file.registryLock": "Could not access document registry",
   "file.sessionUnavailable": "A document is no longer available",
   // Menu items
+  "menu.reload": "Reload from disk",
   "menu.saveAs": "Save as",
   "menu.recent": "Recent documents",
   "menu.recentEmpty": "No recent documents",

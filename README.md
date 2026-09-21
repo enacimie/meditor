@@ -36,6 +36,7 @@
 - **Figures with numbered captions**: an image alone in its paragraph and carrying a title — `![alt](shot.png "What it shows")` — becomes a `<figure>` with a numbered caption. The number is worked out once, in the renderer, so the Web view, the Document view and the HTML export cannot disagree about it.
 - **Recent documents** in the menu, freshest first, with the ones that have been moved or deleted dropped. The list is kept by the backend and clicked by position: the interface is handed names to draw, never a path it could ask to have opened. Desktop only — see [docs/android.md](docs/android.md).
 - **Persistence**: open/save real files and **session restoration** (tabs and content) between launches.
+- **Files that change underneath you**: every open document is watched, and one rewritten by something else is reloaded when it has no unsaved changes, or raises a three-way choice — reload, keep mine, save mine elsewhere — when it has. **Reload from disk** in the menu does the same on demand, for an editor that rewrites a file without moving its timestamp, and asks first when there is unsaved work to lose.
 
 ### Interface
 

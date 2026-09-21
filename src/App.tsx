@@ -79,7 +79,7 @@ import { backend } from "./backend";
 import type { RecentEntry } from "./backend/types";
 import "./App.css";
 
-type FileOperation = "open" | "save" | "saveAs" | "export" | "exportHtml";
+type FileOperation = "open" | "save" | "saveAs" | "export" | "exportHtml" | "reload";
 
 // Editor/preview preferences. The interface language is NOT part of this
 // object: I18nProvider owns it (meditor.language.v1, validated against the
@@ -206,6 +206,7 @@ function isOperationBusy(ref: MutableRefObject<FileOperation | null>): boolean {
 
 function operationNotice(t: ReturnType<typeof useTranslation>["t"], op: FileOperation): string {
   if (op === "open") return t("op.opening");
+  if (op === "reload") return t("op.reloading");
   if (op === "save") return t("op.saving");
   if (op === "saveAs") return t("op.savingAs");
   if (op === "exportHtml") return t("op.exportingHtml");
@@ -221,6 +222,7 @@ function operationNoticeDone(t: ReturnType<typeof useTranslation>["t"], op: File
 
 function operationNoticeError(t: ReturnType<typeof useTranslation>["t"], op: FileOperation): string {
   if (op === "open") return t("op.openError");
+  if (op === "reload") return t("op.reloadError");
   if (op === "export") return t("op.exportError");
   if (op === "exportHtml") return t("op.exportHtmlError");
   return t("op.saveError");
@@ -228,6 +230,7 @@ function operationNoticeError(t: ReturnType<typeof useTranslation>["t"], op: Fil
 
 function operationErrorPrefix(t: ReturnType<typeof useTranslation>["t"], op: FileOperation): string {
   if (op === "open") return t("op.openErrorPrefix");
+  if (op === "reload") return t("op.reloadErrorPrefix");
   if (op === "export") return t("op.exportErrorPrefix");
   if (op === "exportHtml") return t("op.exportHtmlErrorPrefix");
   return t("op.saveErrorPrefix");
@@ -1084,6 +1087,71 @@ export default function App() {
       await showNativeAlert(operationErrorPrefix(t, "open") + String(error), lang);
     } finally {
       endOperation("open");
+    }
+  }
+
+  /**
+   * Read the document's file again and take what is there.
+   *
+   * The watch already does this on its own when it notices a file move, and
+   * that covers the ordinary case. This is for the times it cannot: a file
+   * whose fingerprint did not move although its bytes did — some editors
+   * preserve the modification time — or a reader who simply wants to be sure
+   * they are looking at what is on disk rather than trusting a poll. Every
+   * editor of this kind has the command; meditor did not, and the button
+   * people found instead was "Check for updates".
+   *
+   * Unsaved work is never thrown away without being asked, because that is
+   * exactly what this does: the file wins, whole.
+   */
+  async function reloadFromDisk() {
+    const target = active;
+    const handle = target?.handle;
+    if (!target || !handle) return;
+    /*
+     * The lock goes on before the question, not after the answer.
+     *
+     * Autosave writes two seconds after the last edit and stands down only
+     * while an operation is in flight. Ask first and it lands while the
+     * dialog is still on screen: the buffer this command exists to throw
+     * away becomes the file, and the "Yes" reads it straight back. The
+     * command would report having reloaded the document, having in fact
+     * overwritten the file with the very thing the writer asked to discard.
+     *
+     * Holding it across the question is also what `openFiles` does while the
+     * file dialog is up, cancellation included.
+     */
+    if (!beginOperation("reload")) return;
+    try {
+      if (target.dirty) {
+        const ok = await confirmDialog(t("confirm.reloadDiscards", target.name));
+        if (!ok) {
+          // Replaces the persistent "Reloading…" that `beginOperation` put up.
+          showNotice(t("op.cancelled"), "info");
+          return;
+        }
+      }
+      const content = await backend.readDocument(handle, lang);
+      /*
+       * The fingerprint too, and before the buffer is replaced.
+       *
+       * Without it the next poll finds a file whose fingerprint has moved
+       * since the baseline and reads it all over again — harmless, but it
+       * would also classify: a document made clean here would simply be
+       * reloaded a second time, and one the writer starts typing into within
+       * three seconds would raise a conflict over the very reload they asked
+       * for.
+       */
+      const stat = await backend.documentStat(handle, lang);
+      if (stat) statsRef.current.set(handle, stat);
+      const id = target.id;
+      setDocs((prev) => prev.map((d) => (d.id === id ? { ...d, content, dirty: false } : d)));
+      showNotice(t("op.reloaded", target.name), "success");
+    } catch (error) {
+      showNotice(operationNoticeError(t, "reload"), "error", 0);
+      await showNativeAlert(operationErrorPrefix(t, "reload") + String(error), lang);
+    } finally {
+      endOperation("reload");
     }
   }
 
@@ -1968,6 +2036,10 @@ export default function App() {
         onOpen={openFiles}
         onSave={save}
         onSaveAs={saveAs}
+        // Only where there is a file to read back. The recent rows are gated
+        // the same way, and for the same reason: a row that cannot do
+        // anything teaches nothing by being there.
+        onReload={active?.handle ? reloadFromDisk : undefined}
         recent={recent}
         onOpenRecent={recentAvailable ? openRecent : undefined}
         onExportPdf={pdfExportAvailable ? exportPdf : undefined}
