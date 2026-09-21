@@ -118,7 +118,24 @@ pub fn gtk_page_setup(
     page_setup
 }
 
+/*
+ * Gated as a module rather than test by test.
+ *
+ * Every test here calls `pdf_margin_mm` or `paper_sheet`, and neither
+ * exists on a platform with no PDF path — macOS among them. Six copies of
+ * the same attribute said that six times and still left `use super::*`
+ * unused on macOS, which `-D warnings` makes fatal; said once, here, a test
+ * added later cannot forget it.
+ */
 #[cfg(test)]
+#[cfg(any(
+    target_os = "linux",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd",
+    target_os = "windows"
+))]
 mod tests {
     use super::*;
 
@@ -130,16 +147,6 @@ mod tests {
      * on Linux. What is testable, and what actually broke, is the rule itself:
      * both platforms now ask the same question and must get the same answer.
      */
-    // Gated with the function they cover: on a platform with no PDF path
-    // there is nothing here to call.
-    #[cfg(any(
-        target_os = "linux",
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd",
-        target_os = "windows"
-    ))]
     #[test]
     fn a_paginated_document_is_not_margined_again() {
         // The default, and the case that was wrong on Linux: the sheets that
@@ -147,28 +154,12 @@ mod tests {
         assert_eq!(pdf_margin_mm(false, true), 0.0);
     }
 
-    #[cfg(any(
-        target_os = "linux",
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd",
-        target_os = "windows"
-    ))]
     #[test]
     fn a_slide_brings_its_own_page() {
         assert_eq!(pdf_margin_mm(true, true), 0.0);
         assert_eq!(pdf_margin_mm(true, false), 0.0);
     }
 
-    #[cfg(any(
-        target_os = "linux",
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd",
-        target_os = "windows"
-    ))]
     #[test]
     fn the_plain_web_view_still_gets_real_margins() {
         // The one case that needs them: an unpaginated document is a run of
@@ -176,16 +167,6 @@ mod tests {
         assert_eq!(pdf_margin_mm(false, false), 25.0);
     }
 
-    // Gated with the function they cover, like the margin tests above: on a
-    // platform with no PDF path there is no `paper_sheet` to call.
-    #[cfg(any(
-        target_os = "linux",
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd",
-        target_os = "windows"
-    ))]
     #[test]
     fn a4_is_what_an_unknown_paper_falls_back_to() {
         // A build that has never heard of a paper prints on the one it knows,
@@ -199,16 +180,6 @@ mod tests {
         assert_eq!(paper_sheet(Some("")).1, "iso_a4");
     }
 
-    // Gated with the function they cover, like the margin tests above: on a
-    // platform with no PDF path there is no `paper_sheet` to call.
-    #[cfg(any(
-        target_os = "linux",
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd",
-        target_os = "windows"
-    ))]
     #[test]
     fn letter_is_eight_and_a_half_by_eleven() {
         let ((w, h), name) = paper_sheet(Some("letter"));
@@ -217,16 +188,6 @@ mod tests {
         assert_eq!(h, 11.0);
     }
 
-    // Gated with the function they cover, like the margin tests above: on a
-    // platform with no PDF path there is no `paper_sheet` to call.
-    #[cfg(any(
-        target_os = "linux",
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd",
-        target_os = "windows"
-    ))]
     #[test]
     fn the_two_papers_are_not_the_same_sheet() {
         // The assertion that matters, because the failure it guards is a page
