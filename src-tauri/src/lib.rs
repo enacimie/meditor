@@ -21,6 +21,11 @@ use document::documents_from_locations;
 use locale::Locale;
 use location::DocumentRegistry;
 use std::collections::HashMap;
+// Only the Apple open-document handler names it, and that block exists on
+// no other platform -- which is why dropping this import compiled cleanly
+// on Windows, on Linux and against the Android target, and failed on macOS.
+#[cfg(target_os = "macos")]
+use std::path::PathBuf;
 use std::sync::Mutex;
 
 // `Manager` is the `app.state()` calls in the two hand-offs and in the
