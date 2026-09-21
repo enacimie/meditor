@@ -189,6 +189,29 @@
   .prefs-label {
     flex: none;
   }
+
+  /*
+   * On a phone a hint that follows a dropdown gets its own line.
+   *
+   * Stacking the row puts the label above the control, which is most of the
+   * fix — but the control and its explanation stay side by side inside it,
+   * and a dropdown leaves about 90 px for the sentence. "The sheet the
+   * Document view lays out on, and prints to" came out four lines tall in a
+   * sliver, which is the same thing the dialog was widened for on a desktop.
+   *
+   * Only after a `select`. A hint that follows a checkbox is that checkbox's
+   * own words — "Use the spell checker your system provides" — and belongs
+   * beside it, where a tick and its meaning read as one line. Written as an
+   * adjacent sibling rather than with `:has()`, which meditor also ships to
+   * the BSDs, where WebKitGTK can be some years behind.
+   */
+  .prefs-control {
+    flex-wrap: wrap;
+  }
+
+  .prefs-control select + .prefs-hint {
+    min-width: 100%;
+  }
 }
 
 .prefs-control input[type="checkbox"] {
