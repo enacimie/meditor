@@ -362,6 +362,60 @@ describe("external file changes", () => {
     expect(saveAsCall?.[1]?.content).toBe("my edit");
     expect(conflictDialog()).toBeNull();
   });
+
+  it("waits while a question about unsaved work is on screen", async () => {
+    /*
+     * The watch stands down for a file operation and for a conflict already
+     * being answered, but not for a question. Ctrl+W on a dirty document asks
+     * whether to lose the edits; if the file moves during those seconds, the
+     * poll puts the three-way conflict on top of it. Two modals, each
+     * trapping the focus, each asking about the same unsaved work, and the
+     * answer to one changes what the other was asked about -- resolving the
+     * conflict with "Reload" replaces the buffer the question is still
+     * offering to discard.
+     *
+     * No work is lost either way, which is what makes this smaller than the
+     * autosave hole beside it, and no reason to leave it standing.
+     *
+     * The second half costs nothing to assert and says the pass was deferred
+     * rather than dropped. It is free here in a way it was not for autosave:
+     * the watch is an interval, so a skipped tick is followed by another one
+     * three seconds later without anybody rearming anything.
+     */
+    h.dirty = true;
+    // The file agrees with the buffer, so mounting settles quietly and every
+    // change below is this test's doing.
+    h.disk = "my edit";
+    await mountApp();
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "w", ctrlKey: true });
+      await vi.advanceTimersByTimeAsync(50);
+    });
+    expect(
+      screen.queryByText(/has unsaved changes/i),
+      "closing a dirty document should ask",
+    ).not.toBeNull();
+
+    // Something else rewrites the file while the question is up.
+    h.stat = { modifiedMs: 2000, size: 12 };
+    h.disk = "their edit";
+    await tick();
+
+    expect(
+      conflictDialog(),
+      "one question at a time; this one is already about that unsaved work",
+    ).toBeNull();
+
+    // They keep the tab. The poll that stood down comes back by itself.
+    await clickDialogButton("No");
+    await tick();
+
+    expect(
+      conflictDialog(),
+      "the moment has passed, and the file really did change",
+    ).not.toBeNull();
+  });
 });
 
 describe("saving is not an external change", () => {
