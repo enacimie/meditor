@@ -269,6 +269,15 @@ fn t_rif(key: &str) -> String {
     }
 }
 
+/// The locale a command was handed, or English when it was handed nothing.
+///
+/// Every command takes `Option<String>` rather than a `Locale`, because the
+/// value crosses the IPC boundary as whatever the frontend had, and an
+/// unknown tag is not worth failing a file operation over.
+pub fn parse_locale(raw: Option<String>) -> Locale {
+    raw.as_deref().map(Locale::from_str).unwrap_or(Locale::En)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -334,6 +334,7 @@ meditor/
 ├── src-tauri/
 │   ├── src/lib.rs            # Commands: read/save, session, and PDF export
 │   ├── src/locale.rs         # Localized backend error messages
+│   ├── src/location.rs       # Paths, content URIs, the handle registry, atomic writes
 │   ├── src/recent.rs         # The recent documents, opened by position
 │   ├── tauri.conf.json
 │   ├── capabilities/         # Permissions (dialog, opener; updater and process on desktop)
