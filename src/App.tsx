@@ -784,7 +784,13 @@ export default function App() {
     if (
       busyOperationRef.current !== null ||
       conflictBusyRef.current ||
-      confirmBusyRef.current
+      confirmBusyRef.current ||
+      // The application is on its way out. A write armed by the last
+      // keystroke is still pending when "exit anyway?" is answered yes, and
+      // `requestQuit` then spends up to five seconds on its close tasks
+      // holding no file lock -- long enough for that write to land and put
+      // on disk exactly the work the dialog said would be lost.
+      closingRef.current
     ) {
       return;
     }
