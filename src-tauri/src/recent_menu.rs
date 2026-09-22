@@ -23,6 +23,10 @@ fn recent_file_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
 ///
 /// A missing, truncated or hand-edited file costs the user their recent list
 /// and nothing else, so none of it is worth failing a startup over.
+#[cfg_attr(
+    mobile,
+    allow(dead_code, reason = "read at startup, and only desktop has that setup")
+)]
 pub fn load_recent(app: &tauri::AppHandle) -> Vec<PathBuf> {
     let Ok(path) = recent_file_path(app) else {
         return Vec::new();
