@@ -363,6 +363,111 @@ describe("external file changes", () => {
     expect(conflictDialog()).toBeNull();
   });
 
+  it("keeps the conflict up when saving elsewhere cannot run", async () => {
+    /*
+     * The other half of the same hazard, and the one that loses work.
+     *
+     * Nothing stops a shortcut while the conflict is on screen: Ctrl+S,
+     * Ctrl+O or an export all take the file lock with the three buttons
+     * still there to be pressed. "Save as..." used to dismiss the dialog
+     * and then call `saveAs`, which declines in silence when the lock is
+     * held -- so the reader picked the one answer that protects their
+     * buffer, watched the question disappear, and got nothing written and
+     * nothing said. The question has to stay until it can be honoured.
+     *
+     * The dialog still being there is the assertion that discriminates: the
+     * empty `save_as` holds either way, because the old code did call
+     * `saveAs` and `saveAs` is what declined. It is kept for the other
+     * direction -- a future `saveAs` that ignores the lock instead of
+     * respecting it would write behind a operation in flight, and this
+     * would say so.
+     */
+    h.dirty = true;
+    h.disk = "my edit";
+    await mountApp();
+
+    h.stat = { modifiedMs: 2000, size: 12 };
+    h.disk = "their edit";
+    await tick();
+    expect(conflictDialog()).toBeTruthy();
+
+    // Ctrl+S with the write hung: the lock is taken and never given back.
+    const inner = h.invoke.getMockImplementation()!;
+    h.invoke.mockImplementation(async (cmd: string, args?: Record<string, unknown>) => {
+      if (cmd === "save_document") return new Promise(() => {});
+      return inner(cmd, args);
+    });
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "s", ctrlKey: true });
+      await vi.advanceTimersByTimeAsync(50);
+    });
+    expect(
+      h.invoke.mock.calls.filter(([cmd]) => cmd === "save_document").length,
+      "the shortcut has to reach the backend, or the lock is not held and",
+    ).toBeGreaterThan(0);
+
+    vi.mocked(h.invoke).mockClear();
+    await clickDialogButton("Save as…");
+
+    expect(
+      h.invoke.mock.calls.filter(([cmd]) => cmd === "save_as"),
+      "the dialog cannot pick a file while another operation holds the lock",
+    ).toEqual([]);
+    expect(
+      conflictDialog(),
+      "so the question stays up, to be answered again when it can be obeyed",
+    ).toBeTruthy();
+  });
+
+  it("does not raise a conflict on top of an operation that started later", async () => {
+    /*
+     * The guards at the top of a tick are read once. The body then awaits the
+     * fingerprint and the file, and an operation can start in between -- a
+     * file dialog, an export, or the question a reload asks.
+     *
+     * The cost is not cosmetic. A conflict raised then paints a second
+     * `aria-modal` over the first, and "save mine elsewhere" answers it by
+     * calling `saveAs`, which declines in silence while another operation
+     * holds the lock: the dialog goes away, nothing is written, and the
+     * buffer the reader chose to protect is the one that loses.
+     */
+    h.dirty = true;
+    h.disk = "my edit";
+    await mountApp();
+
+    // Hold the file read open, so a tick is in flight with nothing decided.
+    let releaseRead: (text: string) => void = () => {};
+    const inner = h.invoke.getMockImplementation()!;
+    h.invoke.mockImplementation(async (cmd: string, args?: Record<string, unknown>) => {
+      if (cmd === "read_document") {
+        return new Promise((resolve) => {
+          releaseRead = resolve as (text: string) => void;
+        });
+      }
+      if (cmd === "save_document") return new Promise(() => {});
+      return inner(cmd, args);
+    });
+
+    h.stat = { modifiedMs: 2000, size: 12 };
+    await tick();
+
+    // An operation takes the lock while that read is still outstanding.
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "s", ctrlKey: true });
+      await vi.advanceTimersByTimeAsync(50);
+    });
+
+    await act(async () => {
+      releaseRead("their edit");
+      await vi.advanceTimersByTimeAsync(200);
+    });
+
+    expect(
+      conflictDialog(),
+      "a conflict may not be raised over an operation already in progress",
+    ).toBeNull();
+  });
+
   it("waits while a question about unsaved work is on screen", async () => {
     /*
      * The watch stands down for a file operation and for a conflict already

@@ -1558,6 +1558,28 @@ export default function App() {
           // on the next save, where it can be explained properly.
           continue;
         }
+        /*
+         * Read again, now that two awaits have passed.
+         *
+         * The guards at the top of this function were true when the tick
+         * started; a file dialog, an export or a question can have opened
+         * since. Raising the conflict anyway paints a second `aria-modal`
+         * over the first, and answering it with "save mine elsewhere" then
+         * does nothing at all -- `saveAs` declines silently while another
+         * operation holds the lock, so the dialog goes away and the buffer
+         * the reader chose to protect is not written.
+         *
+         * Nothing is lost by leaving: this is an interval, and the next
+         * tick is three seconds behind.
+         */
+        if (
+          busyOperationRef.current !== null ||
+          conflictBusyRef.current ||
+          confirmBusyRef.current ||
+          closingRef.current
+        ) {
+          return;
+        }
         const verdict = classifyExternalChange({
           baseline: statsRef.current.get(handle) ?? null,
           current: stat,
@@ -1640,9 +1662,20 @@ export default function App() {
 
   function resolveConflictSaveAs() {
     const req = conflictRequest;
+    if (!req) return;
+    /*
+     * The lock before the dismissal.
+     *
+     * `saveAs` declines in silence while another operation holds it, and
+     * this used to clear the dialog first -- so the reader's choice
+     * vanished with their buffer unwritten and nothing on screen saying
+     * so. Leaving the question up is the honest answer: it can be given
+     * again once whatever is in the way has finished.
+     */
+    if (isOperationBusy(busyOperationRef)) return;
     conflictBusyRef.current = false;
     setConflictRequest(null);
-    if (req) void saveAs(req.id);
+    void saveAs(req.id);
   }
 
   async function exportPdf() {
