@@ -52,49 +52,47 @@ const page = await connect(CDP_PORT);
 /** Put `text` in the editor, replacing whatever is there. */
 const setDocument = async (text) => {
   /*
-   * The editor has to be there before anything types into it.
+   * The look and the use in the same turn, and retried until it takes.
    *
-   * Every call that opens a page waits for `.cm-content` first; the ones
-   * in a `finally` did not, and dereferenced it straight away. That is a
-   * race, and it is the cleanup that loses it -- twice on Windows CI,
-   * with `TypeError: Cannot read properties of null (reading 'focus')`
-   * from a spec whose subject was somewhere else entirely, once blocking
-   * a release. Waiting here covers every call site at once, and an editor
-   * that genuinely never comes back now fails by name instead of by
-   * dereference.
+   * Waiting for `.cm-content` from out here is not enough, which is the
+   * thing this cost three CI runs to learn: the element appears, satisfies
+   * the wait, and is gone again by the time the next `evaluate` arrives.
+   * Something remounts CodeMirror shortly after first paint; this spec
+   * cannot see what, and does not need to. Both shapes of the failure were
+   * `TypeError: Cannot read properties of null (reading 'focus')` on
+   * `windows-latest` -- once from a cleanup with no wait at all, and once
+   * from three lines below a wait that had just passed.
+   *
+   * So the page-side code looks and types in one go, and an absent editor
+   * comes back as `false` rather than a dereference. Nothing here can be
+   * unmounted between the check and the use, because there is no gap.
    */
-  await page.waitFor("!!document.querySelector('.cm-content')", {
-    timeout: 20000,
-    message: 'the editor should be mounted before anything types into it',
-  });
-  return page.evaluate(`(() => {
-    const cm = document.querySelector('.cm-content');
-    cm.focus();
-    const range = document.createRange();
-    range.selectNodeContents(cm);
-    const selection = window.getSelection();
-    selection.removeAllRanges();
-    selection.addRange(range);
-    document.execCommand('insertText', false, ${JSON.stringify(text)});
-    return true;
-  })()`);
+  const deadline = Date.now() + 20000;
+  for (;;) {
+    const done = await page.evaluate(`(() => {
+      const cm = document.querySelector('.cm-content');
+      if (!cm) return false;
+      cm.focus();
+      const range = document.createRange();
+      range.selectNodeContents(cm);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      document.execCommand('insertText', false, ${JSON.stringify(text)});
+      return true;
+    })()`);
+    if (done) return true;
+    if (Date.now() > deadline) {
+      throw new Error('the editor never stayed mounted long enough to type into');
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
 };
 
 /** Open the deck in presentation mode, advance one slide, and measure. */
 async function present() {
   await page.freshPage(BASE_URL);
-  await page.waitFor("!!document.querySelector('.cm-content')", { timeout: 20000 });
-  await page.evaluate(`(() => {
-    const cm = document.querySelector('.cm-content');
-    cm.focus();
-    const range = document.createRange();
-    range.selectNodeContents(cm);
-    const selection = window.getSelection();
-    selection.removeAllRanges();
-    selection.addRange(range);
-    document.execCommand('insertText', false, ${JSON.stringify(DECK)});
-    return true;
-  })()`);
+  await setDocument(DECK);
   await page.waitFor("!!document.querySelector('.marpit')", {
     timeout: 20000,
     message: "the deck should reach the preview",
