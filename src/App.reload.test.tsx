@@ -155,10 +155,6 @@ describe("reloading from disk", () => {
     expect(await reload(), "the command should be in the menu").toBe(true);
 
     await waitFor(() => expect(editorText()).toContain("the file as it is now"));
-    expect(
-      document.querySelector(".tab.active .tab-dirty"),
-      "a buffer that is the file is not unsaved",
-    ).toBeNull();
   });
 
   it("asks first when there is unsaved work, and does nothing if told no", async () => {
@@ -200,8 +196,21 @@ describe("reloading from disk", () => {
     await reload();
     await screen.findByText(/unsaved changes/i);
 
-    fireEvent.click(screen.getByRole("button", { name: /Save \(Ctrl/ }));
-    // Long enough for a click that got through to reach the backend.
+    /*
+     * Through the keyboard, deliberately. Clicking the toolbar proves only
+     * that the button carries `disabled`, which React honours before any
+     * handler runs -- that assertion holds with the lock removed from the
+     * save path entirely, which is not what this test says it watches.
+     * The shortcut has no attribute in its way and arrives at the same
+     * guard autosave and the watch go through.
+     */
+    const save = screen.getByRole("button", {
+      name: /Save \(Ctrl/,
+    }) as HTMLButtonElement;
+    expect(save.disabled, "the toolbar says so too, which is its own claim").toBe(true);
+
+    fireEvent.keyDown(window, { key: "s", ctrlKey: true });
+    // Long enough for a keystroke that got through to reach the backend.
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(
@@ -219,6 +228,13 @@ describe("reloading from disk", () => {
     fireEvent.click(screen.getByRole("button", { name: "Yes" }));
 
     await waitFor(() => expect(editorText()).toContain("the file as it is now"));
+    // Here rather than on the clean document, where the same assertion
+    // could not fail: `h.dirty` is false in the `beforeEach`, so there was
+    // never a dot to clear. This is the branch that clears one.
+    expect(
+      document.querySelector(".tab.active .tab-dirty"),
+      "a buffer that is now the file is not unsaved any more",
+    ).toBeNull();
   });
 
   it("does not wedge the application when a second question arrives", async () => {
@@ -287,19 +303,17 @@ describe("reloading from disk", () => {
     );
   });
 
-  it("adopts the file's fingerprint, so the watch does not reload it again", async () => {
-    /*
-     * Without this the next poll finds a file whose fingerprint has moved
-     * since the baseline and reads it all over again — and a writer who
-     * starts typing within three seconds of asking for a reload would be
-     * asked about a conflict over the reload they just requested.
-     */
-    await mountApp();
-    h.stat = { modifiedMs: 12345, size: 21 };
-    await reload();
-    await waitFor(() => expect(editorText()).toContain("the file as it is now"));
-
-    const stats = h.invoke.mock.calls.filter(([cmd]) => cmd === "document_stat");
-    expect(stats.length, "the reload should have asked for the fingerprint").toBeGreaterThan(0);
-  });
+  /*
+   * "It adopts the file's fingerprint, so the watch does not reload it
+   * again" used to be a test here, and could not fail: it asserted that
+   * `document_stat` had been *called*, which the reload does whether or not
+   * it keeps the answer. Deleting the line that keeps it left this file
+   * green. It could not do better here either -- the watch is a three-second
+   * interval and this file runs on the real clock, so the second poll the
+   * claim is about never arrives.
+   *
+   * It lives in `App.externalchange.test.tsx` now, which has the fake clock
+   * the assertion needs, under "does not reload what a reload from disk has
+   * just taken".
+   */
 });
