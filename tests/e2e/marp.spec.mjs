@@ -68,18 +68,44 @@ const FRAG_DECK = [
 const page = await connect(CDP_PORT);
 
 /** Put `text` in the editor, replacing whatever is there. */
-const setDocument = (text) =>
-  page.evaluate(`(() => {
-    const cm = document.querySelector('.cm-content');
-    cm.focus();
-    const range = document.createRange();
-    range.selectNodeContents(cm);
-    const selection = window.getSelection();
-    selection.removeAllRanges();
-    selection.addRange(range);
-    document.execCommand('insertText', false, ${JSON.stringify(text)});
-    return true;
-  })()`);
+const setDocument = async (text) => {
+  /*
+   * The look and the use in the same turn, and retried until it takes.
+   *
+   * Waiting for `.cm-content` from out here is not enough, which is the
+   * thing this cost three CI runs to learn: the element appears, satisfies
+   * the wait, and is gone again by the time the next `evaluate` arrives.
+   * Something remounts CodeMirror shortly after first paint; this spec
+   * cannot see what, and does not need to. Both shapes of the failure were
+   * `TypeError: Cannot read properties of null (reading 'focus')` on
+   * `windows-latest` -- once from a cleanup with no wait at all, and once
+   * from three lines below a wait that had just passed.
+   *
+   * So the page-side code looks and types in one go, and an absent editor
+   * comes back as `false` rather than a dereference. Nothing here can be
+   * unmounted between the check and the use, because there is no gap.
+   */
+  const deadline = Date.now() + 20000;
+  for (;;) {
+    const done = await page.evaluate(`(() => {
+      const cm = document.querySelector('.cm-content');
+      if (!cm) return false;
+      cm.focus();
+      const range = document.createRange();
+      range.selectNodeContents(cm);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      document.execCommand('insertText', false, ${JSON.stringify(text)});
+      return true;
+    })()`);
+    if (done) return true;
+    if (Date.now() > deadline) {
+      throw new Error('the editor never stayed mounted long enough to type into');
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+};
 
 let sampleDocument = null;
 try {
@@ -237,17 +263,7 @@ try {
   // ── Presentation: fragments reveal one step at a time ────────────────
   // Reload the editor with a deck that auto-fragments and declares a slide
   // transition, then drive the presenter from the keyboard.
-  await page.evaluate(`(() => {
-    const cm = document.querySelector('.cm-content');
-    cm.focus();
-    const range = document.createRange();
-    range.selectNodeContents(cm);
-    const selection = window.getSelection();
-    selection.removeAllRanges();
-    selection.addRange(range);
-    document.execCommand('insertText', false, ${JSON.stringify(FRAG_DECK)});
-    return true;
-  })()`);
+  await setDocument(FRAG_DECK);
   await page.waitFor(
     `(() => {
       const n = document.querySelectorAll('.marp-slides svg[data-marpit-svg]').length;
