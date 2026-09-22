@@ -16,18 +16,18 @@ use std::path::{Path, PathBuf};
 ///
 /// Generous next to the 10 MiB the editor accepts on paste, because a
 /// document may point at a photograph nobody put there through meditor.
-pub const MAX_IMAGE_BYTES: u64 = 32 * 1024 * 1024;
+const MAX_IMAGE_BYTES: u64 = 32 * 1024 * 1024;
 
 /// What may be served to an `<img>`, by extension.
 ///
 /// An allow-list rather than a deny-list, and the reason this command cannot
 /// be used to read the user's documents: only these are ever handed back, and
 /// only ever into an image element.
-pub const IMAGE_EXTENSIONS: [&str; 9] = [
+const IMAGE_EXTENSIONS: [&str; 9] = [
     "png", "jpg", "jpeg", "gif", "webp", "bmp", "svg", "avif", "ico",
 ];
 
-pub fn has_image_extension(path: &Path) -> bool {
+fn has_image_extension(path: &Path) -> bool {
     path.extension()
         .and_then(|extension| extension.to_str())
         .map(|extension| {
@@ -54,11 +54,7 @@ pub fn has_image_extension(path: &Path) -> bool {
 /// the only editor that cannot open such a file. What keeps that safe is not
 /// the shape of the path but what may come back through it — an image, by
 /// extension, below the size ceiling, and only ever into an `<img>`.
-pub fn resolve_image_path(
-    locale: Locale,
-    document: &Path,
-    rel_path: &str,
-) -> Result<PathBuf, String> {
+fn resolve_image_path(locale: Locale, document: &Path, rel_path: &str) -> Result<PathBuf, String> {
     if rel_path.is_empty() || rel_path.contains('\0') {
         return Err(t(locale, "image.invalidPath"));
     }
@@ -133,7 +129,7 @@ const RESERVED_STEMS: [&str; 22] = [
 ///
 /// Returns `None` when nothing usable is left, in which case the caller names
 /// the file itself.
-pub fn sanitize_image_name(proposed: &str) -> Option<String> {
+fn sanitize_image_name(proposed: &str) -> Option<String> {
     // Any path in front of the name is not part of the name.
     let base = proposed
         .rsplit(['/', '\\'])
