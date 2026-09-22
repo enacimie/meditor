@@ -583,6 +583,64 @@ describe("autosave", () => {
     ).toEqual(["v1 mine"]);
   });
 
+  it("does not save the work that \"exit anyway\" just discarded", async () => {
+    /*
+     * The dialog states an outcome: there are unsaved documents, and going
+     * ahead loses them. Answering yes has to mean that.
+     *
+     * The window is `requestQuit`'s close wait. Answering also puts the
+     * application back in motion -- right for "no", where the tab is still
+     * dirty and nothing else would ask again -- so a write is armed two
+     * seconds out while `requestQuit` spends up to five on its close tasks,
+     * holding no file lock, with `docsRef` untouched. The pass lands inside
+     * that window and puts on disk exactly what the reader was told they were
+     * giving up.
+     *
+     * The session write is held open here so the wait is a real one. In the
+     * application it is real for a different reason: `exitApp` ends the
+     * process, so nothing after it runs at all.
+     */
+    await mountApp();
+    await enableAutosave();
+    await settle();
+    h.writes.length = 0;
+
+    // Hold the session write open, which is what `requestQuit` waits on.
+    const inner = h.invoke.getMockImplementation()!;
+    h.invoke.mockImplementation(async (cmd: string, args?: Record<string, unknown>) => {
+      if (cmd === "save_session") return new Promise(() => {});
+      return inner(cmd, args);
+    });
+
+    type(" work the writer is about to give up");
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "q", ctrlKey: true });
+      await vi.advanceTimersByTimeAsync(50);
+    });
+    expect(
+      screen.queryByText(/unsaved documents/i),
+      "quitting with unsaved work should ask",
+    ).not.toBeNull();
+
+    // The reader takes their time. The write armed by their last keystroke
+    // comes due while the question is still up, and stands down.
+    await settle();
+    expect(h.writes, "nothing may be written while the question is up").toEqual([]);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Yes" }));
+      // Past the dialog's own exit transition, which is when the answer lands.
+      await vi.advanceTimersByTimeAsync(300);
+    });
+    await settle();
+    await settle();
+
+    expect(
+      h.writes.map((w) => w.content),
+      "the dialog said this would be lost; it may not be written instead",
+    ).toEqual([]);
+  });
+
   it("takes its failure notice down once a write works again", async () => {
     /*
      * The notice has no timer and nothing else clears it, because a message
