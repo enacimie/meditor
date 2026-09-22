@@ -217,9 +217,19 @@ try {
       `(${narrow.pages}), got ${printedNarrow.sheets}`,
   );
   /*
-   * The one that says the margin reached the printer rather than only the
-   * screen. Print on a geometry the browser decided for itself and both
-   * runs come out the same length, however different the two views were.
+   * Read this for what it is: a comparison of two DOM page counts, not
+   * evidence that the margin reached the printer.
+   *
+   * It used to claim the latter, and it cannot. paged.js lays the document
+   * out into fixed-size page elements and hands the printer `@page { margin:
+   * 0 }`, so the millimetres are baked into the sheets before printing
+   * begins -- by design, and it is why the paginated view and the PDF agree.
+   * With the two equalities above pinning printed sheets to paginated pages,
+   * this line says `narrow.pages < wide.pages`.
+   *
+   * It earns its place anyway: that relation holds nowhere else here. The
+   * assertion at the top of this block compares the narrow margin against
+   * the *normal* one, never against the wide.
    */
   assert(
     printedNarrow.sheets < printedWide.sheets,

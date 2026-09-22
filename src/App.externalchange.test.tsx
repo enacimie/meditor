@@ -135,6 +135,37 @@ function conflictDialog(): HTMLElement | null {
   return document.querySelector(".conflict-overlay");
 }
 
+/**
+ * Type into the live editor.
+ *
+ * Through the view, not the DOM: a Range does not reach CodeMirror, and text
+ * dispatched any other way lands somewhere other than where it looks.
+ */
+function type(text: string) {
+  const view = EditorView.findFromDOM(document.querySelector(".cm-editor") as HTMLElement);
+  if (!view) throw new Error("no EditorView mounted");
+  act(() => {
+    view.dispatch({ changes: { from: view.state.doc.length, insert: text } });
+  });
+}
+
+/** "Reload from disk", from the "more options" menu, on the fake clock. */
+async function reloadFromMenu() {
+  await act(async () => {
+    fireEvent.click(screen.getByRole("button", { name: /more options/i }));
+    await vi.advanceTimersByTimeAsync(50);
+  });
+  const row = screen.getByRole("menu");
+  const button = [...row.querySelectorAll("button")].find((b) =>
+    (b.textContent ?? "").includes("Reload from disk"),
+  );
+  if (!button) throw new Error("no reload row in the menu");
+  await act(async () => {
+    fireEvent.click(button);
+    await vi.advanceTimersByTimeAsync(200);
+  });
+}
+
 beforeAll(async () => {
   if (!("getClientRects" in (document.createTextNode("") as Node))) {
     (Range.prototype as unknown as Record<string, unknown>).getClientRects = function () {
@@ -181,6 +212,19 @@ beforeEach(() => {
   h.disk2 = "";
   h.dirty = false;
   h.sessionStat = null;
+  /*
+   * The call log does carry over: `restoreAllMocks` does not empty a
+   * `vi.fn()` -- it undoes `spyOn` -- and `resetInvoke` reinstalls the
+   * implementation without touching `mock.calls`. Measured, not assumed: a
+   * test that saves nothing sees the `save_document` of the test above it.
+   *
+   * Nothing is broken today, because every assertion here that reads
+   * `mock.calls` clears the log itself first. That is the hazard -- it
+   * holds only as long as each new test remembers, and one that forgets
+   * goes green on somebody else's calls. The sibling files clear it here
+   * instead, and have since #118.
+   */
+  h.invoke.mockClear();
   resetInvoke();
 });
 
@@ -205,8 +249,17 @@ describe("a file that changed while meditor was closed", () => {
    * the same failed comparison, which is why it never recovered.
    */
   it("reloads it, rather than sitting on the old text for ever", async () => {
-    // The file moved on while the app was shut: the session's fingerprint is
-    // the old one, the disk has somebody else's bytes.
+    /*
+     * The file moved on while the app was shut: the session's fingerprint is
+     * the old one, the disk has somebody else's bytes.
+     *
+     * `sessionStat` describes the scenario here; it does not decide the
+     * verdict. `classifyExternalChange` takes the same branch for "no
+     * baseline" as for "baseline moved" (`externalChange.ts:44`), so this
+     * test and the one below stay green with the seeding removed. The one
+     * the seed decides is "leaves unsaved work alone when the file did not
+     * move", where it has to *match* -- mutate that one to test the wire.
+     */
     h.sessionStat = { modifiedMs: 1000, size: 10 };
     h.stat = { modifiedMs: 7000, size: 24 };
     h.disk = "written by something else";
@@ -468,6 +521,36 @@ describe("external file changes", () => {
     ).toBeNull();
   });
 
+  it("does not reload what a reload from disk has just taken", async () => {
+    /*
+     * Moved here from `App.reload.test.tsx`, where the same claim could not
+     * fail: it asserted that the reload had *asked* for the fingerprint,
+     * which it does whether or not it keeps the answer, and that file runs
+     * on the real clock so the second poll never came at all.
+     *
+     * What the adopted fingerprint prevents only shows on that second poll.
+     * Keep the old baseline and the poll finds a file that has moved since,
+     * and a reader who started typing in the meantime is asked to resolve a
+     * conflict against the very reload they just asked for.
+     */
+    await mountApp();
+
+    // The file moved, and the reader takes it by hand rather than waiting.
+    h.stat = { modifiedMs: 4242, size: 17 };
+    h.disk = "taken by hand";
+    await reloadFromMenu();
+    expect(editorText(), "the reload should have taken the file").toContain("taken by hand");
+
+    // ...and starts typing inside the three seconds before the next poll.
+    type("!");
+    await tick();
+
+    expect(
+      conflictDialog(),
+      "the reload is not an external change to be asked about",
+    ).toBeNull();
+  });
+
   it("waits while a question about unsaved work is on screen", async () => {
     /*
      * The watch stands down for a file operation and for a conflict already
@@ -524,22 +607,6 @@ describe("external file changes", () => {
 });
 
 describe("saving is not an external change", () => {
-  /**
-   * Type into the live editor.
-   *
-   * Through the view, not the DOM: a Range does not reach CodeMirror, and text
-   * dispatched any other way lands somewhere other than where it looks.
-   */
-  function type(text: string) {
-    const view = EditorView.findFromDOM(
-      document.querySelector(".cm-editor") as HTMLElement,
-    );
-    if (!view) throw new Error("no EditorView mounted");
-    act(() => {
-      view.dispatch({ changes: { from: view.state.doc.length, insert: text } });
-    });
-  }
-
   /** A save, as the disk sees it: new bytes and a new fingerprint. */
   function diskAcceptsSaves() {
     const original = h.invoke.getMockImplementation()!;
