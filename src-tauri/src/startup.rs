@@ -56,7 +56,7 @@ pub fn queue_open_paths<I: IntoIterator<Item = PathBuf>>(paths: I) {
         .extend(paths);
 }
 
-pub fn drain_pending_paths() -> Vec<PathBuf> {
+fn drain_pending_paths() -> Vec<PathBuf> {
     match PENDING_OPEN_PATHS.get() {
         Some(pending) => pending
             .lock()

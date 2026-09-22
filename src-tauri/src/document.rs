@@ -109,7 +109,7 @@ pub fn documents_from_locations(
         .collect()
 }
 
-pub fn saved_document(
+fn saved_document(
     app: &tauri::AppHandle,
     locale: Locale,
     location: Location,
@@ -239,9 +239,13 @@ pub fn save_document(
 /// timestamp, and either alone still detects the edits this exists for.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
+/// The fields are `pub(crate)` rather than private because `session.rs`
+/// builds one with known values to round-trip it through the session file;
+/// `metadata_stat` cannot stand in there, since it reports whatever the
+/// filesystem says rather than the pair the assertion is about.
 pub struct DocumentStat {
-    pub modified_ms: Option<u64>,
-    pub size: Option<u64>,
+    pub(crate) modified_ms: Option<u64>,
+    pub(crate) size: Option<u64>,
 }
 
 fn system_time_ms(time: std::time::SystemTime) -> Option<u64> {
@@ -263,7 +267,7 @@ pub fn metadata_stat(metadata: &std::fs::Metadata) -> DocumentStat {
 /// plugin's own stat command refuses them — but its open hands back a real
 /// file descriptor over the Storage Access Framework, and an fstat on that
 /// descriptor answers the same questions.
-pub fn location_stat(app: &tauri::AppHandle, location: &Location) -> Option<DocumentStat> {
+fn location_stat(app: &tauri::AppHandle, location: &Location) -> Option<DocumentStat> {
     match as_path(location) {
         Some(path) => std::fs::metadata(path).ok().map(|m| metadata_stat(&m)),
         None => {
