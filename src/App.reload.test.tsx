@@ -221,6 +221,49 @@ describe("reloading from disk", () => {
     await waitFor(() => expect(editorText()).toContain("the file as it is now"));
   });
 
+  it("does not wedge the application when a second question arrives", async () => {
+    /*
+     * The one that costs a whole session.
+     *
+     * Only one question fits on screen, so a second used to overwrite the
+     * first and drop the answer it owed. Harmless while nobody held anything
+     * across a question -- but this command holds the file lock across it,
+     * released in a `finally` that then never runs. Everything guarded by
+     * that lock dies quietly: autosave, the external-change watch, Ctrl+S,
+     * Ctrl+O, Ctrl+E, closing a tab.
+     *
+     * Ctrl+Q is the sequence from the report, and it is one keystroke: the
+     * shortcut asks nothing about a question already being on screen.
+     */
+    h.dirty = true;
+    await mountApp();
+    await reload();
+    await screen.findByText(/unsaved changes/i);
+
+    // Quit, on top of the question the reload is waiting on.
+    fireEvent.keyDown(window, { key: "q", ctrlKey: true });
+    await screen.findByText(/unsaved documents/i);
+
+    fireEvent.click(screen.getByRole("button", { name: "No" }));
+    await waitFor(() => expect(screen.queryByText(/unsaved documents/i)).toBeNull());
+
+    // The lock has to be back. Save is the cheapest way to see it from
+    // outside: it takes the same lock and does nothing while it is held.
+    const save = (await screen.findByRole("button", {
+      name: /Save \(Ctrl/,
+    })) as HTMLButtonElement;
+    await waitFor(() =>
+      expect(save.disabled, "the toolbar is still locked out").toBe(false),
+    );
+    fireEvent.click(save);
+    await waitFor(() =>
+      expect(
+        h.invoke.mock.calls.filter(([cmd]) => cmd === "save_document").length,
+        "the file lock was never released",
+      ).toBeGreaterThan(0),
+    );
+  });
+
   it("is not offered for a document that has no file", async () => {
     // There is nothing to read back, and a row that cannot act teaches
     // nothing by being there.
