@@ -325,6 +325,9 @@ export default function App() {
   const [compactLayout, setCompactLayout] = useState(false);
   const [busyOperation, setBusyOperation] = useState<FileOperation | null>(null);
   const [confirmRequest, setConfirmRequest] = useState<{
+    // Rises with every question so the dialog remounts instead of swapping
+    // its text under whatever the reader had focused. See the `key` below.
+    seq: number;
     message: string;
     resolve: (ok: boolean) => void;
   } | null>(null);
@@ -427,6 +430,16 @@ export default function App() {
    * ran on — and neither effect lists the dialog among its dependencies.
    */
   const confirmBusyRef = useRef(false);
+  /**
+   * The answer the question on screen is still waiting for.
+   *
+   * A ref and not the `confirmRequest` state: `confirmDialog` is a stable
+   * callback with no dependencies, so it cannot read state as it is now —
+   * and a question being replaced has to be answered from outside the
+   * render that put it up.
+   */
+  const pendingConfirmRef = useRef<((ok: boolean) => void) | null>(null);
+  const confirmSeqRef = useRef(0);
   // "The standing notice on screen is an autosave failure", so a later write
   // that works can take it down again.
   const autosaveFailedRef = useRef(false);
@@ -973,10 +986,29 @@ export default function App() {
   // identity so the once-registered close guard can reference it safely.
   const confirmDialog = useCallback((message: string): Promise<boolean> => {
     return new Promise((resolve) => {
+      /*
+       * One question at a time, and a new one supersedes the old.
+       *
+       * Only one request can be on screen, so asking a second thing used to
+       * drop the first `resolve` and leave its `await` pending for ever.
+       * That was survivable while no caller held anything across the
+       * question. `reloadFromDisk` holds the file lock across it, and a lock
+       * released in a `finally` that never runs takes autosave, the
+       * external-change watch and every file command down with it, silently,
+       * for the rest of the session — reachable with one Ctrl+Q, since
+       * neither the shortcut nor the window's close guard asks whether
+       * something is already being asked.
+       *
+       * The one being replaced is answered "no": the safe answer, and the
+       * one that sends its caller down a cancel path it already has.
+       */
+      pendingConfirmRef.current?.(false);
       // The single place every "are you sure?" passes through, which is why
       // the flag is raised here rather than in each of the four callers.
       confirmBusyRef.current = true;
-      setConfirmRequest({ message, resolve });
+      pendingConfirmRef.current = resolve;
+      confirmSeqRef.current += 1;
+      setConfirmRequest({ seq: confirmSeqRef.current, message, resolve });
     });
   }, []);
 
@@ -996,8 +1028,12 @@ export default function App() {
    */
   function answerConfirm(answer: boolean): void {
     confirmBusyRef.current = false;
-    confirmRequest?.resolve(answer);
+    // Through the ref rather than the captured state: this is the one
+    // resolver still owed an answer, whichever render put it there.
+    const resolve = pendingConfirmRef.current;
+    pendingConfirmRef.current = null;
     setConfirmRequest(null);
+    resolve?.(answer);
     nudgeAutosave();
   }
 
@@ -2367,6 +2403,10 @@ export default function App() {
       />
       {confirmRequest && (
         <ConfirmDialog
+          // Remount, do not reuse: without this the dialog keeps its focus
+          // and its exit timer across a replacement, so the text changes
+          // under the reader and a pending close can fire the old answer.
+          key={confirmRequest.seq}
           title={t("confirm.title")}
           message={confirmRequest.message}
           confirmLabel={t("confirm.yes")}
