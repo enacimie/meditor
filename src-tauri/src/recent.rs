@@ -145,6 +145,14 @@ impl RecentFiles {
     ///
     /// Separate from [`Self::from_stored`] because the state is managed before
     /// there is an app handle to find the file with.
+    ///
+    /// Only the `#[cfg(desktop)]` setup in `lib.rs` calls this, so on mobile
+    /// it is dead. Compiled there anyway, so the round-trip test below keeps
+    /// covering it and a future mobile recent list has nothing to un-gate.
+    #[cfg_attr(
+        mobile,
+        allow(dead_code, reason = "the desktop-only startup is its one caller")
+    )]
     pub fn restore(&self, stored: Vec<PathBuf>) {
         let Ok(mut paths) = self.0.lock() else { return };
         *paths = stored;
