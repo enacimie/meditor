@@ -68,8 +68,24 @@ const FRAG_DECK = [
 const page = await connect(CDP_PORT);
 
 /** Put `text` in the editor, replacing whatever is there. */
-const setDocument = (text) =>
-  page.evaluate(`(() => {
+const setDocument = async (text) => {
+  /*
+   * The editor has to be there before anything types into it.
+   *
+   * Every call that opens a page waits for `.cm-content` first; the ones
+   * in a `finally` did not, and dereferenced it straight away. That is a
+   * race, and it is the cleanup that loses it -- twice on Windows CI,
+   * with `TypeError: Cannot read properties of null (reading 'focus')`
+   * from a spec whose subject was somewhere else entirely, once blocking
+   * a release. Waiting here covers every call site at once, and an editor
+   * that genuinely never comes back now fails by name instead of by
+   * dereference.
+   */
+  await page.waitFor("!!document.querySelector('.cm-content')", {
+    timeout: 20000,
+    message: 'the editor should be mounted before anything types into it',
+  });
+  return page.evaluate(`(() => {
     const cm = document.querySelector('.cm-content');
     cm.focus();
     const range = document.createRange();
@@ -80,6 +96,7 @@ const setDocument = (text) =>
     document.execCommand('insertText', false, ${JSON.stringify(text)});
     return true;
   })()`);
+};
 
 let sampleDocument = null;
 try {
