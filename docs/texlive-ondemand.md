@@ -1,5 +1,9 @@
 # LaTeX con TeX Live Ondemand
 
+> La compatibilidad con LaTeX está desactivada en la app por ahora
+> (`LATEX_ENABLED` en `src/latexSupport.ts`). Este documento sirve para
+> trabajar en ella con ese interruptor encendido.
+
 SwiftLaTeX incluye el motor PdfTeX y sus archivos WASM en `public/swiftlatex/`,
 pero descarga bajo demanda las clases, paquetes y fuentes de TeX Live. El
 endpoint público histórico (`texlive2.swiftlatex.com`) no ofrece una
@@ -11,9 +15,10 @@ servicio autoalojado de SwiftLaTeX.
 SwiftLaTeX está sin mantener (último commit en 2024, última release en 2022) y
 su endpoint público ha estado caído de forma prolongada. Con el endpoint por
 defecto, la vista previa LaTeX es **experimental y best-effort**; para un uso
-fiable, arranca el servicio autoalojado (arriba) o configura otro endpoint en
-Preferencias. A medio plazo el motor se sustituirá por un compilador LaTeX
-propio en Rust con salida WASM, que elimina la dependencia de este servicio.
+fiable, arranca el servicio autoalojado (abajo) o apunta
+`VITE_TEXLIVE_ENDPOINT` a otro endpoint (ver `.env.example`). A medio plazo el
+motor se sustituirá por un compilador LaTeX propio en Rust con salida WASM, que
+elimina la dependencia de este servicio.
 
 ## Arranque local
 
