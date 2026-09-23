@@ -293,8 +293,6 @@ pub async fn export_pdf(
      */
     #[cfg(target_os = "windows")]
     {
-        // WebView2 measures in inches. A4 with the same 25 mm margins the GTK
-        // path sets, so both platforms produce the same page.
         // The sheet, from the same table the GTK path reads, so the two
         // platforms cannot be asked for different paper.
         let (page_w, page_h) = custom_page.unwrap_or(crate::paper::paper_sheet(paper.as_deref()).0);

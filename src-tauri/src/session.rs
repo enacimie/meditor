@@ -224,8 +224,7 @@ pub fn load_session(
      *
      * `handle.is_some()` is the test, and deliberately not a second one of
      * its own: `restore_session_path` hands back a handle only when the path
-     * still resolves and the file still matches the snapshot byte for byte.
-     * Anything else — moved, deleted, edited underneath us, or an Android
+     * still resolves to a file. Anything else — moved, deleted, or an Android
      * `content://` URI that never was a path — is exactly what the list must
      * not offer.
      *
