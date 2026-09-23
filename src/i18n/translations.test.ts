@@ -106,6 +106,9 @@ describe("translations", () => {
     "op.reloadError",
     "op.reloadErrorPrefix",
     "op.reloaded",
+    // Said where the webview cannot print (macOS, phones); en/es for now.
+    "op.pdfUnavailableHere",
+    "op.printUnavailableHere",
     "prefs.autosave",
     "prefs.autosaveHint",
     "prefs.paperSize",

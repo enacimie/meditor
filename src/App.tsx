@@ -45,7 +45,7 @@ import { useNotice } from "./hooks/useNotice";
 import { useUpdateCheck } from "./hooks/useUpdateCheck";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useCoarsePointer, prefersCoarsePointer } from "./hooks/useCoarsePointer";
-import { usePlatform, isMobilePlatform } from "./hooks/usePlatform";
+import { usePlatform, isMobilePlatform, canPrintNatively } from "./hooks/usePlatform";
 
 import type { Doc, DocKind } from "./types";
 import type { LayoutMode, Theme } from "./components/types";
@@ -1683,7 +1683,16 @@ export default function App() {
     // web build hands the page to the browser's own dialog or downloads the
     // PDF a WASM engine produced. Asking `isTauri()` here left the web build's
     // menu entry doing nothing at all.
-    if (!active || !beginOperation("export")) return;
+    if (!active) return;
+    // Hiding the menu entry is not enough: Ctrl+E comes here directly. A
+    // Markdown document, a Marp deck included, reaches PDF only through the
+    // webview's printing, which a Mac or a phone does not have; say so rather
+    // than hand Rust a request it can only refuse.
+    if (active.kind === "markdown" && !canPrintNatively(platform)) {
+      showNotice(t("op.pdfUnavailableHere"), "info");
+      return;
+    }
+    if (!beginOperation("export")) return;
     try {
       const base = active.name.replace(/\.(md|markdown|txt|typ|typst|tex|latex|ltx)$/i, "") || t("doc.defaultExport");
       if (active.kind === "typst") {
@@ -1740,6 +1749,12 @@ export default function App() {
   }
 
   async function printDocument() {
+    // Ctrl+P is the only way here, and where the webview cannot print it
+    // would only pass on Rust's refusal.
+    if (!canPrintNatively(platform)) {
+      showNotice(t("op.printUnavailableHere"), "info");
+      return;
+    }
     try {
       // A Marp deck is a stack of slides, each already its own page; the
       // paginated view draws pages with their own margins. Either way the
@@ -2105,8 +2120,9 @@ export default function App() {
    * Typst and LaTeX compile to PDF in the frontend's own WASM and hand the
    * bytes to Rust to write, which works anywhere the file dialog does —
    * Android included. Markdown goes through the webview's native printing,
-   * which exists on Linux and Windows only, so on a phone the entry would be
-   * a menu row whose entire job is to raise an error.
+   * which exists on Windows, Linux and the BSDs only (`canPrintNatively`), so
+   * on a Mac or a phone the entry would be a menu row whose entire job is to
+   * raise an error. exportPdf asks the same question, for Ctrl+E.
    *
    * `platform` is null until Rust answers, and in a browser where there is
    * nothing to ask; that counts as available so the menu does not flicker.
@@ -2120,7 +2136,7 @@ export default function App() {
   const activeKind = active?.kind ?? "markdown";
   const pdfExportAvailable =
     (LATEX_ENABLED || activeKind !== "latex") &&
-    (!isMobilePlatform(platform) || activeKind !== "markdown");
+    (canPrintNatively(platform) || activeKind !== "markdown");
 
   /*
    * The updater is a desktop plugin and is not compiled into the mobile

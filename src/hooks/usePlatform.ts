@@ -42,3 +42,33 @@ export function usePlatform(): Platform {
 export function isMobilePlatform(platform: Platform): boolean {
   return platform === "android" || platform === "ios";
 }
+
+/*
+ * Where the webview can print, which is how a Markdown document or a Marp
+ * deck becomes a PDF, and what Ctrl+P does.
+ *
+ * The same targets `export.rs` prints under — Windows through WebView2,
+ * Linux and the BSDs through WebKitGTK — plus the web build, where the
+ * browser's own dialog does it. macOS has no print path yet and a phone has
+ * none at all; Rust answers "not supported" there. Typst and LaTeX compile
+ * their PDF in WASM and never ask.
+ */
+const PRINTS_NATIVELY = new Set([
+  "windows",
+  "linux",
+  "dragonfly",
+  "freebsd",
+  "netbsd",
+  "openbsd",
+  "web",
+]);
+
+/**
+ * Whether the webview can print here.
+ *
+ * Null — Rust has not answered yet — counts as yes, for the same reason as
+ * above: a desktop must not flicker its menu entry in and out on startup.
+ */
+export function canPrintNatively(platform: Platform): boolean {
+  return platform === null || PRINTS_NATIVELY.has(platform);
+}
