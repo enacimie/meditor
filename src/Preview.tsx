@@ -29,6 +29,7 @@ import { DEFAULT_PAGE, buildPagedCss, type PageMetrics } from "./pageSetup";
 import { isMarpDocument } from "./marpDetect";
 import { LATEX_ENABLED } from "./latexSupport";
 import { blockForLine } from "./previewSync";
+import { footnotesToCalls } from "./pagedFootnotes";
 
 import type { DocKind } from "./types";
 import type { Theme } from "./components/types";
@@ -392,6 +393,9 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
         await document.fonts.ready;
         if (cancelled || myToken !== tokenRef.current) return;
         wrapCodeLines(source);
+        // Before the headings are kept with what follows them: a note lifted
+        // into its paragraph changes how tall that paragraph is.
+        footnotesToCalls(source);
         keepHeadingsWithContent(source, undefined, metrics);
         // Last chance to measure: everything below this is a serialised string.
         fitWideTables(source, undefined, landscapeTables, t("preview.landscapeNote"), metrics);

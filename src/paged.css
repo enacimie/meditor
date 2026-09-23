@@ -444,6 +444,54 @@
   break-inside: avoid;
 }
 
+/* ---- Footnotes at the foot of their page ----
+ *
+ * pagedFootnotes.ts lifts every note that can stand in line next to its call
+ * as a span.footnote, and `float: footnote` has paged.js move it into the
+ * note area at the foot of that page. The number is markdown-it's, written
+ * into the note and into its calls, so paged.js's own call and marker, which
+ * count on their own, are hidden. The notes that cannot float stay in the list
+ * at the end (.footnotes, below).
+ *
+ * The note area is not inside .markdown-body.doc, so the type is set on it
+ * here rather than inherited: 9 pt Latin Modern under a short rule, as
+ * LaTeX's \footnoterule draws it.
+ */
+.markdown-body.doc .footnote {
+  float: footnote;
+}
+
+.footnote[data-footnote-call]::after {
+  content: none;
+}
+
+.pagedjs_footnote_area .footnote {
+  display: block;
+  font-family: "Latin Modern Roman", "LM Roman 10", "CMU Serif",
+    "EB Garamond", Georgia, "Times New Roman", serif;
+  font-size: 9pt;
+  line-height: 1.3;
+  color: #000000;
+  text-align: justify;
+  text-indent: 0;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  margin-bottom: 2pt;
+}
+
+.pagedjs_footnote_area .footnote a {
+  color: #000000;
+  text-decoration: none;
+}
+
+.pagedjs_footnote_content::before {
+  content: "";
+  display: block;
+  width: 30%;
+  border-top: 0.4pt solid #000000;
+  margin: 4pt 0 3pt;
+}
+
 .markdown-body.doc .footnotes {
   font-size: 9pt;
   margin-top: 1.8em;

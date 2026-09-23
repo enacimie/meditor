@@ -15,7 +15,7 @@ A **Markdown** editor with _live_ preview, ==highlighted== text, and ++inserted+
 - Autolink: https://example.org
 - Footnotes work too[^1].
 
-[^1]: This is a footnote. It appears at the bottom of the document.
+[^1]: This is a footnote. In the Document view it sits at the foot of the page that calls it; in the Web view, at the end.
 
 ## Tables
 
