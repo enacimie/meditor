@@ -13,7 +13,7 @@
  *   await page.click(".tab-add");
  *   ...
  *   page.close();
- *   chrome.stop();
+ *   await chrome.stop();
  *
  * Specs run as standalone scripts; the runner passes CDP_PORT and BASE_URL
  * via the environment (see run.mjs).
@@ -129,7 +129,7 @@ export function findFreePort() {
  * Launch headless Chrome with remote debugging on an ephemeral profile.
  * Tries a list of known Chrome binaries when `chromeBin` is not given.
  *
- * @returns {{ port: number, stop: () => void }}
+ * @returns {{ port: number, pid: number, profileDir: string, stop: () => Promise<void> }}
  */
 export async function launchChrome({ url, chromeBin, port } = {}) {
   const cdpPort = port ?? (await findFreePort());
@@ -146,6 +146,63 @@ export async function launchChrome({ url, chromeBin, port } = {}) {
     `Could not launch Chrome (tried ${candidates.join(", ")}): ` +
       (lastError?.message ?? "unknown error"),
   );
+}
+
+/**
+ * Close Chrome, then remove its profile once it has let go of it.
+ *
+ * Killing Chrome and removing the folder straight away works on Linux and not
+ * on Windows, where helper processes still hold files in it for a while. The
+ * error used to be swallowed, so every run left its profile — some 55 MB —
+ * behind in %TEMP%. So: ask Chrome to close, kill it only if it will not, let
+ * rmSync retry while the last handles go, and if it still cannot, say which
+ * folder is left rather than leave it silently.
+ */
+async function shutDown(chrome, profileDir, cdpPort) {
+  // A binary that never started has no process to wait for.
+  if (chrome.pid !== undefined && chrome.exitCode === null && chrome.signalCode === null) {
+    const exited = new Promise((resolve) => chrome.once("exit", () => resolve(true)));
+    // Asked to close, Chrome takes its helpers with it. Killed, it leaves the
+    // crash handler and a utility process holding the profile for a while:
+    // measured on Windows, a removal right after a kill failed three times in
+    // three, and right after Browser.close succeeded three times in three.
+    const closing = await askToClose(cdpPort);
+    const closed = closing && (await Promise.race([exited, sleep(5000).then(() => false)]));
+    if (!closed) {
+      chrome.kill("SIGKILL");
+      await Promise.race([exited, sleep(5000)]);
+    }
+  }
+  try {
+    rmSync(profileDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+  } catch (error) {
+    console.warn(`[e2e] could not remove the Chrome profile ${profileDir}: ${error.message}`);
+  }
+}
+
+/** Send Browser.close over CDP; false if Chrome could not be reached. */
+async function askToClose(cdpPort) {
+  try {
+    const version = await (
+      await fetch(`http://127.0.0.1:${cdpPort}/json/version`, { signal: AbortSignal.timeout(2000) })
+    ).json();
+    const socket = new WebSocket(version.webSocketDebuggerUrl);
+    const opened = await Promise.race([
+      new Promise((resolve) => {
+        socket.addEventListener("open", () => resolve(true), { once: true });
+        socket.addEventListener("error", () => resolve(false), { once: true });
+      }),
+      sleep(2000).then(() => false),
+    ]);
+    if (!opened) {
+      socket.close();
+      return false;
+    }
+    socket.send(JSON.stringify({ id: 1, method: "Browser.close" }));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function startWith(bin, cdpPort, url) {
@@ -179,15 +236,9 @@ async function startWith(bin, cdpPort, url) {
       if (res.ok) {
         return {
           port: cdpPort,
+          pid: chrome.pid,
           profileDir,
-          stop() {
-            chrome.kill("SIGKILL");
-            try {
-              rmSync(profileDir, { recursive: true, force: true });
-            } catch {
-              // Profile removal can race with Chrome's shutdown — not fatal.
-            }
-          },
+          stop: () => shutDown(chrome, profileDir, cdpPort),
         };
       }
     } catch {
@@ -195,8 +246,7 @@ async function startWith(bin, cdpPort, url) {
     }
     await sleep(250);
   }
-  chrome.kill("SIGKILL");
-  rmSync(profileDir, { recursive: true, force: true });
+  await shutDown(chrome, profileDir, cdpPort);
   if (spawnError) {
     throw new Error(`binary "${bin}" could not be started: ${spawnError.message}`);
   }
