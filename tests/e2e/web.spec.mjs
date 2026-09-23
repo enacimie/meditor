@@ -10,7 +10,8 @@
  *      UI shows (same tabs, ids, names, active tab) and never a handle.
  *   2. Freezing that session and reloading restores it identically, end to
  *      end, through webBackend.loadSession.
- *   3. No console errors along the way.
+ *   3. Export PDF reaches the browser's print dialog, once.
+ *   4. No console errors along the way.
  *
  * Run via `pnpm test:e2e` (the runner sets CDP_PORT and BASE_URL).
  */
@@ -105,12 +106,47 @@ try {
     `restore activated "${restoredActive.name}" instead of "${activeTab.name}"`,
   );
 
+  // ── Export PDF reaches the browser's print dialog ───────────────────
+  // The web backend's exportPdf is window.print(), so the calls are counted
+  // instead of letting headless Chrome open a dialog. A fresh tab makes the
+  // active document Markdown whatever the restored session held, and the entry
+  // is found by its shortcut label, which reads "Ctrl+E" in every language.
+  // Looking and using happen in one evaluation: the menu is React's to redraw.
+  const exported = await page.evaluate(`(async () => {
+    window.__printCalls = 0;
+    window.print = () => { window.__printCalls += 1; };
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'n', ctrlKey: true, bubbles: true }));
+    const deadline = Date.now() + 5000;
+    const until = async (check) => {
+      while (Date.now() < deadline) {
+        const found = check();
+        if (found) return found;
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
+      return null;
+    };
+    const toggle = await until(() => document.querySelector('.menu-toggle:not([disabled])'));
+    if (!toggle) return { error: 'no enabled menu toggle' };
+    toggle.click();
+    const entry = await until(() => [...document.querySelectorAll('[role="menuitem"]')]
+      .find((item) => item.querySelector('.shortcut')?.textContent === 'Ctrl+E'));
+    if (!entry) return { error: 'no Export PDF entry in the menu' };
+    entry.click();
+    await until(() => window.__printCalls > 0);
+    return { calls: window.__printCalls };
+  })()`);
+  assert(!exported.error, `export check could not run: ${exported.error}`);
+  assert(
+    exported.calls === 1,
+    `Export PDF reached the print dialog ${exported.calls} times instead of once`,
+  );
+
   assert(
     page.consoleErrors.length === 0,
     "console errors: " + page.consoleErrors.join(" | "),
   );
   console.log(
-    "web.spec ok — no Tauri runtime, session mirrors UI and survives a reload",
+    "web.spec ok — no Tauri runtime, session mirrors UI and survives a reload, export prints",
   );
 } finally {
   page.close();
