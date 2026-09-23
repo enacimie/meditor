@@ -141,7 +141,6 @@ export const is = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus leita field",
   "shortcuts.find": "Finna in skjal",
   "shortcuts.replace": "Finna and skipta út",
   "shortcuts.goToLine": "Fara í to lína",

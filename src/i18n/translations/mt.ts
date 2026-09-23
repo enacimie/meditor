@@ -141,7 +141,6 @@ export const mt = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus fittex field",
   "shortcuts.find": "Sib in dokument",
   "shortcuts.replace": "Sib and ibdel",
   "shortcuts.goToLine": "Mur to linja",

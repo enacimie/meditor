@@ -404,10 +404,10 @@ try {
     // #f5f5f5 reads perfectly well. The defect is that it is a white window
     // inside a dark editor.
     await page.evaluate(
-      "window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true })); true",
+      "window.dispatchEvent(new KeyboardEvent('keydown', { key: 'f', ctrlKey: true, bubbles: true })); true",
     );
     await page.waitFor("!!document.querySelector('.cm-panels')", {
-      message: "Ctrl+K should open the find panel",
+      message: "Ctrl+F should open the find panel",
     });
     const panel = await page.evaluate(`(() => {
       const el = document.querySelector('.cm-panels');

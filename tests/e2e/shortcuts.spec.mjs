@@ -4,13 +4,14 @@
  * Verifies, in a real headless Chrome:
  *   1. F1 opens the shortcuts overlay (role=dialog, lists shortcuts).
  *   2. Escape closes it (through the exit animation).
- *   3. Ctrl+K opens the CodeMirror search panel and focuses its input.
+ *   3. Ctrl+F opens the CodeMirror search panel and focuses its input.
  *   4. Typing a query highlights matches in the document.
- *   5. Ctrl+K is open-only: pressing it while an input has focus does not
+ *   5. Ctrl+F is open-only: pressing it while an input has focus does not
  *      steal the focus (no search panel opens from a foreign input).
  *   6. Ctrl+F from the tab bar in preview-only mode brings the editor back
  *      and leaves the caret in the find field.
- *   7. No console errors along the way.
+ *   7. Ctrl+K in the editor turns the selection into a link.
+ *   8. No console errors along the way.
  *
  * Run via `pnpm test:e2e` (the runner sets CDP_PORT and BASE_URL).
  *
@@ -96,7 +97,9 @@ try {
     dialog.rows.length >= 10,
     `overlay should list the shortcuts (got ${dialog.rows.length} rows)`,
   );
-  // The requirement: Ctrl+K is discoverable in the overlay.
+  // The requirement: Ctrl+K, the link, is discoverable in the overlay. What
+  // the row says depends on the interface language, which follows the
+  // browser's here; ShortcutsOverlay.test.tsx checks the English wording.
   assert(dialog.ctrlK, "overlay must list the Ctrl+K shortcut");
   assert(dialog.f2, "overlay must list the F2 shortcut");
   await page.screenshot(join(artifactsDir, "shortcuts-overlay.png"));
@@ -125,12 +128,12 @@ try {
   })()`);
   await page.waitFor("document.querySelector('.shortcuts-overlay') === null");
 
-  // ── Ctrl+K opens the find panel ───────────────────────────────────
+  // ── Ctrl+F opens the find panel ───────────────────────────────────
   assert(
     !(await page.exists(".cm-search")),
     "search panel should start closed",
   );
-  await press(page, "k", "ctrlKey: true");
+  await press(page, "f", "ctrlKey: true");
   await page.waitFor("!!document.querySelector('.cm-search')");
 
   const findInput = await page.evaluate(
@@ -139,7 +142,7 @@ try {
   assert(findInput.exists, "search input should exist");
   await page.waitFor(
     "document.activeElement === document.querySelector('.cm-textfield')",
-    { message: "search input should be focused after Ctrl+K" },
+    { message: "search input should be focused after Ctrl+F" },
   );
   await page.screenshot(join(artifactsDir, "find-panel.png"));
 
@@ -154,7 +157,7 @@ try {
   );
   assert(matches > 0, `expected highlighted matches, got ${matches}`);
 
-  // ── Ctrl+K must not steal focus from a foreign input ─────────────
+  // ── Ctrl+F must not steal focus from a foreign input ─────────────
   await page.evaluate(`(() => {
     const input = document.createElement('input');
     input.className = 'foreign-e2e-input';
@@ -162,7 +165,7 @@ try {
     input.focus();
     return true;
   })()`);
-  await press(page, "k", "ctrlKey: true");
+  await press(page, "f", "ctrlKey: true");
   // The search panel is already open; the key guard must ignore the press
   // because focus sits in a foreign input. Verify focus was not moved.
   const focusAfter = await page.evaluate(
@@ -170,7 +173,7 @@ try {
   );
   assert(
     focusAfter === "foreign-e2e-input",
-    `Ctrl+K must not steal focus (got ${focusAfter})`,
+    `Ctrl+F must not steal focus (got ${focusAfter})`,
   );
   await page.evaluate(`(() => {
     document.querySelector('.foreign-e2e-input')?.remove();
@@ -232,6 +235,39 @@ try {
     return true;
   })()`);
   await page.waitFor("document.querySelector('.cm-search') === null");
+
+  // ── Ctrl+K in the editor writes a link ────────────────────────────
+  // Real key events through CodeMirror's own keymap, where Mod is Cmd on
+  // macOS: select the first line, then Ctrl+K. Every spec starts from a
+  // fresh page, so the sample stays edited only for the rest of this one.
+  await page.send("Emulation.setFocusEmulationEnabled", { enabled: true });
+  const editorFocused = await page.evaluate(`(() => {
+    const content = document.querySelector('.cm-content');
+    if (!content) return false;
+    content.focus();
+    return document.activeElement === content;
+  })()`);
+  assert(editorFocused, "the editor should take focus");
+  const realKey = async (modifiers, key, code, keyCode) => {
+    for (const type of ["keyDown", "keyUp"]) {
+      await page.send("Input.dispatchKeyEvent", {
+        type,
+        modifiers,
+        key,
+        code,
+        windowsVirtualKeyCode: keyCode,
+        nativeVirtualKeyCode: keyCode,
+      });
+    }
+  };
+  await realKey(findModifier, "Home", "Home", 36);
+  await realKey(8, "End", "End", 35);
+  await realKey(findModifier, "k", "KeyK", 75);
+  await page.waitFor(
+    "document.querySelector('.cm-line')?.textContent === '[# meditor]()'",
+    { message: "Ctrl+K should turn the selected first line into a link" },
+  );
+  assert(!(await page.exists(".cm-search")), "Ctrl+K must not open the find panel");
 
   // ── Narrow viewport overlay ───────────────────────────────────────
   await page.send("Emulation.setDeviceMetricsOverride", {
@@ -310,7 +346,7 @@ try {
   );
 
   console.log(
-    "PASS: shortcuts.spec — F1 overlay + Ctrl+K find + Ctrl+F from outside the editor + Ctrl+H replace + Ctrl+G go-to-line",
+    "PASS: shortcuts.spec — F1 overlay + Ctrl+F find, also from outside the editor + Ctrl+K link + Ctrl+H replace + Ctrl+G go-to-line",
   );
 } finally {
   page.close();

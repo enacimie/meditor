@@ -141,7 +141,6 @@ export const gl = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus buscar field",
   "shortcuts.find": "Atopar in documento",
   "shortcuts.replace": "Atopar and substituír",
   "shortcuts.goToLine": "Ir a to liña",

@@ -141,7 +141,6 @@ export const af = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus soek field",
   "shortcuts.find": "Vind in dokument",
   "shortcuts.replace": "Vind and vervang",
   "shortcuts.goToLine": "Gaan na to lyn",

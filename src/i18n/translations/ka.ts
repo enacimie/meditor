@@ -141,7 +141,6 @@ export const ka = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus ძებნა field",
   "shortcuts.find": "პოვნა in დოკუმენტი",
   "shortcuts.replace": "პოვნა and ჩანაცვლება",
   "shortcuts.goToLine": "გადასვლა to ხაზი",

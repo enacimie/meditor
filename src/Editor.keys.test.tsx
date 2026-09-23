@@ -254,20 +254,83 @@ describe("formatting shortcuts", () => {
     expect(text(view)).toBe("hello");
   });
 
-  it("leaves Ctrl+K to the find field", async () => {
-    // Taking a documented shortcut is a bigger decision than adding one.
-    const view = await mount("hello");
-    setCursor(view, 0, 5);
-    ctrl(view, "k");
-    expect(text(view)).toBe("hello");
-  });
-
   it("leaves Ctrl+Shift+K to delete-line", async () => {
-    // The other key a writer might reach for is CodeMirror's own delete-line,
-    // which is worth more than a link shortcut.
+    // The link is Ctrl+K alone; with Shift it stays CodeMirror's delete-line.
+    // Sent as a keyboard sends it: Shift makes the key "K", and its code is
+    // still the letter's, which is how CodeMirror finds Shift-Mod-k.
     const view = await mount("one\ntwo");
     setCursor(view, 0);
-    ctrl(view, "k", true);
+    const event = new KeyboardEvent("keydown", {
+      key: "K",
+      keyCode: 75,
+      ctrlKey: true,
+      shiftKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    view.contentDOM.dispatchEvent(event);
     expect(text(view)).toBe("two");
+  });
+});
+
+describe("the link shortcut", () => {
+  /*
+   * Ctrl+K, as in Word, Google Docs, Typora and Obsidian. The caret lands in
+   * the slot still empty, so the next thing typed or pasted goes where it is
+   * missing.
+   */
+  const caret = (view: EditorView) => view.state.selection.main.head;
+
+  it("makes the selection a Markdown link's text, with the caret on the address", async () => {
+    const view = await mount("see the docs");
+    setCursor(view, 8, 12);
+    expect(ctrl(view, "k")).toBe(true);
+    expect(text(view)).toBe("see the [docs]()");
+    expect(caret(view)).toBe(15);
+  });
+
+  it("makes a selected address the target, with the caret on the text", async () => {
+    const view = await mount("https://example.com");
+    setCursor(view, 0, 19);
+    ctrl(view, "k");
+    expect(text(view)).toBe("[](https://example.com)");
+    expect(caret(view)).toBe(1);
+  });
+
+  it("does not take words that merely start like an address for one", async () => {
+    const view = await mount("www.example.com has it");
+    setCursor(view, 0, 22);
+    ctrl(view, "k");
+    expect(text(view)).toBe("[www.example.com has it]()");
+  });
+
+  it("opens an empty link with the caret on its text when nothing is selected", async () => {
+    const view = await mount("");
+    ctrl(view, "k");
+    expect(text(view)).toBe("[]()");
+    expect(caret(view)).toBe(1);
+  });
+
+  it("writes Typst's #link, with the caret on the address", async () => {
+    const view = await mount("docs", "typst");
+    setCursor(view, 0, 4);
+    ctrl(view, "k");
+    expect(text(view)).toBe('#link("")[docs]');
+    expect(caret(view)).toBe(7);
+  });
+
+  it("puts a selected address in Typst's #link, with the caret on the text", async () => {
+    const view = await mount("https://typst.app", "typst");
+    setCursor(view, 0, 17);
+    ctrl(view, "k");
+    expect(text(view)).toBe('#link("https://typst.app")[]');
+    expect(caret(view)).toBe(27);
+  });
+
+  it("leaves the key alone in LaTeX, which has no marker set here", async () => {
+    const view = await mount("hello", "latex");
+    setCursor(view, 0, 5);
+    expect(ctrl(view, "k")).toBe(false);
+    expect(text(view)).toBe("hello");
   });
 });

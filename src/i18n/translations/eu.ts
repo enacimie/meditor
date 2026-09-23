@@ -141,7 +141,6 @@ export const eu = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus bilatu field",
   "shortcuts.find": "Aurkitu in dokumentua",
   "shortcuts.replace": "Aurkitu and ordeztu",
   "shortcuts.goToLine": "Joan to lerroa",

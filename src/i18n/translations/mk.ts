@@ -141,7 +141,6 @@ export const mk = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus пребарај field",
   "shortcuts.find": "Најди in документ",
   "shortcuts.replace": "Најди and замени",
   "shortcuts.goToLine": "Оди на to ред",

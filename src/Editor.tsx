@@ -173,7 +173,7 @@ function fontTheme(fontSize: number, fontFamily: string): Extension {
 export type EditorHandle = {
   scrollToLine: (line: number) => void;
   getCursorLine: () => number;
-  /** Open (or focus) the find panel — wired to the Ctrl+K shortcut. */
+  /** Open (or focus) the find panel: the menu's Find, and Ctrl+F from outside the editor. */
   focusSearch: () => void;
   /**
    * Step the edit history. Ctrl+Z and Ctrl+Y already do this through
@@ -405,7 +405,7 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
       openSearchPanel(view);
       // The search extension renders the panel synchronously but focuses the
       // field on a rAF, which is unreliable under test. Focus it directly so
-      // Ctrl+K deterministically lands the cursor in the find input.
+      // Find deterministically lands the cursor in the find input.
       const field = view.dom.querySelector<HTMLInputElement>(".cm-textfield");
       field?.focus();
     },

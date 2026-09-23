@@ -141,7 +141,6 @@ export const ny = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus fufuzani field",
   "shortcuts.find": "Pezani in chikalata",
   "shortcuts.replace": "Pezani and sinthani",
   "shortcuts.goToLine": "Pitani ku to mzere",

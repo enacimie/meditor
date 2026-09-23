@@ -141,7 +141,6 @@ export const xh = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus khangela field",
   "shortcuts.find": "Fumana in uxwebhu",
   "shortcuts.replace": "Fumana and buyisela",
   "shortcuts.goToLine": "Ya ku to umgca",

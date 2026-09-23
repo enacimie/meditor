@@ -141,7 +141,6 @@ export const om = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus barbaadi field",
   "shortcuts.find": "Argi in sanada",
   "shortcuts.replace": "Argi and bakka buusi",
   "shortcuts.goToLine": "Deemi to sarara",

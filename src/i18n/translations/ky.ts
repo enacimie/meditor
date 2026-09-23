@@ -141,7 +141,6 @@ export const ky = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus издөө field",
   "shortcuts.find": "Табуу in документ",
   "shortcuts.replace": "Табуу and алмаштыруу",
   "shortcuts.goToLine": "Өтүү to сап",

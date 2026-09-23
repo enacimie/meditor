@@ -136,6 +136,7 @@ describe("translations", () => {
     // Formatting shortcuts; en/es for now like the strings above.
     "shortcuts.bold",
     "shortcuts.italic",
+    "shortcuts.link",
     // CodeMirror's own words (editorPhrases.ts); en/es for now. Until the
     // other languages have them, the editor keeps saying them in English,
     // as it always did.

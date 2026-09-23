@@ -141,7 +141,6 @@ export const gd = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus lorg field",
   "shortcuts.find": "Faigh in sgrìobhainn",
   "shortcuts.replace": "Faigh and cuir an àite",
   "shortcuts.goToLine": "Rach gu to loidhne",

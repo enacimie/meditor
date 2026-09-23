@@ -141,7 +141,6 @@ export const hy = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus որոնել field",
   "shortcuts.find": "Գտնել in փաստաթուղթ",
   "shortcuts.replace": "Գտնել and փոխարինել",
   "shortcuts.goToLine": "Գնալ to տող",

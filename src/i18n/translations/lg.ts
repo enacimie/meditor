@@ -141,7 +141,6 @@ export const lg = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus noonya field",
   "shortcuts.find": "Zuula in kiwandiko",
   "shortcuts.replace": "Zuula and kyusa",
   "shortcuts.goToLine": "Genda to olunyiriri",

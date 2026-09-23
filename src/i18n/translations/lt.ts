@@ -141,7 +141,6 @@ export const lt = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus paieška field",
   "shortcuts.find": "Rasti in dokumentas",
   "shortcuts.replace": "Rasti and pakeisti",
   "shortcuts.goToLine": "Eiti į to eilutė",

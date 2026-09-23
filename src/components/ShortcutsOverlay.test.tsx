@@ -42,12 +42,12 @@ describe("ShortcutsOverlay", () => {
     expect(screen.getByText("F11")).toBeTruthy();
   });
 
-  it("lists Ctrl+K with the focus-search description", () => {
+  it("lists Ctrl+K as the link, not the find field", () => {
     renderOverlay();
     const rows = Array.from(document.querySelectorAll(".shortcuts-row"));
     const ctrlK = rows.find((row) => row.textContent?.includes("Ctrl+K"));
     expect(ctrlK).toBeTruthy();
-    expect(ctrlK?.textContent).toContain("Focus search field");
+    expect(ctrlK?.textContent).toContain("Insert link");
   });
 
   it("exposes the dialog to assistive tech", () => {

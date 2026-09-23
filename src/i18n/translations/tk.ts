@@ -141,7 +141,6 @@ export const tk = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus gözle field",
   "shortcuts.find": "Tap in dokument",
   "shortcuts.replace": "Tap and çalyş",
   "shortcuts.goToLine": "Geç to setir",
