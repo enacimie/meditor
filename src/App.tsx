@@ -1679,7 +1679,11 @@ export default function App() {
   }
 
   async function exportPdf() {
-    if (!active || !isTauri() || !beginOperation("export")) return;
+    // Both backends export: the desktop prints the webview to a file, and the
+    // web build hands the page to the browser's own dialog or downloads the
+    // PDF a WASM engine produced. Asking `isTauri()` here left the web build's
+    // menu entry doing nothing at all.
+    if (!active || !beginOperation("export")) return;
     try {
       const base = active.name.replace(/\.(md|markdown|txt|typ|typst|tex|latex|ltx)$/i, "") || t("doc.defaultExport");
       if (active.kind === "typst") {
