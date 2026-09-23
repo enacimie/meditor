@@ -8,11 +8,11 @@ honest about what the app can and cannot do there yet.
 
 | Area | On Android |
 | --- | --- |
-| Editing, live preview, Markdown / Typst / LaTeX rendering | works |
+| Editing, live preview, Markdown / Typst rendering | works |
 | Session restore (open tabs and their contents) | works |
 | Opening and saving files | works, with one limit — see [Files](#files) |
 | Layout, touch targets, on-screen keyboard | adapted |
-| PDF export of Typst and LaTeX | works (compiled in the frontend's WASM) |
+| PDF export of Typst | works (compiled in the frontend's WASM) |
 | PDF export of Markdown, printing | not available; the menu entry is hidden |
 | Release signing, Play Store | out of scope |
 
@@ -179,9 +179,10 @@ until recently, and still does for a document that has never been saved.
 
 Split, because the two routes are not the same thing.
 
-**Typst and LaTeX** are compiled to PDF by the frontend's own WASM engines and
-the bytes handed to Rust to write. That works anywhere the file dialog does,
-Android included.
+**Typst** is compiled to PDF by the frontend's own WASM engine and the bytes
+handed to Rust to write. That works anywhere the file dialog does, Android
+included. LaTeX would take the same route, but it is switched off everywhere
+for now (see the README).
 
 **Markdown** goes through the webview's native printing, which exists on Linux
 and Windows only. On Android the menu entry is hidden rather than left to raise

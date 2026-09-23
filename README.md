@@ -4,7 +4,7 @@
 
 # meditor
 
-**Markdown/Typst/LaTeX editor for desktop and mobile** with live WASM preview, PDF export, and bidirectional editor↔preview sync. Built with [Tauri](https://tauri.app) (Rust) and React. Supports **104 languages** and 3 document formats.
+**Markdown and Typst editor for desktop and mobile** with live WASM preview, PDF export, and bidirectional editor↔preview sync. Built with [Tauri](https://tauri.app) (Rust) and React. Supports **104 languages**. LaTeX support is in the code but [switched off for now](#latex-switched-off-for-now).
 
 **[Try it in the browser →](https://enacimie.github.io/meditor/)** — the same codebase as a static web build (Chromium recommended: open/save real files needs the File System Access API; elsewhere files go through upload/download).
 
@@ -98,13 +98,24 @@ duplicated.
 
 ### Export & Distribution
 
-- **Export to PDF** vector (selectable text, vector KaTeX and Mermaid), printed by the webview with no system dialog: WebView2 on Windows, WebKitGTK on Linux and the BSDs. The sheet is the one the Document view laid out on, and it already carries its own margins, so no printer margin is added around them. Typst and LaTeX compile to PDF in their own WASM engines instead, which works anywhere the file dialog does — Android included. Marp decks export one slide per page at the slide's own size. macOS has no Markdown PDF export yet.
+- **Export to PDF** vector (selectable text, vector KaTeX and Mermaid), printed by the webview with no system dialog: WebView2 on Windows, WebKitGTK on Linux and the BSDs. The sheet is the one the Document view laid out on, and it already carries its own margins, so no printer margin is added around them. Typst compiles to PDF in its own WASM engine instead, which works anywhere the file dialog does — Android included. Marp decks export one slide per page at the slide's own size. macOS has no Markdown PDF export yet.
 - **Export to HTML**: a single self-contained file (styles embedded, Mermaid diagrams as inline SVG, KaTeX already expanded) that opens in any browser with no network access. Markdown documents and Marp decks.
 - Packaged by `tauri build` for every desktop: **AppImage**, **deb** and **rpm** on Linux, **NSIS** and **MSI** on Windows, a universal **dmg** and `.app` on macOS. A release also carries a debug **APK** for Android.
 
 ### File associations
 
 Installers register meditor for `.md`/`.markdown` and `.typ`/`.typst` on all desktop platforms — NSIS associations on Windows, `CFBundleDocumentTypes` on macOS (files opened from Finder are queued until the UI is ready), and on Linux the deb/rpm ship a shared-mime-info entry declaring `text/x-typst`, which upstream does not provide yet. The previous handler is backed up and restored on uninstall. `.tex`/`.latex`/`.ltx` stay unregistered while LaTeX support is disabled; build with `LATEX_ENABLED=true` to include them.
+
+### LaTeX (switched off for now)
+
+The LaTeX editor, preview and PDF export are in the code, but `LATEX_ENABLED`
+in `src/latexSupport.ts` keeps them switched off. Their engine, SwiftLaTeX,
+fetches TeX Live packages from a server whose upstream is unmaintained and has
+been down for long stretches, so the preview could not be relied upon; LaTeX
+comes back when an in-house Rust/WASM engine replaces it. Meanwhile the menu
+offers no new LaTeX document, a `.tex` file still opens as text with a notice
+where the preview would be, and it has no PDF export. To work on it, see
+[Development](#development).
 
 ## Tech Stack
 
@@ -121,7 +132,7 @@ Installers register meditor for `.md`/`.markdown` and `.typ`/`.typst` on all des
 | Pagination       | paged.js                                                                                                |
 | Typography       | Latin Modern (GUST)                                                                                     |
 | Typst            | @myriaddreamin/typst.ts (WASM compiler + SVG renderer)                                                   |
-| LaTeX            | SwiftLaTeX PdfTeXEngine (WASM, EPL-2.0 / GPL-2.0)                                                       |
+| LaTeX (off)      | SwiftLaTeX PdfTeXEngine (WASM, EPL-2.0 / GPL-2.0)                                                       |
 
 ## Prerequisites
 
@@ -147,8 +158,9 @@ pnpm tauri dev
 
 `pnpm tauri dev` starts Vite and the native window with hot reload.
 
-For reproducible LaTeX compilation, start the local TeX Live Ondemand service
-before launching the app:
+LaTeX is [switched off](#latex-switched-off-for-now) in the app. To work on it,
+set `LATEX_ENABLED` to `true` in `src/latexSupport.ts`, and for reproducible
+compilation start the local TeX Live Ondemand service before launching the app:
 
 ```bash
 docker compose -f docker-compose.texlive.yml up -d
@@ -238,8 +250,8 @@ To run the AppImage on distros without FUSE: `./meditor_*.AppImage --appimage-ex
 
 meditor runs on Android: editing, the live preview, session restore, a layout
 built for a finger rather than a mouse, and opening and saving real files
-through the Storage Access Framework. PDF export works for Typst and LaTeX,
-which compile in the frontend's WASM, but not for Markdown, which needs the
+through the Storage Access Framework. PDF export works for Typst, which
+compiles in the frontend's WASM, but not for Markdown, which needs the
 webview's native printing — that menu entry is hidden there rather than left to
 fail. See [docs/android.md](docs/android.md) for the two limits worth knowing
 about, how to build a debug APK, and where to download one from CI without a
