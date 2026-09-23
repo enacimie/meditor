@@ -32,6 +32,8 @@ export type ShortcutHandlers = {
   openShortcuts: () => void;
   /** Ctrl+K / Cmd+K */
   focusSearch: () => void;
+  /** Ctrl+F / Cmd+F pressed outside the editor, which answers it itself. */
+  find: () => void;
   /** Ctrl+, / Cmd+, */
   openPreferences: () => void;
   /** Ctrl+1 / Ctrl+2 / Ctrl+3 — editor only, split, preview only */
@@ -115,6 +117,15 @@ export function useKeyboardShortcuts(
       } else if (k === "o") {
         e.preventDefault();
         h.openFiles();
+      } else if (k === "f" && !e.shiftKey && !e.altKey) {
+        // Inside the editor the key is CodeMirror's: its Mod-f opens the panel
+        // there, and on macOS Ctrl+F is its Emacs-style "caret right", even at
+        // the end of the text where the caret has nowhere to go. Answering it
+        // here as well would pull the caret into the find field.
+        const target = e.target instanceof Element ? e.target : null;
+        if (target?.closest(".cm-editor")) return;
+        e.preventDefault();
+        h.find();
       } else if (k === "n") {
         e.preventDefault();
         if (e.shiftKey) h.newTypst();
