@@ -55,7 +55,7 @@
 
 - Two preview modes:
   - **Web**: comfortable on-screen view.
-  - **Document**: **paginated pages** with [paged.js](https://pagedjs.org) and LaTeX aesthetics (**Latin Modern** font, justified text, *booktabs*-style tables, page numbers and a running title from the second page on). A4 or US Letter, chosen in Preferences.
+  - **Document**: **paginated pages** with [paged.js](https://pagedjs.org) and LaTeX aesthetics (**Latin Modern** font, justified text, *booktabs*-style tables, footnotes at the foot of the page that calls them, page numbers and a running title from the second page on). A4 or US Letter, chosen in Preferences.
 - **Bidirectional sync** editor ↔ preview:
   - **Double-click** in preview → jumps to the corresponding line of code.
   - **"Go to preview"** and **"Go to code"** buttons in each panel.

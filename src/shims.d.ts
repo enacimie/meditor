@@ -33,4 +33,15 @@ declare module "pagedjs" {
       renderTo?: HTMLElement,
     ): Promise<unknown>;
   }
+  /**
+   * A paged.js module. Every method named after one of its hooks is called
+   * at that hook; `pagedFootnotePages.ts` only uses the constructor.
+   */
+  export class Handler {
+    constructor(chunker: unknown, polisher: unknown, caller: unknown);
+  }
+  /** Adds modules to every Previewer created from then on. */
+  export function registerHandlers(
+    ...handlers: Array<new (chunker: never, polisher: never, caller: never) => Handler>
+  ): void;
 }

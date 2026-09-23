@@ -61,12 +61,14 @@ const BUILT = process.argv.includes("--built");
  * server serves. Reaching the export in a built app means driving the
  * interface and catching what it writes, which is a change to that spec
  * rather than to this list. The stylesheet itself is still covered, by the
- * seven below.
+ * specs below.
  */
 const BUILT_SPECS = [
   "csp.spec.mjs",
   "document-page.spec.mjs",
   "equation-numbers.spec.mjs",
+  "footnote-freeze.spec.mjs",
+  "footnotes.spec.mjs",
   "front-matter.spec.mjs",
   "page-break.spec.mjs",
   "page-margin.spec.mjs",
