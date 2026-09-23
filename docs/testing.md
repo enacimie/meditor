@@ -1,7 +1,8 @@
 # Testing
 
-meditor ships for five platforms, but only some of them are tested by hand on
-real devices. This page says who tests what and — more importantly — what is
+meditor ships for four platforms (Linux, Windows, macOS and Android) and has a
+probe for a fifth (iOS), but only some of them are tested by hand on real
+devices. This page says who tests what and — more importantly — what is
 still unreviewed, so a new tester knows exactly where they are needed.
 
 ## Who tests what
@@ -32,8 +33,9 @@ still unreviewed, so a new tester knows exactly where they are needed.
 - **Other GNU/Linux distros** — the AppImage should work broadly, but nobody
   has confirmed it beyond Ubuntu.
 - **macOS** — nobody on the project has a Mac. The bundle is produced but never
-  launched, and the native print/PDF path is known to differ there (see
-  `docs/android.md` for the PDF split).
+  launched, and there is no native print path there yet, so Markdown export to
+  PDF and printing are not offered (see `docs/android.md` for how PDF export
+  splits between the webview and the WASM engines).
 - **iOS** — only the manual probe workflow exists (see `docs/ios.md`); running
   on a real device also needs an Apple developer account.
 

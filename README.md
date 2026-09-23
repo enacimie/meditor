@@ -121,7 +121,7 @@ where the preview would be, and it has no PDF export. To work on it, see
 
 | Layer            | Technology                                                                                              |
 | ---------------- | ------------------------------------------------------------------------------------------------------- |
-| Desktop shell    | [Tauri v2](https://tauri.app) (Rust + WebKitGTK)                                                        |
+| Desktop shell    | [Tauri v2](https://tauri.app) (Rust, and the system's webview: WebView2, WebKitGTK or WKWebView)         |
 | Frontend         | React 19 + TypeScript + Vite                                                                            |
 | Editor           | CodeMirror 6                                                                                            |
 | Markdown         | markdown-it + plugins (GFM, footnote, mark, sub/sup, ins, deflist, abbr, emoji, container, texmath, highlightjs) |
@@ -219,7 +219,7 @@ unit test could see it.
 
 The **pre-commit hook** (husky) runs `pnpm verify` on every commit — nothing broken lands. Skip it in an emergency with `HUSKY=0 git commit ...`.
 
-E2E specs live in `tests/e2e/` and use a zero-dependency CDP driver (`cdp.mjs`) against a real headless Chrome: dialogs and the window close guard (with a faithful Tauri IPC shim), the high-contrast theme's WCAG ratios, and the keyboard shortcuts. CI additionally runs dependency auditing, lint, TypeScript, V8 coverage, Rust formatting and Clippy. The expensive full LaTeX + Docker verification is available as the manually triggered `LaTeX integration` GitHub Actions workflow, so ordinary pull requests do not download several GB of TeX Live.
+E2E specs live in `tests/e2e/` and use a zero-dependency CDP driver (`cdp.mjs`) against a real headless Chrome. They cover dialogs and the window close guard (with a faithful Tauri IPC shim), the themes' contrast, pagination and printing to PDF, images beside the document, Marp and Typst, the keyboard shortcuts and the web build; `pnpm test:e2e:built` runs the paginated ones again against a production build, under the desktop app's Content-Security-Policy. CI additionally runs dependency auditing, lint, TypeScript, V8 coverage, Rust formatting and Clippy. The expensive full LaTeX + Docker verification is available as the manually triggered `LaTeX integration` GitHub Actions workflow, so ordinary pull requests do not download several GB of TeX Live.
 
 ## Build
 
@@ -289,13 +289,18 @@ who tests what, and which targets are still unreviewed (rpm, macOS, iOS…).
 
 | Shortcut        | Action          |
 | --------------- | --------------- |
-| `Ctrl+N`        | New document    |
+| `Ctrl+N` / `Ctrl+T` | New document |
+| `Ctrl+Shift+N`  | New Typst document |
 | `Ctrl+O`        | Open file(s)    |
 | `Ctrl+S`        | Save            |
 | `Ctrl+Shift+S`  | Save as         |
 | `Ctrl+E`        | Export to PDF   |
 | `Ctrl+W`        | Close tab       |
+| `Ctrl+Shift+T`  | Reopen the last closed tab |
+| `Ctrl+Q`        | Quit            |
+| `Ctrl+P`        | Print           |
 | `Ctrl+Tab` / `Ctrl+Shift+Tab` | Next / previous tab |
+| `Ctrl+B` / `Ctrl+I` | Bold / italic (Markdown or Typst) |
 | `Ctrl+F`        | Find, from anywhere in the window |
 | `Ctrl+K`        | Insert a link (Markdown or Typst) |
 | `Ctrl+H`        | Find & replace  |
@@ -344,7 +349,7 @@ meditor/
 │   ├── components/           # Topbar, TabBar, dialogs, LanguagePicker, ShortcutsOverlay, PresentOverlay…
 │   └── assets/fonts/         # Latin Modern fonts (GUST)
 ├── src-tauri/
-│   ├── src/lib.rs            # Commands: read/save, session, and PDF export
+│   ├── src/lib.rs            # Start-up: plugins, state, and the list of commands the modules below provide
 │   ├── src/document.rs       # The document the frontend sees; open and save
 │   ├── src/export.rs         # Print and PDF/HTML export: WebView2 and WebKitGTK
 │   ├── src/image.rs          # Images beside the document: safe paths and safe names
