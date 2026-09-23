@@ -18,6 +18,14 @@ pnpm test:e2e:latex
 Set `E2E_SPECS` to a comma-separated list of spec filenames to run only a
 subset, as the opt-in LaTeX workflow does with `latex-full.spec.mjs`.
 
+`pnpm test:e2e:built` builds the app and serves `dist/` instead
+(`preview-server.mjs`), under the Content-Security-Policy the desktop app
+runs under: `tauri.conf.json`'s, plus the `'sha256-…'` of each inline script,
+which Tauri adds when it embeds the frontend (`tauri-csp.mjs`). The driver
+collects every violation a page reports and fails the spec on `close()`;
+`csp.spec.mjs`, which only runs there, proves the policy is served and that a
+violation is caught. It refuses to reuse a server that is already running.
+
 The runner (`run.mjs`):
 
 1. Starts vite if nothing is already serving the app. It probes
@@ -25,8 +33,9 @@ The runner (`run.mjs`):
    because vite binds to `localhost` — which resolves to `::1` on most systems,
    so an IPv4-only check reports a healthy server as missing.
 2. Launches headless Chrome on a fresh profile + free CDP port.
-3. Runs every `*.spec.mjs` in this directory, passing `CDP_PORT` and
-   `BASE_URL` via the environment.
+3. Runs the `*.spec.mjs` in this directory, passing `CDP_PORT` and
+   `BASE_URL` via the environment: all of them except `latex-full` (opt-in)
+   and `csp` (built run only), unless `E2E_SPECS` or `--built` choose.
 4. Tears down Chrome (and vite, if it started it).
 
 `BASE_URL` overrides the probing altogether; `E2E_PORT` and
@@ -53,7 +62,7 @@ try {
 | Member | Purpose |
 | ------ | ------- |
 | `launchChrome({ url, chromeBin, port })` | Spawn headless Chrome with remote debugging; returns `{ port, stop() }` |
-| `connect(port)` | Attach to the page target; enables Runtime/Page and collects console errors |
+| `connect(port)` | Attach to the page target; enables Runtime/Page, collects console errors and Content-Security-Policy violations (`page.cspViolations`, which fail the spec on `close()`) |
 | `page.evaluate(expr)` | Run JS in the page and return its value (throws on exceptions) |
 | `page.waitFor(expr, opts)` | Poll until the expression is truthy (default 10s timeout) |
 | `page.click(selector)` / `page.type(selector, text)` | Interact with the DOM; `type` uses the native value setter so React controlled inputs update |
