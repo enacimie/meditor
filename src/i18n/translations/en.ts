@@ -52,6 +52,8 @@ export const en = {
   "op.exportErrorPrefix": "Error exporting PDF: ",
   "op.exportHtmlErrorPrefix": "Error exporting HTML: ",
   "op.cancelled": "Canceled",
+  "op.pdfUnavailableHere": "Exporting Markdown to PDF is not available on this system",
+  "op.printUnavailableHere": "Printing is not available on this system",
   "op.filesOpened": (n: number) => `${n} file${n === 1 ? "" : "s"} opened`,
   // Confirm
   "confirm.unsavedClose": "There are unsaved documents. Exit anyway?",

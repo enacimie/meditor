@@ -45,6 +45,8 @@ export const es = {
   "op.exportErrorPrefix": "Error al exportar PDF: ",
   "op.exportHtmlErrorPrefix": "Error al exportar el HTML: ",
   "op.cancelled": "Cancelado",
+  "op.pdfUnavailableHere": "Exportar Markdown a PDF no está disponible en este sistema",
+  "op.printUnavailableHere": "Imprimir no está disponible en este sistema",
   "op.filesOpened": (n: number) => `${n} archivo${n === 1 ? "" : "s"} abierto${n === 1 ? "" : "s"}`,
   "confirm.unsavedClose": "Hay documentos con cambios sin guardar. ¿Salir de todos modos?",
   "confirm.unsavedTab": (name: string) => `"${name}" tiene cambios sin guardar. ¿Cerrar de todos modos?`,
