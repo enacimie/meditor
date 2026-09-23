@@ -223,7 +223,7 @@ function stopVite(processHandle) {
 async function teardown() {
   if (cleanedUp) return;
   cleanedUp = true;
-  chrome?.stop();
+  await chrome?.stop();
   stopVite(vite);
 }
 

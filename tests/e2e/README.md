@@ -61,7 +61,7 @@ try {
 
 | Member | Purpose |
 | ------ | ------- |
-| `launchChrome({ url, chromeBin, port })` | Spawn headless Chrome with remote debugging; returns `{ port, stop() }` |
+| `launchChrome({ url, chromeBin, port })` | Spawn headless Chrome with remote debugging; returns `{ port, profileDir, stop() }`, and `stop()` resolves once Chrome has exited and its profile is gone |
 | `connect(port)` | Attach to the page target; enables Runtime/Page, collects console errors and Content-Security-Policy violations (`page.cspViolations`, which fail the spec on `close()`) |
 | `page.evaluate(expr)` | Run JS in the page and return its value (throws on exceptions) |
 | `page.waitFor(expr, opts)` | Poll until the expression is truthy (default 10s timeout) |
