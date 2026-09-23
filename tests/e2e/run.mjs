@@ -4,8 +4,10 @@
  * Orchestrates the whole flow so specs only care about the page:
  *   1. Starts vite if nothing is already serving the app.
  *   2. Launches headless Chrome (fresh profile, free CDP port).
- *   3. Runs every `*.spec.mjs` in this directory as a child process, passing
- *      CDP_PORT and BASE_URL via the environment.
+ *   3. Runs the `*.spec.mjs` in this directory as child processes, passing
+ *      CDP_PORT and BASE_URL via the environment: all of them except
+ *      `latex-full` (opt-in) and `csp` (built run only) by default, the
+ *      paginated ones and `csp` with `--built`, or those in E2E_SPECS.
  *   4. Tears down Chrome (and vite, if this runner started it) — even when a
  *      spec fails, Chrome fails to launch, or the user presses Ctrl+C.
  *
@@ -37,6 +39,11 @@ if (process.argv.includes("--latex")) {
  * the default because it costs a production build, and because a spec that
  * fails only here is telling you something quite different from one that
  * fails in development.
+ *
+ * It also serves `dist/` under the Content-Security-Policy the desktop app
+ * runs under (`preview-server.mjs`), and `cdp.mjs` fails any spec that trips
+ * it. That policy is the other thing only the packaged app ever enforced, and
+ * Typst broke in the packaged app twice because of it with every test green.
  */
 const BUILT = process.argv.includes("--built");
 
@@ -57,6 +64,7 @@ const BUILT = process.argv.includes("--built");
  * seven below.
  */
 const BUILT_SPECS = [
+  "csp.spec.mjs",
   "document-page.spec.mjs",
   "front-matter.spec.mjs",
   "page-break.spec.mjs",
@@ -121,7 +129,10 @@ async function buildForPreview() {
 async function ensureVite() {
   const running = await reachableUrl();
   if (running) {
-    if (process.env.E2E_REQUIRE_FRESH_SERVER === "1") {
+    // A preview somebody left open serves whatever `dist/` it was started on,
+    // and without the release policy: using it would make this whole mode a
+    // decoration, which is the failure it exists to prevent.
+    if (BUILT || process.env.E2E_REQUIRE_FRESH_SERVER === "1") {
       throw new Error(
         `a server is already running at ${running}; stop it before this isolated E2E run`,
       );
@@ -138,13 +149,13 @@ async function ensureVite() {
   // server. A detached process group still lets teardown remove any children,
   // preventing a later E2E run from reusing a Vite server started with the
   // wrong VITE_* environment.
-  const viteArgs = [join(projectRoot, "node_modules", "vite", "bin", "vite.js")];
-  if (BUILT) {
-    // `--strictPort` so a preview that cannot have the port fails loudly
-    // instead of moving to another one and leaving the specs pointed at
-    // whatever else was listening.
-    viteArgs.push("preview", "--port", String(PORT), "--strictPort");
-  }
+  // The built run goes through preview-server.mjs, which is `vite preview`
+  // plus the release's Content-Security-Policy. It keeps the port strict, so
+  // a preview that cannot have the port fails loudly instead of moving to
+  // another one and leaving the specs pointed at whatever else was listening.
+  const viteArgs = BUILT
+    ? [join(specsDir, "preview-server.mjs"), "--port", String(PORT)]
+    : [join(projectRoot, "node_modules", "vite", "bin", "vite.js")];
   const vite = spawn(process.execPath, viteArgs, {
     cwd: projectRoot,
     stdio: ["ignore", "pipe", "pipe"],
@@ -240,10 +251,11 @@ try {
   const specs = readdirSync(specsDir)
     .filter((file) => file.endsWith(".spec.mjs"))
     // Full TeX Live compilation is intentionally opt-in; normal E2E remains
-    // deterministic and lightweight. Select it through E2E_SPECS.
+    // deterministic and lightweight. Select it through E2E_SPECS. The CSP
+    // spec checks a header only the built run sends.
     .filter((file) => requestedSpecs
       ? requestedSpecs.has(file)
-      : file !== "latex-full.spec.mjs")
+      : file !== "latex-full.spec.mjs" && file !== "csp.spec.mjs")
     .sort();
   if (!specs.length) {
     throw new Error(

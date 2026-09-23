@@ -60,6 +60,29 @@ const SEND_TIMEOUT_MS = 20000;
  */
 const NAVIGATION_TIMEOUT_MS = 60000;
 
+/*
+ * Content-Security-Policy violations. The page reports them to itself, as a
+ * `securitypolicyviolation` event, and throws nothing a spec could see: a
+ * refused script or eval reaches neither Runtime.exceptionThrown nor
+ * console.error. So every page gets a listener that hands each one to a
+ * binding, and `close()` fails the spec that caused any. Only the built run
+ * sends a policy (preview-server.mjs); anywhere else this stays silent.
+ */
+const CSP_BINDING = "__meditorCspViolation";
+const CSP_LISTENER = `addEventListener("securitypolicyviolation", (event) => {
+  try {
+    ${CSP_BINDING}(JSON.stringify({
+      directive: event.effectiveDirective,
+      blocked: event.blockedURI,
+      source: event.sourceFile,
+      line: event.lineNumber,
+      sample: event.sample,
+    }));
+  } catch (_) {
+    // The binding is gone once the page closes.
+  }
+}, true);`;
+
 /**
  * Chrome binaries tried in order (override with `chromeBin` or CHROME_PATH).
  * Windows installs Chrome outside PATH, so the usual install paths are tried
@@ -254,9 +277,18 @@ export async function connect(port) {
           msg.params.args.map((a) => a.value ?? a.description ?? "").join(" "),
       );
     }
+    if (msg.method === "Runtime.bindingCalled" && msg.params?.name === CSP_BINDING) {
+      try {
+        session.cspViolations.push(JSON.parse(msg.params.payload));
+      } catch {
+        session.cspViolations.push({ directive: "?", blocked: String(msg.params.payload) });
+      }
+    }
   });
   await session.send("Runtime.enable");
   await session.send("Page.enable");
+  await session.send("Runtime.addBinding", { name: CSP_BINDING });
+  await session.addInitScript(CSP_LISTENER);
   return session;
 }
 
@@ -268,6 +300,11 @@ export class CdpSession {
   constructor(ws) {
     this.ws = ws;
     this.consoleErrors = [];
+    /**
+     * Content-Security-Policy violations this page reported, oldest first.
+     * A spec that provokes one on purpose empties it after checking it.
+     */
+    this.cspViolations = [];
     /** How many reads were retried past a transient error, for reporting. */
     this.transientReads = 0;
     this._id = 0;
@@ -544,6 +581,14 @@ export class CdpSession {
   close() {
     if (this._closed) return;
     this._closed = true;
+    // A violation fails the spec even when its own assertions passed: the
+    // packaged app would have refused whatever caused it.
+    if (this.cspViolations.length) {
+      console.error(
+        "[cdp] Content-Security-Policy violations: " + JSON.stringify(this.cspViolations),
+      );
+      process.exitCode = 1;
+    }
     const finish = () => {
       try {
         this.ws.close();
