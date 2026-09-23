@@ -4,6 +4,7 @@ import {
   useEffect,
   useImperativeHandle,
   useLayoutEffect,
+  useMemo,
   useRef,
 } from "react";
 import { placeholder, keymap } from "@codemirror/view";
@@ -39,6 +40,8 @@ import {
   DEFAULT_SPELLCHECK,
 } from "./editorPreferences";
 import { writingAidExtensions } from "./editorFocus";
+import { editorPhrases } from "./editorPhrases";
+import { useTranslation } from "./i18n/I18nProvider";
 import type { DocKind } from "./types";
 import "./Editor.css";
 
@@ -265,6 +268,9 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   // keymap changes with the document — and the editor is reconfigured on a
   // tab switch rather than remounted, so it has to live in a compartment.
   const formattingCompartment = useRef(new Compartment());
+  // CodeMirror's own words, in the interface language: they change when the
+  // language does, without a remount.
+  const phrasesCompartment = useRef(new Compartment());
   const kindSeqRef = useRef(0);
   const activeIdRef = useRef(activeId);
   const suppress = useRef(false);
@@ -307,6 +313,10 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   zenModeRef.current = zenMode;
   const zenPlaceholderRef = useRef(zenPlaceholder);
   zenPlaceholderRef.current = zenPlaceholder;
+  const { t } = useTranslation();
+  const phrases = useMemo(() => editorPhrases(t), [t]);
+  const phrasesRef = useRef(phrases);
+  phrasesRef.current = phrases;
 
   /**
    * Re-apply every prop-driven compartment.
@@ -339,6 +349,7 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
           writingAidExtensions(writingAidsRef.current),
         ),
         languageCompartment.current.reconfigure(languageExtRef.current),
+        phrasesCompartment.current.reconfigure(phrasesRef.current),
       ],
     });
   }, []);
@@ -488,6 +499,7 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
       writingAidsCompartment.current.of(
         writingAidExtensions(initialWritingAids.current),
       ),
+      phrasesCompartment.current.of(phrasesRef.current),
       spellcheckCompartment.current.of(
         spellcheckAttributes(initialSpellcheck.current),
       ),
@@ -680,6 +692,14 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
       ),
     });
   }, [zenMode, zenPlaceholder]);
+
+  // A panel already open keeps the words it was built with: CodeMirror writes
+  // them once, when it creates the panel, so they change the next time it opens.
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch({ effects: phrasesCompartment.current.reconfigure(phrases) });
+  }, [phrases]);
 
   useEffect(() => {
     const view = viewRef.current;

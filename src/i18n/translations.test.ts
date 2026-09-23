@@ -136,6 +136,38 @@ describe("translations", () => {
     // Formatting shortcuts; en/es for now like the strings above.
     "shortcuts.bold",
     "shortcuts.italic",
+    // CodeMirror's own words (editorPhrases.ts); en/es for now. Until the
+    // other languages have them, the editor keeps saying them in English,
+    // as it always did.
+    "editor.search.find",
+    "editor.search.replaceField",
+    "editor.search.next",
+    "editor.search.previous",
+    "editor.search.all",
+    "editor.search.matchCase",
+    "editor.search.regexp",
+    "editor.search.byWord",
+    "editor.search.replace",
+    "editor.search.replaceAll",
+    "editor.search.currentMatch",
+    "editor.search.onLine",
+    "editor.search.replacedMatches",
+    "editor.search.replacedMatchOnLine",
+    "editor.gotoLine.label",
+    "editor.gotoLine.go",
+    "editor.fold.foldLine",
+    "editor.fold.unfoldLine",
+    "editor.fold.foldedCode",
+    "editor.fold.unfold",
+    "editor.fold.foldedLines",
+    "editor.fold.unfoldedLines",
+    "editor.fold.to",
+    "editor.close",
+    "editor.selectionDeleted",
+    "editor.controlCharacter",
+    "editor.completions",
+    "editor.diagnostics",
+    "editor.noDiagnostics",
   ]);
 
   it("every English key is defined in every language", () => {
