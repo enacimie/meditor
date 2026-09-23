@@ -340,6 +340,12 @@ export async function connect(port) {
     }
   });
   await session.send("Runtime.enable");
+  // Enabled up front because it cannot be enabled later: once the page has
+  // stopped answering, only `Debugger.pause` still gets through, and only to
+  // a debugger that was already on. See `whereIsItStuck`.
+  await session.send("Debugger.enable");
+  // So a stuck promise chain shows who started it, not only its last step.
+  await session.send("Debugger.setAsyncCallStackDepth", { maxDepth: 16 });
   await session.send("Page.enable");
   await session.send("Runtime.addBinding", { name: CSP_BINDING });
   await session.addInitScript(CSP_LISTENER);
@@ -411,6 +417,54 @@ export class CdpSession {
     });
   }
 
+  /**
+   * Where the page's main thread is, once it has stopped answering.
+   *
+   * A timed-out evaluation says only that the page did not answer. Chrome
+   * delivers `Debugger.pause` as an interrupt to a busy main thread, so it
+   * reaches a script caught in a loop, and the stack it reports is the loop.
+   * A page that will not pause at all is stuck outside JavaScript, in the
+   * browser's own layout or painting, which is worth knowing just as much.
+   */
+  async whereIsItStuck() {
+    let listener;
+    const paused = new Promise((resolve) => {
+      listener = (msg) => {
+        if (msg.method === "Debugger.paused") resolve(msg.params);
+      };
+      this.onMessage(listener);
+    });
+    this.send("Debugger.pause", {}, 5000).catch(() => {});
+    const params = await Promise.race([paused, sleep(5000).then(() => null)]);
+    this._listeners.splice(this._listeners.indexOf(listener), 1);
+    if (!params) return "the page would not pause: it is stuck outside JavaScript";
+
+    const describe = async (frame) => {
+      const { scriptId, lineNumber, columnNumber } = frame.location ?? frame;
+      let source = "";
+      try {
+        const res = await this.send("Debugger.getScriptSource", { scriptId }, 5000);
+        const line = res.result?.scriptSource?.split("\n")[lineNumber] ?? "";
+        source = line.slice(Math.max(0, columnNumber - 60), columnNumber + 100).trim();
+      } catch {
+        // The stack is still worth having without the source.
+      }
+      const url = (frame.url ?? "").replace(/^https?:\/\/[^/]+/, "");
+      return `${frame.functionName || "(anonymous)"} ${url}:${lineNumber + 1}:${columnNumber + 1}  ${source}`;
+    };
+    const lines = [];
+    for (const frame of params.callFrames.slice(0, 15)) lines.push(await describe(frame));
+    let parent = params.asyncStackTrace;
+    for (let depth = 0; parent && depth < 4; depth++, parent = parent.parent) {
+      lines.push(`-- ${parent.description ?? "async"} --`);
+      for (const frame of parent.callFrames.slice(0, 6)) lines.push(await describe(frame));
+    }
+    // Let it go, so the spec's own cleanup can reach the page.
+    this.send("Runtime.terminateExecution", {}, 5000).catch(() => {});
+    this.send("Debugger.resume", {}, 5000).catch(() => {});
+    return `the page is stuck at:\n    ${lines.join("\n    ")}`;
+  }
+
   /** Send a raw CDP command; rejects after SEND_TIMEOUT_MS. */
   send(method, params = {}, timeoutMs = SEND_TIMEOUT_MS) {
     return new Promise((resolve, reject) => {
@@ -460,6 +514,9 @@ export class CdpSession {
       // the timestamps. The message keeps its original wording at the front,
       // because `isTransientEvaluationError` and one spec both match on it.
       error.message = `${error.message} — evaluating: ${summarise(expression)}`;
+      if (/^CDP command timed out/.test(error.message)) {
+        error.message += `\n  ${await this.whereIsItStuck()}`;
+      }
       throw error;
     }
     if (res.result?.exceptionDetails) {
