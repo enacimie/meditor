@@ -402,6 +402,25 @@
   break-inside: avoid;
 }
 
+/* A numbered equation: the number on the formula's line, at its end, and
+   the formula still centred on the column. See preview/markdown.css. */
+.markdown-body.doc section.eqno {
+  display: flex;
+  align-items: center;
+  break-inside: avoid;
+}
+
+.markdown-body.doc section.eqno > eqn {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-inline-start: 3em;
+}
+
+.markdown-body.doc section.eqno > span {
+  flex: 0 0 3em;
+  text-align: end;
+}
+
 .markdown-body.doc .mermaid {
   text-align: center;
   margin: 1em 0;

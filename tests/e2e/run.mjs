@@ -66,6 +66,7 @@ const BUILT = process.argv.includes("--built");
 const BUILT_SPECS = [
   "csp.spec.mjs",
   "document-page.spec.mjs",
+  "equation-numbers.spec.mjs",
   "front-matter.spec.mjs",
   "page-break.spec.mjs",
   "page-margin.spec.mjs",

@@ -16,7 +16,7 @@
 
 - **GFM**: tables, task lists, strikethrough, and autolinks.
 - **Extensions**: `==highlight==`, `++inserted++`, subscript `H~2~O`, superscript `E=mc^2^`, footnotes, definition lists, abbreviations, emoji 😊, and custom containers (`::: warning`, `::: note`).
-- **Math** with [KaTeX](https://katex.org): inline `$e^{i\pi}+1=0$` and block `$$ ... $$`.
+- **Math** with [KaTeX](https://katex.org): inline `$e^{i\pi}+1=0$` and block `$$ ... $$`; a number after a block, `$$ ... $$ (1)`, is set at the end of the formula's line.
 - **Diagrams** [Mermaid](https://mermaid.js.org) (flowchart, sequence, gantt, etc.), rendered as **vector SVG**.
 - **Code highlighting** with [highlight.js](https://highlightjs.org).
 
