@@ -127,25 +127,29 @@ export function findFreePort() {
 
 /**
  * Launch headless Chrome with remote debugging on an ephemeral profile.
- * Tries a list of known Chrome binaries when `chromeBin` is not given.
+ * Tries a list of known Chrome binaries when `chromeBin` is not given; it can
+ * be one binary or a list of them.
  *
  * @returns {{ port: number, pid: number, profileDir: string, stop: () => Promise<void> }}
  */
 export async function launchChrome({ url, chromeBin, port } = {}) {
   const cdpPort = port ?? (await findFreePort());
-  const candidates = chromeBin ? [chromeBin] : CHROME_BINARIES;
-  let lastError = null;
+  const candidates = chromeBin ? [chromeBin].flat() : CHROME_BINARIES;
+  const failures = [];
   for (const bin of candidates) {
     try {
       return await startWith(bin, cdpPort, url);
     } catch (error) {
-      lastError = error;
+      failures.push(error.message);
     }
   }
-  throw new Error(
-    `Could not launch Chrome (tried ${candidates.join(", ")}): ` +
-      (lastError?.message ?? "unknown error"),
-  );
+  /*
+   * Every candidate's reason, not only the last one's. On a CI runner where
+   * Chrome hung, four binaries that exist each timed out, and the message
+   * named only the fifth, which does not: "spawn chrome ENOENT" reads as
+   * "Chrome is not installed" and sends whoever reads it the wrong way.
+   */
+  throw new Error(`Could not launch Chrome:\n  ${failures.join("\n  ")}`);
 }
 
 /**
