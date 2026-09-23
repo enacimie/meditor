@@ -145,6 +145,7 @@ export const en = {
   "editor.noDiagnostics": "No diagnostics",
   // Preview
   "preview.figureLabel": (n: number) => `Figure ${n}.`,
+  "preview.tableLabel": (n: number) => `Table ${n}.`,
   "preview.unavailable": "Preview unavailable",
   "preview.retry": "Retry",
   "preview.renderError": "Could not generate preview:",

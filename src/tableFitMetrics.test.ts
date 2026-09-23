@@ -96,6 +96,19 @@ describe("the measuring container matches the page", () => {
     );
   });
 
+  it.each(["font-size", "line-height", "margin-bottom"])(
+    "measures a table's caption with the page's %s",
+    (property) => {
+      // Part of the table's height, which is what the grouping of headings
+      // with what follows them is decided from.
+      const expected = declaration(paged.get(".markdown-body.doc caption"), property);
+      expect(expected).not.toBeNull();
+      expect(declaration(preview.get(".preview-source.markdown-body caption"), property)).toBe(
+        expected,
+      );
+    },
+  );
+
   it("drops the cell borders the page does not have", () => {
     // Seventeen collapsed 1 px borders are 18 px of width the page never
     // spends — small, but it is spent in the direction that hides an overflow.

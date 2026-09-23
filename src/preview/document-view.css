@@ -71,6 +71,13 @@
   padding: 3.5pt 12pt;
 }
 
+/* A caption is part of the table's height: measured at the size it prints. */
+.preview-source.markdown-body caption {
+  margin-bottom: 0.5em;
+  font-size: 9.5pt;
+  line-height: 1.35;
+}
+
 .preview-source.markdown-body table.table-fit-1 {
   font-size: 9pt;
 }

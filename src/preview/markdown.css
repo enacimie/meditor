@@ -345,6 +345,20 @@
   opacity: 1;
 }
 
+/*
+ * A table's caption on screen, in the same type. Only in the Web view: the
+ * pages and the measuring copy have rules of their own, in points.
+ */
+.markdown-body:not(.doc) caption {
+  margin-bottom: 0.5em;
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+
+.markdown-body:not(.doc) caption .table-label {
+  font-weight: 600;
+}
+
 /* The heading number on screen, where there are no pages but the same rules. */
 .markdown-body .heading-number {
   font-weight: inherit;
