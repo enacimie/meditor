@@ -15,9 +15,10 @@
  *
  * Run via `pnpm test:e2e` (the runner sets CDP_PORT and BASE_URL).
  *
- * NOTE: this spec runs WITHOUT the Tauri shim (dialogs.spec cleans it up in
- * its finally, and specs share one Chrome/page in alphabetical order:
- * contrast → dialogs → shortcuts). It must stay after dialogs.spec.
+ * NOTE: this spec runs WITHOUT the Tauri shim. Specs share one Chrome, but
+ * each gets a page of its own (connect() opens a new target), so another
+ * spec's shim cannot reach this one; what they do share, storage, is
+ * cleared by freshPage.
  */
 import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -31,7 +32,6 @@ if (!CDP_PORT) throw new Error("CDP_PORT env var is required");
 const artifactsDir = join(dirname(fileURLToPath(import.meta.url)), "artifacts");
 mkdirSync(artifactsDir, { recursive: true });
 
-/** Dispatch a keyboard event on window (the app's global shortcut target). */
 /**
  * CodeMirror registers its keymap on the editor itself, so a shortcut handled
  * by the editor (rather than by the app's window listener) has to be
@@ -47,6 +47,7 @@ const pressInEditor = (page, key, opts = "") =>
     })()`,
   );
 
+/** Dispatch a keyboard event on window (the app's global shortcut target). */
 const press = (page, key, opts = "") =>
   page.evaluate(
     `(() => {

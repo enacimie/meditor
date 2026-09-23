@@ -69,7 +69,7 @@ export function buildMarkdownPairKeymap(): Extension {
  * turn `**word**` into `****word****` and look broken.
  *
  * The markers differ by language, so the keymap is built for the document it
- * is going into. LaTeX has no one-character equivalent — `	extbf{}` is a
+ * is going into. LaTeX has no one-character equivalent — `\textbf{}` is a
  * command, not a wrapper — and is left out rather than guessed at.
  */
 type FormattingMarkers = {

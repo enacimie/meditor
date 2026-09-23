@@ -318,7 +318,7 @@ describe("translations", () => {
 
   // ── Text direction ─────────────────────────────────────────────────
 
-  it("RTL languages are exactly ar, ur, fa, and he", () => {
+  it("RTL languages are exactly ar, fa, he, ps, sd and ur", () => {
     const rtl = ALL_LANGUAGES.filter((l) => isRtl(l));
     expect(rtl.sort()).toEqual(["ar","fa","he","ps","sd","ur"]);
   });

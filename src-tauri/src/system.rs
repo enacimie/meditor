@@ -7,9 +7,6 @@
 
 use crate::locale::{parse_locale, t};
 
-// The plugin dialog is `alert`'s mobile branch only. In lib.rs this import is
-// unconditional because the file pickers need it everywhere; copied here
-// without its gate it is unused on all three desktops.
 #[cfg(any(
     target_os = "linux",
     target_os = "dragonfly",
@@ -18,6 +15,10 @@ use crate::locale::{parse_locale, t};
     target_os = "openbsd"
 ))]
 use gtk::prelude::{DialogExt as GtkDialogExt, GtkWindowExt};
+
+// The plugin dialog is `alert`'s mobile branch only. document.rs and
+// export.rs import it unconditionally because their file pickers need it
+// everywhere; copied here without its gate it is unused on all three desktops.
 #[cfg(mobile)]
 use tauri_plugin_dialog::DialogExt;
 
