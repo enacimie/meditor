@@ -6,7 +6,7 @@
  * and its WASM are deterministic, while compilation also depends on the
  * SwiftLaTeX TeX Live endpoint and should not make CI depend on that service.
  */
-import { connect, assert } from "./cdp.mjs";
+import { connect, assert, sleep } from "./cdp.mjs";
 
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:1420";
 const CDP_PORT = Number(process.env.CDP_PORT);
@@ -20,7 +20,7 @@ try {
   });
 
   /*
-   * Three synchronous steps rather than one asynchronous one.
+   * Synchronous steps rather than one asynchronous one.
    *
    * This call is where `Promise was collected (-32000)` has been landing. It
    * used to click the menu open, `await` a zero-delay timer and click the item
@@ -29,34 +29,39 @@ try {
    * that way, and the shape the LaTeX probe below was already moved off.
    *
    * A synchronous expression returns its value outright: there is no pending
-   * promise for the protocol to lose. The waiting moves to `waitFor`, which
-   * has tolerated transient errors all along.
+   * promise for the protocol to lose.
+   *
+   * And each one looks for what it uses. The toggle used to be looked up in
+   * the evaluation after the one that saw the editor, and on Linux CI it was
+   * once not there: the page had moved on between the two round trips. So
+   * every attempt clicks the Typst item if it is there, and otherwise opens
+   * the menu if it is closed, and says which; only the retrying is out here.
    */
   const MENU_ITEMS = `[...document.querySelectorAll('[role="menu"] [role="menuitem"]')]`;
   const TYPST_ITEM =
     `${MENU_ITEMS}.find((el) => /typst/i.test(el.textContent || '') ` +
     `|| (el.textContent || '').toLowerCase().includes('.typ'))`;
 
-  const menuOpened = await page.evaluate(`(() => {
-    const menuToggle = document.querySelector('button[aria-haspopup="menu"]');
-    if (!(menuToggle instanceof HTMLElement)) return false;
-    menuToggle.click();
-    return true;
-  })()`);
-  assert(menuOpened, "the more-options menu should have a toggle to click");
-
-  await page.waitFor(`!!(${TYPST_ITEM})`, {
-    timeout: 10000,
-    message: "Typst action should be available in the more-options menu",
-  });
-
-  const typstMenuItem = await page.evaluate(`(() => {
-    const item = ${TYPST_ITEM};
-    if (!(item instanceof HTMLElement)) return false;
-    item.click();
-    return true;
-  })()`);
-  assert(typstMenuItem, "the Typst menu item should be clickable");
+  const deadline = Date.now() + 15000;
+  for (;;) {
+    const step = await page.evaluate(`(() => {
+      const item = ${TYPST_ITEM};
+      if (item instanceof HTMLElement) {
+        item.click();
+        return "clicked";
+      }
+      const toggle = document.querySelector('button[aria-haspopup="menu"]');
+      if (!(toggle instanceof HTMLElement)) return "no menu toggle";
+      if (toggle.getAttribute("aria-expanded") !== "true") toggle.click();
+      return "menu opening";
+    })()`);
+    if (step === "clicked") break;
+    assert(
+      Date.now() < deadline,
+      `the Typst item of the more-options menu should become clickable (last: ${step})`,
+    );
+    await sleep(150);
+  }
 
   await page.waitFor("!!document.querySelector('.typst-svg-wrapper svg')", {
     timeout: 45000,
