@@ -28,6 +28,7 @@ import { fitWideTables, keepHeadingsWithContent } from "./previewRenderer";
 import { DEFAULT_PAGE, buildPagedCss, type PageMetrics } from "./pageSetup";
 import { isMarpDocument } from "./marpDetect";
 import { LATEX_ENABLED } from "./latexSupport";
+import { blockForLine } from "./previewSync";
 
 import type { DocKind } from "./types";
 import type { Theme } from "./components/types";
@@ -221,14 +222,10 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
     // on it without re-running every render.
     const container = docViewRef.current ? pagedRef.current : webRef.current;
     if (!container) return false;
-    const nodes = Array.from(container.querySelectorAll<HTMLElement>("[data-line]"));
-    let target: HTMLElement | null = null;
-    for (const n of nodes) {
-      const l = parseInt(n.getAttribute("data-line") || "0", 10);
-      if (l <= line) target = n;
-      else break;
-    }
-    if (!target && nodes.length) target = nodes[0];
+    const target = blockForLine(
+      Array.from(container.querySelectorAll<HTMLElement>("[data-line]")),
+      line,
+    );
     if (!target) return false;
     target.scrollIntoView({ behavior: "smooth", block: "center" });
     target.classList.remove("sync-flash");
