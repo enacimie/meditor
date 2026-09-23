@@ -141,7 +141,6 @@ export const mg = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Mifantoka amin'ny saha karoka",
   "shortcuts.find": "Hitady ao amin'ny antontan-taratasy",
   "shortcuts.replace": "Hitady sy hanolo",
   "shortcuts.goToLine": "Mandehana any amin'ny tsipika",

@@ -141,7 +141,6 @@ export const sl = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus iskanje field",
   "shortcuts.find": "Najdi in dokument",
   "shortcuts.replace": "Najdi and zamenjaj",
   "shortcuts.goToLine": "Pojdi na to vrstica",

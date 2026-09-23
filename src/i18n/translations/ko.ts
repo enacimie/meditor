@@ -158,7 +158,6 @@ export const ko = {
   "shortcuts.ctrlShiftTab": "Ctrl+Shift+Tab",
   "shortcuts.ctrlF": "Ctrl+F",
   "shortcuts.ctrlK": "Ctrl+K",
-  "shortcuts.focusSearch": "검색 필드에 포커스",
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",

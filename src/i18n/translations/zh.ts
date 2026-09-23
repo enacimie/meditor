@@ -158,7 +158,6 @@ export const zh = {
   "shortcuts.ctrlShiftTab": "Ctrl+Shift+Tab",
   "shortcuts.ctrlF": "Ctrl+F",
   "shortcuts.ctrlK": "Ctrl+K",
-  "shortcuts.focusSearch": "聚焦搜索框",
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",

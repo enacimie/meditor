@@ -138,7 +138,6 @@ export const ca = {
   "shortcuts.ctrlShiftTab": "Ctrl+Shift+Tab",
   "shortcuts.ctrlF": "Ctrl+F",
   "shortcuts.ctrlK": "Ctrl+K",
-  "shortcuts.focusSearch": "Enfocar el camp de cerca",
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",

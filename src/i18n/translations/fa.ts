@@ -137,7 +137,6 @@ export const fa = {
   "shortcuts.ctrlShiftTab": "Ctrl+Shift+Tab",
   "shortcuts.ctrlF": "Ctrl+F",
   "shortcuts.ctrlK": "Ctrl+K",
-  "shortcuts.focusSearch": "تمرکز روی فیلد جستجو",
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",

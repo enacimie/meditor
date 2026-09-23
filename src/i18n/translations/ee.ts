@@ -141,7 +141,6 @@ export const ee = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus dii field",
   "shortcuts.find": "Kpɔ in nuŋɔŋlɔ",
   "shortcuts.replace": "Kpɔ and ðɔli",
   "shortcuts.goToLine": "Yi to fli",

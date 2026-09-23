@@ -141,7 +141,6 @@ export const lv = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus meklēt field",
   "shortcuts.find": "Atrast in dokuments",
   "shortcuts.replace": "Atrast and aizstāt",
   "shortcuts.goToLine": "Doties uz to rinda",

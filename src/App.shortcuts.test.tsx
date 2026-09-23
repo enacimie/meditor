@@ -7,6 +7,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach, beforeAll } from "vitest";
 import { render, cleanup, fireEvent, waitFor } from "@testing-library/react";
+import { EditorView } from "@codemirror/view";
 import { I18nProvider } from "./i18n/I18nProvider";
 import App from "./App";
 import { invoke } from "@tauri-apps/api/core";
@@ -119,7 +120,9 @@ describe("shortcuts overlay (F1)", () => {
     );
   });
 
-  it("Ctrl+K focuses the CodeMirror search panel", async () => {
+  it("Ctrl+K in the editor writes a link, and opens no find panel", async () => {
+    // Ctrl+K used to be a window-wide "focus the find field". It is the
+    // editor's link key now, and nothing above the editor may answer it too.
     render(
       <I18nProvider>
         <App />
@@ -129,22 +132,16 @@ describe("shortcuts overlay (F1)", () => {
       () => expect(document.querySelector(".cm-editor")).toBeTruthy(),
       { timeout: 8000 },
     );
+    const view = EditorView.findFromDOM(document.querySelector<HTMLElement>(".cm-editor")!)!;
+    view.dispatch({ selection: { anchor: 2, head: 7 } });
 
-    // The search panel is closed by default.
+    fireEvent.keyDown(view.contentDOM, { key: "k", ctrlKey: true });
+
+    expect(view.state.doc.toString()).toBe("# [hello]()");
     expect(document.querySelector(".cm-search")).toBeNull();
-
-    fireEvent.keyDown(window, { key: "k", ctrlKey: true });
-    await waitFor(() =>
-      expect(document.querySelector(".cm-search")).toBeTruthy(),
-    );
-
-    // The find input receives focus.
-    const input = document.querySelector<HTMLInputElement>(".cm-textfield")!;
-    expect(input).not.toBeNull();
-    expect(document.activeElement).toBe(input);
   });
 
-  it("Ctrl+Shift+K is left to the editor's delete-line, not to the find field", async () => {
+  it("Ctrl+Shift+K stays the editor's delete-line: no link, and no find panel", async () => {
     render(
       <I18nProvider>
         <App />
@@ -154,42 +151,14 @@ describe("shortcuts overlay (F1)", () => {
       () => expect(document.querySelector(".cm-editor")).toBeTruthy(),
       { timeout: 8000 },
     );
+    const view = EditorView.findFromDOM(document.querySelector<HTMLElement>(".cm-editor")!)!;
 
-    // With Shift held the key arrives upper-case; the handler lower-cases it,
-    // which is how Ctrl+Shift+K used to reach the Ctrl+K branch.
-    fireEvent.keyDown(window, { key: "K", ctrlKey: true, shiftKey: true });
+    // As a keyboard delivers it: Shift makes the key "K", and the key code is
+    // still the letter's, which is how CodeMirror finds Shift-Mod-k.
+    fireEvent.keyDown(view.contentDOM, { key: "K", keyCode: 75, ctrlKey: true, shiftKey: true });
 
+    expect(view.state.doc.toString()).toBe("");
     expect(document.querySelector(".cm-search")).toBeNull();
-    expect(document.activeElement?.classList.contains("cm-textfield")).toBe(false);
-
-    // Ctrl+K itself still opens it: the change narrows the key, not the feature.
-    fireEvent.keyDown(window, { key: "k", ctrlKey: true });
-    await waitFor(() => expect(document.querySelector(".cm-search")).toBeTruthy());
-  });
-
-  it("Ctrl+K does not steal focus from the language picker input", async () => {
-    render(
-      <I18nProvider>
-        <App />
-      </I18nProvider>,
-    );
-    await waitFor(
-      () => expect(document.querySelector(".cm-editor")).toBeTruthy(),
-      { timeout: 8000 },
-    );
-
-    // Focus a foreign input (simulates the LanguagePicker/rename search box).
-    const foreign = document.createElement("input");
-    foreign.className = "foreign-input";
-    document.body.appendChild(foreign);
-    foreign.focus();
-
-    fireEvent.keyDown(window, { key: "k", ctrlKey: true });
-
-    // The editor search panel must NOT open — focus is not stolen.
-    expect(document.querySelector(".cm-search")).toBeNull();
-    expect(document.activeElement).toBe(foreign);
-    foreign.remove();
   });
 
   it("Escape exits Zen mode and exposes a visible exit control", async () => {

@@ -141,7 +141,6 @@ export const cy = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus chwilio field",
   "shortcuts.find": "Dod o hyd i in dogfen",
   "shortcuts.replace": "Dod o hyd i and amnewid",
   "shortcuts.goToLine": "Mynd i to llinell",

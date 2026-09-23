@@ -141,7 +141,6 @@ export const tg = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus ҷустуҷӯ field",
   "shortcuts.find": "Ёфтан in ҳуҷҷат",
   "shortcuts.replace": "Ёфтан and иваз кардан",
   "shortcuts.goToLine": "Гузаштан ба to самт",

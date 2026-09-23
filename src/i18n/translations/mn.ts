@@ -141,7 +141,6 @@ export const mn = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus хайх field",
   "shortcuts.find": "Олох in баримт бичиг",
   "shortcuts.replace": "Олох and солих",
   "shortcuts.goToLine": "Очих to мөр",

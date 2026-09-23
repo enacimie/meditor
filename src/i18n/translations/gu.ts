@@ -137,7 +137,6 @@ export const gu = {
   "shortcuts.ctrlShiftTab": "Ctrl+Shift+Tab",
   "shortcuts.ctrlF": "Ctrl+F",
   "shortcuts.ctrlK": "Ctrl+K",
-  "shortcuts.focusSearch": "શોધ ક્ષેત્ર પર ધ્યાન કેન્દ્રિત કરો",
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",

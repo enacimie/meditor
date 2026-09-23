@@ -141,7 +141,6 @@ export const sq = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus kërko field",
   "shortcuts.find": "Gjej in dokument",
   "shortcuts.replace": "Gjej and zëvendëso",
   "shortcuts.goToLine": "Shko te to rresht",

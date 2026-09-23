@@ -141,7 +141,6 @@ export const ga = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus cuardaigh field",
   "shortcuts.find": "Aimsigh in doiciméad",
   "shortcuts.replace": "Aimsigh and ionadaigh",
   "shortcuts.goToLine": "Téigh go to líne",

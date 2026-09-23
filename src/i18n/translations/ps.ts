@@ -141,7 +141,6 @@ export const ps = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus لټون field",
   "shortcuts.find": "موندل in سند",
   "shortcuts.replace": "موندل and ځای په ځای کول",
   "shortcuts.goToLine": "ته تلل to کرښه",

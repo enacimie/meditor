@@ -141,7 +141,6 @@ export const fo = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus leita field",
   "shortcuts.find": "Finna in skjal",
   "shortcuts.replace": "Finna and skifta út",
   "shortcuts.goToLine": "Fara til to linja",

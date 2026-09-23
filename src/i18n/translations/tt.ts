@@ -141,7 +141,6 @@ export const tt = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus эзләү field",
   "shortcuts.find": "Табу in документ",
   "shortcuts.replace": "Табу and алыштыру",
   "shortcuts.goToLine": "Күчү to юл",

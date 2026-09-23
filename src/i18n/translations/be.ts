@@ -141,7 +141,6 @@ export const be = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus пошук field",
   "shortcuts.find": "Знайсці in дакумент",
   "shortcuts.replace": "Знайсці and замяніць",
   "shortcuts.goToLine": "Перайсці to радок",

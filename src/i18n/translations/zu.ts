@@ -141,7 +141,6 @@ export const zu = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus sesha field",
   "shortcuts.find": "Thola in idokhumenti",
   "shortcuts.replace": "Thola and shintsha",
   "shortcuts.goToLine": "Ya kuyo to umugqa",

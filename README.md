@@ -296,8 +296,8 @@ who tests what, and which targets are still unreviewed (rpm, macOS, iOS…).
 | `Ctrl+E`        | Export to PDF   |
 | `Ctrl+W`        | Close tab       |
 | `Ctrl+Tab` / `Ctrl+Shift+Tab` | Next / previous tab |
-| `Ctrl+F`        | Find            |
-| `Ctrl+K`        | Focus the find field |
+| `Ctrl+F`        | Find, from anywhere in the window |
+| `Ctrl+K`        | Insert a link (Markdown or Typst) |
 | `Ctrl+H`        | Find & replace  |
 | `Ctrl+G`        | Go to line      |
 | `Ctrl+,`        | Preferences     |

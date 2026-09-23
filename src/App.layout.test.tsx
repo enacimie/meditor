@@ -166,16 +166,6 @@ describe("layout modes", () => {
     await waitFor(() => expect(app().className).not.toContain("layout-"));
   });
 
-  it("does not focus the hidden editor with Ctrl+K in preview mode", async () => {
-    await renderApp();
-    fireEvent.keyDown(window, { key: "3", ctrlKey: true });
-    await waitFor(() => expect(app().classList.contains("layout-preview")).toBe(true));
-
-    fireEvent.keyDown(window, { key: "k", ctrlKey: true });
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    expect(document.querySelector(".cm-search")).toBeNull();
-  });
-
   /*
    * Pane sizing is written inline by App.tsx, not left to the stylesheet: the
    * divider ratio while both panes share the workspace, the whole workspace

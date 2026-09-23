@@ -141,7 +141,6 @@ export const lo = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus ຄົ້ນຫາ field",
   "shortcuts.find": "ຊອກຫາ in ເອກະສານ",
   "shortcuts.replace": "ຊອກຫາ and ແທນທີ່",
   "shortcuts.goToLine": "ໄປທີ່ to ແຖວ",

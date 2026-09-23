@@ -141,7 +141,6 @@ export const su = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus pilarian field",
   "shortcuts.find": "Teangan in dokumén",
   "shortcuts.replace": "Teangan and ganti",
   "shortcuts.goToLine": "Angkat ka to baris",

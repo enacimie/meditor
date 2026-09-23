@@ -141,7 +141,6 @@ export const sd = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus ڳوليو field",
   "shortcuts.find": "ڳولهيو in دستاويز",
   "shortcuts.replace": "ڳولهيو and مٽايو",
   "shortcuts.goToLine": "ڏانهن وڃو to لڪير",

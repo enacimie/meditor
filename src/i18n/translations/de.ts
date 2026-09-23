@@ -158,7 +158,6 @@ export const de = {
   "shortcuts.ctrlShiftTab": "Strg+Umschalt+Tab",
   "shortcuts.ctrlF": "Strg+F",
   "shortcuts.ctrlK": "Strg+K",
-  "shortcuts.focusSearch": "Suchfeld fokussieren",
   "shortcuts.ctrlH": "Strg+H",
   "shortcuts.ctrlG": "Strg+G",
   "shortcuts.ctrlE": "Strg+E",

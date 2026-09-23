@@ -141,7 +141,6 @@ export const so = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus saar field",
   "shortcuts.find": "Raadi in dukumeenti",
   "shortcuts.replace": "Raadi and beddel",
   "shortcuts.goToLine": "U gudub to sadarka",

@@ -141,7 +141,6 @@ export const st = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus batla field",
   "shortcuts.find": "Fumana in tokomane",
   "shortcuts.replace": "Fumana and kenya sebakeng",
   "shortcuts.goToLine": "Eya to mola",

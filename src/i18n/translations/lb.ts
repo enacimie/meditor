@@ -141,7 +141,6 @@ export const lb = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus sichen field",
   "shortcuts.find": "Fannen in dokument",
   "shortcuts.replace": "Fannen and ersetzen",
   "shortcuts.goToLine": "Géi op to zeil",

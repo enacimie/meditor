@@ -1988,11 +1988,9 @@ export default function App() {
   /**
    * Open the find panel, bringing the editor back if it is hidden.
    *
-   * Ctrl+K deliberately refuses to do that (see the shortcut below): it moves
-   * focus, and moving focus into a pane nobody can see is worse than doing
-   * nothing. Picking "find" from the menu is an explicit request, so it takes
-   * the reader to the source instead of quietly failing — and so does Ctrl+F,
-   * the key that menu entry shows.
+   * Picking Find from the menu, or pressing Ctrl+F, the key that menu entry
+   * shows, is an explicit request, so it takes the reader to the source
+   * instead of quietly failing.
    *
    * Zen mode always shows the editor, whatever layout it will return to, so
    * there is nothing to reveal there; switching the layout would only change
@@ -2011,10 +2009,10 @@ export default function App() {
   /**
    * Whether a shortcut may move focus into the find panel.
    *
-   * Ctrl+K and Ctrl+F put the caret in a field that is already on screen
-   * rather than opening something of their own, so they must not take it
-   * from another field (LanguagePicker search, rename dialog) or open the
-   * panel behind a modal dialog.
+   * Ctrl+F puts the caret in a field that is already on screen rather than
+   * opening something of its own, so it must not take it from another field
+   * (LanguagePicker search, rename dialog) or open the panel behind a modal
+   * dialog.
    */
   function findPanelReachable() {
     if (!ready) return false;
@@ -2049,13 +2047,6 @@ export default function App() {
     openShortcuts: () => {
       if (!ready || shortcutsOpen) return;
       setShortcutsOpen(true);
-    },
-    focusSearch: () => {
-      if (!findPanelReachable()) return;
-      // The editor is hidden in preview-only mode: focusing it would move the
-      // caret somewhere the user cannot see.
-      if (layoutMode === "preview") return;
-      editorRef.current?.focusSearch();
     },
     find: () => {
       if (!findPanelReachable()) return;

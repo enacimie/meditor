@@ -141,7 +141,6 @@ export const et = {
   "shortcuts.ctrlH": "Ctrl+H",
   "shortcuts.ctrlG": "Ctrl+G",
   "shortcuts.ctrlE": "Ctrl+E",
-  "shortcuts.focusSearch": "Focus otsi field",
   "shortcuts.find": "Leia in dokument",
   "shortcuts.replace": "Leia and asenda",
   "shortcuts.goToLine": "Mine to rida",

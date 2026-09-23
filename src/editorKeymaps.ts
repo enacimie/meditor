@@ -143,20 +143,62 @@ function toggleWrap(view: EditorView, marker: string): boolean {
   return true;
 }
 
+/*
+ * A link, from the keyboard: Ctrl+K, as in Word, Google Docs, Typora and
+ * Obsidian. It used to focus the find field, which Ctrl+F now reaches from
+ * anywhere in the window.
+ *
+ * The selection becomes the link's text, or its address when it is one, and
+ * the caret lands in the slot still empty. With nothing selected it lands in
+ * the first slot the syntax has: the text of a Markdown link, the address of
+ * a Typst one.
+ */
+type LinkBuilder = (text: string, url: string) => { insert: string; caret: number };
+
+const LINKS: Partial<Record<DocKind, LinkBuilder>> = {
+  // [text](url) — the address starts after "](".
+  markdown: (text, url) => ({
+    insert: `[${text}](${url})`,
+    caret: text && !url ? text.length + 3 : 1,
+  }),
+  // #link("url")[text] — the address starts after '#link("', the text after '")['.
+  typst: (text, url) => ({
+    insert: `#link("${url}")[${text}]`,
+    caret: url && !text ? url.length + 10 : 7,
+  }),
+};
+
+/** A selection that is an address rather than words. */
+const ADDRESS = /^(?:[a-z][a-z0-9+.-]*:\/\/|mailto:|www\.)\S+$/i;
+
+function insertLink(view: EditorView, build: LinkBuilder): boolean {
+  const { state } = view;
+  view.dispatch(
+    state.changeByRange((range) => {
+      const selected = state.sliceDoc(range.from, range.to);
+      const url = ADDRESS.test(selected) ? selected : "";
+      const { insert, caret } = build(url ? "" : selected, url);
+      return {
+        changes: { from: range.from, to: range.to, insert },
+        range: EditorSelection.cursor(range.from + caret),
+      };
+    }),
+  );
+  return true;
+}
+
 /**
- * Bold and italic for the document's own language.
+ * Bold, italic and links for the document's own language.
  *
  * Empty for a language with no obvious equivalents, so the keys fall through
  * to whatever else wants them rather than doing something almost right.
- *
- * No link shortcut. The two keys a writer would reach for are already taken
- * by things worth keeping — `Mod-k` focuses the find field, and
- * `Mod-Shift-k` is CodeMirror's delete-line — and quietly taking one of them
- * is a bigger decision than adding a shortcut.
+ * `Mod-Shift-k` stays CodeMirror's delete-line, and on macOS Ctrl+K stays its
+ * Emacs-style "delete to the end of the line": the link is Cmd+K there.
  */
 export function buildFormattingKeymap(kind: DocKind): Extension {
   const markers = MARKERS[kind];
-  if (!markers) return [];
+  const link = LINKS[kind];
+  if (!markers || !link) return [];
 
   const bindings = [
     {
@@ -167,6 +209,11 @@ export function buildFormattingKeymap(kind: DocKind): Extension {
     {
       key: "Mod-i",
       run: (view: EditorView) => toggleWrap(view, markers.italic),
+      preventDefault: true,
+    },
+    {
+      key: "Mod-k",
+      run: (view: EditorView) => insertLink(view, link),
       preventDefault: true,
     },
   ];
