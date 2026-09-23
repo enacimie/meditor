@@ -59,7 +59,7 @@ fn t_en(key: &str) -> String {
         "image.invalidPath" => "Invalid image path",
         "image.notFound" => "Image not found",
         "image.unsupportedType" => "Unsupported image type",
-        "image.tooLarge" => "Image exceeds {} MiB limit",
+        "image.tooLarge" => "Image exceeds {0} MiB limit",
         "file.isDirectory" => "Path points to a directory",
         "file.noParent" => "Path has no parent folder",
         "file.noFileName" => "Path has no file name",
@@ -95,7 +95,7 @@ fn t_es(key: &str) -> String {
         "image.invalidPath" => "Ruta de imagen inválida",
         "image.notFound" => "Imagen no encontrada",
         "image.unsupportedType" => "Tipo de imagen no admitido",
-        "image.tooLarge" => "La imagen supera el límite de {} MiB",
+        "image.tooLarge" => "La imagen supera el límite de {0} MiB",
         "file.isDirectory" => "La ruta apunta a un directorio",
         "file.noParent" => "La ruta no tiene carpeta padre",
         "file.noFileName" => "La ruta no tiene nombre de archivo",
@@ -131,7 +131,7 @@ fn t_fr(key: &str) -> String {
         "image.invalidPath" => "Chemin d'image invalide",
         "image.notFound" => "Image introuvable",
         "image.unsupportedType" => "Type d'image non pris en charge",
-        "image.tooLarge" => "L'image dépasse la limite de {} Mio",
+        "image.tooLarge" => "L'image dépasse la limite de {0} Mio",
         "file.isDirectory" => "Le chemin pointe vers un dossier",
         "file.noParent" => "Le chemin n'a pas de dossier parent",
         "file.noFileName" => "Le chemin n'a pas de nom de fichier",
@@ -167,7 +167,7 @@ fn t_ps(key: &str) -> String {
         "image.invalidPath" => "د انځور ناسمه لار",
         "image.notFound" => "انځور و نه موندل شو",
         "image.unsupportedType" => "د انځور ناملاتړ شوی ډول",
-        "image.tooLarge" => "انځور د {} MiB له بریده اوړي",
+        "image.tooLarge" => "انځور د {0} MiB له بریده اوړي",
         "file.isDirectory" => "لار یوې پوښې ته اشاره کوي",
         "file.noParent" => "لار اصلي پوښه نلري",
         "file.noFileName" => "لار د فایل نوم نلري",
@@ -203,7 +203,7 @@ fn t_sd(key: &str) -> String {
         "image.invalidPath" => "غلط تصوير جو رستو",
         "image.notFound" => "تصوير نه مليو",
         "image.unsupportedType" => "تصوير جو قسم قبول ناهي",
-        "image.tooLarge" => "تصوير {} MiB جي حد کان وڌيڪ آهي",
+        "image.tooLarge" => "تصوير {0} MiB جي حد کان وڌيڪ آهي",
         "file.isDirectory" => "رستو هڪ ڊائريڪٽري ڏانهن اشارو ڪري ٿو",
         "file.noParent" => "رستو ۾ اصلي فولڊر ناهي",
         "file.noFileName" => "رستو ۾ فائل جو نالو ناهي",
@@ -401,6 +401,87 @@ mod tests {
                 let result = t(locale, key);
                 assert!(!result.is_empty());
                 assert_ne!(result, key);
+            }
+        }
+    }
+
+    /// Every key the crate hands to `tf`, read out of its own sources.
+    ///
+    /// Listing them by hand would cover the ones there are today; reading
+    /// them covers the next one too, which is the one nobody will remember.
+    fn keys_passed_to_tf() -> Vec<String> {
+        let mut keys: Vec<String> = Vec::new();
+        let mut dirs = vec![std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src")];
+        while let Some(dir) = dirs.pop() {
+            for entry in std::fs::read_dir(&dir).expect("a readable source directory") {
+                let path = entry.expect("a directory entry").path();
+                if path.is_dir() {
+                    dirs.push(path);
+                    continue;
+                }
+                if path.extension().and_then(|ext| ext.to_str()) != Some("rs") {
+                    continue;
+                }
+                let source = std::fs::read_to_string(&path).expect("a source file");
+                for (at, _) in source.match_indices("tf(") {
+                    // A call: not `fn tf(`, and not a longer name ending in "tf".
+                    let before = &source[..at];
+                    let joined = before
+                        .chars()
+                        .next_back()
+                        .is_some_and(|c| c.is_alphanumeric() || c == '_');
+                    if joined || before.ends_with("fn ") {
+                        continue;
+                    }
+                    // The key is the first string literal before the first `)`.
+                    let args = &source[at + 3..];
+                    let Some(end) = args.find(')') else { continue };
+                    let Some(open) = args[..end].find('"') else {
+                        continue;
+                    };
+                    let rest = &args[open + 1..];
+                    let Some(close) = rest.find('"') else {
+                        continue;
+                    };
+                    let key = &rest[..close];
+                    let is_key = key.split('.').count() == 2
+                        && key.chars().all(|c| c.is_ascii_alphanumeric() || c == '.');
+                    if is_key && !keys.iter().any(|k| k == key) {
+                        keys.push(key.to_string());
+                    }
+                }
+            }
+        }
+        keys
+    }
+
+    #[test]
+    fn formatted_messages_carry_their_argument() {
+        // `tf` fills in `{0}` and nothing else. "image.tooLarge" was written
+        // with `{}` in every language that translates it, so the message
+        // reached the user with the braces in it and without its number.
+        let keys = keys_passed_to_tf();
+        assert!(
+            keys.iter().any(|k| k == "image.tooLarge") && keys.len() >= 5,
+            "the source scan found too little: {keys:?}"
+        );
+        for key in &keys {
+            for locale in [
+                Locale::En,
+                Locale::Es,
+                Locale::Fr,
+                Locale::Ps,
+                Locale::Sd,
+                Locale::Zgh,
+                Locale::Kab,
+                Locale::Shi,
+                Locale::Rif,
+            ] {
+                let message = tf(locale, key, "20");
+                assert!(
+                    message.contains("20") && !message.contains('{') && !message.contains('}'),
+                    "{key} in {locale:?} does not take its argument: {message}"
+                );
             }
         }
     }
