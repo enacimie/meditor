@@ -8,6 +8,7 @@
  * network access and no companion files.
  */
 import pagedCss from "./paged.css?inline";
+import { documentLanguage } from "./documentLanguage";
 import { frontMatterValue } from "./frontMatter";
 import { DEFAULT_PAGE, buildPagedCss, type PageMetrics } from "./pageSetup";
 import latexHighlightCss from "./latex-highlight.css?inline";
@@ -249,6 +250,10 @@ export async function exportMarkdownToHtml(
     metrics = DEFAULT_PAGE,
   }: {
     fileName: string;
+    /**
+     * The interface language: the backend's messages are in it, and so is a
+     * document that does not declare its own.
+     */
     lang: string;
     rtl: boolean;
     t: TranslationFn;
@@ -273,12 +278,15 @@ export async function exportMarkdownToHtml(
     docHandle ? { handle: docHandle, locale: lang, format: "data" } : undefined,
   );
   const bodyHtml = host.innerHTML;
+  // The file is the document, so it is in the language the document says it
+  // is in (`lang:`); the interface's is only the fallback, as the preview's is.
+  const language = documentLanguage(frontMatterValue(markdown, "lang"));
 
   return buildStandaloneHtml({
     title: documentTitle(markdown, fileName),
     bodyHtml,
-    lang,
-    dir: rtl ? "rtl" : "ltr",
+    lang: language?.tag ?? lang,
+    dir: language?.dir ?? (rtl ? "rtl" : "ltr"),
     extraCss: await katexCssIfNeeded(bodyHtml),
     metrics,
   });

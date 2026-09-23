@@ -85,4 +85,32 @@ describe("exportMarkdownToHtml", () => {
     });
     expect(html).toContain('<html lang="ar" dir="rtl">');
   }, 20000);
+
+  it("is in the language the document declares, whatever the interface's", async () => {
+    const spanish = await exportMarkdownToHtml("---\nlang: es\n---\n\n# Informe\n", {
+      fileName: "doc",
+      lang: "ar",
+      rtl: true,
+      t,
+    });
+    expect(spanish).toContain('<html lang="es" dir="ltr">');
+
+    const hebrew = await exportMarkdownToHtml("---\nlang: he\n---\n\n# דוח\n", {
+      fileName: "doc",
+      lang: "en",
+      rtl: false,
+      t,
+    });
+    expect(hebrew).toContain('<html lang="he" dir="rtl">');
+  }, 20000);
+
+  it("keeps the interface's when what the document declares is not a language", async () => {
+    const html = await exportMarkdownToHtml("---\nlang: inglés\n---\n\n# Report\n", {
+      fileName: "doc",
+      lang: "en",
+      rtl: false,
+      t,
+    });
+    expect(html).toContain('<html lang="en" dir="ltr">');
+  }, 20000);
 });

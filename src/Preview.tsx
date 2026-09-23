@@ -30,6 +30,7 @@ import { isMarpDocument } from "./marpDetect";
 import { LATEX_ENABLED } from "./latexSupport";
 import { blockForLine } from "./previewSync";
 
+import type { DocumentLanguage } from "./documentLanguage";
 import type { DocKind } from "./types";
 import type { Theme } from "./components/types";
 import "./Preview.css";
@@ -73,6 +74,11 @@ type Props = {
   landscapeTables?: boolean;
   /** The sheet the Document view lays out on, and prints to. */
   pageMetrics?: PageMetrics;
+  /**
+   * The language the document declares, and its direction. Null for one that
+   * declares none, which inherits the interface's from <html>.
+   */
+  language?: DocumentLanguage | null;
   /**
    * The open document, so `![](assets/shot.png)` can be found beside it.
    * Null for a document that has never been saved, and for every document on
@@ -122,6 +128,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
     kind,
     landscapeTables = false,
     pageMetrics: metrics = DEFAULT_PAGE,
+    language = null,
     docHandle = null,
     theme = "system",
     onToggleTask,
@@ -550,11 +557,20 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
     );
   }
 
+  /*
+   * On the containers, not on the markup handed to paged.js: the pages, their
+   * margin boxes and the footnote area are built outside that markup, and
+   * they are the document too. The measuring copy carries it as well, so it
+   * is measured in the language the pages are laid out in.
+   */
+  const languageAttributes = language ? { lang: language.tag, dir: language.dir } : {};
+
   return (
     <>
       <div
         ref={sourceRef}
         className="markdown-body doc preview-source"
+        {...languageAttributes}
         style={
           {
             "--doc-sheet-width": metrics.widthCss,
@@ -565,6 +581,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
       <div
         ref={webRef}
         className="markdown-body"
+        {...languageAttributes}
         style={{ display: docView ? "none" : "block" }}
         onClick={handleClick}
         onDoubleClick={handleDblClick}
@@ -572,6 +589,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
       <div
         ref={pagedRef}
         className="paged-view"
+        {...languageAttributes}
         style={{ display: docView ? "block" : "none" }}
         onClick={handleClick}
         onDoubleClick={handleDblClick}

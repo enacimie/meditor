@@ -48,14 +48,25 @@ function placeholderText(): string | undefined {
 
 const IDS = ["doc-a", "doc-b"];
 
+/** The `lang` on the content element, or null when it has none of its own. */
+function contentLanguage(): string | null {
+  return document.querySelector(".cm-content")?.getAttribute("lang") ?? null;
+}
+
 type Overrides = {
   activeId?: string;
   wrap?: boolean;
   zenMode?: boolean;
+  textLanguage?: string | null;
 };
 
 /** The editor as App renders it, with the props under test overridable. */
-function view({ activeId = "doc-a", wrap = false, zenMode = false }: Overrides) {
+function view({
+  activeId = "doc-a",
+  wrap = false,
+  zenMode = false,
+  textLanguage = null,
+}: Overrides) {
   return (
     <Editor
       activeId={activeId}
@@ -66,6 +77,7 @@ function view({ activeId = "doc-a", wrap = false, zenMode = false }: Overrides) 
       zenMode={zenMode}
       zenPlaceholder="Start writing..."
       kind="markdown"
+      textLanguage={textLanguage}
     />
   );
 }
@@ -119,5 +131,40 @@ describe("editor compartments across tab switches", () => {
     rerender(view({ activeId: "doc-a", wrap: true, zenMode: true }));
     await waitFor(() => expect(isWrapping()).toBe(true));
     expect(placeholderText()).toBe("Start writing...");
+  });
+});
+
+describe("the document's language on the editor", () => {
+  it("is there from the start", async () => {
+    render(view({ textLanguage: "fr" }));
+    await waitFor(() => expect(document.querySelector(".cm-editor")).toBeTruthy());
+    expect(contentLanguage()).toBe("fr");
+  });
+
+  it("follows the document as it changes, and leaves when it is gone", async () => {
+    const { rerender } = render(view({}));
+    await waitFor(() => expect(document.querySelector(".cm-editor")).toBeTruthy());
+    expect(contentLanguage()).toBeNull();
+
+    rerender(view({ textLanguage: "es" }));
+    await waitFor(() => expect(contentLanguage()).toBe("es"));
+
+    // Nothing of its own, so the element inherits the interface's again.
+    rerender(view({ textLanguage: null }));
+    await waitFor(() => expect(contentLanguage()).toBeNull());
+  });
+
+  it("survives a tab switch that does not change it", async () => {
+    // The prop is the same before and after, so only the restore that follows
+    // `view.setState()` can put it back.
+    const { rerender } = render(view({}));
+    await waitFor(() => expect(document.querySelector(".cm-editor")).toBeTruthy());
+    rerender(view({ textLanguage: "de" }));
+    await waitFor(() => expect(contentLanguage()).toBe("de"));
+
+    rerender(view({ activeId: "doc-b", textLanguage: "de" }));
+    await waitFor(() =>
+      expect(contentLanguage(), "the language must survive a tab switch").toBe("de"),
+    );
   });
 });

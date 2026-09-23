@@ -18,6 +18,7 @@ const Editor = lazy(() => import("./Editor"));
 import Preview, { type PreviewHandle } from "./Preview";
 import { SAMPLE, TYPST_SAMPLE, LATEX_SAMPLE, MARP_SAMPLE } from "./sample";
 import { isMarpDocument } from "./marpDetect";
+import { documentLanguage } from "./documentLanguage";
 import { frontMatterValue } from "./frontMatter";
 import Topbar from "./components/Topbar";
 import TabBar from "./components/TabBar";
@@ -507,6 +508,25 @@ export default function App() {
     () => (markdownSyncAvailable ? frontMatterValue(activeContent, "margin") : null),
     [markdownSyncAvailable, activeContent],
   );
+
+  /*
+   * And the language it is written in: `lang`, Pandoc's key once more.
+   *
+   * Hyphenation, the spell checker and a screen reader all go by the `lang` of
+   * the text in front of them, and that used to be the interface's whatever
+   * the document was in: an English document opened in a Spanish interface
+   * was marked as Spanish. What the document says wins, for the reason above.
+   * One that says nothing, or something that is not a language, follows the
+   * interface as before.
+   *
+   * The same two steps as the paper: the string first, so the object below is
+   * rebuilt only when the front-matter changes and not on every keystroke.
+   */
+  const declaredLanguage = useMemo(
+    () => (markdownSyncAvailable ? frontMatterValue(activeContent, "lang") : null),
+    [markdownSyncAvailable, activeContent],
+  );
+  const docLanguage = useMemo(() => documentLanguage(declaredLanguage), [declaredLanguage]);
 
   /*
    * The sheet everything paginated agrees on: the Document view, the
@@ -2375,6 +2395,7 @@ export default function App() {
               kind={active?.kind ?? "markdown"}
               docHandle={active?.handle ?? null}
               locale={lang}
+              textLanguage={docLanguage?.tag ?? null}
               onCursorLineChange={onCursorMoved}
               onImageError={(error) =>
                 showNotice(
@@ -2459,6 +2480,7 @@ export default function App() {
               kind={active?.kind ?? "markdown"}
               landscapeTables={editorPrefs.landscapeTables}
               pageMetrics={pageMetrics}
+              language={docLanguage}
               docHandle={active?.handle ?? null}
               theme={theme}
               onToggleTask={toggleTask}

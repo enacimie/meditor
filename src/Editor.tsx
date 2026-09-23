@@ -135,8 +135,9 @@ function applyLatexLang(
  * whatever the webview provides: WebView2 on Windows and WKWebView on macOS
  * bring their own; WebKitGTK needs it enabled on the web context as well.
  *
- * No `lang` is forced: the content element inherits it from <html>, which
- * I18nProvider keeps in sync with the interface language.
+ * No `lang` here: the content element inherits the interface's from <html>,
+ * which I18nProvider keeps in sync, unless the document declares its own
+ * (`textLanguageAttributes`).
  */
 function spellcheckAttributes(enabled: boolean): Extension {
   return EditorView.contentAttributes.of({
@@ -148,6 +149,20 @@ function spellcheckAttributes(enabled: boolean): Extension {
     // machine should not be guessing about, and keeps the literal behaviour.
     autocapitalize: enabled ? "sentences" : "off",
   });
+}
+
+/**
+ * The language the document declares (`lang:`), on the content element, for
+ * whatever reads it there: the platform's spell checker, a screen reader, and
+ * font selection for scripts that share characters. Nothing when it declares
+ * none, so the element keeps inheriting the interface's.
+ *
+ * Only the language, not the direction: which way the source runs while it
+ * is being edited is a question of its own, and the interface's answer to it
+ * is left as it was.
+ */
+function textLanguageAttributes(tag: string | null): Extension {
+  return tag ? EditorView.contentAttributes.of({ lang: tag }) : [];
 }
 
 /** Theme fragment carrying only the user-configurable typography. */
@@ -229,6 +244,12 @@ type Props = {
   docHandle?: string | null;
   /** The interface language, for the backend's messages. */
   locale?: string;
+  /**
+   * The language the document says it is written in, as a BCP 47 tag. Null
+   * when it says none, and the text is in the interface's as far as the
+   * platform can tell.
+   */
+  textLanguage?: string | null;
 };
 
 const Editor = forwardRef<EditorHandle, Props>(function Editor(
@@ -250,6 +271,7 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
     onImageError,
     docHandle = null,
     locale = "en",
+    textLanguage = null,
   },
   ref,
 ) {
@@ -271,6 +293,9 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   // CodeMirror's own words, in the interface language: they change when the
   // language does, without a remount.
   const phrasesCompartment = useRef(new Compartment());
+  // The document's own language, which changes as its front-matter is edited
+  // and with every tab switch.
+  const textLanguageCompartment = useRef(new Compartment());
   const kindSeqRef = useRef(0);
   const activeIdRef = useRef(activeId);
   const suppress = useRef(false);
@@ -284,6 +309,7 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   const initialFontSize = useRef(fontSize);
   const initialFontFamily = useRef(fontFamily);
   const initialSpellcheck = useRef(spellcheck);
+  const initialTextLanguage = useRef(textLanguage);
   const initialWritingAids = useRef({ focusMode, typewriterMode });
   const initialZenMode = useRef(zenMode);
   const initialZenPlaceholder = useRef(zenPlaceholder);
@@ -309,6 +335,8 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   const writingAidsRef = useRef({ focusMode, typewriterMode });
   writingAidsRef.current = { focusMode, typewriterMode };
   spellcheckRef.current = spellcheck;
+  const textLanguageRef = useRef(textLanguage);
+  textLanguageRef.current = textLanguage;
   const zenModeRef = useRef(zenMode);
   zenModeRef.current = zenMode;
   const zenPlaceholderRef = useRef(zenPlaceholder);
@@ -344,6 +372,9 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
         ),
         spellcheckCompartment.current.reconfigure(
           spellcheckAttributes(spellcheckRef.current),
+        ),
+        textLanguageCompartment.current.reconfigure(
+          textLanguageAttributes(textLanguageRef.current),
         ),
         writingAidsCompartment.current.reconfigure(
           writingAidExtensions(writingAidsRef.current),
@@ -503,6 +534,9 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
       spellcheckCompartment.current.of(
         spellcheckAttributes(initialSpellcheck.current),
       ),
+      textLanguageCompartment.current.of(
+        textLanguageAttributes(initialTextLanguage.current),
+      ),
       EditorView.theme({
         "&": {
           height: "100%",
@@ -649,6 +683,16 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
       ),
     });
   }, [spellcheck]);
+
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch({
+      effects: textLanguageCompartment.current.reconfigure(
+        textLanguageAttributes(textLanguage),
+      ),
+    });
+  }, [textLanguage]);
 
   useEffect(() => {
     const view = viewRef.current;
