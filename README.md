@@ -362,10 +362,12 @@ meditor/
 
 The **Latin Modern** fonts included in `src/assets/fonts/` are distributed under the [GUST Font License](src/assets/fonts/GUST-FONT-LICENSE.TXT) (free). See the accompanying license file.
 
+Typst's default fonts ship in `public/typst-fonts/`, the same files typst.ts would otherwise download from a CDN (typst-assets v0.13.1): **Libertinus Serif** under the SIL Open Font License 1.1, **New Computer Modern** under the GUST Font License, and **DejaVu Sans Mono** under the Bitstream Vera terms. Their licences travel with them ([NOTICE](public/typst-fonts/NOTICE), [GUST](public/typst-fonts/GUST-FONT-LICENSE.TXT)). Typst therefore needs no network for its fonts.
+
 ## License
 
 meditor is licensed under the **GNU Affero General Public License v3.0** (AGPL-3.0-or-later). See [LICENSE](LICENSE) for the full text.
 
-The **Latin Modern** fonts are under the [GUST Font License](src/assets/fonts/GUST-FONT-LICENSE.TXT) (free).
+The **Latin Modern** fonts are under the [GUST Font License](src/assets/fonts/GUST-FONT-LICENSE.TXT) (free). Typst's fonts in `public/typst-fonts/` keep their own free licences (see [Fonts](#fonts)).
 
 **SwiftLaTeX** (PdfTeXEngine) is under EPL-2.0 / GPL-2.0 with Classpath exception.
