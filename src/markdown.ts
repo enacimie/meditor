@@ -12,6 +12,7 @@ import { full as emoji } from "markdown-it-emoji";
 import container from "markdown-it-container";
 import texmath from "markdown-it-texmath";
 import highlightjs from "markdown-it-highlightjs/core";
+import { tableCaptions } from "./tableCaptions";
 import hljs from "highlight.js/lib/core";
 import javascript from "highlight.js/lib/languages/javascript";
 import typescript from "highlight.js/lib/languages/typescript";
@@ -663,6 +664,7 @@ export const md = new MarkdownIt({
   .use(headingNumbers)
   .use(tocPlaceholder)
   .use(figures)
+  .use(tableCaptions)
   .use(addLineNumbers);
 
 const highlightFence = md.renderer.rules.fence;
@@ -691,6 +693,8 @@ export type RenderOptions = {
    * care will see.
    */
   figureLabel?: (n: number) => string;
+  /** How to label table `n`, for the same reason: "Table 1." when absent. */
+  tableLabel?: (n: number) => string;
 };
 
 export function renderMarkdown(src: string, options: RenderOptions = {}): string {

@@ -123,6 +123,7 @@ describe("translations", () => {
     "statusbar.cursor",
     "statusbar.cursorTitle",
     "preview.figureLabel",
+    "preview.tableLabel",
     "preview.landscapeNote",
     // Marp presentations; en/es for now like the strings above.
     "topbar.newMarp",

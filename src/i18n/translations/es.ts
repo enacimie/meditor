@@ -187,6 +187,7 @@ export const es = {
   "prefs.landscapeTables": "Páginas apaisadas para tablas anchas",
   "prefs.landscapeTablesHint": "Una tabla demasiado ancha para vertical puede ocupar una página horizontal",
   "preview.figureLabel": (n: number) => `Figura ${n}.`,
+  "preview.tableLabel": (n: number) => `Tabla ${n}.`,
   "preview.landscapeNote": "Página apaisada — tabla ancha",
   "prefs.pixels": (n: unknown) => `${String(n)} px`,
   "prefs.sample": "El veloz murciélago hindú comía feliz cardillo y kiwi",

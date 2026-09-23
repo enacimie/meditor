@@ -327,10 +327,11 @@ export async function renderContent(
 ): Promise<void> {
   const renderMarkdown = await getMarkdownRenderer();
   if (isStale()) return;
-  // The renderer has no locale, so the one thing in the output that is prose
-  // rather than the author's own words is handed to it: the figure label.
+  // The renderer has no locale, so what in the output is prose rather than
+  // the author's own words is handed to it: the figure and table labels.
   el.innerHTML = renderMarkdown(value, {
     figureLabel: (n: number) => t("preview.figureLabel", n),
+    tableLabel: (n: number) => t("preview.tableLabel", n),
   });
 
   // Awaited here, before this function returns, because everything that

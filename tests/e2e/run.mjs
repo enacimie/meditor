@@ -74,6 +74,7 @@ const BUILT_SPECS = [
   "page-margin.spec.mjs",
   "page-numbers.spec.mjs",
   "print.spec.mjs",
+  "table-captions.spec.mjs",
   "toc.spec.mjs",
 ];
 
