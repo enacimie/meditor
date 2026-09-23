@@ -68,6 +68,42 @@ const NAVIGATION_TIMEOUT_MS = 60000;
  * binding, and `close()` fails the spec that caused any. Only the built run
  * sends a policy (preview-server.mjs); anywhere else this stays silent.
  */
+// TEMPORARY diagnostic: the geometry of every footnote area on the page.
+const FOOTNOTE_SNAPSHOT = `(() => {
+  const r2 = (n) => Math.round(n * 1000) / 1000;
+  const pages = [...document.querySelectorAll('.pagedjs_page')];
+  const out = { pages: pages.length, dpr: devicePixelRatio, areas: [] };
+  pages.forEach((p, index) => {
+    const area = p.querySelector('.pagedjs_area');
+    const fa = p.querySelector('.pagedjs_footnote_area');
+    const content = p.querySelector('.pagedjs_footnote_content');
+    const inner = p.querySelector('.pagedjs_footnote_inner_content');
+    if (!fa || !content || !inner || !inner.textContent.trim()) return;
+    if (out.areas.length >= 6) return;
+    const rangeLines = (() => {
+      const r = document.createRange();
+      r.selectNodeContents(inner);
+      return [...r.getClientRects()].slice(0, 8).map((x) => [r2(x.left), r2(x.top), r2(x.bottom)]);
+    })();
+    const cb = content.getBoundingClientRect();
+    const ib = inner.getBoundingClientRect();
+    const fb = fa.getBoundingClientRect();
+    const pc = p.querySelector('.pagedjs_page_content').getBoundingClientRect();
+    const cs = getComputedStyle(content);
+    out.areas.push({
+      index,
+      reserved: area.style.getPropertyValue('--pagedjs-footnotes-height'),
+      area: [r2(fb.top), r2(fb.height)],
+      content: [r2(cb.top), r2(cb.height), content.scrollHeight, cs.marginTop, cs.paddingTop, cs.borderTopWidth],
+      inner: [r2(ib.left), r2(ib.top), r2(ib.width), r2(ib.height), inner.scrollHeight, inner.scrollWidth, inner.style.height, inner.style.columnWidth],
+      pageContent: [r2(pc.left), r2(pc.right), r2(pc.top), r2(pc.bottom)],
+      lines: rangeLines,
+      text: inner.textContent.trim().slice(0, 50),
+    });
+  });
+  return JSON.stringify(out);
+})()`;
+
 const CSP_BINDING = "__meditorCspViolation";
 const CSP_LISTENER = `addEventListener("securitypolicyviolation", (event) => {
   try {
@@ -462,7 +498,16 @@ export class CdpSession {
     // Let it go, so the spec's own cleanup can reach the page.
     this.send("Runtime.terminateExecution", {}, 5000).catch(() => {});
     this.send("Debugger.resume", {}, 5000).catch(() => {});
-    return `the page is stuck at:\n    ${lines.join("\n    ")}`;
+    // TEMPORARY: what the footnote areas looked like when it stuck.
+    let notes = "";
+    try {
+      await sleep(500);
+      const res = await this.send("Runtime.evaluate", { expression: FOOTNOTE_SNAPSHOT, returnByValue: true }, 5000);
+      notes = `\n  footnote areas: ${res.result?.result?.value ?? JSON.stringify(res.result).slice(0, 300)}`;
+    } catch (error) {
+      notes = `\n  footnote areas: unreadable (${error.message.slice(0, 80)})`;
+    }
+    return `the page is stuck at:\n    ${lines.join("\n    ")}${notes}`;
   }
 
   /** Send a raw CDP command; rejects after SEND_TIMEOUT_MS. */
