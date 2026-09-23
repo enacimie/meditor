@@ -492,6 +492,22 @@
   margin: 4pt 0 3pt;
 }
 
+/*
+ * The notes are never squeezed below their own height.
+ *
+ * The note area is a column flexbox whose height paged.js sets once a note
+ * is in it, and the notes are a flex item that, being overflow: hidden, may
+ * shrink to nothing. paged.js shows them while the area is still 0 tall, so
+ * they are laid out at 0 first. On the Chrome 152 of the CI's Windows and
+ * macOS runners they stayed at 0 after the area grew to fit them; paged.js
+ * then read every note as overflowing, moved it to a new page, and did the
+ * same there, for ever: the preview froze. Not shrinking, their height no
+ * longer depends on when the area got its own.
+ */
+.pagedjs_footnote_content {
+  flex-shrink: 0;
+}
+
 .markdown-body.doc .footnotes {
   font-size: 9pt;
   margin-top: 1.8em;

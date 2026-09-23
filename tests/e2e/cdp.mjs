@@ -68,82 +68,6 @@ const NAVIGATION_TIMEOUT_MS = 60000;
  * binding, and `close()` fails the spec that caused any. Only the built run
  * sends a policy (preview-server.mjs); anywhere else this stays silent.
  */
-// TEMPORARY diagnostic: what paged.js was looking at when it took content out
-// of a footnote area as overflow. Installed before any page script runs.
-const EXTRACTION_RECORDER = `(() => {
-  const original = Range.prototype.extractContents;
-  window.__noteExtractions = [];
-  const r2 = (n) => Math.round(n * 1000) / 1000;
-  Range.prototype.extractContents = function () {
-    try {
-      const start = this.startContainer;
-      const el = start.nodeType === 1 ? start : start.parentElement;
-      const inner = el && el.closest && el.closest('.pagedjs_footnote_inner_content');
-      if (inner && window.__noteExtractions.length < 8) {
-        const content = inner.parentElement;
-        const page = inner.closest('.pagedjs_page');
-        const area = inner.closest('.pagedjs_area');
-        const cb = content.getBoundingClientRect();
-        const ib = inner.getBoundingClientRect();
-        const target = start.nodeType === 1 ? start.childNodes[this.startOffset] || start : start;
-        const tr = target.nodeType === 1 ? target.getBoundingClientRect() : (() => { const r = document.createRange(); r.selectNodeContents(target); return r.getBoundingClientRect(); })();
-        const lines = (() => { const r = document.createRange(); r.selectNodeContents(inner); return [...r.getClientRects()].slice(0, 6).map((x) => [r2(x.left), r2(x.right), r2(x.top), r2(x.bottom)]); })();
-        window.__noteExtractions.push({
-          page: page && page.dataset.pageNumber,
-          pages: document.querySelectorAll('.pagedjs_page').length,
-          empty: page && !page.querySelector('.pagedjs_page_content > div'),
-          reserved: area && area.style.getPropertyValue('--pagedjs-footnotes-height'),
-          content: [r2(cb.left), r2(cb.right), r2(cb.top), r2(cb.bottom), content.scrollWidth, content.scrollHeight],
-          inner: [r2(ib.left), r2(ib.right), r2(ib.top), r2(ib.bottom), inner.scrollWidth, inner.scrollHeight, inner.style.columnWidth, inner.style.columnGap, getComputedStyle(inner).columnGap, inner.style.height],
-          start: [start.nodeName, this.startOffset, (start.textContent || '').slice(0, 30)],
-          target: [target.nodeName, r2(tr.left), r2(tr.right), r2(tr.top), r2(tr.bottom)],
-          lines,
-        });
-      }
-    } catch (error) {
-      window.__noteExtractions.push({ error: String(error) });
-    }
-    return original.apply(this, arguments);
-  };
-})();`;
-
-// TEMPORARY diagnostic: the geometry of every footnote area on the page.
-const FOOTNOTE_SNAPSHOT = `(() => {
-  const r2 = (n) => Math.round(n * 1000) / 1000;
-  const pages = [...document.querySelectorAll('.pagedjs_page')];
-  const out = { pages: pages.length, dpr: devicePixelRatio, areas: [] };
-  pages.forEach((p, index) => {
-    const area = p.querySelector('.pagedjs_area');
-    const fa = p.querySelector('.pagedjs_footnote_area');
-    const content = p.querySelector('.pagedjs_footnote_content');
-    const inner = p.querySelector('.pagedjs_footnote_inner_content');
-    if (!fa || !content || !inner || !inner.textContent.trim()) return;
-    if (out.areas.length >= 6) return;
-    const rangeLines = (() => {
-      const r = document.createRange();
-      r.selectNodeContents(inner);
-      return [...r.getClientRects()].slice(0, 8).map((x) => [r2(x.left), r2(x.top), r2(x.bottom)]);
-    })();
-    const cb = content.getBoundingClientRect();
-    const ib = inner.getBoundingClientRect();
-    const fb = fa.getBoundingClientRect();
-    const pc = p.querySelector('.pagedjs_page_content').getBoundingClientRect();
-    const cs = getComputedStyle(content);
-    out.areas.push({
-      index,
-      reserved: area.style.getPropertyValue('--pagedjs-footnotes-height'),
-      area: [r2(fb.top), r2(fb.height)],
-      content: [r2(cb.top), r2(cb.height), content.scrollHeight, cs.marginTop, cs.paddingTop, cs.borderTopWidth],
-      inner: [r2(ib.left), r2(ib.top), r2(ib.width), r2(ib.height), inner.scrollHeight, inner.scrollWidth, inner.style.height, inner.style.columnWidth],
-      pageContent: [r2(pc.left), r2(pc.right), r2(pc.top), r2(pc.bottom)],
-      lines: rangeLines,
-      text: inner.textContent.trim().slice(0, 50),
-    });
-  });
-  out.extractions = window.__noteExtractions || null;
-  return JSON.stringify(out);
-})()`;
-
 const CSP_BINDING = "__meditorCspViolation";
 const CSP_LISTENER = `addEventListener("securitypolicyviolation", (event) => {
   try {
@@ -416,16 +340,9 @@ export async function connect(port) {
     }
   });
   await session.send("Runtime.enable");
-  // Enabled up front because it cannot be enabled later: once the page has
-  // stopped answering, only `Debugger.pause` still gets through, and only to
-  // a debugger that was already on. See `whereIsItStuck`.
-  await session.send("Debugger.enable");
-  // So a stuck promise chain shows who started it, not only its last step.
-  await session.send("Debugger.setAsyncCallStackDepth", { maxDepth: 16 });
   await session.send("Page.enable");
   await session.send("Runtime.addBinding", { name: CSP_BINDING });
   await session.addInitScript(CSP_LISTENER);
-  await session.addInitScript(EXTRACTION_RECORDER);
   return session;
 }
 
@@ -494,63 +411,6 @@ export class CdpSession {
     });
   }
 
-  /**
-   * Where the page's main thread is, once it has stopped answering.
-   *
-   * A timed-out evaluation says only that the page did not answer. Chrome
-   * delivers `Debugger.pause` as an interrupt to a busy main thread, so it
-   * reaches a script caught in a loop, and the stack it reports is the loop.
-   * A page that will not pause at all is stuck outside JavaScript, in the
-   * browser's own layout or painting, which is worth knowing just as much.
-   */
-  async whereIsItStuck() {
-    let listener;
-    const paused = new Promise((resolve) => {
-      listener = (msg) => {
-        if (msg.method === "Debugger.paused") resolve(msg.params);
-      };
-      this.onMessage(listener);
-    });
-    this.send("Debugger.pause", {}, 5000).catch(() => {});
-    const params = await Promise.race([paused, sleep(5000).then(() => null)]);
-    this._listeners.splice(this._listeners.indexOf(listener), 1);
-    if (!params) return "the page would not pause: it is stuck outside JavaScript";
-
-    const describe = async (frame) => {
-      const { scriptId, lineNumber, columnNumber } = frame.location ?? frame;
-      let source = "";
-      try {
-        const res = await this.send("Debugger.getScriptSource", { scriptId }, 5000);
-        const line = res.result?.scriptSource?.split("\n")[lineNumber] ?? "";
-        source = line.slice(Math.max(0, columnNumber - 60), columnNumber + 100).trim();
-      } catch {
-        // The stack is still worth having without the source.
-      }
-      const url = (frame.url ?? "").replace(/^https?:\/\/[^/]+/, "");
-      return `${frame.functionName || "(anonymous)"} ${url}:${lineNumber + 1}:${columnNumber + 1}  ${source}`;
-    };
-    const lines = [];
-    for (const frame of params.callFrames.slice(0, 15)) lines.push(await describe(frame));
-    let parent = params.asyncStackTrace;
-    for (let depth = 0; parent && depth < 4; depth++, parent = parent.parent) {
-      lines.push(`-- ${parent.description ?? "async"} --`);
-      for (const frame of parent.callFrames.slice(0, 6)) lines.push(await describe(frame));
-    }
-    // Let it go, so the spec's own cleanup can reach the page.
-    this.send("Runtime.terminateExecution", {}, 5000).catch(() => {});
-    this.send("Debugger.resume", {}, 5000).catch(() => {});
-    // TEMPORARY: what the footnote areas looked like when it stuck.
-    let notes = "";
-    try {
-      await sleep(500);
-      const res = await this.send("Runtime.evaluate", { expression: FOOTNOTE_SNAPSHOT, returnByValue: true }, 5000);
-      notes = `\n  footnote areas: ${res.result?.result?.value ?? JSON.stringify(res.result).slice(0, 300)}`;
-    } catch (error) {
-      notes = `\n  footnote areas: unreadable (${error.message.slice(0, 80)})`;
-    }
-    return `the page is stuck at:\n    ${lines.join("\n    ")}${notes}`;
-  }
-
   /** Send a raw CDP command; rejects after SEND_TIMEOUT_MS. */
   send(method, params = {}, timeoutMs = SEND_TIMEOUT_MS) {
     return new Promise((resolve, reject) => {
@@ -600,9 +460,6 @@ export class CdpSession {
       // the timestamps. The message keeps its original wording at the front,
       // because `isTransientEvaluationError` and one spec both match on it.
       error.message = `${error.message} — evaluating: ${summarise(expression)}`;
-      if (/^CDP command timed out/.test(error.message)) {
-        error.message += `\n  ${await this.whereIsItStuck()}`;
-      }
       throw error;
     }
     if (res.result?.exceptionDetails) {
