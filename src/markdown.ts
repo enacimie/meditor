@@ -1,5 +1,6 @@
 import MarkdownIt from "markdown-it";
 import { frontMatterFlag, frontMatterValue } from "./frontMatter";
+import { documentQuotes } from "./documentQuotes";
 import taskLists from "markdown-it-task-lists";
 import footnote from "markdown-it-footnote";
 import mark from "markdown-it-mark";
@@ -640,6 +641,7 @@ export const md = new MarkdownIt({
     },
   })
   .use(frontMatter)
+  .use(documentQuotes)
   .use(taskLists, { enabled: true })
   .use(footnote)
   .use(mark)
