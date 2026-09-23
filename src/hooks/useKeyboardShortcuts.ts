@@ -141,7 +141,10 @@ export function useKeyboardShortcuts(
       } else if (k === ",") {
         e.preventDefault();
         h.openPreferences();
-      } else if (k === "k") {
+      } else if (k === "k" && !e.shiftKey) {
+        // Not with Shift: Ctrl+Shift+K is CodeMirror's delete-line. Answering
+        // it here too opened the find panel on top of the deletion and moved
+        // the caret into it, so the next thing typed went to the search box.
         e.preventDefault();
         h.focusSearch();
       } else if (!e.shiftKey && !e.altKey && (k === "1" || k === "2" || k === "3")) {

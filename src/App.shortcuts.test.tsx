@@ -144,6 +144,29 @@ describe("shortcuts overlay (F1)", () => {
     expect(document.activeElement).toBe(input);
   });
 
+  it("Ctrl+Shift+K is left to the editor's delete-line, not to the find field", async () => {
+    render(
+      <I18nProvider>
+        <App />
+      </I18nProvider>,
+    );
+    await waitFor(
+      () => expect(document.querySelector(".cm-editor")).toBeTruthy(),
+      { timeout: 8000 },
+    );
+
+    // With Shift held the key arrives upper-case; the handler lower-cases it,
+    // which is how Ctrl+Shift+K used to reach the Ctrl+K branch.
+    fireEvent.keyDown(window, { key: "K", ctrlKey: true, shiftKey: true });
+
+    expect(document.querySelector(".cm-search")).toBeNull();
+    expect(document.activeElement?.classList.contains("cm-textfield")).toBe(false);
+
+    // Ctrl+K itself still opens it: the change narrows the key, not the feature.
+    fireEvent.keyDown(window, { key: "k", ctrlKey: true });
+    await waitFor(() => expect(document.querySelector(".cm-search")).toBeTruthy());
+  });
+
   it("Ctrl+K does not steal focus from the language picker input", async () => {
     render(
       <I18nProvider>
