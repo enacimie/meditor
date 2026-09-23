@@ -354,3 +354,30 @@
   display: inline-block;
   min-width: 2.4em;
 }
+
+/* ---- Numbered equations ----
+ *
+ * `$$ ... $$ (1)` renders as <section class="eqno"><eqn>...</eqn><span>(1)</span>
+ * </section> (markdown-it-texmath). With no rule of its own the section is an
+ * ordinary block, and the number dropped onto the line below, at its start.
+ * As a row the number stays on the formula's line, at the end of it: the
+ * right, or the left in a right-to-left document. The formula gets as much
+ * room before it as the number takes after it, so it stays centred on the
+ * column rather than on what the number leaves. This is the Web view's rule;
+ * paged.css has the Document view's, which the exported HTML carries too.
+ */
+.markdown-body:not(.doc) section.eqno {
+  display: flex;
+  align-items: center;
+}
+
+.markdown-body:not(.doc) section.eqno > eqn {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-inline-start: 3em;
+}
+
+.markdown-body:not(.doc) section.eqno > span {
+  flex: 0 0 3em;
+  text-align: end;
+}
