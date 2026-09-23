@@ -68,6 +68,45 @@ const NAVIGATION_TIMEOUT_MS = 60000;
  * binding, and `close()` fails the spec that caused any. Only the built run
  * sends a policy (preview-server.mjs); anywhere else this stays silent.
  */
+// TEMPORARY diagnostic: what paged.js was looking at when it took content out
+// of a footnote area as overflow. Installed before any page script runs.
+const EXTRACTION_RECORDER = `(() => {
+  const original = Range.prototype.extractContents;
+  window.__noteExtractions = [];
+  const r2 = (n) => Math.round(n * 1000) / 1000;
+  Range.prototype.extractContents = function () {
+    try {
+      const start = this.startContainer;
+      const el = start.nodeType === 1 ? start : start.parentElement;
+      const inner = el && el.closest && el.closest('.pagedjs_footnote_inner_content');
+      if (inner && window.__noteExtractions.length < 8) {
+        const content = inner.parentElement;
+        const page = inner.closest('.pagedjs_page');
+        const area = inner.closest('.pagedjs_area');
+        const cb = content.getBoundingClientRect();
+        const ib = inner.getBoundingClientRect();
+        const target = start.nodeType === 1 ? start.childNodes[this.startOffset] || start : start;
+        const tr = target.nodeType === 1 ? target.getBoundingClientRect() : (() => { const r = document.createRange(); r.selectNodeContents(target); return r.getBoundingClientRect(); })();
+        const lines = (() => { const r = document.createRange(); r.selectNodeContents(inner); return [...r.getClientRects()].slice(0, 6).map((x) => [r2(x.left), r2(x.right), r2(x.top), r2(x.bottom)]); })();
+        window.__noteExtractions.push({
+          page: page && page.dataset.pageNumber,
+          pages: document.querySelectorAll('.pagedjs_page').length,
+          empty: page && !page.querySelector('.pagedjs_page_content > div'),
+          reserved: area && area.style.getPropertyValue('--pagedjs-footnotes-height'),
+          content: [r2(cb.left), r2(cb.right), r2(cb.top), r2(cb.bottom), content.scrollWidth, content.scrollHeight],
+          inner: [r2(ib.left), r2(ib.right), r2(ib.top), r2(ib.bottom), inner.scrollWidth, inner.scrollHeight, inner.style.columnWidth, inner.style.columnGap, getComputedStyle(inner).columnGap, inner.style.height],
+          start: [start.nodeName, this.startOffset, (start.textContent || '').slice(0, 30)],
+          target: [target.nodeName, r2(tr.left), r2(tr.right), r2(tr.top), r2(tr.bottom)],
+          lines,
+        });
+      }
+    } catch (error) {
+      window.__noteExtractions.push({ error: String(error) });
+    }
+    return original.apply(this, arguments);
+  };
+})();`;
+
 // TEMPORARY diagnostic: the geometry of every footnote area on the page.
 const FOOTNOTE_SNAPSHOT = `(() => {
   const r2 = (n) => Math.round(n * 1000) / 1000;
@@ -101,6 +140,7 @@ const FOOTNOTE_SNAPSHOT = `(() => {
       text: inner.textContent.trim().slice(0, 50),
     });
   });
+  out.extractions = window.__noteExtractions || null;
   return JSON.stringify(out);
 })()`;
 
@@ -385,6 +425,7 @@ export async function connect(port) {
   await session.send("Page.enable");
   await session.send("Runtime.addBinding", { name: CSP_BINDING });
   await session.addInitScript(CSP_LISTENER);
+  await session.addInitScript(EXTRACTION_RECORDER);
   return session;
 }
 
