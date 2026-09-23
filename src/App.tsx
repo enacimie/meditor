@@ -1991,16 +1991,40 @@ export default function App() {
    * Ctrl+K deliberately refuses to do that (see the shortcut below): it moves
    * focus, and moving focus into a pane nobody can see is worse than doing
    * nothing. Picking "find" from the menu is an explicit request, so it takes
-   * the reader to the source instead of quietly failing.
+   * the reader to the source instead of quietly failing — and so does Ctrl+F,
+   * the key that menu entry shows.
+   *
+   * Zen mode always shows the editor, whatever layout it will return to, so
+   * there is nothing to reveal there; switching the layout would only change
+   * what the reader finds on leaving it.
    */
   function findInDocument() {
     if (!ready) return;
-    if (layoutMode === "preview") {
+    if (layoutMode === "preview" && !zenMode) {
       setLayoutMode(revealing("editor"));
       requestAnimationFrame(() => editorRef.current?.focusSearch());
       return;
     }
     editorRef.current?.focusSearch();
+  }
+
+  /**
+   * Whether a shortcut may move focus into the find panel.
+   *
+   * Ctrl+K and Ctrl+F put the caret in a field that is already on screen
+   * rather than opening something of their own, so they must not take it
+   * from another field (LanguagePicker search, rename dialog) or open the
+   * panel behind a modal dialog.
+   */
+  function findPanelReachable() {
+    if (!ready) return false;
+    const active = document.activeElement;
+    if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) {
+      return false;
+    }
+    if (confirmRequest || renameRequest || shortcutsOpen) return false;
+    if (preferencesOpen || aboutOpen) return false;
+    return true;
   }
 
   // Keyboard shortcuts — extracted to its own hook
@@ -2027,20 +2051,20 @@ export default function App() {
       setShortcutsOpen(true);
     },
     focusSearch: () => {
-      // Ctrl+K is the only shortcut that moves focus, so it must not steal
-      // it from other inputs (LanguagePicker search, rename dialog) or open
-      // the search panel behind a modal dialog.
-      if (!ready) return;
-      const active = document.activeElement;
-      if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) {
-        return;
-      }
-      if (confirmRequest || renameRequest || shortcutsOpen) return;
-      if (preferencesOpen || aboutOpen) return;
+      if (!findPanelReachable()) return;
       // The editor is hidden in preview-only mode: focusing it would move the
       // caret somewhere the user cannot see.
       if (layoutMode === "preview") return;
       editorRef.current?.focusSearch();
+    },
+    find: () => {
+      if (!findPanelReachable()) return;
+      // A slideshow covers the whole window: the panel would open behind it
+      // and take the keys the presentation is listening for.
+      if (presenting) return;
+      // The menu's own Find entry closes the menu; its shortcut does too.
+      setMenuOpen(false);
+      findInDocument();
     },
     setLayout: chooseLayout,
     openPreferences: () => {

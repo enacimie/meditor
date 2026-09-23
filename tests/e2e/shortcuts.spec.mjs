@@ -8,7 +8,9 @@
  *   4. Typing a query highlights matches in the document.
  *   5. Ctrl+K is open-only: pressing it while an input has focus does not
  *      steal the focus (no search panel opens from a foreign input).
- *   6. No console errors along the way.
+ *   6. Ctrl+F from the tab bar in preview-only mode brings the editor back
+ *      and leaves the caret in the find field.
+ *   7. No console errors along the way.
  *
  * Run via `pnpm test:e2e` (the runner sets CDP_PORT and BASE_URL).
  *
@@ -184,6 +186,53 @@ try {
   })()`);
   await page.waitFor("document.querySelector('.cm-search') === null");
 
+  // ── Ctrl+F from outside the editor, with the editor hidden ────────
+  // Real key events, not a KeyboardEvent dispatched on window: the handler
+  // asks where focus is, and only a key the browser delivers to the focused
+  // element answers that honestly. Preview-only mode is the hard case: the
+  // editor is display:none until the key brings it back, and the find field
+  // can only take focus once it is laid out again.
+  await press(page, "3", "ctrlKey: true");
+  await page.waitFor("document.querySelector('.app').classList.contains('layout-preview')");
+  const tabFocused = await page.evaluate(`(() => {
+    const tab = document.querySelector('[role="tab"][aria-selected="true"]');
+    if (!tab) return false;
+    tab.focus();
+    return document.activeElement === tab;
+  })()`);
+  assert(tabFocused, "the active tab should take focus");
+  // CodeMirror's Mod is Cmd on macOS; the app takes Ctrl or Cmd, so send
+  // what a Mac user would press.
+  const findModifier = process.platform === "darwin" ? 4 : 2;
+  for (const type of ["keyDown", "keyUp"]) {
+    await page.send("Input.dispatchKeyEvent", {
+      type,
+      modifiers: findModifier,
+      key: "f",
+      code: "KeyF",
+      windowsVirtualKeyCode: 70,
+      nativeVirtualKeyCode: 70,
+    });
+  }
+  await page.waitFor(
+    "!document.querySelector('.app').className.includes('layout-')",
+    { message: "Ctrl+F in preview-only mode should bring the editor back beside the preview" },
+  );
+  await page.waitFor(
+    `(() => {
+      const field = document.querySelector('.cm-search .cm-textfield');
+      return !!field && document.activeElement === field && field.getBoundingClientRect().width > 0;
+    })()`,
+    { message: "Ctrl+F from the tab bar should leave the caret in a visible find field" },
+  );
+  await page.evaluate(`(() => {
+    document.querySelector('.cm-textfield').dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+    );
+    return true;
+  })()`);
+  await page.waitFor("document.querySelector('.cm-search') === null");
+
   // ── Narrow viewport overlay ───────────────────────────────────────
   await page.send("Emulation.setDeviceMetricsOverride", {
     width: 320,
@@ -261,7 +310,7 @@ try {
   );
 
   console.log(
-    "PASS: shortcuts.spec — F1 overlay + Ctrl+K find + Ctrl+H replace + Ctrl+G go-to-line",
+    "PASS: shortcuts.spec — F1 overlay + Ctrl+K find + Ctrl+F from outside the editor + Ctrl+H replace + Ctrl+G go-to-line",
   );
 } finally {
   page.close();
