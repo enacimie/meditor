@@ -2,10 +2,12 @@
 //!
 //! A saved document links its images rather than embedding them, which means
 //! two questions with security answers: which relative paths a document may
-//! reach (never outside its own folder, never an absolute path, never a URL)
-//! and what a pasted image may be called (not a Windows device name, not a
-//! trail of dots, nothing with a separator in it).
+//! reach (never an absolute path, never a URL, only an image; the checks are
+//! in `beside.rs`, with the rules below) and what a pasted image may be called
+//! (not a Windows device name, not a trail of dots, nothing with a separator
+//! in it).
 
+use crate::beside::{self, Refusal, Rules};
 use crate::document::{metadata_stat, DocumentStat};
 use crate::locale::{parse_locale, t, tf, Locale};
 use crate::location::{as_path, document_location, DocumentRegistry};
@@ -28,14 +30,18 @@ const IMAGE_EXTENSIONS: [&str; 9] = [
 ];
 
 fn has_image_extension(path: &Path) -> bool {
-    path.extension()
-        .and_then(|extension| extension.to_str())
-        .map(|extension| {
-            let lower = extension.to_ascii_lowercase();
-            IMAGE_EXTENSIONS.contains(&lower.as_str())
-        })
-        .unwrap_or(false)
+    beside::has_extension(path, &IMAGE_EXTENSIONS)
 }
+
+/// What an image link may reach: an image, by extension, below the ceiling,
+/// anywhere a relative path leads, `..` included (see `resolve_image_path`).
+const IMAGE_RULES: Rules = Rules {
+    extensions: &IMAGE_EXTENSIONS,
+    max_bytes: MAX_IMAGE_BYTES,
+    may_climb: true,
+    may_be_hidden: true,
+    must_stay_inside: false,
+};
 
 /// The file a document-relative image link points at.
 ///
@@ -55,52 +61,18 @@ fn has_image_extension(path: &Path) -> bool {
 /// the shape of the path but what may come back through it — an image, by
 /// extension, below the size ceiling, and only ever into an `<img>`.
 fn resolve_image_path(locale: Locale, document: &Path, rel_path: &str) -> Result<PathBuf, String> {
-    if rel_path.is_empty() || rel_path.contains('\0') {
-        return Err(t(locale, "image.invalidPath"));
-    }
-    // A URL is not a relative path, whatever it looks like. Checked before
-    // anything else so `file://…` and `https://…` cannot arrive as one.
-    if rel_path.contains("://") {
-        return Err(t(locale, "image.invalidPath"));
-    }
-    // Absolute in any notation, including the ones this platform does not use
-    // itself: a Linux build must still refuse `C:\` and `\server\share`.
-    let bytes = rel_path.as_bytes();
-    let windows_drive =
-        bytes.len() >= 2 && bytes[1] == b':' && (bytes[0] as char).is_ascii_alphabetic();
-    if rel_path.starts_with('/')
-        || rel_path.starts_with('\\')
-        || windows_drive
-        || Path::new(rel_path).is_absolute()
-    {
-        return Err(t(locale, "image.invalidPath"));
-    }
-
-    let parent = document
-        .parent()
-        .ok_or_else(|| t(locale, "image.invalidPath"))?;
-    let joined = parent.join(rel_path);
-    // Canonicalising is what turns `a/../b` into `b` and follows any links,
-    // so everything below is asked of the file that would actually be read.
-    let resolved = joined
-        .canonicalize()
-        .map_err(|_| t(locale, "image.notFound"))?;
-
-    let metadata = std::fs::metadata(&resolved).map_err(|_| t(locale, "image.notFound"))?;
-    if !metadata.is_file() {
-        return Err(t(locale, "image.notFound"));
-    }
-    if !has_image_extension(&resolved) {
-        return Err(t(locale, "image.unsupportedType"));
-    }
-    if metadata.len() > MAX_IMAGE_BYTES {
-        return Err(tf(
+    beside::resolve(document, rel_path, &IMAGE_RULES).map_err(|refusal| match refusal {
+        // Images may lead outside the folder, so `Outside` cannot come back;
+        // it is matched here only so that no refusal goes unworded.
+        Refusal::Invalid | Refusal::Outside => t(locale, "image.invalidPath"),
+        Refusal::NotFound => t(locale, "image.notFound"),
+        Refusal::Unsupported => t(locale, "image.unsupportedType"),
+        Refusal::TooLarge => tf(
             locale,
             "image.tooLarge",
             &(MAX_IMAGE_BYTES / (1024 * 1024)).to_string(),
-        ));
-    }
-    Ok(resolved)
+        ),
+    })
 }
 
 /// The folder a document's own images live in, beside it.
