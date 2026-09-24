@@ -59,6 +59,8 @@ const SEND_TIMEOUT_MS = 20000;
  * alphabetically) failed with "CDP command timed out: Page.navigate".
  */
 const NAVIGATION_TIMEOUT_MS = 60000;
+/** How long `whereWasIt` waits for a paused page, and for each command after. */
+const PAUSE_WAIT_MS = 5000;
 
 /*
  * Content-Security-Policy violations. The page reports them to itself, as a
@@ -341,6 +343,15 @@ export async function connect(port) {
   });
   await session.send("Runtime.enable");
   await session.send("Page.enable");
+  // The debugger, for `whereWasIt`. On from the start because it cannot be
+  // turned on later: once a page has stopped answering, Chrome still delivers
+  // `Debugger.pause` to it, but not `Debugger.enable`.
+  await session.send("Debugger.enable");
+  // With breakpoints off, a `debugger;` left in a library runs straight
+  // through instead of stopping the spec; `Debugger.pause` still works.
+  await session.send("Debugger.setBreakpointsActive", { active: false });
+  // So a promise chain shows who started it, not only its last step.
+  await session.send("Debugger.setAsyncCallStackDepth", { maxDepth: 16 });
   await session.send("Runtime.addBinding", { name: CSP_BINDING });
   await session.addInitScript(CSP_LISTENER);
   return session;
@@ -460,6 +471,9 @@ export class CdpSession {
       // the timestamps. The message keeps its original wording at the front,
       // because `isTransientEvaluationError` and one spec both match on it.
       error.message = `${error.message} — evaluating: ${summarise(expression)}`;
+      if (error.message.startsWith("CDP command timed out")) {
+        error.message += `\n  ${await this.whereWasIt()}`;
+      }
       throw error;
     }
     if (res.result?.exceptionDetails) {
@@ -470,6 +484,62 @@ export class CdpSession {
       );
     }
     return res.result?.result?.value;
+  }
+
+  /**
+   * Where the page was when an evaluation gave up on it.
+   *
+   * A timeout says only that the page did not answer. Chrome delivers
+   * `Debugger.pause` to a main thread that is busy, so a script caught in a
+   * loop is stopped where it is and its stack says where that is; the script
+   * is then ended, so the spec's own cleanup can still reach the page. If no
+   * script runs at all, the pause never comes: the page is idle, waiting for
+   * something that never came, or stuck outside JavaScript, in layout or
+   * painting. That pause would stop the next script the spec runs, so the
+   * debugger is started afresh, which an idle page does answer.
+   */
+  async whereWasIt() {
+    let listener;
+    const paused = new Promise((resolve) => {
+      listener = (msg) => {
+        if (msg.method === "Debugger.paused") resolve(msg.params);
+      };
+      this.onMessage(listener);
+    });
+    this.send("Debugger.pause", {}, PAUSE_WAIT_MS).catch(() => {});
+    const params = await Promise.race([paused, sleep(PAUSE_WAIT_MS).then(() => null)]);
+    this._listeners = this._listeners.filter((l) => l !== listener);
+    if (!params) {
+      // In order, before anything the spec sends next.
+      this.send("Debugger.disable", {}, PAUSE_WAIT_MS).catch(() => {});
+      this.send("Debugger.enable", {}, PAUSE_WAIT_MS).catch(() => {});
+      this.send("Debugger.setBreakpointsActive", { active: false }, PAUSE_WAIT_MS).catch(() => {});
+      return `no script ran in the ${PAUSE_WAIT_MS / 1000} s after: the page is idle, waiting for something that never came, or stuck outside JavaScript`;
+    }
+
+    const describe = async (frame) => {
+      const { scriptId, lineNumber, columnNumber } = frame.location ?? frame;
+      let source = "";
+      try {
+        const res = await this.send("Debugger.getScriptSource", { scriptId }, PAUSE_WAIT_MS);
+        const line = res.result?.scriptSource?.split("\n")[lineNumber] ?? "";
+        source = line.slice(Math.max(0, columnNumber - 60), columnNumber + 100).trim();
+      } catch {
+        // The stack is still worth having without the source.
+      }
+      const url = (frame.url ?? "").replace(/^https?:\/\/[^/]+/, "");
+      return `${frame.functionName || "(anonymous)"} ${url}:${lineNumber + 1}:${columnNumber + 1}  ${source}`;
+    };
+    const lines = [];
+    for (const frame of params.callFrames.slice(0, 15)) lines.push(await describe(frame));
+    let parent = params.asyncStackTrace;
+    for (let depth = 0; parent && depth < 4; depth++, parent = parent.parent) {
+      lines.push(`-- ${parent.description || "async"} --`);
+      for (const frame of parent.callFrames.slice(0, 6)) lines.push(await describe(frame));
+    }
+    this.send("Runtime.terminateExecution", {}, PAUSE_WAIT_MS).catch(() => {});
+    this.send("Debugger.resume", {}, PAUSE_WAIT_MS).catch(() => {});
+    return `paused after the timeout, the page was at:\n    ${lines.join("\n    ")}`;
   }
 
   /**
