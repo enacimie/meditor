@@ -604,11 +604,17 @@
   max-width: 100%;
 }
 
+/*
+ * `opacity: 1` undoes the screen's lighter caption (preview/markdown.css),
+ * whose selector cannot leave `.doc` out and so reaches the page as well:
+ * printed, it came out as text at 85 % opacity, `/ca .85` in the PDF.
+ */
 .markdown-body.doc figcaption {
   margin-top: 0.5em;
   font-size: 9.5pt;
   line-height: 1.35;
   text-align: center;
+  opacity: 1;
 }
 
 .markdown-body.doc figcaption .figure-label {

@@ -67,6 +67,7 @@ const BUILT_SPECS = [
   "csp.spec.mjs",
   "document-page.spec.mjs",
   "equation-numbers.spec.mjs",
+  "figure-captions.spec.mjs",
   "footnote-freeze.spec.mjs",
   "footnotes.spec.mjs",
   "front-matter.spec.mjs",
