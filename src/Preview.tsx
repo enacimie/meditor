@@ -87,6 +87,11 @@ type Props = {
    * a platform where there is no directory to look in.
    */
   docHandle?: string | null;
+  /**
+   * Where the open document is saved, whose name a Typst document needs:
+   * the files it reads are found relative to it.
+   */
+  docPath?: string | null;
   /** The interface theme, which the diagrams on screen follow. */
   theme?: Theme;
   /**
@@ -132,6 +137,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
     pageMetrics: metrics = DEFAULT_PAGE,
     language = null,
     docHandle = null,
+    docPath = null,
     theme = "system",
     onToggleTask,
     onReverseSync,
@@ -140,7 +146,8 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
 ) {
   const { t, lang } = useTranslation();
   // Rebuilt only when the document or the language changes, so the render
-  // effect below does not restart on every keystroke.
+  // effect below does not restart on every keystroke. A Typst document reads
+  // the files beside it through the same.
   const imageSource = useMemo(
     () => (docHandle ? { handle: docHandle, locale: lang } : undefined),
     [docHandle, lang],
@@ -542,7 +549,14 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
   if (kind === "typst") {
     return (
       <Suspense fallback={<div className="typst-loading" role="status"><span className="typst-spinner" aria-hidden="true" />{t("preview.typstCompiling")}</div>}>
-        <TypstPreview ref={setChildHandle} value={value} t={t} onReverseSync={onReverseSync} />
+        <TypstPreview
+          ref={setChildHandle}
+          value={value}
+          t={t}
+          fileSource={imageSource}
+          docPath={docPath}
+          onReverseSync={onReverseSync}
+        />
       </Suspense>
     );
   }

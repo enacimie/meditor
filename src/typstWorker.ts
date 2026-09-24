@@ -12,16 +12,6 @@
  * `new Function` refused on the page, allowed in a worker.
  */
 import { configureTypst } from "./typstSetup";
-import { answer, type TypstRequest } from "./typstWorkerProtocol";
+import { serve, type TypstSnippet, type WorkerScope } from "./typstWorkerProtocol";
 
-const scope = self as unknown as {
-  addEventListener(type: "message", listener: (event: MessageEvent<TypstRequest>) => void): void;
-  postMessage(message: unknown, transfer: Transferable[]): void;
-};
-
-scope.addEventListener("message", (event) => {
-  const request = event.data;
-  void answer(configureTypst(request.fontBase), request).then(({ reply, transfer }) =>
-    scope.postMessage(reply, transfer),
-  );
-});
+serve(self as unknown as WorkerScope, (request) => configureTypst(request.fontBase) as unknown as TypstSnippet);

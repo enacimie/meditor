@@ -96,6 +96,14 @@ export type Backend = {
   /** The bytes of an image beside a document; null when there are none. */
   readImage(handle: string, relPath: string, locale: string): Promise<Uint8Array | null>;
   /**
+   * Whether a file beside a Typst document can be read, and its fingerprint.
+   * `unavailable` wherever there is no folder around the document: an
+   * Android content URI, a web file handle.
+   */
+  typstFileStat(handle: string, relPath: string, locale: string): Promise<TypstFileStat>;
+  /** The bytes of a file beside a Typst document. */
+  readTypstFile(handle: string, relPath: string, locale: string): Promise<Uint8Array>;
+  /**
    * Write an image into `assets/` beside a document, and say what to link to.
    *
    * `name` is a proposal, not a path: the backend decides the final name and
@@ -144,3 +152,10 @@ export type Backend = {
 };
 
 export type { DocumentStat };
+
+/** What the backend says about a file beside a Typst document (typst_files.rs). */
+export type TypstFileStat =
+  | { state: "found"; stat: DocumentStat }
+  | { state: "missing" }
+  | { state: "refused"; reason: "invalid" | "outside" | "unsupported" | "tooLarge" }
+  | { state: "unavailable" };

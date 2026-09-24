@@ -6,6 +6,7 @@ import type {
   RecentEntry,
   SessionInput,
   SessionRestorePayload,
+  TypstFileStat,
 } from "./types";
 
 /**
@@ -76,6 +77,16 @@ export const tauriBackend: Backend = {
     // cost a third more of everything for nothing.
     const buffer = await invoke<ArrayBuffer>("read_image", { handle, relPath, locale });
     return buffer && buffer.byteLength > 0 ? new Uint8Array(buffer) : null;
+  },
+
+  typstFileStat(handle: string, relPath: string, locale: string): Promise<TypstFileStat> {
+    return invoke<TypstFileStat>("typst_file_stat", { handle, relPath, locale });
+  },
+
+  async readTypstFile(handle: string, relPath: string, locale: string): Promise<Uint8Array> {
+    // Raw, as an image is; and possibly empty, since an empty file is a file.
+    const buffer = await invoke<ArrayBuffer>("read_typst_file", { handle, relPath, locale });
+    return new Uint8Array(buffer);
   },
 
   writeImage(

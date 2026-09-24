@@ -73,6 +73,7 @@ import {
   normalizePageMargin,
 } from "./editorPreferences";
 import { getTypst } from "./typstEngine";
+import { prepareTypst, typstMainName } from "./typstFiles";
 import { compileLatexToPdf } from "./latexEngine";
 import { LATEX_ENABLED } from "./latexSupport";
 import { classifyExternalChange, type DocumentStat } from "./externalChange";
@@ -1718,9 +1719,15 @@ export default function App() {
       const base = active.name.replace(/\.(md|markdown|txt|typ|typst|tex|latex|ltx)$/i, "") || t("doc.defaultExport");
       if (active.kind === "typst") {
         // Typst: compile to PDF in the Typst worker, the one the preview
-        // uses, then save through the backend.
+        // uses, with the files beside the document as the preview had them,
+        // then save through the backend.
         const { $typst } = await getTypst();
-        const pdfBytes = await $typst.pdf({ mainContent: active.content });
+        const { input } = await prepareTypst(
+          active.content,
+          typstMainName(active.path),
+          active.handle ? { handle: active.handle, locale: lang } : undefined,
+        );
+        const pdfBytes = await $typst.pdf(input);
         if (!pdfBytes) throw new Error("Typst compilation produced no output");
         const defaultName = `${base}.pdf`;
         await backend.writePdfBytes(pdfBytes, defaultName, lang);
@@ -2482,6 +2489,7 @@ export default function App() {
               pageMetrics={pageMetrics}
               language={docLanguage}
               docHandle={active?.handle ?? null}
+              docPath={active?.path ?? null}
               theme={theme}
               onToggleTask={toggleTask}
               onReverseSync={handleReverseSync}

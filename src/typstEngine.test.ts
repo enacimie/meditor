@@ -119,3 +119,80 @@ describe("the Typst client", () => {
     expect(workers[1].terminated).toBe(false);
   });
 });
+
+describe("the files the Typst client sends", () => {
+  const bytes = (n: number) => new Uint8Array([n]);
+  const folder = (id: string, files: Record<string, string>) => ({
+    id,
+    mainPath: "/report.typ",
+    files: new Map(Object.entries(files).map(([path, key]) => [path, { key, bytes: bytes(key.length) }])),
+  });
+  /** What the request carried: the main path, and the files by path. */
+  const carried = (request: TypstRequest) => ({
+    mainPath: request.mainPath,
+    reset: request.files?.reset,
+    set: request.files?.set.map((file) => file.path),
+    drop: request.files?.drop,
+  });
+
+  it("are all of them the first time, then only what changed or went", () => {
+    const { typst, workers } = setup();
+    void typst.svg({ mainContent: "a", folder: folder("doc", { "a.typ": "1", "fig.png": "1" }) });
+    void typst.svg({ mainContent: "a", folder: folder("doc", { "a.typ": "1", "fig.png": "1" }) });
+    void typst.svg({ mainContent: "a", folder: folder("doc", { "a.typ": "2" }) });
+    expect(workers[0].posted.map(carried)).toEqual([
+      { mainPath: "/report.typ", reset: true, set: ["/a.typ", "/fig.png"], drop: [] },
+      { mainPath: "/report.typ", reset: false, set: [], drop: [] },
+      { mainPath: "/report.typ", reset: false, set: ["/a.typ"], drop: ["/fig.png"] },
+    ]);
+  });
+
+  it("start afresh for another document's folder", () => {
+    const { typst, workers } = setup();
+    void typst.svg({ mainContent: "a", folder: folder("one", { "a.typ": "1" }) });
+    void typst.svg({ mainContent: "b", folder: folder("two", { "a.typ": "1" }) });
+    expect(carried(workers[0].posted[1])).toEqual({
+      mainPath: "/report.typ",
+      reset: true,
+      set: ["/a.typ"],
+      drop: [],
+    });
+  });
+
+  it("are all sent again to a worker that replaces one that died", async () => {
+    const { typst, workers } = setup();
+    void typst.svg({ mainContent: "a", folder: folder("doc", { "a.typ": "1" }) }).catch(() => undefined);
+    workers[0].fail("gone");
+    void typst.svg({ mainContent: "a", folder: folder("doc", { "a.typ": "1" }) });
+    expect(carried(workers[1].posted[0])).toEqual({
+      mainPath: "/report.typ",
+      reset: true,
+      set: ["/a.typ"],
+      drop: [],
+    });
+  });
+
+  it("are taken away, once, from a document without a folder that follows one with them", () => {
+    const { typst, workers } = setup();
+    void typst.svg({ mainContent: "a", folder: folder("doc", { "a.typ": "1" }) });
+    void typst.svg({ mainContent: "unsaved" });
+    void typst.svg({ mainContent: "unsaved again" });
+    void typst.svg({ mainContent: "a", folder: folder("doc", { "a.typ": "1" }) });
+    expect(workers[0].posted.slice(1).map(carried)).toEqual([
+      { mainPath: undefined, reset: true, set: [], drop: [] },
+      { mainPath: undefined, reset: undefined, set: undefined, drop: undefined },
+      { mainPath: "/report.typ", reset: true, set: ["/a.typ"], drop: [] },
+    ]);
+  });
+
+  it("are none, and no path either, for a document without a folder", () => {
+    const { typst, workers } = setup();
+    void typst.svg({ mainContent: "a" });
+    expect(carried(workers[0].posted[0])).toEqual({
+      mainPath: undefined,
+      reset: undefined,
+      set: undefined,
+      drop: undefined,
+    });
+  });
+});

@@ -6,8 +6,21 @@ import {
   useState,
   type MouseEvent,
 } from "react";
+import { isTauri } from "@tauri-apps/api/core";
 import type { TranslationFn } from "./i18n/translations";
+import { isMobilePlatform, usePlatform } from "./hooks/usePlatform";
 import { getTypst } from "./typstEngine";
+import {
+  MAX_DEPTH,
+  MAX_FILE_BYTES,
+  MAX_FILES,
+  MAX_TOTAL_BYTES,
+  prepareTypst,
+  typstMainName,
+  type PreparedTypst,
+  type TypstFileProblem,
+  type TypstFileSource,
+} from "./typstFiles";
 import type { TypstApi } from "./typstWorkerProtocol";
 import { sanitizeSvg } from "./sanitizeSvg";
 import "./Preview.css";
@@ -21,6 +34,31 @@ import "./Preview.css";
  * document was open. Its selectors are put under this element instead.
  */
 const SVG_WRAPPER = "typst-svg-wrapper";
+
+/**
+ * How often the files a document reads are looked at again, for a change
+ * made in another program: a figure exported again, a chapter edited
+ * elsewhere. Each look is one backend call per file, and a compile only when
+ * one of them moved.
+ */
+const FILES_POLL_MS = 3000;
+
+const MIB = 1024 * 1024;
+
+/** Why a file was left out, in words. */
+function problemText(problem: TypstFileProblem, t: TranslationFn): string {
+  switch (problem.reason) {
+    case "invalid":
+    case "outside":
+      return t("preview.typstFileOutside");
+    case "unsupported":
+      return t("preview.typstFileUnsupported");
+    case "tooLarge":
+      return t("preview.typstFileTooLarge", MAX_FILE_BYTES / MIB);
+    default:
+      return t("preview.typstFileLimit", MAX_FILES, MAX_TOTAL_BYTES / MIB, MAX_DEPTH);
+  }
+}
 
 /**
  * Parse a data-source-loc attribute from typst.ts SVGs.
@@ -45,11 +83,19 @@ export type TypstPreviewHandle = {
 type Props = {
   value: string;
   t: TranslationFn;
+  /**
+   * Where the files the document reads are found: the saved document, and
+   * the language for the backend's messages. Absent for a document that has
+   * never been saved, which has no folder yet.
+   */
+  fileSource?: TypstFileSource;
+  /** The document's path, whose last part is its name in that folder. */
+  docPath?: string | null;
   onReverseSync: (line: number) => void;
 };
 
 const TypstPreview = forwardRef<TypstPreviewHandle, Props>(
-  function TypstPreview({ value, t, onReverseSync }, ref) {
+  function TypstPreview({ value, t, fileSource, docPath = null, onReverseSync }, ref) {
     const containerRef = useRef<HTMLDivElement>(null);
     const outputRef = useRef<HTMLDivElement>(null);
     const [svg, setSvg] = useState<string | null>(null);
@@ -57,6 +103,21 @@ const TypstPreview = forwardRef<TypstPreviewHandle, Props>(
     const [loading, setLoading] = useState(false);
     const [retryToken, setRetryToken] = useState(0);
     const [pageCount, setPageCount] = useState(0);
+    /** What the last compile could not be given, and why. */
+    const [files, setFiles] = useState<Pick<PreparedTypst, "problems" | "unavailable">>({
+      problems: [],
+      unavailable: null,
+    });
+    /** Bumped when a file the document reads changed on disk. */
+    const [filesMoved, setFilesMoved] = useState(0);
+    /** What the last compile was given, for the poll to compare with. */
+    const signatureRef = useRef<string | null>(null);
+    const valueRef = useRef(value);
+    const mainName = typstMainName(docPath);
+    const platform = usePlatform();
+    // An unsaved document on the desktop gets a folder by being saved;
+    // anywhere else, saving it gives the backend no folder to read.
+    const savingHelps = isTauri() && !isMobilePlatform(platform);
     const seqRef = useRef(0);
     const markedElRef = useRef<Element | null>(null);
     const markedLineRef = useRef<number | null>(null);
@@ -122,6 +183,10 @@ const TypstPreview = forwardRef<TypstPreviewHandle, Props>(
     }));
 
     useEffect(() => {
+      valueRef.current = value;
+    }, [value]);
+
+    useEffect(() => {
       let cancelled = false;
       const run = async () => {
         let $typst: TypstApi;
@@ -140,7 +205,11 @@ const TypstPreview = forwardRef<TypstPreviewHandle, Props>(
         seqRef.current++;
         const mySeq = seqRef.current;
         try {
-          const result = await $typst.svg({ mainContent: value });
+          const prepared = await prepareTypst(value, mainName, fileSource);
+          if (cancelled || mySeq !== seqRef.current) return;
+          signatureRef.current = prepared.signature;
+          setFiles({ problems: prepared.problems, unavailable: prepared.unavailable });
+          const result = await $typst.svg(prepared.input);
           const safeSvg = sanitizeSvg(result, { scopeStylesTo: `.${SVG_WRAPPER}` });
           if (!safeSvg) throw new Error("Typst produced invalid or unsafe SVG");
           if (cancelled || mySeq !== seqRef.current) return;
@@ -165,7 +234,30 @@ const TypstPreview = forwardRef<TypstPreviewHandle, Props>(
         cancelled = true;
         window.clearTimeout(timer);
       };
-    }, [value, t, retryToken]);
+    }, [value, t, retryToken, filesMoved, mainName, fileSource]);
+
+    // A file the document reads can change while the document does not:
+    // look again every few seconds, and on coming back to the window, and
+    // compile again only when what the compiler would be given has moved.
+    useEffect(() => {
+      if (!fileSource) return;
+      let stopped = false;
+      const look = () => {
+        if (document.visibilityState === "hidden") return;
+        prepareTypst(valueRef.current, mainName, fileSource)
+          .then(({ signature }) => {
+            if (!stopped && signature !== signatureRef.current) setFilesMoved((n) => n + 1);
+          })
+          .catch(() => undefined);
+      };
+      const timer = window.setInterval(look, FILES_POLL_MS);
+      window.addEventListener("focus", look);
+      return () => {
+        stopped = true;
+        window.clearInterval(timer);
+        window.removeEventListener("focus", look);
+      };
+    }, [fileSource, mainName]);
 
     function handleClick(e: MouseEvent) {
       const el = (e.target as HTMLElement).closest<HTMLElement>(
@@ -198,6 +290,29 @@ const TypstPreview = forwardRef<TypstPreviewHandle, Props>(
         className="typst-preview"
         onClick={handleClick}
       >
+        {(files.unavailable || files.problems.length > 0) && (
+          <div className="typst-files-notice" role="status">
+            {files.unavailable && (
+              <p>
+                {files.unavailable === "unsaved" && savingHelps
+                  ? t("preview.typstFilesUnsaved")
+                  : t("preview.typstFilesDesktopOnly")}
+              </p>
+            )}
+            {files.problems.length > 0 && (
+              <>
+                <p>{t("preview.typstFilesLeftOut")}</p>
+                <ul>
+                  {files.problems.map((problem) => (
+                    <li key={problem.path}>
+                      <code>{problem.path}</code>: {problemText(problem, t)}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+        )}
         {loading && !svg && (
           <div className="typst-loading" role="status">
             <span className="typst-spinner" aria-hidden="true" />
