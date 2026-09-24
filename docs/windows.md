@@ -29,10 +29,13 @@ this never shows up during development.
 
 ### Do not turn Smart App Control off
 
-It is tempting and it is close to irreversible: on Windows 11, switching Smart
-App Control off cannot be undone without reinstalling the operating system.
-Unlike SmartScreen it also offers no per-file "run anyway", so there is no
-exception to grant either.
+It is tempting, and it switches the protection off for everything on the
+machine, not only for this installer. Unlike SmartScreen it offers no
+per-file "run anyway", so there is no exception to grant instead.
+
+Until the April 2026 cumulative update (KB5083769), switching it off could not
+be undone without reinstalling Windows. With that update it can be switched
+back on from Windows Security; without it, it still cannot.
 
 ### What you can do instead
 
