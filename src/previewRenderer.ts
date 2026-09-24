@@ -1,4 +1,5 @@
-import type { TranslationFn } from "./i18n/translations";
+import type { TranslationFn, TranslationKey } from "./i18n/translations";
+import type { CrossRefKind } from "./crossReferences";
 import { DEFAULT_PAGE, type PageMetrics } from "./pageSetup";
 import { sanitizeSvg } from "./sanitizeSvg";
 import { resolveRelativeImages, type ImageSource } from "./documentImages";
@@ -7,6 +8,13 @@ import { resolveRelativeImages, type ImageSource } from "./documentImages";
 // export and TypeScript therefore treated its file as a global script,
 // leaking its own copy of the alias into every module in the project.
 import type { MermaidTheme } from "./mermaidTheme";
+
+/** The words a cross-reference is written with, by what it refers to. */
+const CROSS_REF_KEYS: Record<CrossRefKind, TranslationKey> = {
+  fig: "preview.figureRef",
+  tbl: "preview.tableRef",
+  eq: "preview.equationRef",
+};
 
 /**
  * Fenced-code-block pattern: ```lang\n...\n```
@@ -332,6 +340,7 @@ export async function renderContent(
   el.innerHTML = renderMarkdown(value, {
     figureLabel: (n: number) => t("preview.figureLabel", n),
     tableLabel: (n: number) => t("preview.tableLabel", n),
+    crossRefText: (kind, n) => t(CROSS_REF_KEYS[kind], n),
   });
 
   // Awaited here, before this function returns, because everything that

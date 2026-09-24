@@ -14,6 +14,7 @@ import container from "markdown-it-container";
 import texmath from "markdown-it-texmath";
 import highlightjs from "markdown-it-highlightjs/core";
 import { tableCaptions } from "./tableCaptions";
+import { crossReferences, type CrossRefKind } from "./crossReferences";
 import hljs from "highlight.js/lib/core";
 import javascript from "highlight.js/lib/languages/javascript";
 import typescript from "highlight.js/lib/languages/typescript";
@@ -667,6 +668,7 @@ export const md = new MarkdownIt({
   .use(tocPlaceholder)
   .use(figures)
   .use(tableCaptions)
+  .use(crossReferences)
   .use(addLineNumbers);
 
 const highlightFence = md.renderer.rules.fence;
@@ -697,6 +699,8 @@ export type RenderOptions = {
   figureLabel?: (n: number) => string;
   /** How to label table `n`, for the same reason: "Table 1." when absent. */
   tableLabel?: (n: number) => string;
+  /** How a cross-reference says "figure `n`" and the rest: "fig. 1" when absent. */
+  crossRefText?: (kind: CrossRefKind, n: number) => string;
 };
 
 export function renderMarkdown(src: string, options: RenderOptions = {}): string {
