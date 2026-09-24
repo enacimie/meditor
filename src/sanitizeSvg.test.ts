@@ -40,11 +40,42 @@ describe("sanitizeSvg", () => {
 
   it("removes unsafe CSS and SVG data URLs", () => {
     const output = sanitizeSvg(
-      '<svg><style>@import url("https://evil.test/x.css");</style><path style="fill: url(https://evil.test/x)" /><image href="data:image/svg+xml;base64,abc" /></svg>',
+      '<svg><style>@import url("https://evil.test/x.css");</style><path style="fill: url(https://evil.test/x)" /><use href="data:image/svg+xml;base64,abc" /></svg>',
     );
     expect(output).not.toContain("@import");
     expect(output).not.toContain("https://evil.test");
     expect(output).not.toContain("data:image/svg+xml");
+  });
+
+  /*
+   * Typst writes a figure the document embeds as SVG as an `<image>` whose
+   * source is that SVG, base64-encoded. Shown as an image it can run nothing
+   * and fetch nothing; anywhere else the same URL could bring content in.
+   */
+  describe("an SVG as an image's source", () => {
+    const SVG = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciLz4=";
+    const wrap = (inner: string) =>
+      sanitizeSvg(
+        `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">${inner}</svg>`,
+      );
+
+    it("is kept, in the shape Typst writes it and in plain href", () => {
+      expect(wrap(`<image class="typst-image" width="113" height="56" xlink:href="${SVG}" />`)).toContain(
+        `xlink:href="${SVG}"`,
+      );
+      expect(wrap(`<image width="10" height="10" href="${SVG}" />`)).toContain(`href="${SVG}"`);
+    });
+
+    it("is refused anywhere but an image's source", () => {
+      expect(wrap(`<use href="${SVG}" />`)).not.toContain("data:image/svg+xml");
+      expect(wrap(`<use xlink:href="${SVG}" />`)).not.toContain("data:image/svg+xml");
+      expect(wrap(`<image mask="${SVG}" href="#m" />`)).not.toContain("data:image/svg+xml");
+    });
+
+    it("is refused unless it is base64, and an HTML document is refused as an image too", () => {
+      expect(wrap('<image href="data:image/svg+xml,&lt;svg/&gt;" />')).not.toContain("data:image/svg+xml");
+      expect(wrap('<image href="data:text/html;base64,PGgxPng8L2gxPg==" />')).not.toContain("data:text/html");
+    });
   });
   /*
    * A stylesheet is what carries a diagram's colours, and it used to be
