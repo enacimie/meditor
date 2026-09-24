@@ -244,8 +244,10 @@ To run the AppImage on distros without FUSE: `./meditor_*.AppImage --appimage-ex
 > **Smart App Control blocks the downloaded installer.** The installers are not
 > code signed, and Windows 11 refuses to run an unsigned executable that came
 > from the internet. An installer you build yourself carries no mark of the web
-> and runs normally. **Do not switch Smart App Control off to get around it** —
-> on Windows 11 that cannot be undone without reinstalling.
+> and runs normally. **Do not switch Smart App Control off to get around it**:
+> it guards everything on the machine, not only this installer, and a Windows
+> 11 without the April 2026 update cannot switch it back on without
+> reinstalling.
 >
 > [docs/windows.md](docs/windows.md) has the full picture, the workarounds, and
 > what signing would take.
