@@ -54,7 +54,9 @@ const BUILT = process.argv.includes("--built");
  * between the served and the built stylesheet actually shows. And those whose
  * subject only the built run has: the release's policy (csp.spec), and Typst,
  * whose worker Vite bundles differently from how it serves it and which that
- * policy is there to test (typst.spec). `E2E_SPECS`
+ * policy is there to test (typst.spec), along with what Typst's SVG needs the
+ * policy to let through: its own stylesheet, inline (typst-styles.spec), and
+ * the SVG figures it embeds as data URIs (typst-figures.spec). `E2E_SPECS`
  * overrides this, so a suspected build-only failure anywhere can be pointed
  * at without editing the list.
  *
@@ -81,6 +83,8 @@ const BUILT_SPECS = [
   "print.spec.mjs",
   "table-captions.spec.mjs",
   "toc.spec.mjs",
+  "typst-figures.spec.mjs",
+  "typst-styles.spec.mjs",
   "typst.spec.mjs",
 ];
 
