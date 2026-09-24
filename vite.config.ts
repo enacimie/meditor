@@ -8,6 +8,20 @@ import pkg from "./package.json";
 const host = process.env.TAURI_DEV_HOST;
 const MAX_INITIAL_CHUNK_BYTES = 1_750_000;
 
+/**
+ * What may never be in the first load, whatever it weighs.
+ *
+ * Typst's compiler and renderer run in their own worker (src/typstWorker.ts),
+ * which is what lets them start under the desktop app's policy. Imported
+ * statically from the page, typst.ts would be back in the first load, and a
+ * call to it would run on the page, where that policy refuses what the
+ * compiler evaluates when it starts. The byte budget would not notice: it has
+ * the room.
+ */
+const NEVER_IN_THE_FIRST_LOAD = [
+  { modules: "/node_modules/@myriaddreamin/", belongs: "in the Typst worker (src/typstWorker.ts)" },
+];
+
 function bundleBudgetPlugin(): Plugin {
   return {
     name: "meditor-bundle-budget",
@@ -17,31 +31,38 @@ function bundleBudgetPlugin(): Plugin {
       );
       const byFileName = new Map(chunks.map((chunk) => [chunk.fileName, chunk]));
 
-      function initialBytes(entry: (typeof chunks)[number]): number {
-        const visited = new Set<string>();
-        const visit = (fileName: string): number => {
-          if (visited.has(fileName)) return 0;
-          visited.add(fileName);
+      /** What an entry loads before anything else: itself and its static imports. */
+      function initialChunks(entry: OutputChunk): OutputChunk[] {
+        const seen = new Map<string, OutputChunk>();
+        const visit = (fileName: string) => {
           const chunk = byFileName.get(fileName);
-          if (!chunk) return 0;
-          return chunk.code.length + chunk.imports.reduce(
-            (total, imported) => total + visit(imported),
-            0,
-          );
+          if (!chunk || seen.has(fileName)) return;
+          seen.set(fileName, chunk);
+          chunk.imports.forEach(visit);
         };
-        return visit(entry.fileName);
+        visit(entry.fileName);
+        return [...seen.values()];
       }
 
-      const oversizedEntries = chunks.filter(
-        (output) => output.isEntry && initialBytes(output) > MAX_INITIAL_CHUNK_BYTES,
-      );
-      if (oversizedEntries.length) {
-        const details = oversizedEntries
-          .map((output) => `${output.fileName} (${initialBytes(output)} bytes including static imports)`)
-          .join(", ");
-        this.error(
-          `Initial bundle exceeds ${MAX_INITIAL_CHUNK_BYTES} bytes: ${details}`,
-        );
+      for (const entry of chunks.filter((output) => output.isEntry)) {
+        const initial = initialChunks(entry);
+        const bytes = initial.reduce((total, chunk) => total + chunk.code.length, 0);
+        if (bytes > MAX_INITIAL_CHUNK_BYTES) {
+          this.error(
+            `Initial bundle exceeds ${MAX_INITIAL_CHUNK_BYTES} bytes: ${entry.fileName} (${bytes} bytes including static imports)`,
+          );
+        }
+        for (const rule of NEVER_IN_THE_FIRST_LOAD) {
+          for (const chunk of initial) {
+            const module = chunk.moduleIds.find((id) => id.includes(rule.modules));
+            if (module) {
+              const name = module.slice(module.lastIndexOf("/node_modules/") + "/node_modules/".length);
+              this.error(
+                `${name} is in the first load, in ${chunk.fileName} from ${entry.fileName}; it belongs ${rule.belongs}`,
+              );
+            }
+          }
+        }
       }
     },
   };
