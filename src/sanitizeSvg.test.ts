@@ -189,4 +189,43 @@ describe("sanitizeSvg", () => {
       expect(output).toContain('style="stroke: #000"');
     });
   });
+
+  /*
+   * `fill` and `stroke` take a paint server as well as a colour, and a paint
+   * server can live in another document, which some engines then fetch.
+   * These went through unread, although the comment above isSafeCss said
+   * they were checked.
+   */
+  describe("fill and stroke", () => {
+    const withPath = (attributes: string) =>
+      sanitizeSvg(`<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0" ${attributes} /></svg>`);
+
+    it("keep a colour, and a paint server of this document, with or without a fallback", () => {
+      for (const attributes of [
+        'fill="red"',
+        'fill="#1f2328"',
+        'stroke="currentColor"',
+        'fill="url(#gradient)"',
+        'fill="url(#gradient) red"',
+        `stroke="url('#pattern')"`,
+      ]) {
+        expect(withPath(attributes), attributes).toContain(attributes);
+      }
+    });
+
+    it("lose a paint server anywhere else", () => {
+      for (const attributes of [
+        'fill="url(https://evil.test/x.svg#p)"',
+        'stroke="url(//evil.test/y.svg#q)"',
+        'fill="url(paint.svg#p)"',
+        `fill="url('https://evil.test/x.svg#p') red"`,
+        'stroke="url(data:image/svg+xml;base64,abc)"',
+        `fill="url('#p) red"`,
+      ]) {
+        const output = withPath(attributes);
+        expect(output, attributes).not.toContain("fill=");
+        expect(output, attributes).not.toContain("stroke=");
+      }
+    });
+  });
 });
