@@ -67,6 +67,7 @@ const BUILT = process.argv.includes("--built");
  * specs below.
  */
 const BUILT_SPECS = [
+  "cross-references.spec.mjs",
   "csp.spec.mjs",
   "document-page.spec.mjs",
   "equation-numbers.spec.mjs",

@@ -146,6 +146,9 @@ export const en = {
   // Preview
   "preview.figureLabel": (n: number) => `Figure ${n}.`,
   "preview.tableLabel": (n: number) => `Table ${n}.`,
+  "preview.figureRef": (n: number) => `fig. ${n}`,
+  "preview.tableRef": (n: number) => `table ${n}`,
+  "preview.equationRef": (n: number) => `eq. ${n}`,
   "preview.unavailable": "Preview unavailable",
   "preview.retry": "Retry",
   "preview.renderError": "Could not generate preview:",
