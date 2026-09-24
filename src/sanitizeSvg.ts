@@ -150,12 +150,22 @@ const SAME_DOCUMENT_REFERENCE_RE = /^#[A-Za-z0-9_:.-]+$/;
 const BLOCKED_ELEMENT_RE = /script|foreignobject|iframe|object|embed|link|audio|video/i;
 const RASTER_DATA_URI_RE = /^data:image\/(?:png|jpe?g|gif|webp);base64,[a-z0-9+/=]+$/i;
 
-function isSafeReference(value: string): boolean {
+/**
+ * An SVG, as what an `<image>` shows: how Typst writes a figure the document
+ * embeds as SVG. Loaded as an image, an SVG runs no script and fetches
+ * nothing, so that is where it may go, and only there: the same URL in a
+ * `<use>` would bring its content into this document instead.
+ */
+const SVG_DATA_URI_RE = /^data:image\/svg\+xml;base64,[a-z0-9+/=]+$/i;
+const IMAGE_SOURCE_ATTRIBUTES = new Set(["href", "xlink:href"]);
+
+function isSafeReference(value: string, tag: string, name: string): boolean {
   const normalized = value.trim();
   return (
     normalized.startsWith("#") ||
     /^url\(\s*#[^)\s]+\s*\)$/i.test(normalized) ||
-    RASTER_DATA_URI_RE.test(normalized)
+    RASTER_DATA_URI_RE.test(normalized) ||
+    (tag === "image" && IMAGE_SOURCE_ATTRIBUTES.has(name) && SVG_DATA_URI_RE.test(normalized))
   );
 }
 
@@ -212,7 +222,7 @@ function sanitizeElement(element: Element, options: SanitizeSvgOptions): void {
   for (const attribute of Array.from(element.attributes)) {
     const name = attribute.name.toLowerCase();
     const value = attribute.value;
-    const unsafeReference = REFERENCE_ATTRIBUTES.has(name) && !isSafeReference(value);
+    const unsafeReference = REFERENCE_ATTRIBUTES.has(name) && !isSafeReference(value, tag, name);
     if (
       name.startsWith("on") ||
       !ALLOWED_ATTRIBUTES.has(name) ||
