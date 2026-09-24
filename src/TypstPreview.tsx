@@ -8,6 +8,7 @@ import {
 } from "react";
 import type { TranslationFn } from "./i18n/translations";
 import { getTypst } from "./typstEngine";
+import type { TypstApi } from "./typstWorkerProtocol";
 import { sanitizeSvg } from "./sanitizeSvg";
 import "./Preview.css";
 
@@ -113,7 +114,7 @@ const TypstPreview = forwardRef<TypstPreviewHandle, Props>(
     useEffect(() => {
       let cancelled = false;
       const run = async () => {
-        let $typst: typeof import("@myriaddreamin/typst.ts")["$typst"];
+        let $typst: TypstApi;
         try {
           const mod = await getTypst();
           $typst = mod.$typst;

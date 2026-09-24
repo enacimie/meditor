@@ -24,7 +24,10 @@ runs under: `tauri.conf.json`'s, plus the `'sha256-…'` of each inline script,
 which Tauri adds when it embeds the frontend (`tauri-csp.mjs`). The driver
 collects every violation a page reports and fails the spec on `close()`;
 `csp.spec.mjs`, which only runs there, proves the policy is served and that a
-violation is caught. It refuses to reuse a server that is already running.
+violation is caught. `typst.spec.mjs` runs there too: Typst's compiler works
+in a worker because the page's policy refuses what its WASM evaluates when it
+starts, and only the built run can show that it still does. It refuses to
+reuse a server that is already running.
 
 The runner (`run.mjs`):
 

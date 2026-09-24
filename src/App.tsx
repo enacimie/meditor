@@ -1716,8 +1716,8 @@ export default function App() {
     try {
       const base = active.name.replace(/\.(md|markdown|txt|typ|typst|tex|latex|ltx)$/i, "") || t("doc.defaultExport");
       if (active.kind === "typst") {
-        // Typst: compile to PDF via WASM (reuses the same cached module as
-        // the preview), then save via Tauri dialog.
+        // Typst: compile to PDF in the Typst worker, the one the preview
+        // uses, then save through the backend.
         const { $typst } = await getTypst();
         const pdfBytes = await $typst.pdf({ mainContent: active.content });
         if (!pdfBytes) throw new Error("Typst compilation produced no output");
