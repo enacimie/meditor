@@ -373,6 +373,16 @@ export const webBackend: Backend = {
     return null;
   },
 
+  // The same holds for the files a Typst document reads: there is no folder
+  // around a file handle to find them in.
+  async typstFileStat() {
+    return { state: "unavailable" as const };
+  },
+
+  async readTypstFile(): Promise<Uint8Array> {
+    throw new Error("files beside a document cannot be read in the browser");
+  },
+
   /*
    * And nowhere to write one either, for the same reason: a file handle is a
    * handle to that one file, with no directory around it to put anything

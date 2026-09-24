@@ -74,13 +74,31 @@ export const TAURI_SHIM = `(() => {
   const written = [];
   window.__meditorWrittenImages = () => written;
 
-  function imageBytes(relPath) {
-    const base64 = IMAGES[relPath];
-    if (!base64) return null;
+  function fromBase64(base64) {
     const binary = atob(base64);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
     return bytes;
+  }
+
+  function imageBytes(relPath) {
+    const base64 = IMAGES[relPath];
+    return base64 ? fromBase64(base64) : null;
+  }
+
+  /**
+   * Files a Typst document has beside it, by path within its folder:
+   * { text } or { base64 }, with an optional { modified } fingerprint, or
+   * { refused: "unsupported" | "tooLarge" } for one the backend turns down.
+   */
+  const TYPST_FILES = CONFIG.typstFiles ?? {};
+  /** Change a file the way another program would, for a spec to watch the preview follow. */
+  window.__meditorSetTypstFile = (relPath, file) => {
+    TYPST_FILES[relPath] = file;
+  };
+
+  function typstFileBytes(file) {
+    return file.base64 === undefined ? new TextEncoder().encode(file.text ?? "") : fromBase64(file.base64);
   }
 
   const RECENT = (CONFIG.recent ?? []).map((entry) => ({ ...entry }));
@@ -103,6 +121,28 @@ export const TAURI_SHIM = `(() => {
       case "read_image": {
         const bytes = imageBytes(args?.relPath);
         return bytes ? bytes.buffer : new ArrayBuffer(0);
+      }
+      // As typst_files.rs answers: a path that climbs out of the folder, or
+      // passes through a hidden part of it, is refused before anything is
+      // looked up.
+      case "typst_file_stat": {
+        if (CONFIG.typstFilesUnavailable) return { state: "unavailable" };
+        const relPath = String(args?.relPath ?? "");
+        if (relPath.split("/").some((part) => part.startsWith("."))) {
+          return { state: "refused", reason: "invalid" };
+        }
+        const file = TYPST_FILES[relPath];
+        if (!file) return { state: "missing" };
+        if (file.refused) return { state: "refused", reason: file.refused };
+        return {
+          state: "found",
+          stat: { modifiedMs: file.modified ?? 1700000000000, size: typstFileBytes(file).length },
+        };
+      }
+      case "read_typst_file": {
+        const file = TYPST_FILES[String(args?.relPath ?? "")];
+        if (!file || file.refused) return Promise.reject("file not found");
+        return typstFileBytes(file).buffer;
       }
       case "write_image": {
         // As Rust does: the name is a proposal, the folder is decided here,

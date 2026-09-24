@@ -128,6 +128,14 @@ describe("translations", () => {
     "preview.tableRef",
     "preview.equationRef",
     "preview.landscapeNote",
+    // The files a Typst document reads; en/es for now like the strings above.
+    "preview.typstFilesUnsaved",
+    "preview.typstFilesDesktopOnly",
+    "preview.typstFilesLeftOut",
+    "preview.typstFileOutside",
+    "preview.typstFileUnsupported",
+    "preview.typstFileTooLarge",
+    "preview.typstFileLimit",
     // Marp presentations; en/es for now like the strings above.
     "topbar.newMarp",
     "menu.present",

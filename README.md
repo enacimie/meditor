@@ -64,6 +64,7 @@
   - **"Go to preview"** and **"Go to code"** buttons in each panel.
   - Clicking in preview **marks** the position (blue outline) as a jump reference.
 - **Resizable panels** by dragging the divider.
+- **A Typst document reads the files beside it**: `#include` and `#import` of other `.typ` files, images, data (`json`, `csv`, `yaml`, `toml`, `xml`, `read`) and a `#bibliography` with its `.csl` style, each found relative to the file that names it, and a path starting with `/` from the document's folder, as the Typst CLI does when run from there. A file changed in another program shows up within a few seconds, and the PDF export takes the files as they are when it runs. Only files inside the document's folder are read, and no hidden ones, plugins or fonts; the preview names any it left out, and why. Not seen: a path built while the document runs (`"fig" + str(n) + ".png"`) and `@preview` packages, which would need the network. Desktop only, like images beside a Markdown document.
 
 ### Presentations (Marp)
 
@@ -222,7 +223,7 @@ unit test could see it.
 
 The **pre-commit hook** (husky) runs `pnpm verify` on every commit — nothing broken lands. Skip it in an emergency with `HUSKY=0 git commit ...`.
 
-E2E specs live in `tests/e2e/` and use a zero-dependency CDP driver (`cdp.mjs`) against a real headless Chrome. They cover dialogs and the window close guard (with a faithful Tauri IPC shim), the themes' contrast, pagination and printing to PDF, images beside the document, Marp and Typst, the keyboard shortcuts and the web build; `pnpm test:e2e:built` runs the paginated ones and Typst again against a production build, under the desktop app's Content-Security-Policy. CI additionally runs dependency auditing, lint, TypeScript, V8 coverage, Rust formatting and Clippy. The expensive full LaTeX + Docker verification is available as the manually triggered `LaTeX integration` GitHub Actions workflow, so ordinary pull requests do not download several GB of TeX Live.
+E2E specs live in `tests/e2e/` and use a zero-dependency CDP driver (`cdp.mjs`) against a real headless Chrome. They cover dialogs and the window close guard (with a faithful Tauri IPC shim), the themes' contrast, pagination and printing to PDF, images beside the document, Marp, Typst and the files a Typst document reads, the keyboard shortcuts and the web build; `pnpm test:e2e:built` runs the paginated ones and Typst again against a production build, under the desktop app's Content-Security-Policy. CI additionally runs dependency auditing, lint, TypeScript, V8 coverage, Rust formatting and Clippy. The expensive full LaTeX + Docker verification is available as the manually triggered `LaTeX integration` GitHub Actions workflow, so ordinary pull requests do not download several GB of TeX Live.
 
 ## Build
 
@@ -339,6 +340,7 @@ meditor/
 │   ├── types.ts              # Shared types
 │   ├── ErrorBoundary.tsx     # React error boundary
 │   ├── TypstPreview.tsx      # Typst SVG preview
+│   ├── typstFiles.ts         # The files a Typst document names, read beside it
 │   ├── typstWorker.ts        # Typst's WASM compiler, in a worker of its own
 │   ├── LatexPreview.tsx      # SwiftLaTeX WASM compiler + PDF preview
 │   ├── MarpPreview.tsx       # Marp slide preview + slide↔source sync
@@ -354,6 +356,7 @@ meditor/
 │   └── assets/fonts/         # Latin Modern fonts (GUST)
 ├── src-tauri/
 │   ├── src/lib.rs            # Start-up: plugins, state, and the list of commands the modules below provide
+│   ├── src/beside.rs         # A file beside the document: one set of rules, each reader its own
 │   ├── src/document.rs       # The document the frontend sees; open and save
 │   ├── src/export.rs         # Print and PDF/HTML export: WebView2 and WebKitGTK
 │   ├── src/image.rs          # Images beside the document: safe paths and safe names
@@ -365,6 +368,7 @@ meditor/
 │   ├── src/session.rs        # session.json: the tabs that come back, and their fingerprints
 │   ├── src/startup.rs        # Files arriving from argv, a second launch, or the Finder
 │   ├── src/system.rs         # Platform name, exit, and the native alert dialog
+│   ├── src/typst_files.rs    # The files beside a Typst document, kept to its own folder
 │   ├── tauri.conf.json
 │   ├── capabilities/         # Permissions (dialog, opener; updater and process on desktop)
 │   ├── gen/android/          # Android project (generated once, then committed)

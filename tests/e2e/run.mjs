@@ -56,7 +56,8 @@ const BUILT = process.argv.includes("--built");
  * whose worker Vite bundles differently from how it serves it and which that
  * policy is there to test (typst.spec), along with what Typst's SVG needs the
  * policy to let through: its own stylesheet, inline (typst-styles.spec), and
- * the SVG figures it embeds as data URIs (typst-figures.spec). `E2E_SPECS`
+ * the SVG figures it embeds as data URIs (typst-figures.spec); and the files
+ * a document reads, handed to that worker (typst-files.spec). `E2E_SPECS`
  * overrides this, so a suspected build-only failure anywhere can be pointed
  * at without editing the list.
  *
@@ -84,6 +85,7 @@ const BUILT_SPECS = [
   "table-captions.spec.mjs",
   "toc.spec.mjs",
   "typst-figures.spec.mjs",
+  "typst-files.spec.mjs",
   "typst-styles.spec.mjs",
   "typst.spec.mjs",
 ];

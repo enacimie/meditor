@@ -10,6 +10,7 @@ mod recent_menu;
 mod session;
 mod startup;
 mod system;
+mod typst_files;
 
 // Everything below is named only by the two desktop hand-offs in `run()`:
 // a second launch and macOS's open-document event. A phone has neither.
@@ -99,6 +100,8 @@ pub fn run() {
             image::image_stat,
             image::read_image,
             image::write_image,
+            typst_files::typst_file_stat,
+            typst_files::read_typst_file,
             document::read_document,
             session::load_session,
             session::save_session,
