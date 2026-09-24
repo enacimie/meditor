@@ -161,8 +161,9 @@ function isSafeReference(value: string): boolean {
  * CSS for a `style` attribute, where nothing may reach outside the element.
  *
  * No `url()` of any kind: an attribute on one shape has no business pointing
- * anywhere, and the reference attributes that legitimately do — `fill`,
- * `marker-end` and the rest — are checked by `isSafeReference` instead.
+ * anywhere, and the attributes that legitimately do are checked on their own:
+ * `marker-end` and the rest by `isSafeReference`, `fill` and `stroke` by
+ * `pointsOnlyInside`.
  */
 function isSafeCss(value: string): boolean {
   return !CSS_DANGEROUS_RE.test(value) && !CSS_ANY_URL_RE.test(value);
@@ -183,7 +184,11 @@ function isSafeCss(value: string): boolean {
  * `url(` must also match the strict form exactly as many times as it appears.
  */
 function isSafeStylesheetCss(text: string): boolean {
-  if (CSS_DANGEROUS_RE.test(text)) return false;
+  return !CSS_DANGEROUS_RE.test(text) && pointsOnlyInside(text);
+}
+
+/** Whether every `url()` in `text` is a bare `#id`, read as described above. */
+function pointsOnlyInside(text: string): boolean {
   if (!CSS_ANY_URL_RE.test(text)) return true;
 
   const parsed = [...text.matchAll(CSS_URL_RE)];
@@ -192,6 +197,15 @@ function isSafeStylesheetCss(text: string): boolean {
 
   return parsed.every((match) => SAME_DOCUMENT_REFERENCE_RE.test(match[2].trim()));
 }
+
+/**
+ * What a shape is painted with: a colour, or a paint server, `url(#gradient)`,
+ * with a colour after it to fall back on. Its `url()` is held to the
+ * stylesheet's rule, this document's own definitions and nothing else: some
+ * engines load a paint server from another document, and that is a request
+ * the page never meant to make.
+ */
+const PAINT_ATTRIBUTES = new Set(["fill", "stroke"]);
 
 function sanitizeElement(element: Element): void {
   const tag = element.tagName.toLowerCase();
@@ -213,6 +227,7 @@ function sanitizeElement(element: Element): void {
       name.startsWith("on") ||
       !ALLOWED_ATTRIBUTES.has(name) ||
       unsafeReference ||
+      (PAINT_ATTRIBUTES.has(name) && !pointsOnlyInside(value)) ||
       (name === "style" && !isSafeCss(value))
     ) {
       element.removeAttribute(attribute.name);
