@@ -52,6 +52,27 @@ describe("sanitizeSvg", () => {
    * and a reference to the document's own definitions. Losing it does not
    * look like an error — the shapes are still there, drawn in nothing.
    */
+  describe("a stylesheet confined to one element", () => {
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg"><style>svg { fill: none; } .tsel span, .tsel { left: 0; }</style><rect /></svg>';
+
+    it("has its selectors put under the element named", () => {
+      const output = sanitizeSvg(svg, { scopeStylesTo: ".typst-svg-wrapper" });
+      expect(output).toContain(".typst-svg-wrapper svg { fill: none; }");
+      expect(output).toContain(".typst-svg-wrapper .tsel span, .typst-svg-wrapper .tsel { left: 0; }");
+    });
+
+    it("is left as it is when no element is named, as Mermaid's are", () => {
+      expect(sanitizeSvg(svg)).toContain("<style>svg { fill: none; } .tsel span, .tsel { left: 0; }</style>");
+    });
+
+    it("is still removed when it is unsafe, rather than kept in its box", () => {
+      const unsafe =
+        '<svg xmlns="http://www.w3.org/2000/svg"><style>svg { background: url(https://example.com/x.png); }</style></svg>';
+      expect(sanitizeSvg(unsafe, { scopeStylesTo: ".typst-svg-wrapper" })).not.toContain("<style");
+    });
+  });
+
   describe("stylesheet CSS", () => {
     const withStyle = (css: string) =>
       sanitizeSvg(`<svg xmlns="http://www.w3.org/2000/svg"><style>${css}</style><rect /></svg>`);
