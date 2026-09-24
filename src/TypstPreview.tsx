@@ -12,6 +12,16 @@ import { sanitizeSvg } from "./sanitizeSvg";
 import "./Preview.css";
 
 /**
+ * The element the Typst SVG goes into, and the one its stylesheet is kept in.
+ *
+ * The SVG typst.ts writes carries a stylesheet, and once the SVG is in the page
+ * so are its rules. One of them is a bare `svg { fill: none; }`, which blanked
+ * every icon in the interface drawn with a fill (the menu's ⋮) while a Typst
+ * document was open. Its selectors are put under this element instead.
+ */
+const SVG_WRAPPER = "typst-svg-wrapper";
+
+/**
  * Parse a data-source-loc attribute from typst.ts SVGs.
  * Format is typically "line:column" or "startLine:startCol,endLine:endCol".
  * Returns the start line (1-based from Typst, 0-based for the editor).
@@ -130,7 +140,7 @@ const TypstPreview = forwardRef<TypstPreviewHandle, Props>(
         const mySeq = seqRef.current;
         try {
           const result = await $typst.svg({ mainContent: value });
-          const safeSvg = sanitizeSvg(result);
+          const safeSvg = sanitizeSvg(result, { scopeStylesTo: `.${SVG_WRAPPER}` });
           if (!safeSvg) throw new Error("Typst produced invalid or unsafe SVG");
           if (cancelled || mySeq !== seqRef.current) return;
           setSvg(safeSvg);
@@ -213,7 +223,7 @@ const TypstPreview = forwardRef<TypstPreviewHandle, Props>(
                 {pageCount} {t("preview.pages")}
               </span>
             )}
-            <div className="typst-svg-wrapper" dangerouslySetInnerHTML={{ __html: svg }} />
+            <div className={SVG_WRAPPER} dangerouslySetInnerHTML={{ __html: svg }} />
           </div>
         )}
       </div>

@@ -1,3 +1,5 @@
+import { scopeCss } from "./scopeCss";
+
 const ALLOWED_ELEMENTS = new Set([
   "svg",
   "g",
@@ -193,7 +195,7 @@ function isSafeStylesheetCss(text: string): boolean {
   return parsed.every((match) => SAME_DOCUMENT_REFERENCE_RE.test(match[2].trim()));
 }
 
-function sanitizeElement(element: Element): void {
+function sanitizeElement(element: Element, options: SanitizeSvgOptions): void {
   const tag = element.tagName.toLowerCase();
   if (BLOCKED_ELEMENTS.has(tag) || !ALLOWED_ELEMENTS.has(tag)) {
     element.remove();
@@ -201,7 +203,9 @@ function sanitizeElement(element: Element): void {
   }
 
   if (tag === "style") {
-    if (!isSafeStylesheetCss(element.textContent ?? "")) element.remove();
+    const css = element.textContent ?? "";
+    if (!isSafeStylesheetCss(css)) element.remove();
+    else if (options.scopeStylesTo) element.textContent = scopeCss(css, options.scopeStylesTo);
     return;
   }
 
@@ -220,9 +224,21 @@ function sanitizeElement(element: Element): void {
   }
 
   for (const child of Array.from(element.children)) {
-    sanitizeElement(child);
+    sanitizeElement(child, options);
   }
 }
+
+export type SanitizeSvgOptions = {
+  /**
+   * A selector to confine the SVG's stylesheets to.
+   *
+   * A `<style>` in an SVG that sits in an HTML page is a stylesheet of the
+   * page, and its rules reach everything on it. With this, each of its
+   * selectors is put under this one (scopeCss.ts), once the stylesheet has
+   * been found safe.
+   */
+  scopeStylesTo?: string;
+};
 
 /**
  * Return safe SVG markup, or an empty string when parsing fails.
@@ -232,7 +248,7 @@ function sanitizeElement(element: Element): void {
  * strict XML parsing; otherwise a safe document would be rejected before the
  * sanitizer had a chance to remove the executable content.
  */
-export function sanitizeSvg(svg: string): string {
+export function sanitizeSvg(svg: string, options: SanitizeSvgOptions = {}): string {
   if (!svg || typeof DOMParser === "undefined") return "";
   const blocked = BLOCKED_ELEMENT_RE.source;
   const withoutBlockedElements = svg
@@ -247,6 +263,6 @@ export function sanitizeSvg(svg: string): string {
   );
   if (document.querySelector("parsererror")) return "";
   const root = document.documentElement;
-  sanitizeElement(root);
+  sanitizeElement(root, options);
   return root.tagName.toLowerCase() === "svg" ? root.outerHTML : "";
 }
