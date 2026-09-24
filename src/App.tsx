@@ -465,9 +465,10 @@ export default function App() {
   // Parsing runs over the whole document, so keep it off the keystroke path:
   // only the outline panel consumes this, and it is closed by default.
   const activeContent = active?.content ?? "";
+  const activeKind = active?.kind ?? "markdown";
   const headings = useMemo(
-    () => (outlineOpen ? parseHeadings(activeContent) : EMPTY_HEADINGS),
-    [outlineOpen, activeContent],
+    () => (outlineOpen ? parseHeadings(activeContent, activeKind) : EMPTY_HEADINGS),
+    [outlineOpen, activeContent, activeKind],
   );
   // Typst and LaTeX currently do not expose stable source locations in their
   // rendered output, so their preview↔editor sync controls must not pretend
@@ -2153,7 +2154,6 @@ export default function App() {
    * Otherwise the document reads "LaTeX is disabled" and the menu still
    * offers to compile it with the engine that was disabled.
    */
-  const activeKind = active?.kind ?? "markdown";
   const pdfExportAvailable =
     (LATEX_ENABLED || activeKind !== "latex") &&
     (canPrintNatively(platform) || activeKind !== "markdown");
