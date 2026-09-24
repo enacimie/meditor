@@ -143,6 +143,15 @@ export default defineConfig(async () => ({
     },
   },
 
+  // The Typst worker (src/typstWorker.ts) is emitted as an ES module: its
+  // module graph has dynamic imports, which Vite's default IIFE output for
+  // workers cannot hold. Module workers are in WebView2, Android's WebView,
+  // WebKitGTK, and WKWebView from Safari 15; macOS 10.13 and 10.14 cannot
+  // have that, and there Typst does not start.
+  worker: {
+    format: "es",
+  },
+
   build: {
     // Mermaid/paged.js remain lazy and can legitimately exceed Vite's
     // generic 500 kB warning. The custom plugin above protects the initial
@@ -154,6 +163,13 @@ export default defineConfig(async () => ({
         // WASM URLs and `?worker` assets are intentionally left to Vite's
         // native asset handling; only JavaScript modules are grouped here.
         manualChunks(id) {
+          // Vite's helper for dynamic imports, on its own. The entry needs it,
+          // and Rollup pulls the dependencies of a manual chunk into that
+          // chunk: left alone it lands in whichever of the ones below uses it
+          // first, and the entry then loads all of that chunk to reach it.
+          // It sat in the Typst chunk until Typst moved into its worker; the
+          // next in line was Mermaid, 3 MB, straight into the first load.
+          if (id.includes("vite/preload-helper")) return "preload-helper";
           // Match the package directory itself, not similarly named
           // transitive dependencies (e.g. Mermaid's diagram definitions).
           // This keeps lazy feature chunks bounded while leaving workers,

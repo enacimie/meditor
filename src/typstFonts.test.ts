@@ -5,7 +5,8 @@
  * WASM module, with `Function` refusing to evaluate `import(m)` the way a
  * Content-Security-Policy without 'unsafe-eval' does, and require the font
  * step to hand over all seventeen fonts anyway. The real WASM module evaluates
- * strings of its own when it starts; that is outside what these can cover.
+ * strings of its own when it starts, which is why it runs in a worker; that is
+ * for the built run of tests/e2e/typst.spec.mjs, under the app's policy.
  */
 // @ts-expect-error node:crypto and node:fs carry no types here: the src
 // project is kept DOM-only on purpose (see pageSetup.test.ts).

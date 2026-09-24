@@ -51,7 +51,10 @@ const BUILT = process.argv.includes("--built");
  * What is worth running twice.
  *
  * Those whose subject is the printed page, which is where the difference
- * between the served and the built stylesheet actually shows. `E2E_SPECS`
+ * between the served and the built stylesheet actually shows. And those whose
+ * subject only the built run has: the release's policy (csp.spec), and Typst,
+ * whose worker Vite bundles differently from how it serves it and which that
+ * policy is there to test (typst.spec). `E2E_SPECS`
  * overrides this, so a suspected build-only failure anywhere can be pointed
  * at without editing the list.
  *
@@ -76,6 +79,7 @@ const BUILT_SPECS = [
   "print.spec.mjs",
   "table-captions.spec.mjs",
   "toc.spec.mjs",
+  "typst.spec.mjs",
 ];
 
 // `vite preview` has its own default port, and using it keeps a built run from

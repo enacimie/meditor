@@ -10,9 +10,9 @@
  * These are the same files, from typst-assets v0.13.1 (the version typst.ts
  * points its CDN at), shipped in `public/typst-fonts` with their licences and
  * handed to the compiler's builder directly: loading them fetches nothing from
- * outside the application and evaluates nothing. (The WASM compiler still
- * builds a few functions from strings of its own when it starts; that is not
- * something a font loader can change.)
+ * outside the application and evaluates nothing. (The WASM compiler also
+ * builds a few functions from strings of its own when it starts, which no font
+ * loader can change: that is why it runs in a worker, typstWorker.ts.)
  */
 import type { BeforeBuildFn } from "@myriaddreamin/typst.ts/dist/esm/options.init.mjs";
 

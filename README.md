@@ -221,7 +221,7 @@ unit test could see it.
 
 The **pre-commit hook** (husky) runs `pnpm verify` on every commit — nothing broken lands. Skip it in an emergency with `HUSKY=0 git commit ...`.
 
-E2E specs live in `tests/e2e/` and use a zero-dependency CDP driver (`cdp.mjs`) against a real headless Chrome. They cover dialogs and the window close guard (with a faithful Tauri IPC shim), the themes' contrast, pagination and printing to PDF, images beside the document, Marp and Typst, the keyboard shortcuts and the web build; `pnpm test:e2e:built` runs the paginated ones again against a production build, under the desktop app's Content-Security-Policy. CI additionally runs dependency auditing, lint, TypeScript, V8 coverage, Rust formatting and Clippy. The expensive full LaTeX + Docker verification is available as the manually triggered `LaTeX integration` GitHub Actions workflow, so ordinary pull requests do not download several GB of TeX Live.
+E2E specs live in `tests/e2e/` and use a zero-dependency CDP driver (`cdp.mjs`) against a real headless Chrome. They cover dialogs and the window close guard (with a faithful Tauri IPC shim), the themes' contrast, pagination and printing to PDF, images beside the document, Marp and Typst, the keyboard shortcuts and the web build; `pnpm test:e2e:built` runs the paginated ones and Typst again against a production build, under the desktop app's Content-Security-Policy. CI additionally runs dependency auditing, lint, TypeScript, V8 coverage, Rust formatting and Clippy. The expensive full LaTeX + Docker verification is available as the manually triggered `LaTeX integration` GitHub Actions workflow, so ordinary pull requests do not download several GB of TeX Live.
 
 ## Build
 
@@ -337,7 +337,8 @@ meditor/
 │   ├── sanitizeSvg.ts        # SVG allowlist sanitization
 │   ├── types.ts              # Shared types
 │   ├── ErrorBoundary.tsx     # React error boundary
-│   ├── TypstPreview.tsx      # Typst WASM compiler + SVG preview
+│   ├── TypstPreview.tsx      # Typst SVG preview
+│   ├── typstWorker.ts        # Typst's WASM compiler, in a worker of its own
 │   ├── LatexPreview.tsx      # SwiftLaTeX WASM compiler + PDF preview
 │   ├── MarpPreview.tsx       # Marp slide preview + slide↔source sync
 │   ├── marpEngine.ts         # Configured Marp converter (slides → HTML+CSS)
