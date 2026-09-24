@@ -119,6 +119,15 @@ const REFERENCE_ATTRIBUTES = new Set([
   "filter",
 ]);
 
+/**
+ * What a shape is painted with: a colour, or a paint server, `url(#gradient)`,
+ * with a colour after it to fall back on. Held to the rule a stylesheet is
+ * (`isSafeStylesheetCss`): its `url()` may name this document's own
+ * definitions and nothing else. Chromium loads a paint server from another
+ * document, and that is a request the page never meant to make.
+ */
+const PAINT_ATTRIBUTES = new Set(["fill", "stroke"]);
+
 /*
  * What may never appear in CSS, in an attribute or in a stylesheet.
  *
@@ -162,8 +171,8 @@ function isSafeReference(value: string): boolean {
  *
  * No `url()` of any kind: an attribute on one shape has no business pointing
  * anywhere, and the attributes that legitimately do are checked on their own:
- * `marker-end` and the rest by `isSafeReference`, `fill` and `stroke` by
- * `pointsOnlyInside`.
+ * `marker-end` and the rest by `isSafeReference`, `fill` and `stroke` by the
+ * stylesheet's rule (`PAINT_ATTRIBUTES`).
  */
 function isSafeCss(value: string): boolean {
   return !CSS_DANGEROUS_RE.test(value) && !CSS_ANY_URL_RE.test(value);
@@ -184,11 +193,7 @@ function isSafeCss(value: string): boolean {
  * `url(` must also match the strict form exactly as many times as it appears.
  */
 function isSafeStylesheetCss(text: string): boolean {
-  return !CSS_DANGEROUS_RE.test(text) && pointsOnlyInside(text);
-}
-
-/** Whether every `url()` in `text` is a bare `#id`, read as described above. */
-function pointsOnlyInside(text: string): boolean {
+  if (CSS_DANGEROUS_RE.test(text)) return false;
   if (!CSS_ANY_URL_RE.test(text)) return true;
 
   const parsed = [...text.matchAll(CSS_URL_RE)];
@@ -197,15 +202,6 @@ function pointsOnlyInside(text: string): boolean {
 
   return parsed.every((match) => SAME_DOCUMENT_REFERENCE_RE.test(match[2].trim()));
 }
-
-/**
- * What a shape is painted with: a colour, or a paint server, `url(#gradient)`,
- * with a colour after it to fall back on. Its `url()` is held to the
- * stylesheet's rule, this document's own definitions and nothing else: some
- * engines load a paint server from another document, and that is a request
- * the page never meant to make.
- */
-const PAINT_ATTRIBUTES = new Set(["fill", "stroke"]);
 
 function sanitizeElement(element: Element): void {
   const tag = element.tagName.toLowerCase();
@@ -227,7 +223,7 @@ function sanitizeElement(element: Element): void {
       name.startsWith("on") ||
       !ALLOWED_ATTRIBUTES.has(name) ||
       unsafeReference ||
-      (PAINT_ATTRIBUTES.has(name) && !pointsOnlyInside(value)) ||
+      (PAINT_ATTRIBUTES.has(name) && !isSafeStylesheetCss(value)) ||
       (name === "style" && !isSafeCss(value))
     ) {
       element.removeAttribute(attribute.name);
