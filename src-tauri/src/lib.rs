@@ -1,3 +1,4 @@
+mod beside;
 mod document;
 mod export;
 mod image;
