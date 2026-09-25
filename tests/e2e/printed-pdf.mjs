@@ -102,6 +102,32 @@ export function linkCount(pdf) {
   return (Buffer.from(pdf).toString("latin1").match(/\/Subtype\s*\/Link\b/g) || []).length;
 }
 
+/**
+ * The named destinations a PDF's links and bookmarks point at, and those of
+ * them the PDF never defines: each one a click that goes nowhere.
+ *
+ * Chrome names a destination after the element's id (`/Dest /primero`) and
+ * lists the names, each with its page, in the catalog's `/Dests`.
+ */
+export function namedDestinations(pdf) {
+  const text = Buffer.from(pdf).toString("latin1");
+  const NAME = "([^\\s/<>\\[\\]()]+)";
+  const referenced = [
+    ...new Set([...text.matchAll(new RegExp(`/Dest\\s*/${NAME}`, "g"))].map((m) => m[1])),
+  ];
+  const objects = new Map();
+  for (const match of text.matchAll(/(\d+) 0 obj([\s\S]*?)endobj/g)) {
+    objects.set(Number(match[1]), match[2]);
+  }
+  const catalog = [...objects.values()].find((body) => /\/Type\s*\/Catalog/.test(body)) ?? "";
+  const reference = /\/Dests\s+(\d+)\s+0\s+R/.exec(catalog);
+  const dests = reference ? (objects.get(Number(reference[1])) ?? "") : catalog;
+  const defined = new Set(
+    [...dests.matchAll(new RegExp(`/${NAME}\\s*\\[`, "g"))].map((m) => m[1]),
+  );
+  return { referenced, unresolved: referenced.filter((name) => !defined.has(name)) };
+}
+
 /** The text of the `/Title` in one object's body, hex or literal. */
 function titleOf(body) {
   const at = body.indexOf("/Title");

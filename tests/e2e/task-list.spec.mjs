@@ -137,9 +137,10 @@ const placeCursor = async (line) => {
 /*
  * Only the two containers the click handler is attached to.
  *
- * `.preview-source` also holds checkboxes — it is the offscreen container the
- * paginator stages into — and clicking one there does nothing at all, which is
- * how the first version of this spec managed to fail against working code.
+ * `.preview-source` holds checkboxes too while a render is measured in it — it
+ * is the offscreen container the paginator stages into — and clicking one
+ * there does nothing at all, which is how the first version of this spec
+ * managed to fail against working code.
  */
 const VISIBLE_BOXES =
   ".paged-view input.task-list-item-checkbox, " +

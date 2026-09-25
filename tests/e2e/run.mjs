@@ -78,6 +78,7 @@ const BUILT_SPECS = [
   "footnote-freeze.spec.mjs",
   "footnotes.spec.mjs",
   "front-matter.spec.mjs",
+  "hidden-copies.spec.mjs",
   "page-break.spec.mjs",
   "page-margin.spec.mjs",
   "page-numbers.spec.mjs",
