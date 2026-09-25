@@ -1834,6 +1834,9 @@ export default function App() {
             // with or every page spills onto the next.
             pageMetrics.paper.id,
             pdfMetadata(active),
+            // The pages the headings landed on, for bookmarks where the
+            // engine writes none. Only the Document view has pages.
+            previewRef.current?.outline() ?? undefined,
           ),
         );
       }

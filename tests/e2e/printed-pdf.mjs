@@ -176,3 +176,56 @@ function literalBytes(literal) {
   }
   return Buffer.from(bytes);
 }
+
+/**
+ * Where a PDF's bookmarks take the reader, in reading order: each one's
+ * depth, title, page (0 for the first) and height on it, in points from the
+ * foot, as its own destination gives them — `[page /XYZ left top zoom]`,
+ * which is how Chrome writes its bookmarks. And the first page's height, to
+ * set a fraction of the page against.
+ */
+export function bookmarkTargets(pdf) {
+  const text = Buffer.from(pdf).toString("latin1");
+  const objects = new Map();
+  for (const match of text.matchAll(/(\d+) 0 obj([\s\S]*?)endobj/g)) {
+    objects.set(Number(match[1]), match[2]);
+  }
+  const reference = (body, key) => {
+    const match = new RegExp(`${key}\\s+(\\d+)\\s+0\\s+R`).exec(body ?? "");
+    return match ? Number(match[1]) : null;
+  };
+  const catalog = [...objects.values()].find((body) => /\/Type\s*\/Catalog/.test(body));
+  // The pages in the page tree's order, which is the order they print in.
+  const pages = [];
+  const visit = (id, depth) => {
+    const body = objects.get(id) ?? "";
+    if (depth > 32) return;
+    if (!/\/Type\s*\/Pages\b/.test(body)) {
+      pages.push(id);
+      return;
+    }
+    const kids = /\/Kids\s*\[([^\]]*)\]/.exec(body)?.[1] ?? "";
+    for (const kid of kids.matchAll(/(\d+)\s+0\s+R/g)) visit(Number(kid[1]), depth + 1);
+  };
+  visit(reference(catalog, "/Pages"), 0);
+  const box = /\/MediaBox\s*\[\s*(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s*\]/.exec(objects.get(pages[0]) ?? "");
+  const items = [];
+  const walk = (first, depth) => {
+    for (let at = first; at !== null && items.length < 1000; ) {
+      const body = objects.get(at);
+      if (body === undefined) return;
+      const dest = /\/Dest\s*\[\s*(\d+)\s+0\s+R\s*\/XYZ\s+(\S+)\s+(\S+)/.exec(body);
+      items.push({
+        depth,
+        title: titleOf(body),
+        page: dest ? pages.indexOf(Number(dest[1])) : -1,
+        y: dest ? Number(dest[3]) : null,
+      });
+      walk(reference(body, "/First"), depth + 1);
+      at = reference(body, "/Next");
+    }
+  };
+  const root = reference(catalog, "/Outlines");
+  if (root !== null) walk(reference(objects.get(root), "/First"), 1);
+  return { height: box ? Number(box[4]) - Number(box[2]) : null, items };
+}

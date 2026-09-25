@@ -421,6 +421,7 @@ mod gtk_print_tests {
             "A4: the sheet should be 595 x 842 points, got {width} x {height}",
         );
         front_matter_added_to(&pdf);
+        outline_added_to(&pdf);
 
         // ── Letter, laid out and printed on the same paper ────────────────
         let pdf = print_through_webkit_on(
@@ -499,6 +500,43 @@ mod gtk_print_tests {
                 .and_then(|text| lopdf::decode_text_string(text).ok());
             assert_eq!(read.as_deref(), Some(value), "{key} should read {value}");
         }
+    }
+
+    /// Run a PDF WebKitGTK printed through what `export_pdf` does after
+    /// printing, with the headings the frontend would send. WebKitGTK writes
+    /// no outline, so they become the bookmarks, on its pages.
+    fn outline_added_to(pdf: &[u8]) {
+        use crate::pdf_outline::{after_export, bookmarks, heading};
+        let headings = [
+            heading(1, "Uno", 0, 0.2),
+            heading(2, "Método", 1, 0.5),
+            heading(1, "Dos", 2, 0.1),
+        ];
+        let after = after_export(pdf, "gtk", &headings);
+        let read = bookmarks(&after);
+        let shape: Vec<(usize, &str, usize)> = read
+            .iter()
+            .map(|(depth, title, page, _)| (*depth, title.as_str(), *page))
+            .collect();
+        assert_eq!(
+            shape,
+            [(1, "Uno", 0), (2, "Método", 1), (1, "Dos", 2)],
+            "the headings should be the bookmarks, on WebKitGTK's pages",
+        );
+        for ((_, title, _, top), fraction) in read.iter().zip([0.2, 0.5, 0.1]) {
+            let top = top.unwrap_or_else(|| panic!("{title} should point at a height"));
+            let expected = 842.0 * (1.0 - fraction);
+            assert!(
+                (top - expected).abs() < 5.0,
+                "{title} should point about {expected} pt up its A4 page, got {top}",
+            );
+        }
+        assert!(
+            after.starts_with(pdf),
+            "after WebKitGTK's bytes, not into them"
+        );
+        let document = lopdf::Document::load_mem(&after).expect("the PDF should still parse");
+        assert_eq!(document.get_pages().len(), 3, "the pages should stay");
     }
 }
 

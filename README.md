@@ -116,7 +116,7 @@ duplicated.
 
 ### Export & Distribution
 
-- **Export to PDF** vector (selectable text, vector KaTeX and Mermaid), printed by the webview with no system dialog: WebView2 on Windows, WebKitGTK on Linux and the BSDs. The sheet is the one the Document view laid out on, and it already carries its own margins, so no printer margin is added around them. On Windows the headings become the PDF's bookmarks, and the PDF is tagged, so a screen reader can follow it; WebKitGTK writes neither, and no links either, so on Linux the `[TOC]` does not link to its headings in the PDF. Typst compiles to PDF in its own WASM engine instead, which works anywhere the file dialog does — Android included. Marp decks export one slide per page at the slide's own size. macOS has no Markdown PDF export yet.
+- **Export to PDF** vector (selectable text, vector KaTeX and Mermaid), printed by the webview with no system dialog: WebView2 on Windows, WebKitGTK on Linux and the BSDs. The sheet is the one the Document view laid out on, and it already carries its own margins, so no printer margin is added around them. The headings become the PDF's bookmarks on both: WebView2 writes them itself, and tags the PDF so a screen reader can follow it; WebKitGTK writes neither, so the bookmarks are added after printing, from the pages the Document view laid out, as they are on Windows when WebView2 falls back to its plain print. WebKitGTK writes no links either, so on Linux the `[TOC]` does not link to its headings in the PDF. Typst compiles to PDF in its own WASM engine instead, which works anywhere the file dialog does — Android included. Marp decks export one slide per page at the slide's own size. macOS has no Markdown PDF export yet.
 - **Export to HTML**: a single self-contained file (styles embedded, Mermaid diagrams as inline SVG, KaTeX already expanded) that opens in any browser with no network access. Markdown documents and Marp decks.
 - Packaged by `tauri build` for every desktop: **AppImage**, **deb** and **rpm** on Linux, **NSIS** and **MSI** on Windows, a universal **dmg** and `.app` on macOS. A release also carries a debug **APK** for Android.
 
@@ -148,7 +148,7 @@ where the preview would be, and it has no PDF export. To work on it, see
 | Presentations    | Marp (@marp-team/marp-core)                                                                             |
 | Code             | highlight.js                                                                                            |
 | Pagination       | paged.js                                                                                                |
-| PDF metadata     | lopdf (MIT): the front-matter's author, subject and keywords, added to the PDF the webview printed       |
+| PDF metadata     | lopdf (MIT): the front-matter's author, subject and keywords, and the headings as bookmarks where the webview wrote none, added to the PDF it printed |
 | Typography       | Latin Modern (GUST)                                                                                     |
 | Typst            | @myriaddreamin/typst.ts (WASM compiler + SVG renderer)                                                   |
 | LaTeX (off)      | SwiftLaTeX PdfTeXEngine (WASM, EPL-2.0 / GPL-2.0)                                                       |
