@@ -73,16 +73,28 @@ beforeEach(() => {
   writeImage.mockResolvedValue(null);
 });
 
+/** The editors the tests made, and where they were mounted. */
+const mounted: Array<{ view: EditorView; parent: HTMLElement }> = [];
+
 afterEach(() => {
   readers.length = 0;
   vi.restoreAllMocks();
+  // An editor left alive keeps reacting. The paste gives it the focus back,
+  // and CodeMirror answers a change of focus with an update 10 ms later; if
+  // the file has finished by then, that update asks a window that is gone for
+  // requestAnimationFrame, and Vitest fails the run with every test passed.
+  // A destroyed editor ignores the update.
+  for (const { view, parent } of mounted.splice(0)) {
+    view.destroy();
+    parent.remove();
+  }
 });
 
 /** An editor with the placeholder field and an undo history, as Editor mounts it. */
 function makeView(doc: string, cursor: number) {
   const parent = document.createElement("div");
   document.body.appendChild(parent);
-  return new EditorView({
+  const view = new EditorView({
     state: EditorState.create({
       doc,
       selection: { anchor: cursor },
@@ -90,6 +102,8 @@ function makeView(doc: string, cursor: number) {
     }),
     parent,
   });
+  mounted.push({ view, parent });
+  return view;
 }
 
 /** A file of a given size, without allocating the bytes. */
