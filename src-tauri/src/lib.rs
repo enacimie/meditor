@@ -1,4 +1,6 @@
 mod beside;
+#[cfg(target_os = "windows")]
+mod devtools_pdf;
 mod document;
 mod export;
 mod image;

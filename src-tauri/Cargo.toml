@@ -61,6 +61,11 @@ winapi = { version = "0.3", features = ["winuser"] }
 # to the versions wry resolves, so the COM interface types are the same ones.
 webview2-com = "0.38"
 windows = "0.61"
+# The PDF that the DevTools protocol's Page.printToPDF answers with arrives in
+# base64. This version is already built into the Windows binary, through
+# tauri-utils and the updater's HTTP client (MIT OR Apache-2.0): declaring it
+# adds nothing.
+base64 = "0.22"
 
 [target."cfg(target_os = \"windows\")".dev-dependencies]
 # The test that prints through a real WebView2, paper/webview2_print_tests.rs,

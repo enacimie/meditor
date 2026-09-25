@@ -61,3 +61,91 @@ export function assertPaper(boxes, [widthPt, heightPt], label) {
       `${JSON.stringify(boxes.slice(0, 3))}`,
   );
 }
+
+/**
+ * A PDF's bookmarks, as `[depth, title]` pairs in reading order.
+ *
+ * Chrome writes its PDFs through Skia: every dictionary as plain text. So the
+ * outline is read as text — from the catalog's `/Outlines`, each item, then
+ * its `/First` child, then its `/Next` sibling. A title that is not plain
+ * ASCII comes in UTF-16 behind a byte order mark.
+ */
+export function outlineOf(pdf) {
+  const text = Buffer.from(pdf).toString("latin1");
+  const objects = new Map();
+  for (const match of text.matchAll(/(\d+) 0 obj([\s\S]*?)endobj/g)) {
+    objects.set(Number(match[1]), match[2]);
+  }
+  const reference = (body, key) => {
+    const match = new RegExp(`${key}\\s+(\\d+)\\s+0\\s+R`).exec(body ?? "");
+    return match ? Number(match[1]) : null;
+  };
+  const items = [];
+  // A broken PDF could chain its items into a loop; no test has this many.
+  const walk = (first, depth) => {
+    for (let at = first; at !== null && items.length < 1000; ) {
+      const body = objects.get(at);
+      if (body === undefined) return;
+      items.push([depth, titleOf(body)]);
+      walk(reference(body, "/First"), depth + 1);
+      at = reference(body, "/Next");
+    }
+  };
+  const catalog = [...objects.values()].find((body) => /\/Type\s*\/Catalog/.test(body));
+  const root = reference(catalog, "/Outlines");
+  if (root !== null) walk(reference(objects.get(root), "/First"), 1);
+  return items;
+}
+
+/** How many link annotations a PDF has: a table of contents' among them. */
+export function linkCount(pdf) {
+  return (Buffer.from(pdf).toString("latin1").match(/\/Subtype\s*\/Link\b/g) || []).length;
+}
+
+/** The text of the `/Title` in one object's body, hex or literal. */
+function titleOf(body) {
+  const at = body.indexOf("/Title");
+  if (at < 0) return "";
+  const rest = body.slice(at + "/Title".length).trimStart();
+  let bytes;
+  if (rest.startsWith("<")) {
+    bytes = Buffer.from(rest.slice(1, rest.indexOf(">")).replace(/\s+/g, ""), "hex");
+  } else if (rest.startsWith("(")) {
+    bytes = literalBytes(rest.slice(1));
+  } else {
+    return "";
+  }
+  if (bytes[0] === 0xfe && bytes[1] === 0xff) {
+    const utf16 = Buffer.from(bytes.subarray(2, 2 + ((bytes.length - 2) & ~1)));
+    utf16.swap16();
+    return utf16.toString("utf16le");
+  }
+  return bytes.toString("latin1");
+}
+
+/** The bytes of a literal string, from just after its opening parenthesis. */
+function literalBytes(literal) {
+  const escapes = { n: 10, r: 13, t: 9, b: 8, f: 12 };
+  const bytes = [];
+  let depth = 1;
+  for (let i = 0; i < literal.length; i++) {
+    const c = literal[i];
+    if (c === "\\") {
+      const next = literal[++i];
+      if (/[0-7]/.test(next)) {
+        let octal = next;
+        while (octal.length < 3 && /[0-7]/.test(literal[i + 1])) octal += literal[++i];
+        bytes.push(parseInt(octal, 8) & 0xff);
+      } else if (next in escapes) {
+        bytes.push(escapes[next]);
+      } else if (next !== undefined) {
+        bytes.push(next.charCodeAt(0));
+      }
+      continue;
+    }
+    if (c === "(") depth++;
+    if (c === ")" && --depth === 0) break;
+    bytes.push(c.charCodeAt(0));
+  }
+  return Buffer.from(bytes);
+}
