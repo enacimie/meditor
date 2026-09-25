@@ -458,8 +458,8 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
           /*
            * Serialised, the copy has done its work, and goes before the pages
            * arrive. Hidden is not gone: a browser resolves an id to the first
-           * element that has it, so the copy's ids took the contents' links,
-           * the PDF's bookmarks and the diagrams' arrowheads from the pages.
+           * element that has it, so the copy's ids took the contents' links
+           * and the diagrams' arrowheads from the pages.
            */
           source.replaceChildren();
           await previewer.preview(html, collectStyles(metrics), paged);

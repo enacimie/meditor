@@ -14,10 +14,11 @@
  * outline for paged.js's shape of page; this shows that the application's
  * page is that shape.
  *
- * And that every bookmark and every link of the contents leads somewhere, in
- * either view. A destination is named after an id, and the measuring copy
- * carried every heading's id ahead of the pages: the names went undefined,
- * and each click in the PDF went nowhere.
+ * And that every link of the contents leads somewhere, in either view. A
+ * link's destination is named after an id, and the measuring copy carried
+ * every heading's id ahead of the pages: the names went undefined, and each
+ * click in the PDF went nowhere. The bookmarks never depended on it: Chrome
+ * points them at the page itself, not at a name.
  *
  * The document arrives through the shim rather than being typed, as in
  * toc.spec, and for the same reasons.
@@ -105,9 +106,9 @@ async function print() {
 }
 
 /**
- * Every link and bookmark in `pdf` has a destination the PDF defines.
+ * Every destination a link in `pdf` names is one the PDF defines.
  *
- * Chrome names each destination after the element's id, and the first
+ * Chrome names a link's destination after the element's id, and the first
  * element with that id is the one it resolves. Were a hidden copy of the
  * document ahead of the printed one, the name would stay undefined and the
  * click would go nowhere — which is what the measuring copy used to do.
@@ -117,7 +118,7 @@ function leadsSomewhere(pdf, where) {
   assert(referenced.length >= 5, `${where}: the links should name their destinations, got ${JSON.stringify(referenced)}`);
   assert(
     unresolved.length === 0,
-    `${where}: every link and bookmark should lead somewhere; these lead nowhere: ${JSON.stringify(unresolved)}`,
+    `${where}: every link should lead somewhere; these lead nowhere: ${JSON.stringify(unresolved)}`,
   );
 }
 

@@ -103,11 +103,12 @@ export function linkCount(pdf) {
 }
 
 /**
- * The named destinations a PDF's links and bookmarks point at, and those of
- * them the PDF never defines: each one a click that goes nowhere.
+ * The named destinations a PDF points at, and those of them it never
+ * defines: each one a click that goes nowhere.
  *
- * Chrome names a destination after the element's id (`/Dest /primero`) and
- * lists the names, each with its page, in the catalog's `/Dests`.
+ * Chrome names a link's destination after the element's id (`/Dest
+ * /primero`) and lists the names, each with its page, in the catalog's
+ * `/Dests`. Its bookmarks name none: each points at its page directly.
  */
 export function namedDestinations(pdf) {
   const text = Buffer.from(pdf).toString("latin1");
