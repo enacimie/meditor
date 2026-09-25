@@ -442,6 +442,27 @@ mod gtk_print_tests {
              nothing and half of this can go",
         );
     }
+
+    /// The WebKitGTK half of the measurement in `tests/pdf-contents`: the same
+    /// fixture, printed with the application's page setup and written to the
+    /// folder `MEDITOR_PDF_PROBE_DIR` names, for `describe-pdf.mjs` to read.
+    ///
+    /// A measurement, not a claim: it asserts nothing, and without that
+    /// variable it returns before touching GTK, because the CI step runs every
+    /// ignored test here and GTK may only ever start on one thread — the test
+    /// above's. To measure, run this one alone, by its full name.
+    #[test]
+    #[ignore = "a measurement; writes to MEDITOR_PDF_PROBE_DIR"]
+    fn gtk_pdf_contents_probe() {
+        let Some(out) = std::env::var_os("MEDITOR_PDF_PROBE_DIR") else {
+            eprintln!("MEDITOR_PDF_PROBE_DIR is not set: nothing to measure");
+            return;
+        };
+        let fixture = include_str!("../../tests/pdf-contents/fixture.html");
+        let pdf = print_through_webkit_on("pdf-contents", fixture, None);
+        std::fs::write(std::path::Path::new(&out).join("webkitgtk.pdf"), pdf)
+            .expect("the probe folder");
+    }
 }
 
 #[cfg(all(test, target_os = "windows"))]

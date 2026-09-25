@@ -477,3 +477,68 @@ fn webview2_print_puts_each_view_on_the_sheet_it_asks_for() {
         "a background should print, as the Document view's shading needs; the page drew no red fill",
     );
 }
+
+/// The WebView2 half of the measurement in `tests/pdf-contents`: what a PDF
+/// carries besides its pages. The fixture is printed twice over — through
+/// `PrintToPdf`, as `export_pdf` does, and through the DevTools protocol's
+/// `Page.printToPDF`, whose outline and tagging options `PrintToPdf` has no
+/// counterpart for — and written, with the runtime's version, to the folder
+/// `MEDITOR_PDF_PROBE_DIR` names, for `describe-pdf.mjs` to read.
+///
+/// A measurement, not a claim: it asserts nothing, and without that variable
+/// it does nothing, because the CI step runs every ignored test here.
+#[test]
+#[ignore = "a measurement; writes to MEDITOR_PDF_PROBE_DIR"]
+fn webview2_pdf_contents_probe() {
+    use webview2_com::CallDevToolsProtocolMethodCompletedHandler;
+
+    let Some(out) = std::env::var_os("MEDITOR_PDF_PROBE_DIR") else {
+        eprintln!("MEDITOR_PDF_PROBE_DIR is not set: nothing to measure");
+        return;
+    };
+    let out = std::path::PathBuf::from(out);
+    let fixture = include_str!("../../../tests/pdf-contents/fixture.html");
+    let engine = start();
+    let pdf = print_through_webview2(&engine, "pdf-contents", fixture, View::Document(None));
+    std::fs::write(out.join("webview2-printtopdf.pdf"), pdf).expect("the probe folder");
+
+    // The page is still loaded: the same document, asked for over CDP.
+    let print = r#"{"printBackground":true,"preferCSSPageSize":true"#;
+    for (name, method, params) in [
+        ("webview2-version", "Browser.getVersion", "{}".to_string()),
+        ("webview2-cdp", "Page.printToPDF", format!("{print}}}")),
+        (
+            "webview2-cdp-tagged",
+            "Page.printToPDF",
+            format!(r#"{print},"generateTaggedPDF":true}}"#),
+        ),
+        (
+            "webview2-cdp-outline",
+            "Page.printToPDF",
+            format!(r#"{print},"generateDocumentOutline":true}}"#),
+        ),
+        (
+            "webview2-cdp-outline-tagged",
+            "Page.printToPDF",
+            format!(r#"{print},"generateDocumentOutline":true,"generateTaggedPDF":true}}"#),
+        ),
+    ] {
+        let (tx, rx) = mpsc::channel();
+        unsafe {
+            engine.view.CallDevToolsProtocolMethod(
+                &HSTRING::from(method),
+                &HSTRING::from(params.as_str()),
+                &CallDevToolsProtocolMethodCompletedHandler::create(Box::new(
+                    move |error, json| {
+                        let _ = tx.send((error, json));
+                        Ok(())
+                    },
+                )),
+            )
+        }
+        .expect("the DevTools call should start");
+        let (error, json) = webview2_com::wait_with_pump(rx).expect("the DevTools call should end");
+        error.expect("the DevTools call should succeed");
+        std::fs::write(out.join(format!("{name}.json")), json).expect("the probe folder");
+    }
+}
