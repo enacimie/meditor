@@ -87,6 +87,14 @@ pub(super) fn link_count(pdf: &[u8]) -> usize {
         .count()
 }
 
+/// The document's title, from the information dictionary the trailer points
+/// at: what a PDF reader shows as the document's name.
+pub(super) fn info_title(pdf: &[u8]) -> Option<String> {
+    let text: String = pdf.iter().map(|&b| char::from(b)).collect();
+    let info = reference(&text[text.rfind("trailer")?..], "/Info")?;
+    title(objects(pdf).get(&info)?)
+}
+
 /// The PDF's outline, its bookmarks, as (depth, title) in reading order: from
 /// the catalog's `/Outlines`, each item before its `/First` child, and that
 /// before its `/Next` sibling.

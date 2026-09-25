@@ -19,6 +19,7 @@ import Preview, { type PreviewHandle } from "./Preview";
 import type { LineRange } from "./editorSelection";
 import { SAMPLE, TYPST_SAMPLE, LATEX_SAMPLE, MARP_SAMPLE } from "./sample";
 import { isMarpDocument } from "./marpDetect";
+import { pdfTitle, withDocumentTitle } from "./pdfTitle";
 import { documentLanguage } from "./documentLanguage";
 import { frontMatterValue } from "./frontMatter";
 import Topbar from "./components/Topbar";
@@ -1757,20 +1758,27 @@ export default function App() {
         const viewBox = /viewBox="0 0 (\d+(?:\.\d+)?) (\d+(?:\.\d+)?)"/.exec(html);
         const widthIn = viewBox ? Number(viewBox[1]) / 96 : 1280 / 96;
         const heightIn = viewBox ? Number(viewBox[2]) / 96 : 720 / 96;
-        await backend.exportPdf(`${base}.pdf`, lang, true, widthIn, heightIn);
+        // Here and below, the PDF takes its title from `document.title` as it
+        // prints: the document's own, when its front-matter names one, rather
+        // than the tab's.
+        await withDocumentTitle(pdfTitle(active), () =>
+          backend.exportPdf(`${base}.pdf`, lang, true, widthIn, heightIn),
+        );
       } else {
-        await backend.exportPdf(
-          `${base}.pdf`,
-          lang,
-          // The paginated preview already draws its pages with their own
-          // margins; asking the printer for margins too would inset every
-          // page a second time and split it across two sheets.
-          docView,
-          undefined,
-          undefined,
-          // And the sheet it drew them on, which the printer has to agree
-          // with or every page spills onto the next.
-          pageMetrics.paper.id,
+        await withDocumentTitle(pdfTitle(active), () =>
+          backend.exportPdf(
+            `${base}.pdf`,
+            lang,
+            // The paginated preview already draws its pages with their own
+            // margins; asking the printer for margins too would inset every
+            // page a second time and split it across two sheets.
+            docView,
+            undefined,
+            undefined,
+            // And the sheet it drew them on, which the printer has to agree
+            // with or every page spills onto the next.
+            pageMetrics.paper.id,
+          ),
         );
       }
       showNotice(operationNoticeDone(t, "export"), "success");
