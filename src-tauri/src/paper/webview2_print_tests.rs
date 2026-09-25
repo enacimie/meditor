@@ -19,7 +19,9 @@
 //! it, and its callbacks arrive through that thread's message loop.
 
 use super::print_fixture::{first_media_box, paged_document, paged_document_on, PRINT_CSS};
-use super::skia_pdf::{first_page_content, first_page_placement, link_count, outline, page_count};
+use super::skia_pdf::{
+    first_page_content, first_page_placement, info_title, link_count, outline, page_count,
+};
 use super::*;
 use std::os::windows::ffi::OsStrExt;
 use std::sync::mpsc;
@@ -486,6 +488,10 @@ fn each_view_on_its_sheet(engine: &Engine, route: Route) {
 /// boxes, and a running head in each page's top margin, which is text and
 /// must not become a bookmark — with a table of contents whose links work by
 /// either route, as they always did through `PrintToPdf`.
+///
+/// And the page's title as the PDF's, by either route: the application sets
+/// `document.title` to the front-matter's `title:` while it exports, and this
+/// is the engine's half of that.
 #[test]
 #[ignore = "needs the WebView2 runtime and a desktop; CI runs it on Windows only"]
 fn webview2_print_writes_the_headings_as_bookmarks() {
@@ -497,7 +503,8 @@ fn webview2_print_writes_the_headings_as_bookmarks() {
         )
     };
     let document = format!(
-        "<!doctype html><html lang=\"es\"><head><meta charset=\"utf-8\"><style>\
+        "<!doctype html><html lang=\"es\"><head><meta charset=\"utf-8\">\
+         <title>Informe de medición</title><style>\
          @page {{ size: a4; margin: 0; }}\
          html, body {{ margin: 0; }}\
          .pagedjs_page {{ --pagedjs-height: 297mm; width: 210mm; height: 297mm;\
@@ -536,6 +543,11 @@ fn webview2_print_writes_the_headings_as_bookmarks() {
         3,
         "DevTools: the contents' three links should work in the PDF"
     );
+    assert_eq!(
+        info_title(&pdf).as_deref(),
+        Some("Informe de medición"),
+        "DevTools: the PDF's title should be the page's",
+    );
 
     let pdf = print_through_webview2(
         &engine,
@@ -548,5 +560,10 @@ fn webview2_print_writes_the_headings_as_bookmarks() {
         link_count(&pdf),
         3,
         "PrintToPdf: the contents' three links should work in the PDF"
+    );
+    assert_eq!(
+        info_title(&pdf).as_deref(),
+        Some("Informe de medición"),
+        "PrintToPdf: the PDF's title should be the page's",
     );
 }
