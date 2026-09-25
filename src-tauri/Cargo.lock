@@ -2027,6 +2027,7 @@ version = "0.3.8"
 dependencies = [
  "glib",
  "gtk",
+ "miniz_oxide",
  "serde",
  "serde_json",
  "tauri",

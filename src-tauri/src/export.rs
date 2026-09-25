@@ -293,14 +293,6 @@ pub async fn export_pdf(
      */
     #[cfg(target_os = "windows")]
     {
-        // The sheet, from the same table the GTK path reads, so the two
-        // platforms cannot be asked for different paper.
-        let (page_w, page_h) = custom_page.unwrap_or(crate::paper::paper_sheet(paper.as_deref()).0);
-        // WebView2 measures in inches; the decision itself is shared with the
-        // GTK path so the two cannot drift again.
-        let margin =
-            crate::paper::pdf_margin_mm(custom_page.is_some(), paged.unwrap_or(true)) / 25.4;
-
         let path = {
             let selected = app
                 .dialog()
@@ -333,21 +325,16 @@ pub async fn export_pdf(
                     let printer: ICoreWebView2_7 = core.cast().map_err(|e| e.to_string())?;
                     let environment: ICoreWebView2Environment6 =
                         webview.environment().cast().map_err(|e| e.to_string())?;
-                    let settings =
-                        unsafe { environment.CreatePrintSettings() }.map_err(|e| e.to_string())?;
-                    unsafe {
-                        settings.SetPageWidth(page_w).map_err(|e| e.to_string())?;
-                        settings.SetPageHeight(page_h).map_err(|e| e.to_string())?;
-                        settings.SetMarginTop(margin).map_err(|e| e.to_string())?;
-                        settings
-                            .SetMarginBottom(margin)
-                            .map_err(|e| e.to_string())?;
-                        settings.SetMarginLeft(margin).map_err(|e| e.to_string())?;
-                        settings.SetMarginRight(margin).map_err(|e| e.to_string())?;
-                        settings
-                            .SetShouldPrintBackgrounds(true)
-                            .map_err(|e| e.to_string())?;
-                    }
+                    // The sheet, the margin and the backgrounds, from the same
+                    // table and rule the GTK path reads, and the settings that
+                    // paper/webview2_print_tests.rs prints a real WebView2 with.
+                    let settings = crate::paper::webview2_print_settings(
+                        &environment,
+                        custom_page,
+                        paged.unwrap_or(true),
+                        paper.as_deref(),
+                    )
+                    .map_err(|e| e.to_string())?;
                     let done_tx = result_tx;
                     let handler =
                         PrintToPdfCompletedHandler::create(Box::new(move |result, succeeded| {
