@@ -40,6 +40,42 @@ const visibleChrome = () =>
 
 const setMedia = (media) => page.send("Emulation.setEmulatedMedia", { media });
 
+/**
+ * A reading of the paged view, taken once it holds what `ready` asks for and
+ * has stopped changing: three polls in a row that read the same.
+ *
+ * paged.js lays the pages out one by one in the container on screen, so a
+ * page count that holds still between two polls can be a pagination halfway
+ * through. On a slow runner this spec once took that for the end and read
+ * three portrait pages and no table at all, a moment after the table had been
+ * on screen. The reading returned is the one the decision was made on, not a
+ * later look that could land in the middle of another pass.
+ *
+ * `read` and `ready` are the source of two functions run in the page.
+ */
+async function settledReading(read, ready, { key, message }) {
+  const last = `${key}Last`;
+  const settled = await page
+    .waitFor(
+      `(() => {
+        const now = (${read})();
+        const seen = (window[${JSON.stringify(key)}] ??= []);
+        seen.push(JSON.stringify(now));
+        if (seen.length > 3) seen.shift();
+        window[${JSON.stringify(last)}] = now;
+        return (${ready})(now) && seen.length === 3 && seen.every((s) => s === seen[0]);
+      })()`,
+      { timeout: 40000, interval: 500, message },
+    )
+    .then(
+      () => true,
+      () => false,
+    );
+  const reading = await page.evaluate(`window[${JSON.stringify(last)}] ?? null`);
+  assert(settled, `${message}: ${JSON.stringify(reading)}`);
+  return reading;
+}
+
 try {
   await page.freshPage(BASE_URL);
   await page.waitFor("!!document.querySelector('.cm-content')", { timeout: 20000 });
@@ -234,19 +270,33 @@ try {
     return true;
   })()`);
 
-  await page.waitFor("document.querySelectorAll('.paged-view table').length > 1", {
-    timeout: 40000,
-    interval: 500,
-    message: "the typed tables should reach the paginated view",
-  });
-  await page.waitFor(
-    `(() => {
-      const n = document.querySelectorAll('.pagedjs_page').length;
-      const previous = window.__tablePages ?? -1;
-      window.__tablePages = n;
-      return n > 0 && n === previous;
-    })()`,
-    { timeout: 40000, interval: 600, message: "pagination should settle around the tables" },
+  const tables = await settledReading(
+    `() => {
+      const out = [];
+      for (const table of document.querySelectorAll('.paged-view table')) {
+        // Measure against the page this fragment is actually on: paged.js
+        // places the pages with transforms, so comparing rectangles across
+        // pages means nothing.
+        const area = table.closest('.pagedjs_page_content');
+        if (!area) continue;
+        const style = getComputedStyle(table);
+        out.push({
+          columns: table.querySelectorAll('th').length ||
+            table.querySelectorAll('tr:first-child td').length,
+          printable: area.clientWidth,
+          width: table.offsetWidth,
+          overflow: table.offsetWidth - area.clientWidth,
+          step: [...table.classList].filter((c) => c.startsWith('table-fit')).join(',') || null,
+          marginLeft: style.marginLeft,
+        });
+      }
+      return out;
+    }`,
+    `(tables) => tables.some((t) => t.columns === ${COLUMNS}) && tables.some((t) => t.columns === 2)`,
+    {
+      key: "__tableReadings",
+      message: "the typed tables should reach the paginated view, and the pages settle around them",
+    },
   );
 
   /*
@@ -310,28 +360,6 @@ try {
     "the measuring container is not styled like the page on its own — its rules have stopped matching. " +
       `container ${fixture.alone.fontSize}/${fixture.alone.padding}, page ${fixture.page.fontSize}/${fixture.page.padding}`,
   );
-
-  const tables = await page.evaluate(`(() => {
-    const out = [];
-    for (const table of document.querySelectorAll('.paged-view table')) {
-      // Measure against the page this fragment is actually on: paged.js places
-      // the pages with transforms, so comparing rectangles across pages means
-      // nothing.
-      const area = table.closest('.pagedjs_page_content');
-      if (!area) continue;
-      const style = getComputedStyle(table);
-      out.push({
-        columns: table.querySelectorAll('th').length ||
-          table.querySelectorAll('tr:first-child td').length,
-        printable: area.clientWidth,
-        width: table.offsetWidth,
-        overflow: table.offsetWidth - area.clientWidth,
-        step: [...table.classList].filter((c) => c.startsWith('table-fit')).join(',') || null,
-        marginLeft: style.marginLeft,
-      });
-    }
-    return out;
-  })()`);
 
   assert(tables.length > 0, "the paginated view should hold tables to measure");
 
@@ -456,47 +484,43 @@ try {
     return true;
   })()`);
 
-  await page.waitFor(
-    `(() => [...document.querySelectorAll('.paged-view table')].some((t) =>
-      (${COLS}) === ${LAND_COLUMNS})())`,
-    { timeout: 40000, interval: 500, message: "the wide table should reach the paginated view" },
+  const afterOptIn = await settledReading(
+    `() => {
+      const cols = (t) =>
+        t.querySelectorAll('th').length || t.querySelectorAll('tr:first-child td').length;
+      const onLandscape = (t) =>
+        !!t.closest('.pagedjs_page')?.classList.contains('pagedjs_landscape-table_page');
+      // The table typed above, by what it holds as well as by its width: the
+      // column count is measured from this runner's fonts, and could match a
+      // table the document already had.
+      const wide = [...document.querySelectorAll('.paged-view table')].filter((t) =>
+        cols(t) === ${LAND_COLUMNS} &&
+        [...t.querySelectorAll('th')].every((th) => th.textContent.trim() === 'x'));
+      const allMarked = [...document.querySelectorAll('.paged-view table.needs-landscape')];
+      return {
+        wideCount: wide.length,
+        wideMarked: wide.some((t) => t.classList.contains('needs-landscape')),
+        wideOnLandscape: wide.length > 0 && wide.every(onLandscape),
+        wideNote: wide[0]?.getAttribute('data-landscape-note') ?? null,
+        wideFits: wide.every((t) => {
+          const area = t.closest('.pagedjs_page_content');
+          return area && t.offsetWidth <= area.clientWidth + 1;
+        }),
+        allMarkedCount: allMarked.length,
+        markedWithNote: allMarked.filter((t) => t.getAttribute('data-landscape-note')).length,
+        markedOnLandscape: allMarked.every(onLandscape),
+        landscapePages: document.querySelectorAll('.pagedjs_page.pagedjs_landscape-table_page').length,
+        portraitPages: document.querySelectorAll('.pagedjs_page:not(.pagedjs_landscape-table_page)').length,
+      };
+    }`,
+    "(reading) => reading.wideCount > 0",
+    {
+      key: "__landscapeReadings",
+      message:
+        `the wide table (${LAND_COLUMNS} columns, from ${probe} px per column) should reach ` +
+        "the paginated view, and the pages settle with landscape on",
+    },
   );
-  await page.waitFor(
-    `(() => {
-      const count = document.querySelectorAll('.pagedjs_page').length;
-      const previous = window.__landPages ?? -1;
-      window.__landPages = count;
-      return count > 0 && count === previous;
-    })()`,
-    { timeout: 40000, interval: 600, message: "pagination should settle with landscape on" },
-  );
-
-  const afterOptIn = await page.evaluate(`(() => {
-    const cols = (t) =>
-      t.querySelectorAll('th').length || t.querySelectorAll('tr:first-child td').length;
-    const onLandscape = (t) =>
-      !!t.closest('.pagedjs_page')?.classList.contains('pagedjs_landscape-table_page');
-    const wide = [...document.querySelectorAll('.paged-view table')].filter((t) =>
-      cols(t) === ${LAND_COLUMNS});
-    const allMarked = [...document.querySelectorAll('.paged-view table.needs-landscape')];
-    return {
-      wideCount: wide.length,
-      wideMarked: wide.some((t) => t.classList.contains('needs-landscape')),
-      wideOnLandscape: wide.length > 0 && wide.every(onLandscape),
-      wideNote: wide[0]?.getAttribute('data-landscape-note') ?? null,
-      wideFits: wide.every((t) => {
-        const area = t.closest('.pagedjs_page_content');
-        return area && t.offsetWidth <= area.clientWidth + 1;
-      }),
-      allMarkedCount: allMarked.length,
-      markedWithNote: allMarked.filter((t) => t.getAttribute('data-landscape-note')).length,
-      markedOnLandscape: allMarked.every(onLandscape),
-      landscapePages: document.querySelectorAll('.pagedjs_page.pagedjs_landscape-table_page').length,
-      portraitPages: document.querySelectorAll('.pagedjs_page:not(.pagedjs_landscape-table_page)').length,
-    };
-  })()`);
-
-  assert(afterOptIn.wideCount > 0, "the wide table should reach the paginated view: " + JSON.stringify(afterOptIn));
   // The opt-in must actually take: with a table wider than any portrait step
   // in the document, something claims a landscape page. This is what catches
   // the feature silently deciding nothing ever needs one.
