@@ -81,7 +81,9 @@
   border-radius: 3px;
 }
 
-.sync-marked {
+/* A block clicked here, and the blocks the editor's selection covers. */
+.sync-marked,
+.sync-selected {
   outline: 2px solid rgba(9, 105, 218, 0.45);
   outline-offset: 2px;
   border-radius: 3px;

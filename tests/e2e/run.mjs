@@ -81,6 +81,7 @@ const BUILT_SPECS = [
   "page-break.spec.mjs",
   "page-margin.spec.mjs",
   "page-numbers.spec.mjs",
+  "preview-selection.spec.mjs",
   "print.spec.mjs",
   "table-captions.spec.mjs",
   "toc.spec.mjs",

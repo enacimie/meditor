@@ -16,6 +16,7 @@ import type { EditorHandle } from "./Editor";
 
 const Editor = lazy(() => import("./Editor"));
 import Preview, { type PreviewHandle } from "./Preview";
+import type { LineRange } from "./editorSelection";
 import { SAMPLE, TYPST_SAMPLE, LATEX_SAMPLE, MARP_SAMPLE } from "./sample";
 import { isMarpDocument } from "./marpDetect";
 import { documentLanguage } from "./documentLanguage";
@@ -383,6 +384,11 @@ export default function App() {
 
   const editorRef = useRef<EditorHandle>(null);
   const previewRef = useRef<PreviewHandle>(null);
+  // What is selected in the editor, marked in the preview. Handed straight
+  // across rather than through state: nothing else here needs to redraw for it.
+  const onSelectionLines = useCallback((lines: LineRange | null) => {
+    previewRef.current?.showEditorSelection(lines);
+  }, []);
   const docsRef = useRef<Doc[]>([]);
   const idsRef = useRef<string[]>([]);
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
@@ -2404,6 +2410,7 @@ export default function App() {
               locale={lang}
               textLanguage={docLanguage?.tag ?? null}
               onCursorLineChange={onCursorMoved}
+              onSelectionLinesChange={onSelectionLines}
               onImageError={(error) =>
                 showNotice(
                   error.kind === "tooLarge"
