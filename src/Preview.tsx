@@ -28,7 +28,8 @@ import { fitWideTables, keepHeadingsWithContent } from "./previewRenderer";
 import { DEFAULT_PAGE, buildPagedCss, type PageMetrics } from "./pageSetup";
 import { isMarpDocument } from "./marpDetect";
 import { LATEX_ENABLED } from "./latexSupport";
-import { blockForLine } from "./previewSync";
+import { blockForLine, markLines } from "./previewSync";
+import type { LineRange } from "./editorSelection";
 import { footnotesToCalls } from "./pagedFootnotes";
 import { limitFootnotePages } from "./pagedFootnotePages";
 
@@ -66,6 +67,11 @@ export type PreviewHandle = {
   scrollToLine: (line: number) => void;
   getTargetLine: () => number;
   clearMark: () => void;
+  /**
+   * Mark the blocks the editor's selection covers, or none for null. Only the
+   * Markdown preview marks them; the others draw their own kind of page.
+   */
+  showEditorSelection: (lines: LineRange | null) => void;
 };
 
 type Props = {
@@ -184,6 +190,8 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
   /** Line a sync asked for while the pane had nothing rendered in it. */
   const pendingScrollRef = useRef<number | null>(null);
   const flashTimerRef = useRef<number | undefined>(undefined);
+  /** The lines selected in the editor, marked here until the selection goes. */
+  const editorSelectionRef = useRef<LineRange | null>(null);
   const activePreviewerRef = useRef<Previewer | undefined>(undefined);
   const [renderError, setRenderError] = useState<string | null>(null);
   const [retryToken, setRetryToken] = useState(0);
@@ -256,6 +264,25 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
     return true;
   }, []);
 
+  /**
+   * Mark the blocks the editor's selection covers, with the outline a click
+   * here gives a block, and bring the first into view when none of them is.
+   *
+   * Kept apart from the click's mark: a click moves the editor's caret, the
+   * selection that goes with it is empty, and clearing the editor's marks
+   * must not take the one just clicked. Scrolls only when asked: after a
+   * render the marks are put back where the reader already is.
+   */
+  const markEditorSelection = useCallback((scroll: boolean) => {
+    markLines({
+      clearFrom: [webRef.current, pagedRef.current],
+      container: docViewRef.current ? pagedRef.current : webRef.current,
+      lines: editorSelectionRef.current,
+      className: "sync-selected",
+      scroll,
+    });
+  }, []);
+
   useImperativeHandle(ref, () => ({
     scrollToLine(line: number) {
       if (childHandleRef.current) {
@@ -292,8 +319,13 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
       }
       clearMark();
     },
+    showEditorSelection(lines: LineRange | null) {
+      editorSelectionRef.current = lines;
+      if (childHandleRef.current) return;
+      markEditorSelection(true);
+    },
   }),
-  [scrollToLineNow]);
+  [scrollToLineNow, markEditorSelection]);
 
   function clearMark() {
     if (markedElRef.current) markedElRef.current.classList.remove("sync-marked");
@@ -461,6 +493,8 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
         );
       }
       flushPendingScroll();
+      // The render replaced the blocks the editor's selection had marked.
+      markEditorSelection(false);
     };
 
     /**
@@ -505,6 +539,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
     kind,
     isMarp,
     scrollToLineNow,
+    markEditorSelection,
     imageSource,
     // Switching the interface theme redraws the diagrams on screen: without
     // this the preview keeps the ones it made for the other theme.

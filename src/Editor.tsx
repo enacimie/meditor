@@ -40,6 +40,7 @@ import {
   DEFAULT_SPELLCHECK,
 } from "./editorPreferences";
 import { writingAidExtensions } from "./editorFocus";
+import { selectionLines, type LineRange } from "./editorSelection";
 import { editorPhrases } from "./editorPhrases";
 import { useTranslation } from "./i18n/I18nProvider";
 import type { DocKind } from "./types";
@@ -236,6 +237,11 @@ type Props = {
    * callback is worth saying out loud rather than leaving to be discovered.
    */
   onCursorLineChange?: (line: number, column: number) => void;
+  /**
+   * Fired when the lines the selection covers change: zero-based, or null
+   * once only a caret is left. The preview marks the blocks they draw.
+   */
+  onSelectionLinesChange?: (lines: LineRange | null) => void;
   /** Document language ("markdown" or "typst"). */
   kind: DocKind;
   /** Told when a pasted or dropped image could not be inserted. */
@@ -267,6 +273,7 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
     zenMode,
     zenPlaceholder,
     onCursorLineChange,
+    onSelectionLinesChange,
     kind,
     onImageError,
     docHandle = null,
@@ -301,6 +308,9 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   const suppress = useRef(false);
   const onChangeRef = useRef(onChange);
   const onCursorLineChangeRef = useRef(onCursorLineChange);
+  const onSelectionLinesChangeRef = useRef(onSelectionLinesChange);
+  /** The selection last reported, so a keystroke does not report it again. */
+  const reportedSelectionRef = useRef("");
   const lastIdsRef = useRef<string[]>([]);
   // Capture initial prop values for the mount-once effect
   const initialActiveId = useRef(activeId);
@@ -392,7 +402,17 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   useLayoutEffect(() => {
     onChangeRef.current = onChange;
     onCursorLineChangeRef.current = onCursorLineChange;
-  }, [onChange, onCursorLineChange]);
+    onSelectionLinesChangeRef.current = onSelectionLinesChange;
+  }, [onChange, onCursorLineChange, onSelectionLinesChange]);
+
+  /** Tell the preview which lines are selected, when that has changed. */
+  const reportSelection = useCallback((state: EditorState) => {
+    const lines = selectionLines(state);
+    const key = lines ? `${lines.from}:${lines.to}` : "";
+    if (key === reportedSelectionRef.current) return;
+    reportedSelectionRef.current = key;
+    onSelectionLinesChangeRef.current?.(lines);
+  }, []);
 
   useImperativeHandle(ref, () => ({
     scrollToLine(line: number) {
@@ -520,6 +540,7 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
           const line =
             u.state.doc.lineAt(u.state.selection.main.head).number - 1;
           onCursorLineChangeRef.current?.(line, columnOf(u.state));
+          reportSelection(u.state);
         }
       }),
       // Font size and family live in their own compartment so Preferences can
@@ -652,7 +673,8 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
       viewRef.current = null;
       currentStates.clear();
     };
-  }, []);
+    // reportSelection is stable (it reads refs), so this still runs once.
+  }, [reportSelection]);
 
   useEffect(() => {
     const view = viewRef.current;
@@ -782,7 +804,8 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
       view.state.doc.lineAt(view.state.selection.main.head).number - 1,
       columnOf(view.state),
     );
-  }, [activeId, content, wrap, syncCompartments]);
+    reportSelection(view.state);
+  }, [activeId, content, wrap, syncCompartments, reportSelection]);
 
   useEffect(() => {
     const prev = lastIdsRef.current;

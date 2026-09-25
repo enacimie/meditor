@@ -32,6 +32,21 @@
      */
     height: calc(var(--pagedjs-height) - 0.5mm);
   }
+
+  /*
+   * The marks of the sync between the panes belong to the screen: a block
+   * clicked in the preview, the blocks selected in the editor, the flash of a
+   * jump. Printing is how a Markdown document becomes a PDF, and a selection
+   * left in the editor would otherwise print as a blue frame around it.
+   */
+  .sync-marked,
+  .sync-selected {
+    outline: none;
+  }
+
+  .sync-flash {
+    animation: none;
+  }
 }
 
 /* ---- Print: Typst ---- */
