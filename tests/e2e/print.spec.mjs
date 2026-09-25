@@ -179,16 +179,14 @@ try {
       }
     }
     const source = document.querySelector('.preview-source');
-    const firstBlock = source?.firstElementChild;
     return {
       stranded,
       wrappers: document.querySelectorAll('.keep-with-next').length,
       // If the grouping did not happen, these say why: it only runs when the
-      // offscreen source container has layout to measure.
+      // offscreen source container has layout to measure. Its blocks are gone
+      // once the pages are laid out, so its width is what is left to read.
       pages: document.querySelectorAll('.pagedjs_page').length,
-      sourceBlocks: source ? source.children.length : -1,
-      sourceHeight: source ? source.offsetHeight : -1,
-      firstBlockHeight: firstBlock ? firstBlock.offsetHeight : -1,
+      sourceWidth: source ? source.offsetWidth : -1,
       docView: !!document.querySelector('.paged-view'),
     };
   })()`);
@@ -309,7 +307,10 @@ try {
    * nothing. That is not hypothetical — it is how the fixture came to be
    * switched off while every unit test passed.
    *
-   * Reading it needs one precaution. paged.js injects its own copy of
+   * Reading it needs two precautions. The container is emptied once the pages
+   * are laid out, or its ids would come before theirs, so a table is put in
+   * it for the reading and taken out again: one with no fit step, like the
+   * page table it is compared with. And paged.js injects its own copy of
    * paged.css into the document, and that copy reaches this container too
    * because it carries `markdown-body doc` — so once a page has been laid out
    * a dead fixture still measures correctly. It is switched off for the
@@ -317,8 +318,12 @@ try {
    */
   const fixture = await page.evaluate(`(() => {
     const source = document.querySelector('.preview-source');
-    const cell = source && source.querySelector('td');
-    if (!cell) return { error: 'no cell in the measuring container' };
+    if (!source) return { error: 'there is no measuring container' };
+    const stepped = (table) => [...table.classList].some((c) => c.startsWith('table-fit'));
+    const pageTable = [...document.querySelectorAll('.pagedjs_page table')].find((t) => !stepped(t));
+    const onPage = pageTable && pageTable.querySelector('td');
+    if (!onPage) return { error: 'no page table without a fit step to compare it with' };
+    const page = { padding: getComputedStyle(onPage).padding, fontSize: getComputedStyle(onPage).fontSize };
 
     const injected = [...document.styleSheets].filter((sheet) => {
       try {
@@ -329,23 +334,24 @@ try {
       }
     });
 
-    const onPage = document.querySelector('.pagedjs_page td');
-    const page = onPage
-      ? { padding: getComputedStyle(onPage).padding, fontSize: getComputedStyle(onPage).fontSize }
-      : null;
-
+    const table = document.createElement('table');
+    table.innerHTML =
+      '<thead><tr><th>A</th><th>B</th></tr></thead><tbody><tr><td>1</td><td>2</td></tr></tbody>';
+    source.append(table);
+    const cell = table.querySelector('td');
     injected.forEach((sheet) => { sheet.disabled = true; });
     const alone = {
       padding: getComputedStyle(cell).padding,
       fontSize: getComputedStyle(cell).fontSize,
-      display: getComputedStyle(cell.closest('table')).display,
+      display: getComputedStyle(table).display,
     };
     injected.forEach((sheet) => { sheet.disabled = false; });
+    table.remove();
 
     return { injectedSheets: injected.length, page, alone };
   })()`);
 
-  assert(!fixture.error, "the measuring container should hold a table: " + fixture.error);
+  assert(!fixture.error, "the measuring container's tables could not be read: " + fixture.error);
   assert(
     fixture.injectedSheets > 0,
     "expected paged.js to have injected its stylesheet; the reading below means nothing without it",

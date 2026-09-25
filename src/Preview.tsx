@@ -32,6 +32,7 @@ import { blockForLine, markLines } from "./previewSync";
 import type { LineRange } from "./editorSelection";
 import { footnotesToCalls } from "./pagedFootnotes";
 import { limitFootnotePages } from "./pagedFootnotePages";
+import { useSetAsideWhileHidden } from "./hooks/useSetAsideWhileHidden";
 
 import type { DocumentLanguage } from "./documentLanguage";
 import type { DocKind } from "./types";
@@ -410,6 +411,7 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
 
     let cancelled = false;
     let debounceTimer: number | undefined;
+    const measuring = sourceRef.current;
 
     const run = async () => {
       markedLineRef.current = null;
@@ -453,6 +455,13 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
           previewer = await getPreviewer();
           if (cancelled || myToken !== tokenRef.current) return;
           const html = `<div class="markdown-body doc">${source.innerHTML}</div>`;
+          /*
+           * Serialised, the copy has done its work, and goes before the pages
+           * arrive. Hidden is not gone: a browser resolves an id to the first
+           * element that has it, so the copy's ids took the contents' links
+           * and the diagrams' arrowheads from the pages.
+           */
+          source.replaceChildren();
           await previewer.preview(html, collectStyles(metrics), paged);
           if (cancelled || myToken !== tokenRef.current) {
             if (activePreviewerRef.current === previewer) {
@@ -528,6 +537,9 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
     return () => {
       cancelled = true;
       if (debounceTimer) clearTimeout(debounceTimer);
+      // A render given up before it serialised would leave its measuring
+      // copy full, ids and all, ahead of whichever view shows next.
+      measuring?.replaceChildren();
     };
   }, [
     deferredValue,
@@ -545,6 +557,10 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
     // this the preview keeps the ones it made for the other theme.
     screenDiagramTheme,
   ]);
+
+  // While the Document view shows, the Web view's last render is out of the
+  // page, as the measuring copy is: hidden, its ids would still come first.
+  useSetAsideWhileHidden(webRef, docView);
 
   // Re-run whatever render was skipped while the pane was hidden, as soon as
   // it has a box again — leaving zen mode, switching the layout back, or the
