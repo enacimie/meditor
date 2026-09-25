@@ -462,4 +462,10 @@ mod gtk_print_tests {
 mod skia_pdf;
 
 #[cfg(all(test, target_os = "windows"))]
+mod webview2_engine;
+
+#[cfg(all(test, target_os = "windows"))]
 mod webview2_print_tests;
+
+#[cfg(all(test, target_os = "windows"))]
+mod webview2_print_contents_tests;

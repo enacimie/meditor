@@ -87,12 +87,13 @@ pub(super) fn link_count(pdf: &[u8]) -> usize {
         .count()
 }
 
-/// The document's title, from the information dictionary the trailer points
-/// at: what a PDF reader shows as the document's name.
-pub(super) fn info_title(pdf: &[u8]) -> Option<String> {
+/// One entry of the information dictionary the last trailer points at —
+/// `/Title`, `/Author` — as a reader sees it: after an incremental update,
+/// the dictionary it redefined, which comes last in the file.
+pub(super) fn info_entry(pdf: &[u8], key: &str) -> Option<String> {
     let text: String = pdf.iter().map(|&b| char::from(b)).collect();
     let info = reference(&text[text.rfind("trailer")?..], "/Info")?;
-    title(objects(pdf).get(&info)?)
+    text_entry(objects(pdf).get(&info)?, key)
 }
 
 /// The PDF's outline, its bookmarks, as (depth, title) in reading order: from
@@ -124,14 +125,15 @@ fn walk(
         if items.len() > 1000 {
             return;
         }
-        items.push((depth, title(body).unwrap_or_default()));
+        items.push((depth, text_entry(body, "/Title").unwrap_or_default()));
         walk(objects, reference(body, "/First"), depth + 1, items);
         next = reference(body, "/Next");
     }
 }
 
 /// Every object in the PDF, by number, as the text between `N 0 obj` and its
-/// `endobj`. Each byte becomes one `char`, so strings keep their bytes.
+/// `endobj`. Each byte becomes one `char`, so strings keep their bytes. An
+/// object defined again by an incremental update keeps its last definition.
 fn objects(pdf: &[u8]) -> HashMap<u32, String> {
     let text: String = pdf.iter().map(|&b| char::from(b)).collect();
     let mut objects = HashMap::new();
@@ -167,11 +169,11 @@ fn reference(body: &str, key: &str) -> Option<u32> {
         .flatten()
 }
 
-/// The text of the `/Title` in `body`, from a hex string or a literal one, in
-/// UTF-16 when it opens with the byte order mark, as Chromium writes any
-/// title that is not plain ASCII.
-fn title(body: &str) -> Option<String> {
-    let at = body.find("/Title")? + "/Title".len();
+/// The text of the entry `key` in `body`, from a hex string or a literal one,
+/// in UTF-16 when it opens with the byte order mark, as Chromium writes any
+/// text that is not plain ASCII.
+fn text_entry(body: &str, key: &str) -> Option<String> {
+    let at = body.find(key)? + key.len();
     let rest = body[at..].trim_start();
     let bytes: Vec<u8> = if let Some(hex) = rest.strip_prefix('<') {
         let digits: Vec<u8> = hex
