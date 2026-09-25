@@ -207,7 +207,11 @@ pub fn write_atomic(locale: Locale, path: &Path, content: &str) -> Result<(), St
     write_atomic_bytes(locale, path, content.as_bytes())
 }
 
-fn write_atomic_bytes(locale: Locale, path: &Path, content: &[u8]) -> Result<(), String> {
+pub(crate) fn write_atomic_bytes(
+    locale: Locale,
+    path: &Path,
+    content: &[u8],
+) -> Result<(), String> {
     let parent = path.parent().ok_or_else(|| t(locale, "file.noParent"))?;
     if !parent.is_dir() {
         return Err(t(locale, "file.directoryMissing"));

@@ -20,6 +20,7 @@ import type { LineRange } from "./editorSelection";
 import { SAMPLE, TYPST_SAMPLE, LATEX_SAMPLE, MARP_SAMPLE } from "./sample";
 import { isMarpDocument } from "./marpDetect";
 import { pdfTitle, withDocumentTitle } from "./pdfTitle";
+import { pdfMetadata } from "./pdfMetadata";
 import { documentLanguage } from "./documentLanguage";
 import { frontMatterValue } from "./frontMatter";
 import Topbar from "./components/Topbar";
@@ -1760,9 +1761,18 @@ export default function App() {
         const heightIn = viewBox ? Number(viewBox[2]) / 96 : 720 / 96;
         // Here and below, the PDF takes its title from `document.title` as it
         // prints: the document's own, when its front-matter names one, rather
-        // than the tab's.
+        // than the tab's. The author, subject and keywords, which no engine
+        // writes, go to the backend to add afterwards.
         await withDocumentTitle(pdfTitle(active), () =>
-          backend.exportPdf(`${base}.pdf`, lang, true, widthIn, heightIn),
+          backend.exportPdf(
+            `${base}.pdf`,
+            lang,
+            true,
+            widthIn,
+            heightIn,
+            undefined,
+            pdfMetadata(active),
+          ),
         );
       } else {
         await withDocumentTitle(pdfTitle(active), () =>
@@ -1778,6 +1788,7 @@ export default function App() {
             // And the sheet it drew them on, which the printer has to agree
             // with or every page spills onto the next.
             pageMetrics.paper.id,
+            pdfMetadata(active),
           ),
         );
       }

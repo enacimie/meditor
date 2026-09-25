@@ -1,11 +1,11 @@
 //! Printing through WebView2, for real: what the PDF carries besides its pages.
 //!
-//! The headings as bookmarks, the table of contents' links and the page's
-//! title. `#[ignore]`, and run by the same Windows-only CI step as
-//! `webview2_print_tests`.
+//! The headings as bookmarks, the table of contents' links, the page's title,
+//! and the front-matter's metadata added on top by `pdf_meta`. `#[ignore]`,
+//! and run by the same Windows-only CI step as `webview2_print_tests`.
 
 use super::print_fixture::PRINT_CSS;
-use super::skia_pdf::{info_entry, link_count, outline};
+use super::skia_pdf::{info_entry, link_count, outline, page_count};
 use super::webview2_engine::{print_through_webview2, start, Route, View};
 
 /// The headings, as the PDF's bookmarks: what the DevTools route is for.
@@ -17,7 +17,9 @@ use super::webview2_engine::{print_through_webview2, start, Route, View};
 ///
 /// And the page's title as the PDF's, by either route: the application sets
 /// `document.title` to the front-matter's `title:` while it exports, and this
-/// is the engine's half of that.
+/// is the engine's half of that. Then the front-matter's author, subject and
+/// keywords added on top, as `export_pdf` does after either route, with the
+/// engine's PDF left whole: its bytes, pages, bookmarks, links and title.
 #[test]
 #[ignore = "needs the WebView2 runtime and a desktop; CI runs it on Windows only"]
 fn webview2_print_writes_the_headings_as_bookmarks() {
@@ -74,6 +76,7 @@ fn webview2_print_writes_the_headings_as_bookmarks() {
         Some("Informe de medición"),
         "DevTools: the PDF's title should be the page's",
     );
+    front_matter_added_to(&pdf, Route::DevTools);
 
     let pdf = print_through_webview2(
         &engine,
@@ -91,5 +94,57 @@ fn webview2_print_writes_the_headings_as_bookmarks() {
         info_entry(&pdf, "/Title").as_deref(),
         Some("Informe de medición"),
         "PrintToPdf: the PDF's title should be the page's",
+    );
+    front_matter_added_to(&pdf, Route::PrintToPdf);
+}
+
+/// Add the front-matter's metadata to `pdf` the way `export_pdf` does, on
+/// the file, and check that it arrived and that nothing the engine wrote
+/// was lost on the way.
+fn front_matter_added_to(pdf: &[u8], route: Route) {
+    let path = std::env::temp_dir().join(format!(
+        "meditor-webview2-meta-{}-{route:?}.pdf",
+        std::process::id()
+    ));
+    std::fs::write(&path, pdf).expect("the engine's PDF, on disk");
+    let meta = crate::export::PdfMeta {
+        author: Some("Ana Pérez".to_string()),
+        subject: Some("Medición".to_string()),
+        keywords: Some("pdf, marcadores".to_string()),
+    };
+    crate::pdf_meta::add_to_file(crate::locale::Locale::En, &path, Some(&meta));
+    let added = std::fs::read(&path).expect("the PDF, with its metadata");
+    let _ = std::fs::remove_file(&path);
+
+    for (key, value) in [
+        ("/Author", "Ana Pérez"),
+        ("/Subject", "Medición"),
+        ("/Keywords", "pdf, marcadores"),
+        ("/Title", "Informe de medición"),
+    ] {
+        assert_eq!(
+            info_entry(&added, key).as_deref(),
+            Some(value),
+            "{route:?}: {key} should read {value} once the metadata is added",
+        );
+    }
+    assert!(
+        added.starts_with(pdf),
+        "{route:?}: the metadata should go after the engine's bytes, not into them",
+    );
+    assert_eq!(
+        page_count(&added),
+        page_count(pdf),
+        "{route:?}: the pages should stay"
+    );
+    assert_eq!(
+        outline(&added),
+        outline(pdf),
+        "{route:?}: the bookmarks should stay"
+    );
+    assert_eq!(
+        link_count(&added),
+        link_count(pdf),
+        "{route:?}: the links should stay"
     );
 }

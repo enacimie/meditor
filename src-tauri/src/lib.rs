@@ -7,6 +7,15 @@ mod image;
 mod locale;
 mod location;
 mod paper;
+#[cfg(any(
+    target_os = "linux",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd",
+    target_os = "windows"
+))]
+mod pdf_meta;
 mod recent;
 mod recent_menu;
 mod session;

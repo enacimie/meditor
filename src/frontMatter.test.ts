@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { frontMatterLines, frontMatterValue, frontMatterFlag } from "./frontMatter";
+import { frontMatterLines, frontMatterValue, frontMatterFlag, frontMatterList } from "./frontMatter";
 
 /**
  * The YAML block at the top, and the shapes it is allowed to take.
@@ -91,5 +91,46 @@ describe("reading a value out of it", () => {
   it("reads a flag whatever case it is written in", () => {
     expect(frontMatterFlag("---\nmarp: TRUE\n---\n", "marp")).toBe(true);
     expect(frontMatterFlag("---\nmarp: yes\n---\n", "marp")).toBe(false);
+  });
+});
+
+describe("frontMatterList", () => {
+  it("reads a flow sequence on the key's own line", () => {
+    expect(frontMatterList("---\nkeywords: [pdf, marcadores]\n---\n", "keywords")).toEqual([
+      "pdf",
+      "marcadores",
+    ]);
+  });
+
+  it("keeps a comma that is inside quotes", () => {
+    expect(frontMatterList('---\nauthor: ["Pérez, Ana", Luis]\n---\n', "author")).toEqual([
+      "Pérez, Ana",
+      "Luis",
+    ]);
+  });
+
+  it("reads a block sequence right under the key, and stops where it ends", () => {
+    const content =
+      "---\nauthor:\n  - Ana Pérez\n  - Luis Gómez  # co-author\ntitle: Informe\n---\n";
+    expect(frontMatterList(content, "author")).toEqual(["Ana Pérez", "Luis Gómez"]);
+    // The next key's list is the next key's.
+    const two = "---\nauthor:\n  - Ana\nkeywords:\n  - pdf\n---\n";
+    expect(frontMatterList(two, "author")).toEqual(["Ana"]);
+    expect(frontMatterList(two, "keywords")).toEqual(["pdf"]);
+  });
+
+  it("takes a single scalar as a list of one", () => {
+    expect(frontMatterList("---\nauthor: 'Ana Pérez'\n---\n", "author")).toEqual(["Ana Pérez"]);
+  });
+
+  it("leaves a mapping alone, and a key that is missing or empty", () => {
+    expect(frontMatterList("---\nauthor:\n  name: Ana\n---\n", "author")).toBeNull();
+    expect(frontMatterList("---\ntitle: Informe\n---\n", "author")).toBeNull();
+    expect(frontMatterList("---\nkeywords: []\n---\n", "keywords")).toBeNull();
+    expect(frontMatterList("# Informe\n", "author")).toBeNull();
+  });
+
+  it("does not take a longer key for the one asked", () => {
+    expect(frontMatterList("---\nauthors: [Ana]\n---\n", "author")).toBeNull();
   });
 });

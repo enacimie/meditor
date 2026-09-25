@@ -53,6 +53,16 @@ webkit2gtk = "2.0"
 gtk = "0.18"
 glib = "0.18"
 
+# Everywhere there is a PDF path: the author, subject and keywords of the
+# front-matter are written into the PDF the engine printed, which no engine
+# can be asked to do itself (see pdf_meta.rs). MIT. Without its default
+# features it brings 29 crates the tree did not have, all MIT, MIT OR
+# Apache-2.0, or with BSD-3-Clause (encoding_rs): measured with cargo on
+# 2026-09-25. Some are the ciphers lopdf needs to open encrypted PDFs, which
+# this application never asks it to, and which it offers no way to leave out.
+[target."cfg(any(target_os = \"linux\", target_os = \"dragonfly\", target_os = \"freebsd\", target_os = \"netbsd\", target_os = \"openbsd\", target_os = \"windows\"))".dependencies]
+lopdf = { version = "0.45", default-features = false }
+
 [target."cfg(target_os = \"windows\")".dependencies]
 winapi = { version = "0.3", features = ["winuser"] }
 # Printing to PDF goes through WebView2, the same webview Tauri already embeds
