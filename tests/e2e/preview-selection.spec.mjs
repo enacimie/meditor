@@ -83,6 +83,15 @@ const scrollTop = () => page.evaluate("document.querySelector('.preview-scroll')
 let configId;
 let shimId;
 try {
+  // Pin the viewport, as layout-modes.spec does: below 760px the workspace
+  // stacks the panes, and a runner's headless Chrome opens at whatever width
+  // it likes. Cleared in the finally.
+  await page.send("Emulation.setDeviceMetricsOverride", {
+    width: 1280,
+    height: 800,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
   configId = await page.addInitScript(CONFIG);
   shimId = await page.addInitScript(TAURI_SHIM);
   await page.freshPage(BASE_URL);
@@ -94,11 +103,24 @@ try {
     return true;
   })()`);
   await page.reload();
-  await page.waitFor(
-    `!window.__beforeReload && !!document.querySelector('.cm-content')?.cmTile &&
-      document.querySelectorAll('${WEB} [data-line]').length > 60`,
-    { timeout: 20000, message: "the reloaded page should show the editor and draw the document" },
-  );
+  await page
+    .waitFor(
+      `!window.__beforeReload && !!document.querySelector('.cm-content')?.cmTile &&
+        document.querySelectorAll('${WEB} [data-line]').length > 60`,
+      { timeout: 20000, message: "the reloaded page should show the editor and draw the document" },
+    )
+    .catch(async (error) => {
+      // Which half is missing, and in what layout, rather than a bare timeout.
+      const state = await page.evaluate(`({
+        reloaded: !window.__beforeReload,
+        editor: !!document.querySelector('.cm-content')?.cmTile,
+        webBlocks: document.querySelectorAll('${WEB} [data-line]').length,
+        pagedPages: document.querySelectorAll('.paged-view .pagedjs_page').length,
+        app: document.querySelector('.app')?.className ?? null,
+        size: [innerWidth, innerHeight],
+      })`);
+      throw new Error(`${error.message}: ${JSON.stringify(state)}`);
+    });
 
   // Two list items: each is marked, not the list around them.
   await select(4, 2, 5, 4);
@@ -143,19 +165,19 @@ try {
 
   // Already on screen, but not in the middle of it: the preview stays where
   // it is. (Selecting the paragraph now centred again would prove nothing:
-  // centring it a second time moves nothing either.)
-  // The last paragraph cannot be centred, the document ends below it; this
-  // one sits well off the middle of the window, and whole within it.
-  const NEARBY = LAST - 8;
-  const nearbyInView = await page.evaluate(`(() => {
-    const block = document.querySelector('${WEB} [data-line="${NEARBY}"]');
-    const box = block.getBoundingClientRect();
+  // centring it a second time moves nothing either.) Picked by where it is
+  // rather than by its line, which depends on the runner's fonts.
+  const nearby = await page.evaluate(`(() => {
     const view = document.querySelector('.preview-scroll').getBoundingClientRect();
-    return box.top > view.top && box.bottom < view.bottom &&
-      Math.abs((box.top + box.bottom) / 2 - (view.top + view.bottom) / 2) > 20;
+    const middle = (view.top + view.bottom) / 2;
+    const block = [...document.querySelectorAll('${WEB} p[data-line]')].find((p) => {
+      const box = p.getBoundingClientRect();
+      return box.top > view.top && box.bottom < view.bottom && Math.abs((box.top + box.bottom) / 2 - middle) > 40;
+    });
+    return block ? Number(block.getAttribute('data-line')) : null;
   })()`);
-  assert(nearbyInView, "the premise: the paragraph a little above should be on screen, off centre");
-  await select(NEARBY, 0, NEARBY, 6);
+  assert(nearby !== null, "the premise: some paragraph should be on screen, whole and off centre");
+  await select(nearby, 0, nearby, 6);
   await new Promise((resolve) => setTimeout(resolve, 600));
   const still = await scrollTop();
   assert(Math.abs(still - scrolled) < 2, `a selection already in view should not scroll (${scrolled} to ${still})`);
@@ -215,6 +237,7 @@ try {
       "the Document view marked the same",
   );
 } finally {
+  await page.send("Emulation.clearDeviceMetricsOverride").catch(() => {});
   if (shimId) await page.removeInitScript(shimId).catch(() => {});
   if (configId) await page.removeInitScript(configId).catch(() => {});
   await page.close();
