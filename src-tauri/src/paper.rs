@@ -8,7 +8,13 @@
 //! compile wherever there is a PDF path at all. `gtk_page_setup` returns a
 //! `gtk::PageSetup`, and the `gtk` crate exists only on the five Unix-likes,
 //! so its gate is one target shorter. The difference is load-bearing: merging
-//! the two lists breaks Windows.
+//! the two lists breaks Windows. `webview2_print_settings` is its Windows
+//! counterpart, gated to Windows alone, where `webview2-com` is.
+
+#[cfg(target_os = "windows")]
+use webview2_com::Microsoft::Web::WebView2::Win32::{
+    ICoreWebView2Environment6, ICoreWebView2PrintSettings,
+};
 
 /// The margin to leave around an exported page, in millimetres.
 ///
@@ -118,6 +124,44 @@ pub fn gtk_page_setup(
     page_setup
 }
 
+/// The settings WebView2 prints a PDF with: the sheet in inches, the margin
+/// the rule gives, and backgrounds.
+///
+/// The Windows counterpart of `gtk_page_setup`, and shared for the same
+/// reason: `export_pdf` prints with it, and so does the test in
+/// `paper/webview2_print_tests.rs` that prints through a real WebView2 and
+/// counts what comes out, so the settings that test measures are the ones the
+/// application uses.
+///
+/// Only the sheet's size always holds. A page with an `@page` rule of its own
+/// keeps that rule's orientation and margin, whatever these settings say —
+/// measured on 2026-09-25 — and every paginated document has one, written by
+/// paged.js, as every slide does. So on this engine the margin only reaches
+/// the unpaginated Web view; the zero the rule gives everything else is what
+/// those pages ask for anyway.
+#[cfg(target_os = "windows")]
+pub fn webview2_print_settings(
+    environment: &ICoreWebView2Environment6,
+    custom_page: Option<(f64, f64)>,
+    paged: bool,
+    paper_id: Option<&str>,
+) -> windows::core::Result<ICoreWebView2PrintSettings> {
+    let (width, height) = custom_page.unwrap_or(paper_sheet(paper_id).0);
+    // WebView2 measures in inches.
+    let margin = pdf_margin_mm(custom_page.is_some(), paged) / 25.4;
+    let settings = unsafe { environment.CreatePrintSettings() }?;
+    unsafe {
+        settings.SetPageWidth(width)?;
+        settings.SetPageHeight(height)?;
+        settings.SetMarginTop(margin)?;
+        settings.SetMarginBottom(margin)?;
+        settings.SetMarginLeft(margin)?;
+        settings.SetMarginRight(margin)?;
+        settings.SetShouldPrintBackgrounds(true)?;
+    }
+    Ok(settings)
+}
+
 /*
  * Gated as a module rather than test by test.
  *
@@ -200,6 +244,9 @@ mod tests {
     }
 }
 
+#[cfg(all(test, any(target_os = "linux", target_os = "windows")))]
+mod print_fixture;
+
 /// Printing a paginated document through WebKitGTK, for real.
 ///
 /// Everything else about this path is checked by reasoning: `pdf_margin_mm`
@@ -229,46 +276,13 @@ mod tests {
 /// that one.
 #[cfg(all(test, target_os = "linux"))]
 mod gtk_print_tests {
+    use super::print_fixture::{first_media_box, paged_document, paged_document_on};
     use super::*;
     use gtk::prelude::*;
     use std::cell::Cell;
     use std::rc::Rc;
     use std::time::{Duration, Instant};
     use webkit2gtk::{LoadEvent, PrintOperationExt, WebViewExt};
-
-    /// The application's print stylesheet, read rather than restated.
-    ///
-    /// This is what makes the test a guard: the sheet height that keeps a page
-    /// from spilling is a rule in this file, so removing it has to turn the
-    /// test red.
-    const PRINT_CSS: &str = include_str!("../../src/preview/print.css");
-
-    /// What paged.js leaves behind: page boxes sized from its own variables,
-    /// inside the wrapper `print.css` selects on, under the `@page` rule it
-    /// injects for the printer.
-    fn paged_document(sheets: usize) -> String {
-        paged_document_on(sheets, "a4", "210mm", "297mm")
-    }
-
-    /// The same, on a named sheet — what `buildPagedCss` produces for a paper.
-    fn paged_document_on(sheets: usize, css_size: &str, width: &str, height: &str) -> String {
-        let pages: String = (1..=sheets)
-            .map(|n| format!("<div class=\"pagedjs_page\" id=\"page-{n}\">Page {n}</div>"))
-            .collect();
-        format!(
-            "<!doctype html><html><head><meta charset=\"utf-8\"><style>\
-             @page {{ size: {css_size}; margin: 0; }}\
-             html, body {{ margin: 0; padding: 0; }}\
-             .pagedjs_page {{\
-               --pagedjs-width: {width}; --pagedjs-height: {height};\
-               width: var(--pagedjs-width); height: var(--pagedjs-height);\
-               break-after: page; overflow: hidden;\
-             }}\
-             .paged-view .pagedjs_page {{ margin: 0 auto 24px; }}\
-             </style><style>{PRINT_CSS}</style></head>\
-             <body><div class=\"paged-view\"><div class=\"pagedjs_pages\">{pages}</div></div></body></html>"
-        )
-    }
 
     /// Pump the GTK main loop until `done`, or give up.
     ///
@@ -290,23 +304,6 @@ mod gtk_print_tests {
     /// uncompressed, so this is a count rather than a guess.
     fn page_count(pdf: &[u8]) -> usize {
         pdf.windows(9).filter(|w| *w == b"/MediaBox").count()
-    }
-
-    /// The first `/MediaBox` as (width, height) in points.
-    fn first_media_box(pdf: &[u8]) -> Option<(f64, f64)> {
-        let at = pdf.windows(9).position(|w| w == b"/MediaBox")?;
-        let rest = &pdf[at..];
-        let open = rest.iter().position(|b| *b == b'[')?;
-        let close = rest.iter().position(|b| *b == b']')?;
-        let inside = std::str::from_utf8(&rest[open + 1..close]).ok()?;
-        let numbers: Vec<f64> = inside
-            .split_whitespace()
-            .filter_map(|n| n.parse::<f64>().ok())
-            .collect();
-        match numbers.as_slice() {
-            [x0, y0, x1, y1] => Some((x1 - x0, y1 - y0)),
-            _ => None,
-        }
     }
 
     /// Print `body` through the page setup the application uses, and hand back
@@ -446,3 +443,6 @@ mod gtk_print_tests {
         );
     }
 }
+
+#[cfg(all(test, target_os = "windows"))]
+mod webview2_print_tests;

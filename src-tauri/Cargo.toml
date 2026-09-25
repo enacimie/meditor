@@ -62,3 +62,18 @@ winapi = { version = "0.3", features = ["winuser"] }
 webview2-com = "0.38"
 windows = "0.61"
 
+[target."cfg(target_os = \"windows\")".dev-dependencies]
+# The test that prints through a real WebView2, paper/webview2_print_tests.rs,
+# opens a window of its own and pumps its messages. The same crate and version as above, so
+# nothing new is built: these parts of it are only asked for by name, rather
+# than borrowed from whatever wry happens to enable.
+windows = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_System_Com",
+    "Win32_System_LibraryLoader",
+    "Win32_UI_WindowsAndMessaging",
+] }
+# To read how the printed page sits on its sheet, which Chromium writes
+# deflated. Already in the tree through png (MIT OR Zlib OR Apache-2.0).
+miniz_oxide = "0.8"
+

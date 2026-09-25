@@ -226,6 +226,21 @@ jobs:
         run: |
           xvfb-run -a cargo test --lib -- --ignored --test-threads=1 gtk_print
 
+      # The Windows counterpart: a PDF printed through WebView2 with the
+      # settings export_pdf uses, and then looked at. The E2E suite prints with
+      # Chrome's own Page.printToPDF, which is not the printing WebView2 does
+      # for PrintToPdf, so until this nothing had printed on this path at all.
+      #
+      # Windows only and #[ignore], for the reasons above. The runner has the
+      # WebView2 runtime and a desktop for the test's window. The time limit is
+      # there because the test waits on WebView2's callbacks with no limit of
+      # its own: a runtime that never answers should fail the job, not hold it.
+      - name: Print through WebView2 and count the pages
+        if: runner.os == 'Windows'
+        timeout-minutes: 10
+        working-directory: src-tauri
+        run: cargo test --lib -- --ignored --test-threads=1 webview2_print
+
   # Android compiles from the same sources, and the ways it can break are ones
   # no desktop job would notice: a plugin that is an empty crate there, an
   # import left over once its only user is gated out. Building it here keeps
