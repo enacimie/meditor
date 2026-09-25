@@ -420,6 +420,7 @@ mod gtk_print_tests {
             (width - 595.0).abs() < 3.0 && (height - 842.0).abs() < 3.0,
             "A4: the sheet should be 595 x 842 points, got {width} x {height}",
         );
+        front_matter_added_to(&pdf);
 
         // ── Letter, laid out and printed on the same paper ────────────────
         let pdf = print_through_webkit_on(
@@ -455,6 +456,49 @@ mod gtk_print_tests {
              it does not, threading the paper through to the printer buys \
              nothing and half of this can go",
         );
+    }
+
+    /// Add the front-matter's metadata to a PDF WebKitGTK printed, the way
+    /// `export_pdf` does, on the file; then read it back with lopdf. WebKitGTK
+    /// writes no author, subject or keywords, and nothing it did write may be
+    /// lost on the way.
+    fn front_matter_added_to(pdf: &[u8]) {
+        let path =
+            std::env::temp_dir().join(format!("meditor-gtk-print-meta-{}.pdf", std::process::id()));
+        std::fs::write(&path, pdf).expect("the engine's PDF, on disk");
+        let meta = crate::export::PdfMeta {
+            author: Some("Ana Pérez".to_string()),
+            subject: Some("Medición".to_string()),
+            keywords: Some("pdf, marcadores".to_string()),
+        };
+        crate::pdf_meta::add_to_file(crate::locale::Locale::En, &path, Some(&meta));
+        let added = std::fs::read(&path).expect("the PDF, with its metadata");
+        let _ = std::fs::remove_file(&path);
+
+        assert!(
+            added.starts_with(pdf),
+            "the metadata should go after WebKitGTK's bytes, not into them",
+        );
+        let document = lopdf::Document::load_mem(&added).expect("the PDF should still parse");
+        assert_eq!(document.get_pages().len(), 3, "the pages should stay");
+        let info = document
+            .trailer
+            .get(b"Info")
+            .and_then(lopdf::Object::as_reference)
+            .and_then(|id| document.get_object(id))
+            .and_then(lopdf::Object::as_dict)
+            .expect("an information dictionary");
+        for (key, value) in [
+            ("Author", "Ana Pérez"),
+            ("Subject", "Medición"),
+            ("Keywords", "pdf, marcadores"),
+        ] {
+            let read = info
+                .get(key.as_bytes())
+                .ok()
+                .and_then(|text| lopdf::decode_text_string(text).ok());
+            assert_eq!(read.as_deref(), Some(value), "{key} should read {value}");
+        }
     }
 }
 

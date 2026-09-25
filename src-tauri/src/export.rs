@@ -234,6 +234,28 @@ pub async fn print_document(
     }
 }
 
+/// What the front-matter says about the document, for the PDF's information
+/// dictionary: each field only when the document names it. `pdf_meta.rs`
+/// writes it, on the platforms that have a PDF path; elsewhere the command
+/// refuses before reading it, which is what the `allow` is for.
+#[derive(Debug, Default, serde::Deserialize)]
+#[cfg_attr(
+    not(any(
+        target_os = "linux",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "windows"
+    )),
+    allow(dead_code)
+)]
+pub struct PdfMeta {
+    pub author: Option<String>,
+    pub subject: Option<String>,
+    pub keywords: Option<String>,
+}
+
 /// Print the live webview to a PDF the user picks.
 ///
 /// `paged` is true when the preview is the paginated document view, which lays
@@ -241,7 +263,7 @@ pub async fn print_document(
 /// on top of that insets every page twice and spills each one onto a second
 /// sheet, so the export gains a blank page for every real one.
 /*
- * Eight arguments, and clippy is right that it is a lot.
+ * Nine arguments, and clippy is right that it is a lot.
  *
  * They are not a parameter list, though: they are this command's IPC surface,
  * the object the frontend sends. Folding four of them into a `PageRequest`
@@ -261,6 +283,7 @@ pub async fn export_pdf(
     page_width: Option<f64>,
     page_height: Option<f64>,
     paper: Option<String>,
+    meta: Option<PdfMeta>,
 ) -> Result<(), String> {
     let loc = parse_locale(locale);
     // A caller that supplies both dimensions wants exactly that page — a Marp
@@ -279,7 +302,16 @@ pub async fn export_pdf(
         target_os = "windows"
     )))]
     {
-        let _ = (app, window, default_name, loc, paged, custom_page, paper);
+        let _ = (
+            app,
+            window,
+            default_name,
+            loc,
+            paged,
+            custom_page,
+            paper,
+            meta,
+        );
         Err(t(loc, "pdf.notSupported"))
     }
 
@@ -336,6 +368,9 @@ pub async fn export_pdf(
         if &header != b"%PDF-" {
             return Err(t(loc, "pdf.invalidPdf"));
         }
+        // The front-matter's author, subject and keywords, which no engine
+        // writes; left out, never failed, when they cannot be added.
+        crate::pdf_meta::add_to_file(loc, &path, meta.as_ref());
         Ok(())
     }
 
@@ -438,6 +473,9 @@ pub async fn export_pdf(
         if &header != b"%PDF-" {
             return Err(t(loc, "pdf.invalidPdf"));
         }
+        // The front-matter's author, subject and keywords, which no engine
+        // writes; left out, never failed, when they cannot be added.
+        crate::pdf_meta::add_to_file(loc, &path, meta.as_ref());
         Ok(())
     }
 }

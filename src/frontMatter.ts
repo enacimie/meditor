@@ -9,10 +9,12 @@
  *
  * Deliberately not a YAML parser. What is understood here is a top-level
  * mapping of scalars, which is what every directive this application reads
- * happens to be, and anything else — nesting, block scalars, flow sequences —
- * is left alone rather than half-parsed. A `style: |` payload that mentions
- * `title:` on an indented line must not be mistaken for a title, so keys are
- * required to start at column zero.
+ * happens to be, and anything else — nesting, block scalars — is left alone
+ * rather than half-parsed. The one exception is a list of scalars, the two
+ * shapes a person writes by hand, for the keys Pandoc gives lists to
+ * (`frontMatterList`). A `style: |` payload that mentions `title:` on an
+ * indented line must not be mistaken for a title, so keys are required to
+ * start at column zero.
  */
 
 /** Strip a byte-order mark, which otherwise hides the opening `---`. */
@@ -89,16 +91,77 @@ export function frontMatterValue(content: string, key: string): string | null {
   for (const line of lines) {
     const match = line.match(re);
     if (!match) continue;
-    const value = match[1]
+    return scalar(match[1]) || null;
+  }
+  return null;
+}
+
+/** A value as written, without its comment and its quotes. */
+function scalar(raw: string): string {
+  return (
+    raw
       // A trailing comment is not part of the value. Written this way it also
       // takes a `#` that begins the value, which is a comment too.
       .replace(/\s*#.*$/, "")
       .trim()
       .replace(/^["']|["']$/g, "")
-      .trim();
-    return value || null;
+      .trim()
+  );
+}
+
+/**
+ * A top-level value that may be a list, as its items, or `null` when the key
+ * is not there or holds nothing.
+ *
+ * Pandoc's `author` and `keywords` are lists as often as not, written one of
+ * two ways: a flow sequence on the key's own line, `keywords: [pdf, marcas]`,
+ * or a block sequence right under it, one `- item` a line. A single scalar is
+ * a list of one. Anything deeper — an author as a mapping, with `name:` and
+ * `affiliation:` — is left alone, as the rest of this file leaves it.
+ */
+export function frontMatterList(content: string, key: string): string[] | null {
+  const lines = frontMatterLines(content);
+  if (!lines) return null;
+  const re = new RegExp(`^${key}[ \\t]*:(.*)$`, "i");
+  const at = lines.findIndex((line) => re.test(line));
+  if (at < 0) return null;
+  const rest = (lines[at].match(re)?.[1] ?? "").replace(/\s*#.*$/, "").trim();
+  let items: string[];
+  if (rest.startsWith("[") && rest.endsWith("]")) {
+    items = flowItems(rest.slice(1, -1));
+  } else if (rest) {
+    items = [rest];
+  } else {
+    items = [];
+    for (const line of lines.slice(at + 1)) {
+      const item = /^\s*-\s+(.+)$/.exec(line);
+      if (!item) break;
+      items.push(item[1]);
+    }
   }
-  return null;
+  const values = items.map(scalar).filter(Boolean);
+  return values.length ? values : null;
+}
+
+/** The items of a flow sequence's inside, split at commas outside quotes. */
+function flowItems(inside: string): string[] {
+  const items: string[] = [];
+  let quote: string | null = null;
+  let current = "";
+  for (const c of inside) {
+    if (quote) {
+      if (c === quote) quote = null;
+    } else if (c === '"' || c === "'") {
+      quote = c;
+    } else if (c === ",") {
+      items.push(current);
+      current = "";
+      continue;
+    }
+    current += c;
+  }
+  items.push(current);
+  return items;
 }
 
 /** True when a top-level key is present and reads as `true`. */

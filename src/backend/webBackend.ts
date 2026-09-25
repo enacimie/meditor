@@ -392,14 +392,15 @@ export const webBackend: Backend = {
     return null;
   },
 
-  async exportPdf(_defaultName, _locale, _paged, _pageWidthIn, _pageHeightIn, _paper) {
+  async exportPdf(_defaultName, _locale, _paged, _pageWidthIn, _pageHeightIn, _paper, _meta) {
     // The browser's own print dialog offers "Save as PDF"; the print
     // stylesheet scopes the output to the preview pane. A Marp deck supplies
     // its own page size through an @page rule, so the dimensions are ignored.
     //
     // The paper is ignored here too, and does not need passing: paged.js has
     // already written the chosen size into the `@page` rule it injected, and
-    // that is the one thing the browser's dialog reads.
+    // that is the one thing the browser's dialog reads. The metadata has
+    // nowhere to go: the browser writes the PDF, and there is no after.
     window.print();
   },
 

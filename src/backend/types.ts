@@ -7,6 +7,16 @@ import type { DocumentStat } from "../externalChange";
  */
 export type BackendDocument = Doc;
 
+/**
+ * What the front-matter says about a document, for its PDF: each field only
+ * when the document names it. Mirrors the Rust `PdfMeta` in `export.rs`.
+ */
+export type PdfMeta = {
+  author?: string;
+  subject?: string;
+  keywords?: string;
+};
+
 /** One row of the recent-documents menu. */
 export type RecentEntry = {
   /** The file's own name, which is what the row says. */
@@ -132,6 +142,12 @@ export type Backend = {
      * spills, and every page takes two.
      */
     paper?: string,
+    /**
+     * The front-matter's author, subject and keywords, which the desktop
+     * backend writes into the PDF after the engine has printed it. The web
+     * build hands the page to the browser's print dialog and cannot.
+     */
+    meta?: PdfMeta,
   ): Promise<void>;
   /**
    * Print what is on screen.

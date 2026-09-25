@@ -3,6 +3,7 @@ import type { Doc } from "../types";
 import type { DocumentStat } from "../externalChange";
 import type {
   Backend,
+  PdfMeta,
   RecentEntry,
   SessionInput,
   SessionRestorePayload,
@@ -112,6 +113,7 @@ export const tauriBackend: Backend = {
     pageWidthIn?: number,
     pageHeightIn?: number,
     paper?: string,
+    meta?: PdfMeta,
   ): Promise<void> {
     return invoke<void>("export_pdf", {
       defaultName,
@@ -120,6 +122,7 @@ export const tauriBackend: Backend = {
       pageWidth: pageWidthIn ?? null,
       pageHeight: pageHeightIn ?? null,
       paper: paper ?? null,
+      meta: meta ?? null,
     });
   },
 
