@@ -1,10 +1,11 @@
 //! Printing through WebView2, for real.
 //!
 //! The Windows counterpart of `gtk_print_tests`: the same document and
-//! stylesheet, printed with the settings `export_pdf` uses by the engine the
-//! installed application prints with, and read back. Until this, nothing had
-//! ever produced a PDF on this path. The E2E suite prints with Chrome's own
-//! `Page.printToPDF`, which is not the printing WebView2 does for `PrintToPdf`.
+//! stylesheet, printed the two ways `export_pdf` prints on Windows — the
+//! DevTools protocol's `Page.printToPDF` first, `PrintToPdf` when that one
+//! will not answer — by the engine the installed application prints with, and
+//! read back. Nothing else produces a PDF on this path: the E2E suite prints
+//! with Chrome's own `Page.printToPDF`, which is Chrome and not WebView2.
 //!
 //! `#[ignore]` because it needs the WebView2 runtime and a desktop to open a
 //! window on, which `cargo test --lib` does not ask for anywhere. CI runs it as
@@ -14,10 +15,11 @@
 //! cargo test --lib -- --ignored --test-threads=1 webview2_print
 //! ```
 //!
-//! One test on one thread, like the GTK one: a WebView2 belongs to the thread
-//! that made it, and its callbacks arrive through that thread's message loop.
+//! On one thread, like the GTK one: a WebView2 belongs to the thread that made
+//! it, and its callbacks arrive through that thread's message loop.
 
 use super::print_fixture::{first_media_box, paged_document, paged_document_on, PRINT_CSS};
+use super::skia_pdf::{first_page_content, first_page_placement, link_count, outline, page_count};
 use super::*;
 use std::os::windows::ffi::OsStrExt;
 use std::sync::mpsc;
@@ -26,9 +28,9 @@ use webview2_com::Microsoft::Web::WebView2::Win32::{
     ICoreWebView2Environment, ICoreWebView2EnvironmentOptions, ICoreWebView2_7,
 };
 use webview2_com::{
-    CoreWebView2EnvironmentOptions, CreateCoreWebView2ControllerCompletedHandler,
-    CreateCoreWebView2EnvironmentCompletedHandler, NavigationCompletedEventHandler,
-    PrintToPdfCompletedHandler,
+    CallDevToolsProtocolMethodCompletedHandler, CoreWebView2EnvironmentOptions,
+    CreateCoreWebView2ControllerCompletedHandler, CreateCoreWebView2EnvironmentCompletedHandler,
+    NavigationCompletedEventHandler, PrintToPdfCompletedHandler,
 };
 use windows::core::{w, Interface, HSTRING, PCWSTR};
 use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, RECT, WPARAM};
@@ -38,78 +40,6 @@ use windows::Win32::UI::WindowsAndMessaging::{
     CreateWindowExW, DefWindowProcW, RegisterClassW, ShowWindow, CW_USEDEFAULT, SW_SHOW,
     WINDOW_EX_STYLE, WNDCLASSW, WS_OVERLAPPEDWINDOW,
 };
-
-/// How many pages a PDF has: its page objects, `/Type /Page`, and not the
-/// `/Type /Pages` tree above them. Counted this way rather than by
-/// `/MediaBox`, which a writer may also put on that tree.
-fn page_count(pdf: &[u8]) -> usize {
-    let mut count = 0;
-    let mut at = 0;
-    while let Some(found) = pdf[at..].windows(5).position(|w| w == b"/Type") {
-        let mut rest = at + found + 5;
-        while pdf.get(rest).is_some_and(|b| b.is_ascii_whitespace()) {
-            rest += 1;
-        }
-        if pdf[rest..].starts_with(b"/Page") && !pdf[rest..].starts_with(b"/Pages") {
-            count += 1;
-        }
-        at = rest;
-    }
-    count
-}
-
-fn find(haystack: &[u8], needle: &[u8]) -> Option<usize> {
-    haystack.windows(needle.len()).position(|w| w == needle)
-}
-
-/// The first page's drawing instructions, which Chromium writes deflated:
-/// the first stream that inflates to text placing something with `cm`.
-fn first_page_content(pdf: &[u8]) -> Option<String> {
-    let mut at = 0;
-    while let Some(found) = find(&pdf[at..], b"stream") {
-        let mut start = at + found + b"stream".len();
-        while pdf.get(start).is_some_and(|b| *b == b'\r' || *b == b'\n') {
-            start += 1;
-        }
-        let length = find(&pdf[start..], b"endstream")?;
-        at = start + length + b"endstream".len();
-        let mut data = &pdf[start..start + length];
-        while data.last().is_some_and(|b| *b == b'\r' || *b == b'\n') {
-            data = &data[..data.len() - 1];
-        }
-        let Ok(inflated) = miniz_oxide::inflate::decompress_to_vec_zlib(data) else {
-            continue;
-        };
-        let text = String::from_utf8_lossy(&inflated).into_owned();
-        if text.split_whitespace().any(|token| token == "cm") {
-            return Some(text);
-        }
-    }
-    None
-}
-
-/// How the first page drew its sheet: at what scale, as a fraction of
-/// full size, and how far in from the left edge, in points.
-///
-/// The drawing's first `cm` turns device units, a three-hundredth of an
-/// inch, into points: 0.24 per unit. The second places the page's CSS
-/// pixels, and at full size a CSS pixel is 300/96 = 3.125 of those units.
-/// A printer margin shows in both: the sheet drawn smaller, and moved in
-/// from the edge.
-fn first_page_placement(pdf: &[u8]) -> Option<(f64, f64)> {
-    let text = first_page_content(pdf)?;
-    let tokens: Vec<&str> = text.split_whitespace().collect();
-    let matrices: Vec<Vec<f64>> = tokens
-        .iter()
-        .enumerate()
-        .filter(|(i, token)| **token == "cm" && *i >= 6)
-        .filter_map(|(i, _)| tokens[i - 6..i].iter().map(|t| t.parse().ok()).collect())
-        .collect();
-    match matrices.as_slice() {
-        [device, page, ..] => Some((page[0] / 3.125, page[4] * device[0].abs())),
-        _ => None,
-    }
-}
 
 unsafe extern "system" fn window_proc(
     window: HWND,
@@ -141,6 +71,8 @@ fn start() -> Engine {
         lpszClassName: w!("meditor-webview2-print-test"),
         ..Default::default()
     };
+    // A second test registers the same class again, which fails harmlessly:
+    // a window class belongs to the process, not to the thread that made it.
     unsafe { RegisterClassW(&class) };
     let window = unsafe {
         CreateWindowExW(
@@ -219,6 +151,15 @@ fn start() -> Engine {
             .expect("the webview should show");
     }
     let view = unsafe { controller.CoreWebView2() }.expect("the webview itself");
+    // As the released application has it. A release build of Tauri turns the
+    // DevTools off — wry passes its `devtools` flag to this very setting — so
+    // the DevTools route has to print with them off, not only in a debug
+    // build where they are on.
+    unsafe {
+        view.Settings()
+            .and_then(|settings| settings.SetAreDevToolsEnabled(false))
+    }
+    .expect("the DevTools should turn off, as in a release build");
     Engine {
         environment,
         _controller: controller,
@@ -239,9 +180,17 @@ enum View {
     Slides(f64, f64),
 }
 
-/// Load `body`, print it with the settings the application uses for `view`,
-/// and hand back the PDF's bytes.
-fn print_through_webview2(engine: &Engine, tag: &str, body: &str, view: View) -> Vec<u8> {
+/// The two ways `export_pdf` prints on Windows, in the order it tries them.
+#[derive(Clone, Copy, Debug)]
+enum Route {
+    /// `Page.printToPDF`, over the DevTools protocol: with bookmarks.
+    DevTools,
+    /// `PrintToPdf`: what `export_pdf` falls back to, without them.
+    PrintToPdf,
+}
+
+/// Load `body` and wait until it has.
+fn load(engine: &Engine, body: &str) {
     let (tx, rx) = mpsc::channel();
     let mut token = 0_i64;
     unsafe {
@@ -258,49 +207,84 @@ fn print_through_webview2(engine: &Engine, tag: &str, body: &str, view: View) ->
         .expect("the fixture should be handed over");
     webview2_com::wait_with_pump(rx).expect("the fixture should finish loading");
     unsafe { engine.view.remove_NavigationCompleted(token) }.expect("the watch should end");
+}
 
-    let out = std::env::temp_dir().join(format!(
-        "meditor-webview2-print-{}-{tag}.pdf",
-        std::process::id()
-    ));
-    let _ = std::fs::remove_file(&out);
-    let wide: Vec<u16> = out.as_os_str().encode_wide().chain(Some(0)).collect();
-    let environment: ICoreWebView2Environment6 = engine
-        .environment
-        .cast()
-        .expect("an environment that makes print settings");
+/// Load `body`, print it the way `route` does with what the application asks
+/// for `view`, and hand back the PDF's bytes.
+fn print_through_webview2(
+    engine: &Engine,
+    tag: &str,
+    body: &str,
+    view: View,
+    route: Route,
+) -> Vec<u8> {
+    load(engine, body);
     let (custom_page, paged, paper) = match view {
         View::Document(paper) => (None, true, paper),
         View::Web(paper) => (None, false, paper),
         View::Slides(width, height) => (Some((width, height)), true, None),
     };
-    let settings = webview2_print_settings(&environment, custom_page, paged, paper)
-        .expect("the application's print settings");
-    let printer: ICoreWebView2_7 = engine.view.cast().expect("a webview that prints");
-
-    let (tx, rx) = mpsc::channel();
-    unsafe {
-        printer.PrintToPdf(
-            PCWSTR(wide.as_ptr()),
-            &settings,
-            &PrintToPdfCompletedHandler::create(Box::new(move |result, succeeded| {
-                let _ = tx.send(result.map(|()| succeeded));
-                Ok(())
-            })),
-        )
+    match route {
+        Route::DevTools => {
+            let params = crate::devtools_pdf::print_params(custom_page, paged, paper);
+            let (tx, rx) = mpsc::channel();
+            unsafe {
+                engine.view.CallDevToolsProtocolMethod(
+                    w!("Page.printToPDF"),
+                    &HSTRING::from(params.as_str()),
+                    &CallDevToolsProtocolMethodCompletedHandler::create(Box::new(
+                        move |result, answer| {
+                            let _ = tx.send(result.map(|()| answer));
+                            Ok(())
+                        },
+                    )),
+                )
+            }
+            .expect("the print should start");
+            let answer = webview2_com::wait_with_pump(rx)
+                .expect("the print should finish")
+                .expect("the print should not fail");
+            crate::devtools_pdf::pdf_from_answer(&answer)
+                .unwrap_or_else(|why| panic!("{tag}: the answer held no PDF: {why:?}"))
+        }
+        Route::PrintToPdf => {
+            let out = std::env::temp_dir().join(format!(
+                "meditor-webview2-print-{}-{tag}.pdf",
+                std::process::id()
+            ));
+            let _ = std::fs::remove_file(&out);
+            let wide: Vec<u16> = out.as_os_str().encode_wide().chain(Some(0)).collect();
+            let environment: ICoreWebView2Environment6 = engine
+                .environment
+                .cast()
+                .expect("an environment that makes print settings");
+            let settings = webview2_print_settings(&environment, custom_page, paged, paper)
+                .expect("the application's print settings");
+            let printer: ICoreWebView2_7 = engine.view.cast().expect("a webview that prints");
+            let (tx, rx) = mpsc::channel();
+            unsafe {
+                printer.PrintToPdf(
+                    PCWSTR(wide.as_ptr()),
+                    &settings,
+                    &PrintToPdfCompletedHandler::create(Box::new(move |result, succeeded| {
+                        let _ = tx.send(result.map(|()| succeeded));
+                        Ok(())
+                    })),
+                )
+            }
+            .expect("the print should start");
+            let printed = webview2_com::wait_with_pump(rx)
+                .expect("the print should finish")
+                .expect("the print should not fail");
+            assert!(printed, "{tag}: WebView2 declined to print");
+            let bytes = std::fs::read(&out).expect("the printer should have written a file");
+            let _ = std::fs::remove_file(&out);
+            bytes
+        }
     }
-    .expect("the print should start");
-    let printed = webview2_com::wait_with_pump(rx)
-        .expect("the print should finish")
-        .expect("the print should not fail");
-    assert!(printed, "{tag}: WebView2 declined to print");
-
-    let bytes = std::fs::read(&out).expect("the printer should have written a file");
-    let _ = std::fs::remove_file(&out);
-    bytes
 }
 
-/// Every claim about this print path, in one test, on one thread.
+/// Every claim about the sheet, on both routes, in one test.
 ///
 /// Measured on WebView2 on 2026-09-25, and in two ways not what WebKitGTK
 /// does. A page taller than its sheet does not spill onto a second one:
@@ -313,19 +297,34 @@ fn print_through_webview2(engine: &Engine, tag: &str, body: &str, view: View) ->
 #[ignore = "needs the WebView2 runtime and a desktop; CI runs it on Windows only"]
 fn webview2_print_puts_each_view_on_the_sheet_it_asks_for() {
     let engine = start();
+    for route in [Route::DevTools, Route::PrintToPdf] {
+        each_view_on_its_sheet(&engine, route);
+    }
+}
 
+fn each_view_on_its_sheet(engine: &Engine, route: Route) {
     // ── A4, the paper this project has always used ────────────────────────
-    let pdf = print_through_webview2(&engine, "a4", &paged_document(3), View::Document(None));
-    assert_eq!(&pdf[..5], b"%PDF-", "A4: the printer should write a PDF");
+    let pdf = print_through_webview2(
+        engine,
+        "a4",
+        &paged_document(3),
+        View::Document(None),
+        route,
+    );
+    assert_eq!(
+        &pdf[..5],
+        b"%PDF-",
+        "{route:?}, A4: the printer should write a PDF"
+    );
     assert_eq!(
         page_count(&pdf),
         3,
-        "A4: three paged.js pages should print as three sheets"
+        "{route:?}, A4: three paged.js pages should print as three sheets"
     );
     let (width, height) = first_media_box(&pdf).expect("A4: a page should declare its size");
     assert!(
         (width - 595.0).abs() < 3.0 && (height - 842.0).abs() < 3.0,
-        "A4: the sheet should be 595 x 842 points, got {width} x {height}",
+        "{route:?}, A4: the sheet should be 595 x 842 points, got {width} x {height}",
     );
     // The paged view's sheets carry their own margins, inside them: each one
     // should fill its paper, rather than be drawn smaller or away from the
@@ -334,31 +333,32 @@ fn webview2_print_puts_each_view_on_the_sheet_it_asks_for() {
         first_page_placement(&pdf).expect("A4: the page's drawing should be readable");
     assert!(
         (scale - 1.0).abs() < 0.01 && left.abs() < 1.0,
-        "A4: the page should fill its sheet at full size, from the edge; got {scale} of full size, {left} pt in",
+        "{route:?}, A4: the page should fill its sheet at full size, from the edge; got {scale} of full size, {left} pt in",
     );
 
     // ── Letter, laid out and printed on the same paper ────────────────────
     let pdf = print_through_webview2(
-        &engine,
+        engine,
         "letter",
         &paged_document_on(3, "letter", "215.9mm", "279.4mm"),
         View::Document(Some("letter")),
+        route,
     );
     assert_eq!(
         page_count(&pdf),
         3,
-        "Letter: three sheets should print as three pages"
+        "{route:?}, Letter: three sheets should print as three pages"
     );
     let (width, height) = first_media_box(&pdf).expect("Letter: a page should declare its size");
     assert!(
         (width - 612.0).abs() < 3.0 && (height - 792.0).abs() < 3.0,
-        "Letter: the sheet should be 612 x 792 points, got {width} x {height}",
+        "{route:?}, Letter: the sheet should be 612 x 792 points, got {width} x {height}",
     );
     let (scale, left) =
         first_page_placement(&pdf).expect("Letter: the page's drawing should be readable");
     assert!(
         (scale - 1.0).abs() < 0.01 && left.abs() < 1.0,
-        "Letter: the page should fill its sheet at full size, from the edge; got {scale}, {left} pt in",
+        "{route:?}, Letter: the page should fill its sheet at full size, from the edge; got {scale}, {left} pt in",
     );
 
     /*
@@ -373,25 +373,26 @@ fn webview2_print_puts_each_view_on_the_sheet_it_asks_for() {
      * cut at the foot.
      */
     let pdf = print_through_webview2(
-        &engine,
+        engine,
         "a4-on-letter",
         &paged_document(3),
         View::Document(Some("letter")),
+        route,
     );
     let (width, height) = first_media_box(&pdf).expect("a page should declare its size");
     assert!(
         (width - 612.0).abs() < 3.0 && (height - 792.0).abs() < 3.0,
-        "the sheet should be the Letter asked for, whatever the CSS says; got {width} x {height}",
+        "{route:?}: the sheet should be the Letter asked for, whatever the CSS says; got {width} x {height}",
     );
     assert_eq!(
         page_count(&pdf),
         3,
-        "an A4 layout on Letter should not spill in WebView2"
+        "{route:?}: an A4 layout on Letter should not spill in WebView2"
     );
     let (scale, _) = first_page_placement(&pdf).expect("the page's drawing should be readable");
     assert!(
         (scale - 279.4 / 297.0).abs() < 0.01,
-        "each A4 page should be drawn whole, shrunk to the Letter sheet's height; got {scale} of full size",
+        "{route:?}: each A4 page should be drawn whole, shrunk to the Letter sheet's height; got {scale} of full size",
     );
 
     /*
@@ -412,23 +413,23 @@ fn webview2_print_puts_each_view_on_the_sheet_it_asks_for() {
          <body><div class=\"markdown-body\"><p>A paragraph with no page around it.</p></div>\
          </body></html>"
     );
-    let pdf = print_through_webview2(&engine, "web", &web, View::Web(None));
+    let pdf = print_through_webview2(engine, "web", &web, View::Web(None), route);
     assert_eq!(
         page_count(&pdf),
         1,
-        "Web view: a paragraph should print on one sheet"
+        "{route:?}, Web view: a paragraph should print on one sheet"
     );
     let (width, height) = first_media_box(&pdf).expect("Web view: a page should declare its size");
     assert!(
         (width - 595.0).abs() < 3.0 && (height - 842.0).abs() < 3.0,
-        "Web view: the sheet should be A4 and upright, 595 x 842 points; got {width} x {height}",
+        "{route:?}, Web view: the sheet should be A4 and upright, 595 x 842 points; got {width} x {height}",
     );
     let (scale, left) =
         first_page_placement(&pdf).expect("Web view: the page's drawing should be readable");
     let margin = 25.0 / 25.4 * 72.0;
     assert!(
         (scale - 1.0).abs() < 0.01 && (left - margin).abs() < 2.0,
-        "Web view: the text should start {margin:.1} pt in from the edge, at full size; got {left} pt in, at {scale}",
+        "{route:?}, Web view: the text should start {margin:.1} pt in from the edge, at full size; got {left} pt in, at {scale}",
     );
 
     /*
@@ -444,36 +445,108 @@ fn webview2_print_puts_each_view_on_the_sheet_it_asks_for() {
                   section { width: 1280px; height: 720px; break-after: page; }\
                   </style></head><body><section>One</section><section>Two</section></body></html>";
     let pdf = print_through_webview2(
-        &engine,
+        engine,
         "slides",
         slides,
         View::Slides(1280.0 / 96.0, 720.0 / 96.0),
+        route,
     );
     assert_eq!(
         page_count(&pdf),
         2,
-        "Slides: two slides should print as two sheets"
+        "{route:?}, Slides: two slides should print as two sheets"
     );
     let (width, height) = first_media_box(&pdf).expect("Slides: a page should declare its size");
     assert!(
         (width - 960.0).abs() < 3.0 && (height - 540.0).abs() < 3.0,
-        "Slides: the sheet should be the slide's, 960 x 540 points; got {width} x {height}",
+        "{route:?}, Slides: the sheet should be the slide's, 960 x 540 points; got {width} x {height}",
     );
     let (scale, left) =
         first_page_placement(&pdf).expect("Slides: the page's drawing should be readable");
     assert!(
         (scale - 1.0).abs() < 0.01 && left.abs() < 1.0,
-        "Slides: each slide should fill its sheet at full size; got {scale} of full size, {left} pt in",
+        "{route:?}, Slides: each slide should fill its sheet at full size; got {scale} of full size, {left} pt in",
     );
 
     // ── Backgrounds, which a table's header and a code block are made of ─
     let red = "<!doctype html><html><head><style>@page { size: a4; margin: 0; }\
                html, body { margin: 0; }</style></head><body>\
                <div style=\"background: #ff0000; width: 50mm; height: 20mm\"></div></body></html>";
-    let pdf = print_through_webview2(&engine, "background", red, View::Document(None));
+    let pdf = print_through_webview2(engine, "background", red, View::Document(None), route);
     let content = first_page_content(&pdf).expect("the page's drawing should be readable");
     assert!(
         content.contains("1 0 0 rg"),
-        "a background should print, as the Document view's shading needs; the page drew no red fill",
+        "{route:?}: a background should print, as the Document view's shading needs; the page drew no red fill",
+    );
+}
+
+/// The headings, as the PDF's bookmarks: what the DevTools route is for.
+///
+/// On the shape paged.js gives the Document view — the headings inside page
+/// boxes, and a running head in each page's top margin, which is text and
+/// must not become a bookmark — with a table of contents whose links work by
+/// either route, as they always did through `PrintToPdf`.
+#[test]
+#[ignore = "needs the WebView2 runtime and a desktop; CI runs it on Windows only"]
+fn webview2_print_writes_the_headings_as_bookmarks() {
+    let engine = start();
+    let page = |content: &str| {
+        format!(
+            "<div class=\"pagedjs_page\"><div class=\"pagedjs_margin-top\">Informe</div>\
+             <div class=\"markdown-body doc\">{content}</div></div>"
+        )
+    };
+    let document = format!(
+        "<!doctype html><html lang=\"es\"><head><meta charset=\"utf-8\"><style>\
+         @page {{ size: a4; margin: 0; }}\
+         html, body {{ margin: 0; }}\
+         .pagedjs_page {{ --pagedjs-height: 297mm; width: 210mm; height: 297mm;\
+           break-after: page; overflow: hidden; }}\
+         </style><style>{PRINT_CSS}</style></head>\
+         <body><div class=\"paged-view\"><div class=\"pagedjs_pages\">{}{}</div></div></body></html>",
+        page(
+            "<nav class=\"markdown-toc\" role=\"doc-toc\"><ol>\
+             <li><a href=\"#uno\">Uno</a></li>\
+             <li><a href=\"#m%C3%A9todo\">Método</a></li>\
+             <li><a href=\"#dos\">Dos</a></li></ol></nav>\
+             <h1 id=\"uno\">Uno</h1><p>Primero.</p><h2 id=\"método\">Método</h2><p>Segundo.</p>"
+        ),
+        page("<h1 id=\"dos\">Dos</h1><p>Tercero.</p>"),
+    );
+
+    let pdf = print_through_webview2(
+        &engine,
+        "bookmarks",
+        &document,
+        View::Document(None),
+        Route::DevTools,
+    );
+    assert_eq!(
+        outline(&pdf),
+        [(1, "Uno"), (2, "Método"), (1, "Dos")].map(|(depth, title)| (depth, title.to_string())),
+        "the headings should be the bookmarks, each once and nested as they are; the running head none of them",
+    );
+    assert!(
+        pdf.windows(b"/StructTreeRoot".len())
+            .any(|w| w == b"/StructTreeRoot"),
+        "DevTools: the PDF should be tagged, with a structure tree",
+    );
+    assert_eq!(
+        link_count(&pdf),
+        3,
+        "DevTools: the contents' three links should work in the PDF"
+    );
+
+    let pdf = print_through_webview2(
+        &engine,
+        "links",
+        &document,
+        View::Document(None),
+        Route::PrintToPdf,
+    );
+    assert_eq!(
+        link_count(&pdf),
+        3,
+        "PrintToPdf: the contents' three links should work in the PDF"
     );
 }

@@ -124,14 +124,30 @@ pub fn gtk_page_setup(
     page_setup
 }
 
-/// The settings WebView2 prints a PDF with: the sheet in inches, the margin
-/// the rule gives, and backgrounds.
+/// The sheet and the margin WebView2 is asked for, in its unit: inches.
+///
+/// Both ways this application prints through WebView2 read them — the
+/// DevTools protocol's `Page.printToPDF`, and `PrintToPdf` when that one will
+/// not answer — so the two cannot be asked for different paper.
+#[cfg(target_os = "windows")]
+pub fn webview2_sheet_inches(
+    custom_page: Option<(f64, f64)>,
+    paged: bool,
+    paper_id: Option<&str>,
+) -> ((f64, f64), f64) {
+    let sheet = custom_page.unwrap_or(paper_sheet(paper_id).0);
+    let margin = pdf_margin_mm(custom_page.is_some(), paged) / 25.4;
+    (sheet, margin)
+}
+
+/// The settings WebView2's `PrintToPdf` prints a PDF with: the sheet in
+/// inches, the margin the rule gives, and backgrounds.
 ///
 /// The Windows counterpart of `gtk_page_setup`, and shared for the same
-/// reason: `export_pdf` prints with it, and so does the test in
-/// `paper/webview2_print_tests.rs` that prints through a real WebView2 and
-/// counts what comes out, so the settings that test measures are the ones the
-/// application uses.
+/// reason: `export_pdf` falls back to it when the DevTools protocol will not
+/// print, and the test in `paper/webview2_print_tests.rs` prints a real
+/// WebView2 with it and counts what comes out, so the settings that test
+/// measures are the ones the application uses.
 ///
 /// Only the sheet's size always holds. A page with an `@page` rule of its own
 /// keeps that rule's orientation and margin, whatever these settings say —
@@ -146,9 +162,7 @@ pub fn webview2_print_settings(
     paged: bool,
     paper_id: Option<&str>,
 ) -> windows::core::Result<ICoreWebView2PrintSettings> {
-    let (width, height) = custom_page.unwrap_or(paper_sheet(paper_id).0);
-    // WebView2 measures in inches.
-    let margin = pdf_margin_mm(custom_page.is_some(), paged) / 25.4;
+    let ((width, height), margin) = webview2_sheet_inches(custom_page, paged, paper_id);
     let settings = unsafe { environment.CreatePrintSettings() }?;
     unsafe {
         settings.SetPageWidth(width)?;
@@ -443,6 +457,9 @@ mod gtk_print_tests {
         );
     }
 }
+
+#[cfg(all(test, target_os = "windows"))]
+mod skia_pdf;
 
 #[cfg(all(test, target_os = "windows"))]
 mod webview2_print_tests;

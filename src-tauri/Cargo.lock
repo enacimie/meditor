@@ -2025,6 +2025,7 @@ dependencies = [
 name = "meditor"
 version = "0.3.8"
 dependencies = [
+ "base64 0.22.1",
  "glib",
  "gtk",
  "miniz_oxide",

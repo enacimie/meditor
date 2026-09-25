@@ -102,7 +102,7 @@ duplicated.
 
 ### Export & Distribution
 
-- **Export to PDF** vector (selectable text, vector KaTeX and Mermaid), printed by the webview with no system dialog: WebView2 on Windows, WebKitGTK on Linux and the BSDs. The sheet is the one the Document view laid out on, and it already carries its own margins, so no printer margin is added around them. Typst compiles to PDF in its own WASM engine instead, which works anywhere the file dialog does — Android included. Marp decks export one slide per page at the slide's own size. macOS has no Markdown PDF export yet.
+- **Export to PDF** vector (selectable text, vector KaTeX and Mermaid), printed by the webview with no system dialog: WebView2 on Windows, WebKitGTK on Linux and the BSDs. The sheet is the one the Document view laid out on, and it already carries its own margins, so no printer margin is added around them. On Windows the headings become the PDF's bookmarks, and the PDF is tagged, so a screen reader can follow it; WebKitGTK writes neither, and no links either, so on Linux the `[TOC]` does not link to its headings in the PDF. Typst compiles to PDF in its own WASM engine instead, which works anywhere the file dialog does — Android included. Marp decks export one slide per page at the slide's own size. macOS has no Markdown PDF export yet.
 - **Export to HTML**: a single self-contained file (styles embedded, Mermaid diagrams as inline SVG, KaTeX already expanded) that opens in any browser with no network access. Markdown documents and Marp decks.
 - Packaged by `tauri build` for every desktop: **AppImage**, **deb** and **rpm** on Linux, **NSIS** and **MSI** on Windows, a universal **dmg** and `.app` on macOS. A release also carries a debug **APK** for Android.
 
