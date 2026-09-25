@@ -19,7 +19,6 @@ const BASE_URL = process.env.BASE_URL ?? "http://localhost:1420";
 const CDP_PORT = Number(process.env.CDP_PORT);
 if (!CDP_PORT) throw new Error("CDP_PORT env var is required");
 
-const PREFERENCES_KEY = "meditor.preferences.v1";
 const FILLER = Array.from({ length: 60 }, (_, n) => [`Filler paragraph ${n + 1}.`, ""]).flat();
 const DOCUMENT = [
   "# Selection", //                   0
@@ -95,26 +94,29 @@ try {
   configId = await page.addInitScript(CONFIG);
   shimId = await page.addInitScript(TAURI_SHIM);
   await page.freshPage(BASE_URL);
-  // The Web view, and a page that is surely the reloaded one before anything
-  // is looked at: the old one keeps answering for a moment after reload().
+  await page.waitFor(
+    "!!document.querySelector('.cm-content')?.cmTile && !!document.querySelector('.pane-view-label')",
+    { timeout: 20000, message: "the page should show the editor and the preview's view button" },
+  );
+  // To the Web view with the button a reader would press. A preference
+  // written to storage before a reload did not survive it on CI's Linux and
+  // macOS runners: the app saves its own over it.
   await page.evaluate(`(() => {
-    localStorage.setItem(${JSON.stringify(PREFERENCES_KEY)}, JSON.stringify({ docView: false, wrap: true }));
-    window.__beforeReload = true;
+    if (getComputedStyle(document.querySelector('.paged-view')).display !== 'none') {
+      document.querySelector('.pane-view-label').closest('button').click();
+    }
     return true;
   })()`);
-  await page.reload();
   await page
-    .waitFor(
-      `!window.__beforeReload && !!document.querySelector('.cm-content')?.cmTile &&
-        document.querySelectorAll('${WEB} [data-line]').length > 60`,
-      { timeout: 20000, message: "the reloaded page should show the editor and draw the document" },
-    )
+    .waitFor(`document.querySelectorAll('${WEB} [data-line]').length > 60`, {
+      timeout: 20000,
+      message: "the Web view should draw the document",
+    })
     .catch(async (error) => {
-      // Which half is missing, and in what layout, rather than a bare timeout.
+      // What is on screen instead, rather than a bare timeout.
       const state = await page.evaluate(`({
-        reloaded: !window.__beforeReload,
-        editor: !!document.querySelector('.cm-content')?.cmTile,
         webBlocks: document.querySelectorAll('${WEB} [data-line]').length,
+        pagedDisplay: getComputedStyle(document.querySelector('.paged-view')).display,
         pagedPages: document.querySelectorAll('.paged-view .pagedjs_page').length,
         app: document.querySelector('.app')?.className ?? null,
         size: [innerWidth, innerHeight],
