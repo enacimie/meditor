@@ -278,11 +278,11 @@ export const sw = {
   "lang.noResults": "Hakuna lugha zilizopatikana",
   // Misc
   "topbar.newTypst": "Mpya .typ",
-  "topbar.newLatex": "New .tex",
+  "topbar.newLatex": ".tex mpya",
   "topbar.newMarp": "Seti mpya ya Marp",
   "preview.typstCompiling": "Inakusanya Typst…",
   "preview.typstError": "Typst:",
-  "preview.pages": "pages",
+  "preview.pages": "kurasa",
   "preview.typstFilesUnsaved": "Hifadhi hati ili Typst iweze kusoma faili zilizo pembeni mwake.",
   "preview.typstFilesDesktopOnly": "Programu ya kompyuta ya mezani pekee ndiyo inaweza kupa Typst faili zilizo pembeni mwa hati.",
   "preview.typstFilesLeftOut": "Faili hizi hazikupewa Typst:",
@@ -291,9 +291,9 @@ export const sw = {
   "preview.typstFileTooLarge": (mib: number) => `kubwa kuliko ${mib} MiB`,
   "preview.typstFileLimit": (files: number, mib: number, depth: number) =>
     `imezidi kiwango ambacho hati moja inaweza kusoma: faili ${files}, ${mib} MiB, viwango ${depth} vya include`,
-  "preview.latexCompiling": "Compiling LaTeX...",
+  "preview.latexCompiling": "Inasindika LaTeX...",
   "preview.latexError": "LaTeX:",
-  "preview.latexEmpty": "Empty LaTeX document.",
+  "preview.latexEmpty": "Hati tupu ya LaTeX.",
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 

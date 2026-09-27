@@ -276,12 +276,12 @@ export const te = {
   "lang.clearSearch": "శోధన తొలగించు",
   "lang.noResults": "భాషలు కనుగొనబడలేదు",
   // Misc
-  "topbar.newTypst": "New .typ",
-  "topbar.newLatex": "New .tex",
+  "topbar.newTypst": "కొత్త .typ",
+  "topbar.newLatex": "కొత్త .tex",
   "topbar.newMarp": "కొత్త Marp డెక్",
-  "preview.typstCompiling": "Compiling Typst...",
+  "preview.typstCompiling": "Typst కంపైల్ అవుతోంది...",
   "preview.typstError": "Typst:",
-  "preview.pages": "pages",
+  "preview.pages": "పేజీలు",
   "preview.typstFilesUnsaved": "Typst పక్కన ఉన్న ఫైల్‌లను చదవడానికి పత్రాన్ని సేవ్ చేయండి.",
   "preview.typstFilesDesktopOnly": "పత్రం పక్కన ఉన్న ఫైల్‌లను Typst కు ఇవ్వడానికి డెస్క్‌టాప్ యాప్ మాత్రమే సాధ్యం.",
   "preview.typstFilesLeftOut": "ఈ ఫైల్‌లు Typst కు ఇవ్వబడలేదు:",
@@ -290,9 +290,9 @@ export const te = {
   "preview.typstFileTooLarge": (mib: number) => `${mib} MiB కంటే పెద్దది`,
   "preview.typstFileLimit": (files: number, mib: number, depth: number) =>
     `ఒక పత్రం చదవగల గరిష్టాన్ని మించింది: ${files} ఫైల్‌లు, ${mib} MiB, ${depth} స్థాయిల include`,
-  "preview.latexCompiling": "Compiling LaTeX...",
+  "preview.latexCompiling": "LaTeX కంపైల్ అవుతోంది...",
   "preview.latexError": "LaTeX:",
-  "preview.latexEmpty": "Empty LaTeX document.",
+  "preview.latexEmpty": "ఖాళీ LaTeX పత్రం.",
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 

@@ -277,11 +277,11 @@ export const ur = {
   "lang.noResults": "کوئی زبان نہیں ملی",
   // Misc
   "topbar.newTypst": ".typ نیا",
-  "topbar.newLatex": "New .tex",
+  "topbar.newLatex": "نیا .tex",
   "topbar.newMarp": "نیا Marp ڈیک",
   "preview.typstCompiling": "…Typst مرتب ہو رہا ہے",
   "preview.typstError": ":Typst",
-  "preview.pages": "pages",
+  "preview.pages": "صفحات",
   "preview.typstFilesUnsaved": "دستاویز محفوظ کریں تاکہ Typst اس کے پہلو کی فائلیں پڑھ سکے۔",
   "preview.typstFilesDesktopOnly": "دستاویز کے پہلو کی فائلیں Typst کو صرف ڈیسک ٹاپ ایپ دے سکتی ہے۔",
   "preview.typstFilesLeftOut": "یہ فائلیں Typst کو نہیں دی گئیں:",
@@ -290,9 +290,9 @@ export const ur = {
   "preview.typstFileTooLarge": (mib: number) => `${mib} MiB سے بڑی`,
   "preview.typstFileLimit": (files: number, mib: number, depth: number) =>
     `ایک دستاویز زیادہ سے زیادہ جتنی پڑھ سکتی ہے اس سے تجاوز: ${files} فائلیں، ${mib} MiB، ${depth} سطحیں include کی`,
-  "preview.latexCompiling": "Compiling LaTeX...",
+  "preview.latexCompiling": "LaTeX مرتب ہو رہا ہے...",
   "preview.latexError": "LaTeX:",
-  "preview.latexEmpty": "Empty LaTeX document.",
+  "preview.latexEmpty": "خالی LaTeX دستاویز۔",
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 

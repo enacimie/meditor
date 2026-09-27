@@ -277,11 +277,11 @@ export const bn = {
   "lang.noResults": "কোনো ভাষা পাওয়া যায়নি",
   // Misc
   "topbar.newTypst": "নতুন .typ",
-  "topbar.newLatex": "New .tex",
+  "topbar.newLatex": "নতুন .tex",
   "topbar.newMarp": "নতুন Marp ডেক",
   "preview.typstCompiling": "Typst কম্পাইল হচ্ছে…",
   "preview.typstError": "Typst:",
-  "preview.pages": "pages",
+  "preview.pages": "পৃষ্ঠা",
   "preview.typstFilesUnsaved": "Typst যেন পাশের ফাইলগুলো পড়তে পারে, তাই নথিটি সংরক্ষণ করুন।",
   "preview.typstFilesDesktopOnly": "শুধু ডেস্কটপ অ্যাপই Typst-কে নথির পাশের ফাইল দিতে পারে।",
   "preview.typstFilesLeftOut": "এই ফাইলগুলো Typst পায়নি:",
@@ -290,9 +290,9 @@ export const bn = {
   "preview.typstFileTooLarge": (mib: number) => `${mib} MiB-এর বেশি`,
   "preview.typstFileLimit": (files: number, mib: number, depth: number) =>
     `একটি নথি সর্বোচ্চ যা পড়তে পারে তার বেশি: ${files}টি ফাইল, ${mib} MiB, ${depth} ধাপের include`,
-  "preview.latexCompiling": "Compiling LaTeX...",
+  "preview.latexCompiling": "LaTeX সংকলন হচ্ছে...",
   "preview.latexError": "LaTeX:",
-  "preview.latexEmpty": "Empty LaTeX document.",
+  "preview.latexEmpty": "খালি LaTeX নথি।",
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 

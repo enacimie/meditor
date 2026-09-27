@@ -274,12 +274,12 @@ export const ig = {
   "lang.clearSearch": "Hichaa nchọ",
   "lang.noResults": "Ọ dịghị asụsụ achọtara",
   // Misc
-  "topbar.newTypst": "New .typ",
-  "topbar.newLatex": "New .tex",
+  "topbar.newTypst": ".typ ọhụrụ",
+  "topbar.newLatex": ".tex ọhụrụ",
   "topbar.newMarp": "Ngosipụta Marp ọhụrụ",
-  "preview.typstCompiling": "Compiling Typst...",
+  "preview.typstCompiling": "A na-akọmpaịl Typst...",
   "preview.typstError": "Typst:",
-  "preview.pages": "pages",
+  "preview.pages": "ibe",
   "preview.typstFilesUnsaved": "Chekwaa akwụkwọ ahụ ka Typst wee nwee ike ịgụ faịlụ ndị dị n'akụkụ ya.",
   "preview.typstFilesDesktopOnly": "Naanị ngwa desktọpụ nwere ike inye Typst faịlụ ndị dị n'akụkụ akwụkwọ.",
   "preview.typstFilesLeftOut": "E nyeghị Typst faịlụ ndị a:",
@@ -288,9 +288,9 @@ export const ig = {
   "preview.typstFileTooLarge": (mib: number) => `karịrị ${mib} MiB`,
   "preview.typstFileLimit": (files: number, mib: number, depth: number) =>
     `karịrị ihe otu akwụkwọ nwere ike ịgụ: faịlụ ${files}, ${mib} MiB, ọkwa include ${depth}`,
-  "preview.latexCompiling": "Compiling LaTeX...",
+  "preview.latexCompiling": "A na-akọmpaịl LaTeX...",
   "preview.latexError": "LaTeX:",
-  "preview.latexEmpty": "Empty LaTeX document.",
+  "preview.latexEmpty": "Akwụkwọ LaTeX efu.",
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 

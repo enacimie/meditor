@@ -200,6 +200,137 @@ describe("translations", () => {
     }
   });
 
+  // ── Content: a key defined in every language is not yet translated ──
+
+  /*
+   * The parity tests above prove presence; these prove translation. The
+   * August expansion satisfied every structural check while leaving entire
+   * clusters in English and word-by-word templates ("Empty or invalid
+   * датотека path") in dozens of languages — a dictionary that speaks
+   * English inside another language's sentence is not a translation, and
+   * nothing keyed on keys alone ever caught it.
+   */
+
+  /** Key groups whose text is the same in every language by nature. */
+  const UNIVERSAL_KEY_PREFIXES = ["shortcuts.ctrl", "menu.shortcut."];
+  const UNIVERSAL_KEYS = new Set([
+    "app.brand", // the product's own name
+    "preview.mermaidError", // "Mermaid:" — a brand and a colon
+    "preview.latexError", // "LaTeX:"
+    "preview.typstError", // "Typst:"
+    "editor.search.regexp", // CodeMirror's own word for the toggle
+    "shortcuts.ctrlWheel",
+  ]);
+  /** English spellings that are also the local word (internationalisms). */
+  const UNIVERSAL_VALUES = new Set([
+    "Editor", "Document", "System", "Web", "Markdown", "Typst", "LaTeX",
+    "Marp", "PDF", "Diagnostics", "OK", "A4", "US Letter",
+  ]);
+  /**
+   * Single (language, key) pairs where the English spelling IS the local
+   * word — a copy is the correct translation. Verified one by one; grow
+   * this only the same way.
+   */
+  const LEGITIMATE_COPIES = new Set([
+    "ca:doc.defaultExport", // "document" is Catalan
+    "fr:doc.defaultExport", // …French
+    "nl:doc.defaultExport", // …Dutch
+    "ro:doc.defaultExport", // …Romanian
+    "fr:preview.pages", // "pages" is French
+    "sv:present.aria", // "Presentation" is Swedish
+    "lb:editor.search.all", // "all" is Luxembourgish
+  ]);
+
+  it("leaves no translatable value in English", () => {
+    const offenders: string[] = [];
+    for (const key of allKeys()) {
+      const en = (translations.en as Record<string, unknown>)[key];
+      if (typeof en !== "string") continue;
+      if (UNIVERSAL_KEYS.has(key)) continue;
+      if (UNIVERSAL_KEY_PREFIXES.some((prefix) => key.startsWith(prefix))) continue;
+      if (UNIVERSAL_VALUES.has(en)) continue;
+      if (!/[a-zA-Z]{3}/.test(en)) continue; // nothing to translate in it
+      for (const lang of ALL_LANGUAGES) {
+        if (lang === "en") continue;
+        const v = (translations[lang] as Record<string, unknown>)[key];
+        if (v !== en) continue;
+        if (LEGITIMATE_COPIES.has(`${lang}:${key}`)) continue;
+        offenders.push(`${lang}.${key}`);
+      }
+    }
+    expect(
+      offenders,
+      "still spelled in English — translate them; a copy is only legitimate " +
+        "when the English word is the local word, and then it belongs in " +
+        `LEGITIMATE_COPIES:\n  ${offenders.slice(0, 20).join("\n  ")}`,
+    ).toEqual([]);
+  });
+
+  /**
+   * Word pairs only English says, lifted from the messages the template
+   * batch half-translated. A value that is not the English one but still
+   * contains one of these is English furniture inside a translated sentence.
+   */
+  const ENGLISH_FINGERPRINTS = new Set([
+    "is no", "no longer", "could not", "went wrong", "does not", "has no",
+    "points to", "exceeds allowed", "empty or invalid", "available for",
+    "for saving", "start writing", "close all", "close other", "next tab",
+    "previous tab", "source code", "resize panels", "follow system",
+    "or invalid", "to a directory", "parent folder", "allowed limit",
+    "something went",
+  ]);
+
+  it("has no value half in English and half in its own language", () => {
+    const offenders: string[] = [];
+    for (const key of allKeys()) {
+      const en = (translations.en as Record<string, unknown>)[key];
+      if (typeof en !== "string") continue;
+      for (const lang of ALL_LANGUAGES) {
+        if (lang === "en") continue;
+        const v = (translations[lang] as Record<string, unknown>)[key];
+        if (typeof v !== "string" || v === en) continue;
+        const words = v.toLowerCase().match(/[a-z']+/g) ?? [];
+        for (let i = 0; i + 1 < words.length; i++) {
+          if (ENGLISH_FINGERPRINTS.has(`${words[i]} ${words[i + 1]}`)) {
+            offenders.push(`${lang}.${key}: "${v}"`);
+            break;
+          }
+        }
+      }
+    }
+    expect(
+      offenders,
+      `English islands inside translated values:\n  ${offenders.slice(0, 10).join("\n  ")}`,
+    ).toEqual([]);
+  });
+
+  it("translates the plural functions too, except pure units", () => {
+    // A function's body is where the August batch left English plurals
+    // ("${n} word${…}") in the four Amazigh languages while the strings
+    // around them were translated. Checked for those four, where the debt
+    // was; a language that spells a body like the English one may simply
+    // share the word ("Version ${v}" is correct German). Units are the
+    // exception everywhere: "mm" and "px" are the same in every language.
+    const UNITS = new Set(["prefs.pageMarginValue", "prefs.pixels"]);
+    const AMAZIGH: Language[] = ["kab", "rif", "shi", "zgh"];
+    const normalize = (f: unknown) =>
+      String(f).replace(/\s+/g, " ").replace(/^\(.*?\)\s*=>\s*/, "");
+    const offenders: string[] = [];
+    for (const key of allKeys()) {
+      const en = (translations.en as Record<string, unknown>)[key];
+      if (typeof en !== "function" || UNITS.has(key)) continue;
+      for (const lang of AMAZIGH) {
+        const v = (translations[lang] as Record<string, unknown>)[key];
+        if (typeof v !== "function") continue;
+        if (normalize(v) === normalize(en)) offenders.push(`${lang}.${key}`);
+      }
+    }
+    expect(
+      offenders,
+      `function bodies still in English:\n  ${offenders.slice(0, 10).join("\n  ")}`,
+    ).toEqual([]);
+  });
+
   // ── Language metadata ──────────────────────────────────────────────
 
   it("LANGUAGES entries match translations object", () => {
