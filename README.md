@@ -43,7 +43,7 @@
 
 ### Interface
 
-- **104 languages** with a searchable selector in the menu. Full RTL support (Arabic, Urdu, Persian, Pashto, Sindhi, Hebrew, etc.).
+- **104 languages** ([full list](#supported-languages)) with a searchable selector in the menu. Full RTL support (Arabic, Urdu, Persian, Pashto, Sindhi, Hebrew, etc.).
 - **4 themes**: System, Light, Dark, and a **High Contrast** colorblind-friendly theme (WCAG AA everywhere).
 - **Layout modes** (Ctrl+1/2/3): editor only, editor and preview, or preview only — reading a document without its source. The choice is remembered.
 - **Window zoom** (Ctrl+= / Ctrl+- / Ctrl+0, Ctrl+wheel, trackpad pinch): scales the whole page — text, preview and chrome alike. The level is remembered across sessions, and while it is off 100% the status bar shows it; one click on the percentage puts the page back.
@@ -54,6 +54,19 @@
 - **Spell checking** provided by the platform (Windows and macOS webviews; on Linux it also needs WebKitGTK's own setting). The editor tells it the document's language when the front-matter declares one (`lang:`), and the interface's otherwise; how closely each platform's checker follows that is up to the platform.
 - **Status bar** with word, line and character counts, an estimated **reading time** (200 words a minute, the figure this kind of estimate is usually given at), the caret's line and column, and the unsaved indicator.
 - **Outline** (table of contents) from headings for quick navigation.
+
+### Supported languages
+
+Every string of the interface exists in all 104 languages, and a test keeps it
+that way. The selector in the menu searches by either name below — the
+language's own or the English one — and the choice is remembered.
+
+<details>
+<summary>The 104 languages</summary>
+
+English · 中文 (Chinese) · हिन्दी (Hindi) · Español (Spanish) · العربية (Arabic) · Français (French) · বাংলা (Bengali) · Português (Portuguese) · Русский (Russian) · اردو (Urdu) · Bahasa Indonesia (Indonesian) · Deutsch (German) · 日本語 (Japanese) · Kiswahili (Swahili) · मराठी (Marathi) · తెలుగు (Telugu) · Türkçe (Turkish) · தமிழ் (Tamil) · 한국어 (Korean) · Italiano (Italian) · Polski (Polish) · Tiếng Việt (Vietnamese) · ไทย (Thai) · فارسی (Persian) · Nederlands (Dutch) · Українська (Ukrainian) · Română (Romanian) · עברית (Hebrew) · Bahasa Melayu (Malay) · Filipino · ਪੰਜਾਬੀ (Punjabi) · Basa Jawa (Javanese) · Hausa · ಕನ್ನಡ (Kannada) · ગુજરાતી (Gujarati) · አማርኛ (Amharic) · Yorùbá (Yoruba) · ଓଡ଼ିଆ (Odia) · മലയാളം (Malayalam) · မြန်မာ (Burmese) · O'zbek (Uzbek) · Igbo · नेपाली (Nepali) · සිංහල (Sinhala) · ខ្មែរ (Khmer) · Қазақша (Kazakh) · Azərbaycan (Azerbaijani) · Kurdî (Kurdish) · Kreyòl Ayisyen (Haitian Creole) · Cebuano · Svenska (Swedish) · Dansk (Danish) · Suomi (Finnish) · Norsk (Norwegian) · Čeština (Czech) · Slovenčina (Slovak) · Magyar (Hungarian) · Български (Bulgarian) · Ελληνικά (Greek) · Català (Catalan) · српски (Serbian) · Hrvatski (Croatian) · Lietuvių (Lithuanian) · Latviešu (Latvian) · Eesti (Estonian) · Slovenščina (Slovenian) · Македонски (Macedonian) · Shqip (Albanian) · Հայերեն (Armenian) · ქართული (Georgian) · Монгол (Mongolian) · ລາວ (Lao) · Galego (Galician) · Euskara (Basque) · Íslenska (Icelandic) · Malti (Maltese) · Cymraeg (Welsh) · Gàidhlig (Scottish Gaelic) · Gaeilge (Irish) · Lëtzebuergesch (Luxembourgish) · Afrikaans · isiZulu (Zulu) · isiXhosa (Xhosa) · Sesotho · Chichewa · Malagasy · Soomaali (Somali) · پښتو (Pashto) · Türkmen (Turkmen) · Кыргызча (Kyrgyz) · Тоҷикӣ (Tajik) · Татарча (Tatar) · Беларуская (Belarusian) · Bosanski (Bosnian) · Føroyskt (Faroese) · Eʋegbe (Ewe) · Luganda · Afaan Oromoo (Oromo) · سنڌي (Sindhi) · Basa Sunda (Sundanese) · ⵜⴰⵎⴰⵣⵉⵖⵜ (Tamazight) · Taqbaylit (Kabyle) · ⵜⴰⵛⵍⵃⵉⵜ (Tachelhit) · Tarifit
+
+</details>
 
 ### Preview & Sync
 
@@ -324,6 +337,7 @@ who tests what, and which targets are still unreviewed (rpm, macOS, iOS…).
 | `Ctrl+0`        | Reset zoom      |
 | `Ctrl+Wheel`    | Zoom in or out  |
 | `F11`           | Zen mode        |
+| `Esc`           | Close dialogs and overlays, exit Zen mode |
 
 Press **F1** anytime for the full list. Also: **double-click** in preview to jump to code, and **drag the divider** to resize panels.
 
