@@ -235,3 +235,26 @@ describe("application close guard", () => {
     expect(calls.slice(0, exitIndex)).toContain("save_session");
   });
 });
+
+describe("the close that cannot write its session", () => {
+  it("tells the writer, and leaves anyway", async () => {
+    // The session cache has a ceiling and the disk can be full. Refusing to
+    // quit over either one traps the writer in an application that will not
+    // close and fails the same way every retry; the honest answer is to say
+    // what could not be written, and go.
+    await renderAppWithSession(false);
+    invokeMock.mockImplementation(async (cmd: string) => {
+      if (cmd === "save_session") throw new Error("file.sessionTooLarge");
+      return null;
+    });
+
+    const event = closeEvent();
+    await act(async () => {
+      await closeHandlerRef.current!(event);
+    });
+
+    const calls = closeCalls();
+    expect(calls).toContain("alert");
+    expect(calls.filter((c) => c === "exit_app")).toHaveLength(1);
+  });
+});

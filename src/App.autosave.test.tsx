@@ -678,3 +678,82 @@ describe("autosave", () => {
     ).toBeNull();
   });
 });
+
+describe("autosave against a file that moved while meditor was closed", () => {
+  it("classifies the change before the first autosave can stomp it", async () => {
+    /*
+     * The restart race. The session comes back dirty over a file somebody
+     * else rewrote in the meantime, and autosave arms a two-second clock at
+     * the very same `ready` that starts the watcher — whose first tick used
+     * to be three seconds out. The poll has to look at the disk immediately,
+     * or the autosave writes the restored buffer over the external change
+     * and adopts the fingerprint of its own write: the conflict nobody
+     * classified is now undetectable, and the other writer's work is gone.
+     */
+    localStorage.setItem(
+      "meditor.preferences.v1",
+      JSON.stringify({ autosave: true }),
+    );
+    h.invoke.mockImplementation(async (cmd: string) => {
+      switch (cmd) {
+        case "platform":
+          return "linux";
+        case "cli_files":
+          return [];
+        case "load_session":
+          return {
+            docs: [
+              {
+                id: "doc-1",
+                name: "notes.md",
+                path: "/tmp/notes.md",
+                content: "mine",
+                dirty: true,
+                handle: "h-1",
+                kind: "markdown",
+                // What the session recorded before meditor closed.
+                stat: { modifiedMs: 500, size: 4 },
+              },
+            ],
+            activeId: "doc-1",
+            split: 50,
+          };
+        case "document_stat":
+          // The file moved after that, while the app was closed.
+          return { modifiedMs: 9999, size: 7 };
+        case "read_document":
+          return "theirs";
+        default:
+          return null;
+      }
+    });
+
+    vi.useFakeTimers();
+    render(
+      <I18nProvider>
+        <App />
+      </I18nProvider>,
+    );
+    for (let i = 0; i < 200 && !document.querySelector(".cm-editor"); i += 1) {
+      await advance(50);
+    }
+    expect(document.querySelector(".cm-editor")).toBeTruthy();
+    await advance(200);
+
+    expect(
+      document.querySelector(".conflict-overlay"),
+      "the change from while-closed should be caught at startup, not three seconds in",
+    ).not.toBeNull();
+
+    // Well past the autosave delay: the lock the conflict raised is what
+    // has to hold the writer's own timer back.
+    await advance(2500);
+    const attempts = h.invoke.mock.calls.filter(
+      ([cmd]) => cmd === "save_document",
+    );
+    expect(
+      attempts,
+      "an autosave must not stomp a change nobody has classified yet",
+    ).toEqual([]);
+  });
+});

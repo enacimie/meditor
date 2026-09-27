@@ -11,6 +11,13 @@ against the code by hand, not only reported.
 
 ## Bundle 1 — data safety
 
+**Status: landed (PR #200).** All five findings fixed, each pinned by a new
+test (`Editor.restore.test.tsx`, and new cases in `App.externalchange`,
+`App.autosave` and `App.closeguard`). The pre-existing test that pinned the
+old "nothing stops a shortcut while the conflict is up" behaviour was
+rewritten to hold the file lock with Ctrl+O instead of Ctrl+S, keeping its
+real subject — "Save as…" must not dismiss the dialog it cannot honour.
+
 The paths where the application can lose or silently diverge somebody's
 writing.
 
