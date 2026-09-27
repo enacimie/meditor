@@ -6,7 +6,14 @@ import pkg from "./package.json";
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
-const MAX_INITIAL_CHUNK_BYTES = 1_750_000;
+/*
+ * Every one of the 104 languages is fully translated, so the translation
+ * tables weigh about a third of a megabyte more than when only the common
+ * strings were done in all of them. The first load carries the lot because
+ * the language picker swaps dictionaries without a round trip; the budget
+ * makes room for that instead of trading it away.
+ */
+const MAX_INITIAL_CHUNK_BYTES = 2_200_000;
 
 /**
  * What may never be in the first load, whatever it weighs.
