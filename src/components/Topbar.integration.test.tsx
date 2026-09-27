@@ -380,3 +380,17 @@ describe("Topbar integration", () => {
   });
 
 });
+
+describe("the menu's own keyboard", () => {
+  it("closes on Tab and gives the focus back to the toggle", () => {
+    // The menu is one tab stop: Tab must not walk its twenty-odd items, nor
+    // leave the focus roaming the page while the panel is still open.
+    renderTopbar({});
+    const toggle = getMenuToggle();
+    fireEvent.click(toggle);
+    expect(document.getElementById("app-menu")).not.toBeNull();
+    fireEvent.keyDown(document.getElementById("app-menu")!, { key: "Tab" });
+    expect(document.getElementById("app-menu")).toBeNull();
+    expect(document.activeElement).toBe(toggle);
+  });
+});

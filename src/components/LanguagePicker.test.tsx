@@ -25,8 +25,15 @@ const mockT = vi.fn((key: string) => {
   return dict[key] ?? key;
 });
 
-function renderPicker(lang: Language = "en", onSelect = vi.fn()) {
-  return render(<LanguagePicker lang={lang} t={mockT as unknown as typeof mockT} onSelect={onSelect} />);
+function renderPicker(lang: Language = "en", onSelect = vi.fn(), onCancel = vi.fn()) {
+  return render(
+    <LanguagePicker
+      lang={lang}
+      t={mockT as unknown as typeof mockT}
+      onSelect={onSelect}
+      onCancel={onCancel}
+    />,
+  );
 }
 
 // ── Initial render ────────────────────────────────────────────────
@@ -186,13 +193,28 @@ describe("LanguagePicker", () => {
       expect(onSelect).toHaveBeenCalledWith("de");
     });
 
-    it("Escape calls onSelect with current language (close without change)", () => {
+    it("Escape dismisses through onCancel, re-deciding nothing", () => {
+      // It used to call onSelect with the language already in use, which
+      // re-saved it and rewrote <html lang> on the way out, and closed the
+      // whole menu rather than the picker.
       const onSelect = vi.fn();
-      renderPicker("es", onSelect);
+      const onCancel = vi.fn();
+      renderPicker("es", onSelect, onCancel);
       const input = screen.getByLabelText("Search language");
       fireEvent.keyDown(input, { key: "Escape" });
+      expect(onCancel).toHaveBeenCalledTimes(1);
+      expect(onSelect).not.toHaveBeenCalled();
+    });
+
+    it("opens with the language in use already active", () => {
+      // Enter straight after opening must be a no-op choice, not a switch
+      // to whichever language happens to head the list.
+      const onSelect = vi.fn();
+      renderPicker("es", onSelect);
+      const input = screen.getByRole("combobox");
+      expect(input.getAttribute("aria-activedescendant")).toMatch(/-es$/);
+      fireEvent.keyDown(input, { key: "Enter" });
       expect(onSelect).toHaveBeenCalledWith("es");
-      expect(onSelect).toHaveBeenCalledTimes(1);
     });
 
     it("Arrow keys stay inside the combobox instead of moving menu focus", () => {

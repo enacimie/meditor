@@ -28,11 +28,11 @@
 }
 
 .pane-header > .pane-title {
-  margin-right: auto;
+  margin-inline-end: auto;
 }
 
 .pane-header > .sync-btn {
-  margin-left: 0;
+  margin-inline-start: 0;
 }
 
 .pane-title {

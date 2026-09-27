@@ -197,6 +197,16 @@ const Topbar = memo(function Topbar({
       e.preventDefault();
       setMenuOpen(false);
       menuToggleRef.current?.focus();
+    } else if (e.key === "Tab") {
+      /*
+       * One tab stop, as the menu pattern asks: Tab does not walk the
+       * twenty-odd items — or worse, leave the focus roaming the page with
+       * the menu still open. It closes the menu and returns to the button
+       * that opened it; a second Tab carries on from there.
+       */
+      e.preventDefault();
+      setMenuOpen(false);
+      menuToggleRef.current?.focus();
     }
   }
 
@@ -459,6 +469,12 @@ const Topbar = memo(function Topbar({
                         setMenuOpen(false);
                         menuToggleRef.current?.focus();
                       }}
+                      onCancel={() => {
+                        // Escape closes the picker, not the menu, and without
+                        // re-deciding the language it already has.
+                        setLangPickerOpen(false);
+                        document.getElementById("menu-lang-row")?.focus();
+                      }}
                     />
                   </Suspense>
                 )}
@@ -466,6 +482,7 @@ const Topbar = memo(function Topbar({
               {!langPickerOpen && (
                 <button
                   type="button"
+                  id="menu-lang-row"
                   role="menuitem"
                   disabled={busy}
                   aria-expanded={langPickerOpen}

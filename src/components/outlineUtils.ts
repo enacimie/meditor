@@ -9,7 +9,10 @@ export type Heading = {
 
 /** A heading line in each language: `#` to `######` in Markdown, `=` to `====` in Typst. */
 const HEADING: Partial<Record<DocKind, RegExp>> = {
-  markdown: /^(#{1,6})[ \t]+(.+)$/,
+  // CommonMark allows up to three spaces before an ATX heading, and
+  // markdown-it renders the indented one; an outline that skipped it would
+  // list fewer headings than the page shows.
+  markdown: /^ {0,3}(#{1,6})[ \t]+(.+)$/,
   typst: /^(={1,4})[ \t]+(.+)$/,
 };
 

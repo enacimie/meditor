@@ -10,23 +10,39 @@ type Props = {
   t: TranslationFn;
   /** Called when the user selects a language. The parent closes the menu afterwards. */
   onSelect: (code: Language) => void;
+  /**
+   * Called when the picker is dismissed without choosing (Escape). The
+   * parent closes the picker only — the menu stays, and the language is
+   * not re-decided, which re-applying the current one on the way out used
+   * to do (rewriting `<html>` and the stored choice for nothing).
+   */
+  onCancel: () => void;
 };
 
 /** Searchable language combobox rendered inside the topbar menu. */
-const LanguagePicker = memo(function LanguagePicker({ lang, t, onSelect }: Props) {
+const LanguagePicker = memo(function LanguagePicker({ lang, t, onSelect, onCancel }: Props) {
   const [query, setQuery] = useState("");
-  const [activeIndex, setActiveIndex] = useState(0);
+  /*
+   * The active row starts on the language in use, not on the first row:
+   * Enter right after opening used to switch the whole interface to
+   * English, whichever language it was speaking.
+   */
+  const [activeIndex, setActiveIndex] = useState(() =>
+    Math.max(0, LANGUAGES.findIndex((l) => l.code === lang)),
+  );
   const inputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
   const listId = useId();
   const optionIdPrefix = `${listId}-option`;
 
-  const filtered = query.trim()
+  // The emptiness test trims, so the filter has to as well: a query that is
+  // only spaces used to announce "empty" and then search for the spaces.
+  const q = query.trim().toLowerCase();
+  const filtered = q
     ? LANGUAGES.filter(
         (l) =>
-          l.nativeLabel.toLowerCase().includes(query.toLowerCase()) ||
-          l.label.toLowerCase().includes(query.toLowerCase()) ||
-          l.code.includes(query.toLowerCase()),
+          l.nativeLabel.toLowerCase().includes(q) ||
+          l.label.toLowerCase().includes(q) ||
+          l.code.toLowerCase().includes(q),
       )
     : LANGUAGES;
 
@@ -54,7 +70,7 @@ const LanguagePicker = memo(function LanguagePicker({ lang, t, onSelect }: Props
       if (e.key === "Escape") {
         e.preventDefault();
         e.stopPropagation();
-        onSelect(lang); // close without changing the language
+        onCancel(); // close the picker, not the menu, and change nothing
         return;
       }
       if (e.key === "ArrowDown" || e.key === "ArrowUp") {
@@ -74,12 +90,17 @@ const LanguagePicker = memo(function LanguagePicker({ lang, t, onSelect }: Props
         if (active) onSelect(active.code);
       }
     },
-    [activeIndex, filtered, lang, onSelect],
+    [activeIndex, filtered, onSelect, onCancel],
   );
 
-  // Re-focus the input when the user clicks the picker background or list.
+  // Re-focus the input when the user clicks the picker background or the
+  // list's empty space — but not an option: that click already chose a
+  // language and unmounted the picker, and focusing the input on the way
+  // out dropped the focus on the body.
   const handleContainerClick = useCallback((e: React.MouseEvent) => {
-    if (e.target === e.currentTarget || (e.target as HTMLElement).closest(".lang-list")) {
+    const target = e.target as HTMLElement;
+    if (target.closest(".lang-option")) return;
+    if (target === e.currentTarget || target.closest(".lang-list")) {
       inputRef.current?.focus();
     }
   }, []);
@@ -138,17 +159,19 @@ const LanguagePicker = memo(function LanguagePicker({ lang, t, onSelect }: Props
           </button>
         )}
       </div>
+      {/* A live region, but not a child of the listbox: role="listbox" may
+          only own options and groups, and a status div inside it is both an
+          invalid child and a poor announcement. */}
+      {filtered.length === 0 && (
+        <div className="lang-no-results" role="status" aria-live="polite">
+          {t("lang.noResults")}
+        </div>
+      )}
       <div
         id={listId}
         className="lang-list"
-        ref={listRef}
         role="listbox"
       >
-        {filtered.length === 0 && (
-          <div className="lang-no-results" role="status" aria-live="polite">
-            {t("lang.noResults")}
-          </div>
-        )}
         {filtered.map((l, index) => (
           <button
             key={l.code}

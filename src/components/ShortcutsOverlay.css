@@ -28,7 +28,7 @@
   padding: 20px 24px;
   width: min(440px, calc(100vw - 32px));
   min-width: 0;
-  max-height: 80vh;
+  max-height: 80dvh;
   overflow: auto;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
   /* Entry: subtle rise + settle. */

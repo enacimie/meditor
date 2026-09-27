@@ -9,10 +9,14 @@
   flex-shrink: 0;
 }
 
+.tabbar-list {
+  display: contents;
+}
+
 .tab {
   display: flex;
   align-items: stretch;
-  border-right: 1px solid var(--border);
+  border-inline-end: 1px solid var(--border);
   white-space: nowrap;
   max-width: 240px;
 }
@@ -26,24 +30,21 @@
   border: none;
   background: transparent;
   color: var(--fg);
-  padding: 6px 4px 6px 10px;
+  padding-block: 6px;
+  padding-inline: 10px 4px;
   cursor: pointer;
   font: inherit;
   font-size: 13px;
-  text-align: left;
+  text-align: start;
   user-select: none;
+  /* Rename is a double-click, and on a phone a double tap is the pinch-zoom
+     gesture unless the element opts out. */
+  touch-action: manipulation;
 }
 
 .tab:hover,
 .tab-main:hover {
   background: var(--bg);
-}
-
-button:focus-visible,
-[role="tab"]:focus-visible,
-[role="separator"]:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
 }
 
 .tab.active {
@@ -84,6 +85,12 @@ button:focus-visible,
 .tab-close:hover {
   opacity: 1;
   background: var(--border);
+}
+
+.tab-main:disabled,
+.tab-close:disabled,
+.tab-add:disabled {
+  cursor: wait;
 }
 
 .tab-add {

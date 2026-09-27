@@ -106,7 +106,7 @@ of quietly riding the entry. The first load measures ≈1.94 MB against the
 
 ## Bundle 4 — dialogs, a11y and RTL
 
-**Status: landing in two parts.** Part 1, the keyboard and the modals, is
+**Status: landed in two parts.** Part 1, the keyboard and the modals, was
 PR #203: a shared `useDialogKeys` hook owns Escape and the Tab trap on the
 *document* for all six dialogs, so they survive the focus escaping to the
 body (a click on the panel's padding used to hand Escape to the global
@@ -115,11 +115,38 @@ handler, which read it as "exit zen"); the trap counts every enabled button
 leaked the focus out); F1/F2 no longer stack a dialog over an open one; one
 global AltGr gate replaces the per-branch guards that only some letters
 had; the update offer waits behind any other modal; the status bar stopped
-being an `aria-atomic` live region re-read on every caret move. Part 2 —
-the physical properties that break RTL, contrast under AA, the language
-picker's initial row and listbox structure, menu tab semantics, indented
-ATX headings in the outline, `dvh`, and the platform's own modifier in the
-overlay — follows in its own PR.
+being an `aria-atomic` live region re-read on every caret move. Part 2
+(PR #204) is the visual and picker half: every asymmetric physical property
+in the chrome and the document styles became logical (`inset-inline-end`,
+`padding-inline-start`, `text-align: start` — the menu, the tabs, the
+outline, the picker, the about close button, the present HUD, blockquotes,
+lists, callouts, hanging indents, in the screen CSS *and* in paged.css, so
+print follows the document's own direction too); each of the four themes
+names its own `--danger` and the dark `--accent-fg` is a near-black that
+clears 6:1 on the accent (white measured 3.1:1); the muted texts that
+measured under AA are raised; the dialogs use `dvh`; the language picker
+opens on the language in use (an immediate Enter no longer switches the
+interface to English), filters on the trimmed query, keeps its "no results"
+live region out of the listbox, and dismisses through an `onCancel` that
+closes the picker instead of the whole menu; Tab in the menu closes it and
+returns the focus to the toggle; the outline lists ATX headings indented up
+to three spaces; the "+" button moved out of the `tablist` (into a
+`display: contents` wrapper, layout untouched); the tab arrows mirror in
+RTL and a double tap can rename on a phone (`touch-action: manipulation`);
+the about dialog has a heading like its four siblings.
+
+Still open from this bundle, deliberately:
+- setext headings (`Title\n=====`) in the outline — recognising them needs
+  real paragraph tracking to avoid calling every `---` after text a
+  heading; the gap is noted rather than half-fixed.
+- platform-aware modifier names in the shortcuts overlay ("Ctrl" is
+  translated — German says "Strg" — so a find/replace to "⌘" on macOS
+  cannot work; it needs a decision about how the overlay names keys).
+- the presentation overlay: its key handler ignores modifiers, global
+  shortcuts stay live during a slideshow, its `aria-modal` has no focus
+  trap, and `startViewTransition().finished` can reject unhandled.
+- `memo()` on Topbar/TabBar/StatusBar/Outline is inert while App passes
+  fresh closures every render; a `useCallback` pass is its own change.
 
 - [high] dialog keyboard handling (Escape + focus trap) hangs off the
   overlay's React `onKeyDown`: once focus escapes the subtree (a click on
@@ -128,7 +155,8 @@ overlay — follows in its own PR.
   of its three buttons. — **fixed (part 1)**
 - [high] `.menu-panel { right: 0 }` and ~10 more physical properties with
   no `[dir="rtl"]` counterpart anywhere in the CSS: the main menu grows off
-  the clipped viewport in the six RTL languages. — *part 2*
+  the clipped viewport in the six RTL languages. — **fixed (part 2, without
+  needing `[dir="rtl"]` rules at all: the properties are logical now)**
 - [high] StatusBar is `role="status" aria-atomic="true"` around the caret
   readout: screen readers re-announce the whole bar on every arrow key. —
   **fixed (part 1)**
@@ -140,11 +168,14 @@ overlay — follows in its own PR.
   undefined (fallback 3.07:1), LanguagePicker muted text 3.16:1;
   LanguagePicker `activeIndex` starts at 0 (an immediate Enter switches the
   UI to English); menu role/tab semantics; `vh` where `dvh` is needed. —
-  *part 2 (picker activeIndex included)*
+  **fixed (part 2; menu gets Tab-closes rather than roving tabindex, see
+  the open notes above)**
 - [low] ConfirmDialog ids are static while two instances can coexist —
   **fixed (part 1, `useId` + the offer waits behind other modals)**;
   outline ignores indented ATX and setext headings; hardcoded "Ctrl+" in
-  the overlay on macOS; assorted aria-label/role fixes. — *part 2*
+  the overlay on macOS; assorted aria-label/role fixes. — **fixed (part 2)
+  except the setext headings and the macOS modifier names, which stay open
+  with the notes above**
 
 ## Bundle 5 — Typst
 
