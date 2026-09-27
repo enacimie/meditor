@@ -782,30 +782,56 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
     ) {
       return;
     }
-    if (idChanged) {
-      states.current.set(activeIdRef.current, view.state);
-      let next = states.current.get(activeId);
-      if (!next) {
-        next = EditorState.create({ doc: content, extensions: extRef.current });
-        states.current.set(activeId, next);
-      }
-      activeIdRef.current = activeId;
-    } else {
-      const next = EditorState.create({ doc: content, extensions: extRef.current });
-      states.current.set(activeId, next);
-    }
+    /*
+     * Text this editor does not hold arrives as one replacement in place,
+     * not as a rebuilt state: an external reload of the active tab, or of a
+     * background tab whose cached state is older than the prop, keeps the
+     * writer's undo history and caret instead of throwing both away. The
+     * suppressed flag is what keeps the replacement from being reported back
+     * as though it had been typed — React handed this text down, and
+     * echoing it up would mark the document dirty over a reload.
+     */
+    const replaceDoc = (target: EditorView) => {
+      target.dispatch({
+        changes: { from: 0, to: target.state.doc.length, insert: content },
+        selection: {
+          anchor: Math.min(target.state.selection.main.anchor, content.length),
+        },
+      });
+    };
     suppress.current = true;
-    view.setState(states.current.get(activeId)!);
-    syncCompartments(view);
-    states.current.set(activeId, view.state);
-    suppress.current = false;
+    try {
+      if (idChanged) {
+        states.current.set(activeIdRef.current, view.state);
+        let next = states.current.get(activeId);
+        if (!next) {
+          next = EditorState.create({ doc: content, extensions: extRef.current });
+        }
+        activeIdRef.current = activeId;
+        view.setState(next);
+        syncCompartments(view);
+        // The cache can lag behind the prop: the file was reloaded from disk
+        // while this tab sat in the background. The prop is what the
+        // application believes the document says, so the prop wins.
+        if (view.state.doc.toString() !== content) replaceDoc(view);
+      } else {
+        replaceDoc(view);
+      }
+      states.current.set(activeId, view.state);
+    } finally {
+      suppress.current = false;
+    }
     // Report the cursor position of the newly active document.
     onCursorLineChangeRef.current?.(
       view.state.doc.lineAt(view.state.selection.main.head).number - 1,
       columnOf(view.state),
     );
     reportSelection(view.state);
-  }, [activeId, content, wrap, syncCompartments, reportSelection]);
+    // `wrap` is deliberately not a dependency: the wrapping compartment has
+    // its own effect, and re-running this one on a wrap toggle would replace
+    // the document with whatever the content prop was when the keystroke's
+    // round trip had not landed yet.
+  }, [activeId, content, syncCompartments, reportSelection]);
 
   useEffect(() => {
     const prev = lastIdsRef.current;

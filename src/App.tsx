@@ -293,6 +293,31 @@ function waitForCloseTasks(tasks: Promise<unknown>[], timeoutMs = 5000): Promise
   });
 }
 
+/**
+ * Start watching documents from the files their bytes came from.
+ *
+ * A backend hands the fingerprint over with the document — when it is
+ * opened, when it comes back from the recents, and when a session restores
+ * it — and this is where the watch learns it. Without a baseline the first
+ * tick sees a buffer that differs from the disk the moment the writer types
+ * a character, and cannot tell whose change it is: a document opened and
+ * edited inside one poll interval would be accused of conflicting with
+ * itself.
+ *
+ * Documents already being watched are left alone: a live fingerprint is
+ * newer than anything a payload carries.
+ */
+function seedWatchBaselines(
+  stats: Map<string, DocumentStat>,
+  documents: Doc[],
+): void {
+  for (const doc of documents) {
+    if (!doc.handle || !doc.stat) continue;
+    if (stats.has(doc.handle)) continue;
+    stats.set(doc.handle, doc.stat);
+  }
+}
+
 export default function App() {
   const { t, lang, setLanguage } = useTranslation();
   const [ready, setReady] = useState(false);
@@ -582,6 +607,11 @@ export default function App() {
       next.push(doc);
       if (!activateId) activateId = doc.id;
     }
+    // Whatever the backend handed over carries the file's fingerprint with
+    // it; the watch has to start from there, or a writer who types inside
+    // the first poll interval is accused of conflicting with the file they
+    // just opened.
+    seedWatchBaselines(statsRef.current, incoming);
     docsRef.current = next;
     setDocs(next);
     if (activateId) setActiveId(activateId);
@@ -637,7 +667,7 @@ export default function App() {
       }
       if (cancelled) return;
       if (cliActive) startActive = cliActive;
-      seedWatchBaselines(base);
+      seedWatchBaselines(statsRef.current, base);
       setDocs(base);
       if (!startActive || !base.some((d) => d.id === startActive)) {
         startActive = base[0]?.id ?? "";
@@ -917,6 +947,17 @@ export default function App() {
    */
   useEffect(() => {
     if (!ready) return;
+    /*
+     * The first tick is immediate, not three seconds out.
+     *
+     * Autosave arms its own two-second clock the moment `ready` flips, and a
+     * session restored dirty over a file that changed while meditor was
+     * closed has to be classified — and the conflict lock set — before an
+     * autosave is allowed anywhere near it. Polling first also means the
+     * common restart case (nothing changed) costs one early fingerprint
+     * sweep and nothing else.
+     */
+    void checkExternalChangesRef.current();
     const timer = window.setInterval(() => {
       void checkExternalChangesRef.current();
     }, 3000);
@@ -1302,27 +1343,6 @@ export default function App() {
   }
 
   /**
-   * Start watching a document from the file its bytes came from.
-   *
-   * A backend hands the fingerprint over with the document — when it is
-   * opened, and when a session restores it — and this is where the watch
-   * learns it. It matters most on a restart: the file may have been written
-   * by something else while meditor was closed, and the stored fingerprint is
-   * the only thing that says so. Without it the first tick sees a buffer that
-   * differs from the disk and cannot tell whose change it is.
-   *
-   * Documents already being watched are left alone: a live fingerprint is
-   * newer than anything a payload carries.
-   */
-  function seedWatchBaselines(documents: Doc[]): void {
-    for (const doc of documents) {
-      if (!doc.handle || !doc.stat) continue;
-      if (statsRef.current.has(doc.handle)) continue;
-      statsRef.current.set(doc.handle, doc.stat);
-    }
-  }
-
-  /**
    * Adopt the fingerprint of a file this application has just written.
    *
    * Without this, saving looks exactly like somebody else editing the file.
@@ -1436,11 +1456,16 @@ export default function App() {
         sessionSaveQueueRef.current,
       ]);
       if (!closeTasksCompleted) {
+        // Say the loss, and leave anyway. Trapping somebody in an application
+        // that refuses to close is worse than the cache that failed to
+        // write: the session has a five-megabyte ceiling and the disk can be
+        // full, and retrying walks into the same wall every time. The
+        // documents' own saves ran ahead of this in the queue; what is lost
+        // is the restore point, not silently the writing.
         await showNativeAlert(
           closeTRef.current("session.saveError"),
           closeLangRef.current,
         );
-        return;
       }
       await backend.exitApp();
     } catch (error) {
@@ -1459,6 +1484,9 @@ export default function App() {
   requestQuitRef.current = requestQuit;
 
   async function saveAs(targetId?: string) {
+    // Same lock as save(): while the conflict dialog is up, the only route
+    // to a write is the dialog's own "Save As", which clears the lock first.
+    if (conflictBusyRef.current) return;
     // The conflict dialog routes a background tab here, so the target is
     // resolved by id when given; the menu and Ctrl+Shift+S keep saving the
     // active document.
@@ -1519,6 +1547,13 @@ export default function App() {
 
   async function save() {
     if (!active) return;
+    // The conflict dialog is a question about this very file, and a
+    // shortcut must not answer behind its back: Ctrl+S reaches this
+    // function with the dialog up (the global key handler knows nothing of
+    // it), and a write from here would make the dialog's later "Reload from
+    // disk" install stale content over the save nobody sees. The dialog's
+    // own buttons clear the lock before they route anywhere.
+    if (conflictBusyRef.current) return;
     if (!active.handle) {
       await saveAs();
       return;

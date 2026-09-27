@@ -420,13 +420,15 @@ describe("external file changes", () => {
     /*
      * The other half of the same hazard, and the one that loses work.
      *
-     * Nothing stops a shortcut while the conflict is on screen: Ctrl+S,
-     * Ctrl+O or an export all take the file lock with the three buttons
-     * still there to be pressed. "Save as..." used to dismiss the dialog
-     * and then call `saveAs`, which declines in silence when the lock is
-     * held -- so the reader picked the one answer that protects their
-     * buffer, watched the question disappear, and got nothing written and
-     * nothing said. The question has to stay until it can be honoured.
+     * Some shortcuts still run while the conflict is on screen (Ctrl+S no
+     * longer does — the question about the file comes first, and "does not
+     * let Ctrl+S answer" pins that): Ctrl+O or an export take the file lock
+     * with the three buttons still there to be pressed. "Save as..." used to
+     * dismiss the dialog and then call `saveAs`, which declines in silence
+     * when the lock is held -- so the reader picked the one answer that
+     * protects their buffer, watched the question disappear, and got nothing
+     * written and nothing said. The question has to stay until it can be
+     * honoured.
      *
      * The dialog still being there is the assertion that discriminates: the
      * empty `save_as` holds either way, because the old code did call
@@ -444,18 +446,18 @@ describe("external file changes", () => {
     await tick();
     expect(conflictDialog()).toBeTruthy();
 
-    // Ctrl+S with the write hung: the lock is taken and never given back.
+    // Ctrl+O with the picker hung: the lock is taken and never given back.
     const inner = h.invoke.getMockImplementation()!;
     h.invoke.mockImplementation(async (cmd: string, args?: Record<string, unknown>) => {
-      if (cmd === "save_document") return new Promise(() => {});
+      if (cmd === "open_files") return new Promise(() => {});
       return inner(cmd, args);
     });
     await act(async () => {
-      fireEvent.keyDown(window, { key: "s", ctrlKey: true });
+      fireEvent.keyDown(window, { key: "o", ctrlKey: true });
       await vi.advanceTimersByTimeAsync(50);
     });
     expect(
-      h.invoke.mock.calls.filter(([cmd]) => cmd === "save_document").length,
+      h.invoke.mock.calls.filter(([cmd]) => cmd === "open_files").length,
       "the shortcut has to reach the backend, or the lock is not held and",
     ).toBeGreaterThan(0);
 
@@ -754,5 +756,98 @@ describe("saving is not an external change", () => {
       conflictDialog(),
       "their write happened; adopting their fingerprint as ours would bury it",
     ).not.toBeNull();
+  });
+});
+
+describe("the watch learns every file it is handed", () => {
+  it("does not accuse a file opened mid-session of conflicting with itself", async () => {
+    /*
+     * A document that arrives after startup — Ctrl+O, the recents, an open
+     * event from the OS — carries its file's fingerprint in the payload, and
+     * the watch has to start from there. Without that baseline the first
+     * poll compares the disk to a buffer the writer has already typed into
+     * and calls their own keystrokes a conflict; the dialog's Reload then
+     * discards exactly the work it accused.
+     */
+    const inner = h.invoke.getMockImplementation()!;
+    h.invoke.mockImplementation(async (cmd: string, args?: Record<string, unknown>) => {
+      if (cmd === "open_files") {
+        return [
+          {
+            id: "doc-9",
+            name: "fresh.md",
+            path: "/tmp/fresh.md",
+            content: h.disk,
+            dirty: false,
+            handle: "h-9",
+            kind: "markdown",
+            stat: { ...h.stat },
+          },
+        ];
+      }
+      if (cmd === "document_stat" && args?.handle === "h-9") return { ...h.stat };
+      if (cmd === "read_document" && args?.handle === "h-9") return h.disk;
+      return inner(cmd, args);
+    });
+
+    await mountApp();
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "o", ctrlKey: true });
+      await vi.advanceTimersByTimeAsync(300);
+    });
+
+    // The opened document is the active one; type into it right away.
+    type("X");
+    await tick();
+
+    expect(
+      conflictDialog(),
+      "a file opened, typed into, and polled must not conflict with itself",
+    ).toBeNull();
+  });
+
+  it("does not let Ctrl+S answer the conflict dialog from behind its back", async () => {
+    /*
+     * The dialog is a question about this very file. A global shortcut that
+     * writes while the question is up decides it in silence, and the
+     * dialog's later "Reload from disk" then installs content older than
+     * the save nobody saw — file and buffer diverge with no witness.
+     */
+    h.dirty = true; // the session restores unsaved work over a file that moved
+    await mountApp();
+    expect(
+      conflictDialog(),
+      "the fixture should have raised the conflict",
+    ).not.toBeNull();
+
+    const inner = h.invoke.getMockImplementation()!;
+    let saveAttempts = 0;
+    h.invoke.mockImplementation(async (cmd: string, args?: Record<string, unknown>) => {
+      if (cmd === "save_document") saveAttempts += 1;
+      return inner(cmd, args);
+    });
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "s", ctrlKey: true });
+      await vi.advanceTimersByTimeAsync(300);
+    });
+
+    expect(saveAttempts, "Ctrl+S must not write while the conflict is up").toBe(0);
+    expect(
+      conflictDialog(),
+      "and the question must still be on screen, unanswered",
+    ).not.toBeNull();
+
+    // The dialog's own way out still works, and Ctrl+S answers again after.
+    await clickDialogButton("Keep mine");
+    expect(conflictDialog()).toBeNull();
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "s", ctrlKey: true });
+      await vi.advanceTimersByTimeAsync(300);
+    });
+    expect(
+      saveAttempts,
+      "once the writer has decided, Ctrl+S is Ctrl+S again",
+    ).toBe(1);
   });
 });
