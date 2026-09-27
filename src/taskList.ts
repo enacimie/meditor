@@ -16,12 +16,13 @@
 /**
  * A task marker at the start of a list item.
  *
- * Deliberately anchored and deliberately narrow: the leading whitespace of a
- * nested item, then the bullet or the number, then the box. Matching `[ ]`
- * anywhere on the line would tick a checkbox because the prose happened to
- * mention one.
+ * Deliberately anchored and deliberately narrow: quote markers and the
+ * leading whitespace of a nested item, then the bullet or the number, then
+ * the box — a quoted task (`> - [ ] something`) renders a checkbox in the
+ * preview, so the click has to reach it too. Matching `[ ]` anywhere on the
+ * line would tick a checkbox because the prose happened to mention one.
  */
-const TASK_MARKER = /^(\s*(?:[-*+]|\d{1,9}[.)])\s+\[)([ xX])\]/;
+const TASK_MARKER = /^((?:\s*>\s*)*\s*(?:[-*+]|\d{1,9}[.)])\s+\[)([ xX])\]/;
 
 /** The offset of a task's box within its line, and what to write into it. */
 export type TaskToggle = {

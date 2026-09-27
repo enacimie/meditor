@@ -1,6 +1,7 @@
 import { keymap, EditorView } from "@codemirror/view";
-import type { ChangeSpec, Extension } from "@codemirror/state";
+import type { ChangeSpec, EditorState, Extension } from "@codemirror/state";
 import { EditorSelection } from "@codemirror/state";
+import { syntaxTree } from "@codemirror/language";
 import type { DocKind } from "./types";
 
 /** Markdown tokens that auto-close in pairs: *, _, ~, `, $ */
@@ -12,50 +13,102 @@ export const MARKDOWN_PAIRS: [string, string][] = [
   ["$", "$"],
 ];
 
+/*
+ * The pairs each language actually has.
+ *
+ * Markdown's full set; Typst drops the tilde, where `~` is a hard space
+ * rather than something to wrap text in; LaTeX keeps only the math
+ * delimiter, because its underscore subscripts, its backtick opens a quote
+ * and its asterisk marks a starred command — none of them has a partner to
+ * close. Smart backspace stays on the full Markdown set: deleting both
+ * halves of an empty pair is right wherever the pair came from.
+ */
+const PAIRS: Record<DocKind, [string, string][]> = {
+  markdown: MARKDOWN_PAIRS,
+  typst: [
+    ["`", "`"],
+    ["*", "*"],
+    ["_", "_"],
+    ["$", "$"],
+  ],
+  latex: [["$", "$"]],
+};
+
+/*
+ * Where a pair must not auto-close: inside code or math, in any of the
+ * grammars in play. The names are the grammars' own — @lezer/markdown says
+ * FencedCode/CodeBlock/InlineCode (with CodeText inside), the Typst grammar
+ * says CodeBlock, Code and Math — and a walk up the tree covers the content
+ * of a block as well as its fences. LaTeX runs through a StreamLanguage,
+ * which builds no such tree; its single pair stays context-free there.
+ */
+const CODE_NODES = new Set([
+  "CodeBlock",
+  "FencedCode",
+  "InlineCode",
+  "CodeText",
+  "Code",
+  "Math",
+]);
+
+function insideCode(state: EditorState, pos: number): boolean {
+  let node = syntaxTree(state).resolveInner(pos, -1);
+  for (;;) {
+    if (CODE_NODES.has(node.type.name)) return true;
+    const parent = node.parent;
+    if (!parent) return false;
+    node = parent;
+  }
+}
+
 /**
- * Build a CodeMirror keymap that auto-closes markdown formatting pairs.
+ * Build a CodeMirror keymap that auto-closes the formatting pairs of
+ * `kind`.
  * - No selection, char after cursor ≠ close → inserts pair with cursor between
  * - No selection, char after cursor = close → skips over (no duplicate)
- * - Selection → wraps selection with the pair (e.g. "hello" → "**hello**")
+ * - Selection → wraps it and stays selected, as the Ctrl+B/I toggles do
+ * - Inside code or math → declines, and the character inserts itself:
+ *   `snake_case` in a fence is an identifier, not emphasised snake
+ *
+ * Every cursor of a multi-selection is served, through `changeByRange`;
+ * the context question is asked of the main one, which is the trade for
+ * not leaving a mixed-context multi-cursor with a cursor that receives
+ * nothing at all.
  */
-export function buildMarkdownPairKeymap(): Extension {
-  const bindings = MARKDOWN_PAIRS.flatMap(([open, close]) => [
-    {
-      key: open,
-      run: (view: EditorView): boolean => {
-        const sel = view.state.selection.main;
-        const hasSelection = sel.from !== sel.to;
-
-        if (hasSelection) {
-          const text = view.state.sliceDoc(sel.from, sel.to);
-          view.dispatch({
-            changes: [
-              { from: sel.from, to: sel.from, insert: open },
-              { from: sel.to, to: sel.to, insert: close },
-            ],
-            selection: {
-              anchor: sel.from + open.length + text.length + close.length,
-            },
-          });
-        } else {
-          // Skip-over: if the next character is already the closing char,
-          // just move the cursor past it instead of inserting a duplicate.
-          const nextChar = view.state.sliceDoc(sel.from, sel.from + close.length);
-          if (nextChar === close) {
-            view.dispatch({
-              selection: { anchor: sel.from + close.length },
-            });
-          } else {
-            view.dispatch({
-              changes: { from: sel.from, insert: open + close },
-              selection: { anchor: sel.from + open.length },
-            });
+export function buildMarkdownPairKeymap(kind: DocKind = "markdown"): Extension {
+  const pairs = PAIRS[kind] ?? [];
+  if (!pairs.length) return [];
+  const bindings = pairs.map(([open, close]) => ({
+    key: open,
+    run: (view: EditorView): boolean => {
+      const { state } = view;
+      if (insideCode(state, state.selection.main.head)) return false;
+      view.dispatch(
+        state.changeByRange((range) => {
+          if (range.empty) {
+            // Skip-over: if the next character is already the closing char,
+            // just move the cursor past it instead of inserting a duplicate.
+            const nextChar = state.sliceDoc(range.from, range.from + close.length);
+            if (nextChar === close) {
+              return { range: EditorSelection.cursor(range.from + close.length) };
+            }
+            return {
+              changes: { from: range.from, insert: open + close },
+              range: EditorSelection.cursor(range.from + open.length),
+            };
           }
-        }
-        return true;
-      },
+          return {
+            changes: [
+              { from: range.from, insert: open },
+              { from: range.to, insert: close },
+            ],
+            range: EditorSelection.range(range.from + open.length, range.to + open.length),
+          };
+        }),
+      );
+      return true;
     },
-  ]);
+  }));
 
   return keymap.of(bindings);
 }

@@ -190,6 +190,50 @@ describe("markdown pairs", () => {
   });
 });
 
+describe("pairs in context", () => {
+  it("does not pair inside a fenced code block", async () => {
+    // An underscore in a fence is an identifier, not the start of an
+    // emphasis: snake_case has to stay snake_case.
+    const view = await mount("```\nsnake_case\n```");
+    setCursor(view, 9);
+    expect(press(view, "_")).toBe(false);
+    expect(text(view)).toBe("```\nsnake_case\n```");
+  });
+
+  it("does not pair inside inline code", async () => {
+    const view = await mount("use `snake_case` here");
+    setCursor(view, 10);
+    expect(press(view, "_")).toBe(false);
+    expect(text(view)).toBe("use `snake_case` here");
+  });
+
+  it("pairs again once the fence is behind the cursor", async () => {
+    const view = await mount("```\ncode\n```\nafter");
+    setCursor(view, 18);
+    expect(press(view, "_")).toBe(true);
+    expect(text(view)).toBe("```\ncode\n```\nafter__");
+  });
+
+  it("leaves the Typst hard space unpaired", async () => {
+    // In Typst a tilde is a non-breaking space in its own right, not a
+    // marker with anything to close.
+    const view = await mount("hello world", "typst");
+    setCursor(view, 5);
+    expect(press(view, "~")).toBe(false);
+    expect(text(view)).toBe("hello world");
+  });
+
+  it("go-to-line answers with the Shift held too", async () => {
+    // Ctrl+G is documented as go-to-line; Ctrl+Shift+G used to fall through
+    // to searchKeymap's find-previous, the same key meaning two things.
+    const view = await mount("# hello");
+    ctrl(view, "g", true);
+    expect(
+      document.querySelector('.cm-panel input[name="line"]'),
+    ).toBeTruthy();
+  });
+});
+
 describe("formatting shortcuts", () => {
   /*
    * Ctrl+B on text that is already bold is how a writer un-bolds it. A

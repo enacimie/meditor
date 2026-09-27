@@ -12,8 +12,10 @@
  * invisible, because the fresh state happens to carry the right configuration.
  */
 import { describe, it, expect, vi, beforeEach, afterEach, beforeAll } from "vitest";
-import { render, cleanup, waitFor } from "@testing-library/react";
+import { render, cleanup, waitFor, fireEvent } from "@testing-library/react";
+import { EditorView } from "@codemirror/view";
 import Editor from "./Editor";
+import type { DocKind } from "./types";
 
 beforeAll(() => {
   if (!("getClientRects" in (document.createTextNode("") as Node))) {
@@ -58,6 +60,7 @@ type Overrides = {
   wrap?: boolean;
   zenMode?: boolean;
   textLanguage?: string | null;
+  kind?: DocKind;
 };
 
 /** The editor as App renders it, with the props under test overridable. */
@@ -66,6 +69,7 @@ function view({
   wrap = false,
   zenMode = false,
   textLanguage = null,
+  kind = "markdown",
 }: Overrides) {
   return (
     <Editor
@@ -76,7 +80,7 @@ function view({
       wrap={wrap}
       zenMode={zenMode}
       zenPlaceholder="Start writing..."
-      kind="markdown"
+      kind={kind}
       textLanguage={textLanguage}
     />
   );
@@ -131,6 +135,48 @@ describe("editor compartments across tab switches", () => {
     rerender(view({ activeId: "doc-a", wrap: true, zenMode: true }));
     await waitFor(() => expect(isWrapping()).toBe(true));
     expect(placeholderText()).toBe("Start writing...");
+  });
+
+  it("writes each tab's own bold markers after a switch", async () => {
+    /*
+     * The formatting keymap lives in a compartment because the markers
+     * differ by language — and the switch has to restore it like every
+     * other compartment, or a Typst tab reached from a Markdown mount bolds
+     * with `**`, which Typst reads as nested emphasis, and a Markdown tab
+     * reached back bolds with `*`, which is its italic.
+     */
+    const { rerender } = render(view({ activeId: "doc-a" }));
+    await waitFor(() => expect(document.querySelector(".cm-editor")).toBeTruthy());
+
+    rerender(view({ activeId: "doc-b", kind: "typst" }));
+    await waitFor(() => expect(document.querySelector(".cm-editor")).toBeTruthy());
+    const typstView = EditorView.findFromDOM(
+      document.querySelector<HTMLElement>(".cm-editor")!,
+    )!;
+    typstView.dispatch({
+      changes: { from: 0, to: typstView.state.doc.length, insert: "word" },
+      selection: { anchor: 0, head: 4 },
+    });
+    fireEvent.keyDown(typstView.contentDOM, { key: "b", ctrlKey: true });
+    expect(
+      typstView.state.doc.toString(),
+      "Ctrl+B in the Typst tab writes the Typst marker",
+    ).toBe("*word*");
+
+    rerender(view({ activeId: "doc-a", kind: "markdown" }));
+    await waitFor(() => expect(document.querySelector(".cm-editor")).toBeTruthy());
+    const mdView = EditorView.findFromDOM(
+      document.querySelector<HTMLElement>(".cm-editor")!,
+    )!;
+    mdView.dispatch({
+      changes: { from: 0, to: mdView.state.doc.length, insert: "word" },
+      selection: { anchor: 0, head: 4 },
+    });
+    fireEvent.keyDown(mdView.contentDOM, { key: "b", ctrlKey: true });
+    expect(
+      mdView.state.doc.toString(),
+      "and back in the Markdown tab, the Markdown one",
+    ).toBe("**word**");
   });
 });
 

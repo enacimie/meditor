@@ -101,12 +101,22 @@ function applyTypstLang(
   seqRef: { current: number },
   appliedRef: { current: Extension },
 ) {
-  getTypstLang().then((ext) => {
-    if (view.viewport && seqRef.current === seq) {
-      appliedRef.current = ext;
-      view.dispatch({ effects: compartment.reconfigure(ext) });
-    }
-  });
+  getTypstLang()
+    .then((ext) => {
+      if (view.viewport && seqRef.current === seq) {
+        appliedRef.current = ext;
+        view.dispatch({ effects: compartment.reconfigure(ext) });
+      }
+    })
+    .catch((error) => {
+      // A mode that never arrived must not leave the previous document's
+      // highlighting on this one: fall back to plain text and say why.
+      console.error("Could not load the Typst language mode", error);
+      if (seqRef.current === seq) {
+        appliedRef.current = [];
+        view.dispatch({ effects: compartment.reconfigure([]) });
+      }
+    });
 }
 
 /** Synchronous placeholder for LaTeX — the Compartment will be reconfigured async. */
@@ -122,12 +132,20 @@ function applyLatexLang(
   seqRef: { current: number },
   appliedRef: { current: Extension },
 ) {
-  getLatexLang().then((ext) => {
-    if (view.viewport && seqRef.current === seq) {
-      appliedRef.current = ext;
-      view.dispatch({ effects: compartment.reconfigure(ext) });
-    }
-  });
+  getLatexLang()
+    .then((ext) => {
+      if (view.viewport && seqRef.current === seq) {
+        appliedRef.current = ext;
+        view.dispatch({ effects: compartment.reconfigure(ext) });
+      }
+    })
+    .catch((error) => {
+      console.error("Could not load the LaTeX language mode", error);
+      if (seqRef.current === seq) {
+        appliedRef.current = [];
+        view.dispatch({ effects: compartment.reconfigure([]) });
+      }
+    });
 }
 
 /**
@@ -170,6 +188,15 @@ function textLanguageAttributes(tag: string | null): Extension {
 const fontThemeCache = new Map<string, Extension>();
 
 /**
+ * The formatting that follows the document's language: the Ctrl+B/I/K
+ * toggles and the characters that auto-close in pairs. They ride one
+ * compartment so a tab switch can never restore one without the other.
+ */
+function formattingFor(kind: DocKind): Extension {
+  return [buildFormattingKeymap(kind), buildMarkdownPairKeymap(kind)];
+}
+
+/**
  * Theme fragment carrying only the user-configurable typography.
  *
  * Memoised because EditorView.theme() mints a fresh StyleModule on every
@@ -180,10 +207,12 @@ function fontTheme(fontSize: number, fontFamily: string): Extension {
   const key = fontSize + "|" + fontFamily;
   const cached = fontThemeCache.get(key);
   if (cached) return cached;
-  return EditorView.theme({
+  const theme = EditorView.theme({
     "&": { fontSize: `${fontSize}px` },
     ".cm-scroller": { fontFamily: fontStackFor(fontFamily) },
   });
+  fontThemeCache.set(key, theme);
+  return theme;
 }
 
 export type EditorHandle = {
@@ -337,6 +366,8 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   // always uses what the user has now, not what a stale closure captured.
   const wrapRef = useRef(wrap);
   wrapRef.current = wrap;
+  const kindRef = useRef(kind);
+  kindRef.current = kind;
   const fontSizeRef = useRef(fontSize);
   fontSizeRef.current = fontSize;
   const fontFamilyRef = useRef(fontFamily);
@@ -388,6 +419,9 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
         ),
         writingAidsCompartment.current.reconfigure(
           writingAidExtensions(writingAidsRef.current),
+        ),
+        formattingCompartment.current.reconfigure(
+          formattingFor(kindRef.current),
         ),
         languageCompartment.current.reconfigure(languageExtRef.current),
         phrasesCompartment.current.reconfigure(phrasesRef.current),
@@ -492,11 +526,10 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
       Prec.highest(
         keymap.of([
           { key: "Mod-h", run: openSearchPanel, preventDefault: true },
-          { key: "Mod-g", run: gotoLine, preventDefault: true },
+          { key: "Mod-g", run: gotoLine, shift: gotoLine, preventDefault: true },
         ]),
       ),
       keymap.of(searchKeymap),
-      buildMarkdownPairKeymap(),
       // ADDING A KEYMAP? Cover it in Editor.keys.test.tsx, which dispatches a
       // real keydown. A binding called directly from a test passes whether or
       // not the editor ever reaches it.
@@ -510,7 +543,11 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
       // gets `(|)` and deleteCharBackward still gets ordinary text.
       Prec.high(buildSmartBackspaceKeymap()),
       /*
-       * Bold and italic, in the markers this document's language uses.
+       * Bold and italic, and the characters that auto-close in pairs, in the
+       * markers this document's language uses — one compartment because both
+       * follow the document, and a tab switch that restored one without the
+       * other would leave Ctrl+B writing `**` into a Typst file while `_`
+       * still paired like Markdown.
        *
        * High precedence, and for the same reason as the backspace above:
        * `defaultKeymap` binds Mod-i to `selectParentSyntax`, which declines
@@ -521,7 +558,7 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
        * node has no place on it.
        */
       Prec.high(
-        formattingCompartment.current.of(buildFormattingKeymap(initialKind.current)),
+        formattingCompartment.current.of(formattingFor(initialKind.current)),
       ),
       // Tracks where each in-flight pasted image is going to land. Part of the
       // shared extension list, so a state created for another tab carries it
@@ -736,11 +773,16 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
     kindSeqRef.current++;
     const seq = kindSeqRef.current;
     view.dispatch({
-      effects: formattingCompartment.current.reconfigure(buildFormattingKeymap(kind)),
+      effects: formattingCompartment.current.reconfigure(formattingFor(kind)),
     });
     if (isTypst) {
+      // Plain text until the mode lands: a tab switch must not carry the
+      // previous document's highlighting into this one, and if the import
+      // fails there is a `.catch` that says so rather than a lie of colour.
+      languageExtRef.current = [];
       applyTypstLang(view, languageCompartment.current, seq, kindSeqRef, languageExtRef);
     } else if (isLatex) {
+      languageExtRef.current = [];
       applyLatexLang(view, languageCompartment.current, seq, kindSeqRef, languageExtRef);
     } else {
       const ext = markdown({ base: markdownLanguage, codeLanguages: languages });
