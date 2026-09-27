@@ -34,6 +34,16 @@ describe("finding the box on a task line", () => {
     expect(taskToggleOnLine("    - [ ] deep")?.at).toBe(7);
   });
 
+  it("finds the box of a quoted task", () => {
+    // The preview renders `> - [ ]` as a real checkbox — markdown-it-task-
+    // lists does not care what block the list sits in — so the click has to
+    // reach the document too. A control that silently discards what you do
+    // to it is worse than one visibly disabled: this module's whole reason.
+    expect(applied("> - [ ] quoted")).toBe("> - [x] quoted");
+    expect(taskToggleOnLine("> - [ ] quoted")?.at).toBe(5);
+    expect(applied("> > - [X] deep quoted")).toBe("> > - [ ] deep quoted");
+  });
+
   it("leaves a second box further along the line alone", () => {
     expect(applied("- [ ] see the [ ] over there")).toBe("- [x] see the [ ] over there");
   });
@@ -42,7 +52,7 @@ describe("finding the box on a task line", () => {
     for (const line of [
       "Some prose about [ ] checkboxes.",
       "[ ] no bullet in front of it",
-      "> - [ ] quoted, and not a list item of ours",
+      "> [ ] quoted prose is prose all the same",
       "- [] no room for a state",
       "- [y] not a state we know",
       "-[ ] no space after the bullet",

@@ -45,30 +45,43 @@ writing.
 
 ## Bundle 2 — editor correctness
 
+**Status: landed (PR #201), except the two image-pipeline mediums, which
+move to a follow-up because they reach into `useImagePaste` and the Rust
+`write_image` command.** Landed: the formatting compartment (pairs now ride
+with the toggles, per document kind, and `syncCompartments` restores the
+lot), the pair context (code and math nodes decline; Typst loses the tilde,
+LaTeX keeps only `$`; every cursor of a multi-selection is served through
+`changeByRange`, and a wrap now stays selected like the Ctrl+B/I toggles),
+the font-theme cache that never cached, the `.catch` on both language
+imports (plain text plus a console line instead of a stuck previous
+language), quoted task checkboxes, `Mod-g` with Shift, and zen mode no
+longer overruling the writer's font size.
+
 - [high] (verified) `syncCompartments` restores eight of nine compartments:
   `formattingCompartment` is missing, so after a tab switch Ctrl+B/I/K use
   the markers of the document that was open at mount (Markdown `**` in a
-  Typst tab and vice versa).
+  Typst tab and vice versa). — **fixed**
 - [high] (verified) `buildMarkdownPairKeymap` checks no syntax context and
   no document kind: `_`/`*`/`` ` ``/`~`/`$` auto-pair inside fenced and
   inline code (`snake_case` becomes `snake_case_`), in Typst (subscripts)
   and in LaTeX; and it dispatches on `selection.main` only, destroying
-  multi-cursor selections.
+  multi-cursor selections. — **fixed**
 - [medium] `fontThemeCache` is read but never written — the memoisation its
   comment describes does not exist and every font change leaks a mounted
-  StyleModule.
+  StyleModule. — **fixed**
 - [medium] the Typst/LaTeX language imports have no `.catch`: a failed
   dynamic import leaves an unhandled rejection and the previous document's
-  highlighting stuck.
+  highlighting stuck. — **fixed**
 - [medium] image paste/drop handlers ride React props on the wrapper div,
   so they run after CodeMirror's own: `preventDefault` arrives late and
-  dropping an SVG inserts both the raw text and the link.
+  dropping an SVG inserts both the raw text and the link. — *follow-up*
 - [medium] `writeImage` crosses the IPC as `Array.from(bytes)` — a JSON
-  array of millions of numbers for a screenshot.
+  array of millions of numbers for a screenshot. — *follow-up (Rust)*
 - [low] `toggleTask` does not recognise `> - [ ] task` inside blockquotes;
   `Mod-g` binding does not declare `shift`; `wrap` sits unused in the
   content effect's deps; `suppress` is dead for `setState`; the zen
-  selector overrides the user's font size.
+  selector overrides the user's font size. — **fixed** (deps/`suppress`
+  travelled with Bundle 1)
 
 ## Bundle 3 — bundle and budget
 

@@ -377,7 +377,9 @@ body,
 
 .app.zen .editor-host .cm-content {
   padding: 48px 0 30vh;
-  font-size: 15px;
+  /* No font-size here on purpose: zen is the writer's own size like every
+     other mode — the preference sets it on .cm-editor and a rule with this
+     much specificity would silently overrule it. */
   line-height: 1.75;
 }
 

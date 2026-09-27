@@ -9,13 +9,14 @@
  */
 import { describe, it, expect, beforeAll } from "vitest";
 import { EditorView } from "codemirror";
-import { EditorState } from "@codemirror/state";
+import { EditorState, EditorSelection } from "@codemirror/state";
 import { keymap } from "@codemirror/view";
 import {
   buildMarkdownPairKeymap,
   buildSmartBackspaceKeymap,
   MARKDOWN_PAIRS,
 } from "./editorKeymaps";
+import type { DocKind } from "./types";
 
 // Polyfill getClientRects for jsdom — CodeMirror needs it during rAF layout.
 beforeAll(() => {
@@ -27,11 +28,18 @@ beforeAll(() => {
 });
 
 /** A view holding just the keymaps under test — no basicSetup, no language. */
-function makeView(doc: string) {
+function makeView(doc: string, kind: DocKind = "markdown") {
   const div = document.createElement("div");
   const state = EditorState.create({
     doc,
-    extensions: [buildMarkdownPairKeymap(), buildSmartBackspaceKeymap()],
+    extensions: [
+      // basicSetup turns this on in the real editor; without it a dispatch
+      // collapses a multi-selection to its main range before the keymap sees
+      // it, and the multi-cursor test would test nothing.
+      EditorState.allowMultipleSelections.of(true),
+      buildMarkdownPairKeymap(kind),
+      buildSmartBackspaceKeymap(),
+    ],
   });
   return new EditorView({ state, parent: div });
 }
@@ -85,12 +93,15 @@ describe("buildMarkdownPairKeymap", () => {
     }
   });
 
-  it("wraps a selection instead of replacing it", () => {
+  it("wraps a selection instead of replacing it, and keeps it selected", () => {
     const v = makeView("hello");
     setCursor(v, 0, 5);
     press(v, "*");
     expect(text(v)).toBe("*hello*");
-    expect(v.state.selection.main.head).toBe(7);
+    // Kept selected, as the Ctrl+B/I toggles keep theirs: the writer can
+    // carry on with the words they just wrapped.
+    const { from, to } = v.state.selection.main;
+    expect(v.state.sliceDoc(from, to)).toBe("hello");
   });
 
   it("skips over the closing char instead of doubling it", () => {
@@ -99,6 +110,41 @@ describe("buildMarkdownPairKeymap", () => {
     press(v, "`");
     expect(text(v)).toBe("``");
     expect(v.state.selection.main.head).toBe(2);
+  });
+
+  it("serves every cursor of a multi-selection", () => {
+    const v = makeView("one two");
+    v.dispatch({
+      selection: EditorSelection.create([
+        EditorSelection.range(0, 3),
+        EditorSelection.range(4, 7),
+      ]),
+    });
+    press(v, "*");
+    expect(text(v)).toBe("*one* *two*");
+  });
+});
+
+describe("the pairs each language has", () => {
+  it("gives Typst no tilde pair, where a tilde is a hard space", () => {
+    const v = makeView("a", "typst");
+    setCursor(v, 1);
+    expect(press(v, "~")).toBeUndefined();
+    expect(text(v)).toBe("a");
+    // The pairs Typst does have still pair.
+    expect(press(v, "_")).toBe(true);
+    expect(text(v)).toBe("a__");
+  });
+
+  it("gives LaTeX only the math pair", () => {
+    const v = makeView("a", "latex");
+    setCursor(v, 1);
+    // Its underscore subscripts and its backtick opens a quote.
+    expect(press(v, "_")).toBeUndefined();
+    expect(press(v, "`")).toBeUndefined();
+    expect(text(v)).toBe("a");
+    expect(press(v, "$")).toBe(true);
+    expect(text(v)).toBe("a$$");
   });
 });
 
