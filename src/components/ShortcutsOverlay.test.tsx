@@ -136,4 +136,13 @@ describe("ShortcutsOverlay", () => {
     flushExit();
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it("lists the zoom shortcuts, wheel included", () => {
+    renderOverlay();
+    expect(screen.getByText("Ctrl+= / Ctrl++")).toBeTruthy();
+    expect(screen.getByText("Zoom in")).toBeTruthy();
+    expect(screen.getByText("Ctrl+0")).toBeTruthy();
+    expect(screen.getByText("Ctrl+Wheel")).toBeTruthy();
+    expect(screen.getByText("Zoom in or out")).toBeTruthy();
+  });
 });

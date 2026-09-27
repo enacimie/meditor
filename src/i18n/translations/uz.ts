@@ -250,6 +250,11 @@ export const uz = {
   "shortcuts.quit": "Chiqish",
   "shortcuts.print": "Chop etish",
   "shortcuts.esc": "Yopish / Chiqish",
+  "shortcuts.zoomIn": "Kattalashtirish",
+  "shortcuts.zoomOut": "Kichiklashtirish",
+  "shortcuts.zoomReset": "Masshtabni tiklash",
+  "shortcuts.zoomWheel": "Kattalashtirish yoki kichiklashtirish",
+  "shortcuts.ctrlWheel": "Ctrl+G'ildirak",
   // Go to line
   // Status bar
   "statusbar.words": (n: number) => `${n} ta so'z`,
@@ -263,6 +268,7 @@ export const uz = {
   "statusbar.cursor": (line: number, column: number) => `Qator ${line}, ustun ${column}`,
   "statusbar.cursorTitle": "Kursorning qatori va ustuni",
   "statusbar.dirtyTitle": "Saqlanmagan o'zgarishlar",
+  "statusbar.zoomTitle": "Masshtab darajasi — tiklash uchun bosing",
   // Language picker
   "lang.searchPlaceholder": "Til qidirish…",
   "lang.searchAria": "Til qidirish",

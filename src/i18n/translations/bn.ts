@@ -251,6 +251,11 @@ export const bn = {
   "shortcuts.quit": "প্রস্থান",
   "shortcuts.print": "মুদ্রণ",
   "shortcuts.esc": "বন্ধ / প্রস্থান",
+  "shortcuts.zoomIn": "জুম ইন",
+  "shortcuts.zoomOut": "জুম আউট",
+  "shortcuts.zoomReset": "জুম পুনরায় সেট করুন",
+  "shortcuts.zoomWheel": "জুম ইন বা আউট",
+  "shortcuts.ctrlWheel": "Ctrl+হুইল",
   // Go to line
   // Status bar
   "statusbar.words": (n: number) => `${n}টি শব্দ`,
@@ -264,6 +269,7 @@ export const bn = {
   "statusbar.cursor": (line: number, column: number) => `লাইন ${line}, কলাম ${column}`,
   "statusbar.cursorTitle": "কার্সরের লাইন ও কলাম",
   "statusbar.dirtyTitle": "সংরক্ষিত নয় এমন পরিবর্তন",
+  "statusbar.zoomTitle": "জুম স্তর — পুনরায় সেট করতে ক্লিক করুন",
   // Language picker
   "lang.searchPlaceholder": "ভাষা খুঁজুন…",
   "lang.searchAria": "ভাষা খুঁজুন",

@@ -249,6 +249,11 @@ export const kk = {
   "shortcuts.quit": "Шығу",
   "shortcuts.print": "Басып шығару",
   "shortcuts.esc": "Жабу / Шығу",
+  "shortcuts.zoomIn": "Ұлғайту",
+  "shortcuts.zoomOut": "Кішірейту",
+  "shortcuts.zoomReset": "Масштабты қалпына келтіру",
+  "shortcuts.zoomWheel": "Ұлғайту немесе кішірейту",
+  "shortcuts.ctrlWheel": "Ctrl+Дөңгелек",
   // Go to line
   // Status bar
   "statusbar.words": (n: number) => `${n} сөз`,
@@ -262,6 +267,7 @@ export const kk = {
   "statusbar.cursor": (line: number, column: number) => `Жол ${line}, баған ${column}`,
   "statusbar.cursorTitle": "Меңзердің жолы мен бағаны",
   "statusbar.dirtyTitle": "Сақталмаған өзгерістер",
+  "statusbar.zoomTitle": "Масштаб деңгейі — қалпына келтіру үшін басыңыз",
   // Language picker
   "lang.searchPlaceholder": "Тіл іздеу…",
   "lang.searchAria": "Тіл іздеу",

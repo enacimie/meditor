@@ -251,6 +251,11 @@ export const ku = {
   "shortcuts.quit": "Derkeve",
   "shortcuts.print": "Çap bike",
   "shortcuts.esc": "Bigire / Derkeve",
+  "shortcuts.zoomIn": "Nêzîk bike",
+  "shortcuts.zoomOut": "Dûr bike",
+  "shortcuts.zoomReset": "Zoomê ji nû ve saz bike",
+  "shortcuts.zoomWheel": "Nêzîk bike an dûr bike",
+  "shortcuts.ctrlWheel": "Ctrl+Teker",
   // Go to line
   // Status bar
   "statusbar.words": (n: number) => `${n} peyv`,
@@ -264,6 +269,7 @@ export const ku = {
   "statusbar.cursor": (line: number, column: number) => `Rêz ${line}, Stûn ${column}`,
   "statusbar.cursorTitle": "Rêz û stûna nîşanderê",
   "statusbar.dirtyTitle": "Guhertinên tomarkirî",
+  "statusbar.zoomTitle": "Asta zoomê — ji bo ji nû ve sazkirinê bitikîne",
   // Language picker
   "lang.searchPlaceholder": "Li ziman bigere…",
   "lang.searchAria": "Li ziman bigere",

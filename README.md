@@ -46,6 +46,7 @@
 - **104 languages** with a searchable selector in the menu. Full RTL support (Arabic, Urdu, Persian, Pashto, Sindhi, Hebrew, etc.).
 - **4 themes**: System, Light, Dark, and a **High Contrast** colorblind-friendly theme (WCAG AA everywhere).
 - **Layout modes** (Ctrl+1/2/3): editor only, editor and preview, or preview only — reading a document without its source. The choice is remembered.
+- **Window zoom** (Ctrl+= / Ctrl+- / Ctrl+0, Ctrl+wheel, trackpad pinch): scales the whole page — text, preview and chrome alike. The level is remembered across sessions, and while it is off 100% the status bar shows it; one click on the percentage puts the page back.
 - **Touch**: on a touch screen the workspace is one pane at a time (splitting a phone in half helps nobody), controls grow to a 44px target, tapping the preview marks a spot without dragging you into the editor, and on-screen undo/redo appear — a touch keyboard has no Ctrl.
 - **Zen mode** (F11): fullscreen distraction-free writing.
 - **Keyboard shortcuts overlay** (F1) and in-window dialogs for confirm/rename (fully themed and localized).
@@ -318,6 +319,10 @@ who tests what, and which targets are still unreviewed (rpm, macOS, iOS…).
 | `Ctrl+1`        | Editor only     |
 | `Ctrl+2`        | Editor and preview |
 | `Ctrl+3`        | Preview only    |
+| `Ctrl+=` / `Ctrl++` | Zoom in     |
+| `Ctrl+-`        | Zoom out        |
+| `Ctrl+0`        | Reset zoom      |
+| `Ctrl+Wheel`    | Zoom in or out  |
 | `F11`           | Zen mode        |
 
 Press **F1** anytime for the full list. Also: **double-click** in preview to jump to code, and **drag the divider** to resize panels.

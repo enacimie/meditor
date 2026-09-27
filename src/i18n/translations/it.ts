@@ -251,6 +251,11 @@ export const it = {
   "shortcuts.quit": "Esci",
   "shortcuts.print": "Stampa",
   "shortcuts.esc": "Chiudi / Esci",
+  "shortcuts.zoomIn": "Ingrandisci",
+  "shortcuts.zoomOut": "Rimpicciolisci",
+  "shortcuts.zoomReset": "Reimposta zoom",
+  "shortcuts.zoomWheel": "Ingrandisci o rimpicciolisci",
+  "shortcuts.ctrlWheel": "Ctrl+Rotella",
   // Vai alla riga
   // Status bar
   "statusbar.words": (n: number) => `${n} parola${n === 1 ? "" : "e"}`,
@@ -264,6 +269,7 @@ export const it = {
   "statusbar.cursor": (line: number, column: number) => `Riga ${line}, col. ${column}`,
   "statusbar.cursorTitle": "Riga e colonna del cursore",
   "statusbar.dirtyTitle": "Modifiche non salvate",
+  "statusbar.zoomTitle": "Livello di zoom — fai clic per reimpostare",
   // Language picker
   "lang.searchPlaceholder": "Cerca lingua…",
   "lang.searchAria": "Cerca lingua",

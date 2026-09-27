@@ -250,6 +250,11 @@ export const ta = {
   "shortcuts.quit": "வெளியேறு",
   "shortcuts.print": "அச்சிடு",
   "shortcuts.esc": "மூடு / வெளியேறு",
+  "shortcuts.zoomIn": "பெரிதாக்கு",
+  "shortcuts.zoomOut": "சிறிதாக்கு",
+  "shortcuts.zoomReset": "ஜூத்தை மீட்டமை",
+  "shortcuts.zoomWheel": "பெரிதாக்கு அல்லது சிறிதாக்கு",
+  "shortcuts.ctrlWheel": "Ctrl+சக்கரம்",
   // Go to line
   // Status bar
   "statusbar.words": (n: number) => `${n} சொல்${n === 1 ? " " : "கள் "}`,
@@ -263,6 +268,7 @@ export const ta = {
   "statusbar.cursor": (line: number, column: number) => `வரி ${line}, நெடுவரிசை ${column}`,
   "statusbar.cursorTitle": "கர்சரின் வரி மற்றும் நெடுவரிசை",
   "statusbar.dirtyTitle": "சேமிக்கப்படாத மாற்றங்கள்",
+  "statusbar.zoomTitle": "ஜூம் நிலை — மீட்டமைக்க கிளிக் செய்யவும்",
   // Language picker
   "lang.searchPlaceholder": "மொழியைத் தேடு…",
   "lang.searchAria": "மொழியைத் தேடு",

@@ -165,6 +165,16 @@ export type Backend = {
   writeHtmlFile(html: string, defaultName: string, locale: string): Promise<boolean>;
   alert(message: string, locale: string): Promise<void>;
   exitApp(): Promise<void>;
+  /**
+   * Scale the whole window by `factor` (1 is natural size).
+   *
+   * The desktop backend asks the webview for its own zoom, which re-renders
+   * the page at the new scale — crisp text at every level. The web build has
+   * no webview to ask and scales the document with CSS instead. Android's
+   * webview accepts the call and does nothing with it: pinch zoom belongs to
+   * the system there.
+   */
+  setZoom(factor: number): Promise<void>;
 };
 
 export type { DocumentStat };

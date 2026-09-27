@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type { Doc } from "../types";
 import type { DocumentStat } from "../externalChange";
 import type {
@@ -152,5 +153,9 @@ export const tauriBackend: Backend = {
 
   exitApp(): Promise<void> {
     return invoke<void>("exit_app");
+  },
+
+  setZoom(factor: number): Promise<void> {
+    return getCurrentWebview().setZoom(factor);
   },
 };

@@ -278,6 +278,11 @@ export const en = {
   "shortcuts.quit": "Quit",
   "shortcuts.print": "Print",
   "shortcuts.esc": "Close / Exit",
+  "shortcuts.zoomIn": "Zoom in",
+  "shortcuts.zoomOut": "Zoom out",
+  "shortcuts.zoomReset": "Reset zoom",
+  "shortcuts.zoomWheel": "Zoom in or out",
+  "shortcuts.ctrlWheel": "Ctrl+Wheel",
   // Go to line
   // Status bar
   "statusbar.words": (n: number) => `${n} word${n === 1 ? "" : "s"}`,
@@ -291,6 +296,7 @@ export const en = {
   "statusbar.cursor": (line: number, column: number) => `Ln ${line}, Col ${column}`,
   "statusbar.cursorTitle": "Line and column of the cursor",
   "statusbar.dirtyTitle": "Unsaved changes",
+  "statusbar.zoomTitle": "Zoom level — click to reset",
   // Language picker
   "lang.searchPlaceholder": "Search language…",
   "lang.searchAria": "Search language",

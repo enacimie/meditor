@@ -249,6 +249,11 @@ export const si = {
   "shortcuts.quit": "ඉවත් වන්න",
   "shortcuts.print": "මුද්‍රණය",
   "shortcuts.esc": "වසන්න / පිටවන්න",
+  "shortcuts.zoomIn": "විශාලනය",
+  "shortcuts.zoomOut": "කුඩා කිරීම",
+  "shortcuts.zoomReset": "විශාලනය නැවත සකසන්න",
+  "shortcuts.zoomWheel": "විශාලනය හෝ කුඩා කිරීම",
+  "shortcuts.ctrlWheel": "Ctrl+රෝදය",
   // Go to line
   // Status bar
   "statusbar.words": (n: number) => `වචන ${n}ක්`,
@@ -262,6 +267,7 @@ export const si = {
   "statusbar.cursor": (line: number, column: number) => `පේළිය ${line}, තීරය ${column}`,
   "statusbar.cursorTitle": "කර්සරයේ පේළිය සහ තීරය",
   "statusbar.dirtyTitle": "සුරැකී නැති වෙනස්කම්",
+  "statusbar.zoomTitle": "විශාලන මට්ටම — නැවත සැකසීමට ක්ලික් කරන්න",
   // Language picker
   "lang.searchPlaceholder": "භාෂාව සොයන්න…",
   "lang.searchAria": "භාෂාව සොයන්න",

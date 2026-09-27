@@ -36,6 +36,12 @@ export type ShortcutHandlers = {
   openPreferences: () => void;
   /** Ctrl+1 / Ctrl+2 / Ctrl+3 — editor only, split, preview only */
   setLayout: (mode: "editor" | "split" | "preview") => void;
+  /** Ctrl+= / Ctrl++ (and the numpad's) — one step up the zoom ladder */
+  zoomIn: () => void;
+  /** Ctrl+- — one step down the zoom ladder */
+  zoomOut: () => void;
+  /** Ctrl+0 — back to natural size */
+  zoomReset: () => void;
   /** Ctrl+Tab */
   nextTab: () => void;
   /** Ctrl+Shift+Tab */
@@ -155,6 +161,20 @@ export function useKeyboardShortcuts(
         // Ctrl+Alt and would otherwise swallow the digits.
         e.preventDefault();
         h.setLayout(k === "1" ? "editor" : k === "2" ? "split" : "preview");
+      } else if (!e.altKey && (k === "+" || k === "=")) {
+        // Both keys: `=` is where the plus sign lives unshifted on a US
+        // keyboard, and every browser takes either for zooming in. The
+        // numpad's plus arrives as "+" on its own.
+        e.preventDefault();
+        h.zoomIn();
+      } else if (!e.altKey && (k === "-" || k === "_")) {
+        // "_" is "-" with Shift on a US keyboard, and browsers honour that
+        // combination for zooming out too.
+        e.preventDefault();
+        h.zoomOut();
+      } else if (!e.shiftKey && !e.altKey && k === "0") {
+        e.preventDefault();
+        h.zoomReset();
       }
     };
 

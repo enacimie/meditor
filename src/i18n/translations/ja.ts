@@ -249,6 +249,11 @@ export const ja = {
   "shortcuts.quit": "終了",
   "shortcuts.print": "印刷",
   "shortcuts.esc": "閉じる / 終了",
+  "shortcuts.zoomIn": "拡大",
+  "shortcuts.zoomOut": "縮小",
+  "shortcuts.zoomReset": "ズームをリセット",
+  "shortcuts.zoomWheel": "拡大または縮小",
+  "shortcuts.ctrlWheel": "Ctrl+ホイール",
   // 行に移動
   // Status bar
   "statusbar.words": (n: number) => `${n}語`,
@@ -262,6 +267,7 @@ export const ja = {
   "statusbar.cursor": (line: number, column: number) => `行 ${line}、列 ${column}`,
   "statusbar.cursorTitle": "カーソルの行と列",
   "statusbar.dirtyTitle": "未保存の変更",
+  "statusbar.zoomTitle": "ズームレベル — クリックでリセット",
   // Language picker
   "lang.searchPlaceholder": "言語を検索…",
   "lang.searchAria": "言語を検索",

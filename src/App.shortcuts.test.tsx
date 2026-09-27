@@ -6,7 +6,7 @@
  * - The tab and quit shortcuts (Ctrl+T, Ctrl+Shift+T, Ctrl+Q).
  */
 import { describe, it, expect, vi, beforeEach, afterEach, beforeAll } from "vitest";
-import { render, cleanup, fireEvent, waitFor } from "@testing-library/react";
+import { render, cleanup, fireEvent, waitFor, act } from "@testing-library/react";
 import { EditorView } from "@codemirror/view";
 import { I18nProvider } from "./i18n/I18nProvider";
 import App from "./App";
@@ -46,6 +46,16 @@ vi.mock("@tauri-apps/api/event", () => ({
   listen: () => Promise.resolve(() => {}),
 }));
 
+// The zoom lives in the webview itself on the desktop, reached through
+// Tauri's webview API; this is the spy standing in for the real glass.
+const { webviewSetZoom } = vi.hoisted(() => ({
+  webviewSetZoom: vi.fn(async () => {}),
+}));
+
+vi.mock("@tauri-apps/api/webview", () => ({
+  getCurrentWebview: () => ({ setZoom: webviewSetZoom }),
+}));
+
 vi.mock("./Preview", () => ({
   default: () => <div data-testid="preview-mock" />,
 }));
@@ -73,6 +83,7 @@ beforeEach(() => {
   Element.prototype.scrollIntoView = vi.fn();
   localStorage.clear();
   invokeMock.mockClear();
+  webviewSetZoom.mockClear();
 });
 
 afterEach(() => {
@@ -307,6 +318,70 @@ describe("tab and quit shortcuts", () => {
       expect(invokeMock).toHaveBeenCalledWith(
         "print_document",
         expect.objectContaining({ paged: true }),
+      ),
+    );
+  });
+});
+
+describe("window zoom", () => {
+  it("Ctrl+= and Ctrl+- walk the ladder, and Ctrl+0 returns to natural size", async () => {
+    render(
+      <I18nProvider>
+        <App />
+      </I18nProvider>,
+    );
+    await waitFor(
+      () => expect(document.querySelector(".cm-editor")).toBeTruthy(),
+      { timeout: 8000 },
+    );
+
+    // The zoom readout only appears in the status bar while off natural size.
+    expect(document.querySelector(".statusbar-zoom")).toBeNull();
+
+    fireEvent.keyDown(window, { key: "=", ctrlKey: true });
+    await waitFor(() =>
+      expect(document.querySelector(".statusbar-zoom")?.textContent).toBe(
+        "110%",
+      ),
+    );
+    expect(webviewSetZoom).toHaveBeenCalledWith(1.1);
+
+    fireEvent.keyDown(window, { key: "-", ctrlKey: true });
+    await waitFor(() =>
+      expect(document.querySelector(".statusbar-zoom")).toBeNull(),
+    );
+
+    fireEvent.keyDown(window, { key: "+", ctrlKey: true });
+    fireEvent.keyDown(window, { key: "0", ctrlKey: true });
+    await waitFor(() =>
+      expect(webviewSetZoom).toHaveBeenLastCalledWith(1),
+    );
+    expect(document.querySelector(".statusbar-zoom")).toBeNull();
+  });
+
+  it("Ctrl+wheel zooms from anywhere in the window", async () => {
+    render(
+      <I18nProvider>
+        <App />
+      </I18nProvider>,
+    );
+    await waitFor(
+      () => expect(document.querySelector(".cm-editor")).toBeTruthy(),
+      { timeout: 8000 },
+    );
+
+    act(() => {
+      window.dispatchEvent(
+        new WheelEvent("wheel", {
+          deltaY: -120,
+          ctrlKey: true,
+          cancelable: true,
+        }),
+      );
+    });
+    await waitFor(() =>
+      expect(document.querySelector(".statusbar-zoom")?.textContent).toBe(
+        "110%",
       ),
     );
   });

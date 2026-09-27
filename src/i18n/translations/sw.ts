@@ -252,6 +252,11 @@ export const sw = {
   "shortcuts.quit": "Funga",
   "shortcuts.print": "Chapisha",
   "shortcuts.esc": "Funga / Toka",
+  "shortcuts.zoomIn": "Kuza",
+  "shortcuts.zoomOut": "Punguza ukuzaji",
+  "shortcuts.zoomReset": "Weka upya ukuzaji",
+  "shortcuts.zoomWheel": "Kuza au punguza",
+  "shortcuts.ctrlWheel": "Ctrl+Gurudumu",
   // Go to line
   // Status bar
   "statusbar.words": (n: number) => `Maneno ${n}`,
@@ -265,6 +270,7 @@ export const sw = {
   "statusbar.cursor": (line: number, column: number) => `Mstari ${line}, Safu ${column}`,
   "statusbar.cursorTitle": "Mstari na safu ya kishale",
   "statusbar.dirtyTitle": "Mabadiliko ambayo hayajahifadhiwa",
+  "statusbar.zoomTitle": "Kiwango cha ukuzaji — bofya ili kuweka upya",
   // Language picker
   "lang.searchPlaceholder": "Tafuta lugha…",
   "lang.searchAria": "Tafuta lugha",

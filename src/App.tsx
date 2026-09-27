@@ -48,6 +48,7 @@ import { useSplitDivider } from "./hooks/useSplitDivider";
 import { useNotice } from "./hooks/useNotice";
 import { useUpdateCheck } from "./hooks/useUpdateCheck";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
+import { useZoom } from "./hooks/useZoom";
 import { useCoarsePointer, prefersCoarsePointer } from "./hooks/useCoarsePointer";
 import { usePlatform, isMobilePlatform, canPrintNatively } from "./hooks/usePlatform";
 
@@ -383,6 +384,7 @@ export default function App() {
     useSplitDivider(50);
   const { notice, showNotice, dismissNotice } = useNotice();
   const updates = useUpdateCheck(t, { showNotice, dismissNotice });
+  const { zoom, zoomIn, zoomOut, zoomReset } = useZoom();
 
   const editorRef = useRef<EditorHandle>(null);
   const previewRef = useRef<PreviewHandle>(null);
@@ -2126,6 +2128,9 @@ export default function App() {
       findInDocument();
     },
     setLayout: chooseLayout,
+    zoomIn,
+    zoomOut,
+    zoomReset,
     openPreferences: () => {
       if (!ready || confirmRequest || renameRequest) return;
       // Two aria-modal dialogs at once would trap focus in the wrong one.
@@ -2530,6 +2535,8 @@ export default function App() {
         dirty={active?.dirty}
         cursorLine={cursorLine + 1}
         cursorColumn={cursorColumn}
+        zoom={zoom}
+        onZoomReset={zoomReset}
       />
       {confirmRequest && (
         <ConfirmDialog

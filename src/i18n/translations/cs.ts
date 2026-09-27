@@ -235,6 +235,11 @@ export const cs = {
   "shortcuts.quit": "Ukončit",
   "shortcuts.print": "Tisk",
   "shortcuts.esc": "Zavřít / Ukončit",
+  "shortcuts.zoomIn": "Přiblížit",
+  "shortcuts.zoomOut": "Oddálit",
+  "shortcuts.zoomReset": "Obnovit přiblížení",
+  "shortcuts.zoomWheel": "Přiblížit nebo oddálit",
+  "shortcuts.ctrlWheel": "Ctrl+kolečko",
   "statusbar.words": (n: number) => {
     if (n === 1) return `${n} slovo`;
     if (n >= 2 && n <= 4) return `${n} slova`;
@@ -254,6 +259,7 @@ export const cs = {
   "statusbar.cursor": (line: number, column: number) => `Ř. ${line}, sl. ${column}`,
   "statusbar.cursorTitle": "Řádek a sloupec kurzoru",
   "statusbar.dirtyTitle": "Neuložené změny",
+  "statusbar.zoomTitle": "Úroveň přiblížení — kliknutím obnovíte",
   "lang.searchPlaceholder": "Hledat jazyk…",
   "lang.searchAria": "Hledat jazyk",
   "lang.clearSearch": "Vymazat hledání",

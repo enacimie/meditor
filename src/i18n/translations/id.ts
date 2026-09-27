@@ -250,6 +250,11 @@ export const id = {
   "shortcuts.quit": "Keluar",
   "shortcuts.print": "Cetak",
   "shortcuts.esc": "Tutup / Exit",
+  "shortcuts.zoomIn": "Perbesar",
+  "shortcuts.zoomOut": "Perkecil",
+  "shortcuts.zoomReset": "Atur ulang zoom",
+  "shortcuts.zoomWheel": "Perbesar atau perkecil",
+  "shortcuts.ctrlWheel": "Ctrl+Roda",
   // Go to line
   // Status bar
   "statusbar.words": (n: number) => `${n} kata`,
@@ -263,6 +268,7 @@ export const id = {
   "statusbar.cursor": (line: number, column: number) => `Brs ${line}, Kol ${column}`,
   "statusbar.cursorTitle": "Baris dan kolom kursor",
   "statusbar.dirtyTitle": "Perubahan belum disimpan",
+  "statusbar.zoomTitle": "Tingkat zoom — klik untuk mengatur ulang",
   // Language picker
   "lang.searchPlaceholder": "Cari bahasa…",
   "lang.searchAria": "Cari bahasa",

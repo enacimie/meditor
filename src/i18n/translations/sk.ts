@@ -234,6 +234,11 @@ export const sk = {
   "shortcuts.quit": "Ukončiť",
   "shortcuts.print": "Tlačiť",
   "shortcuts.esc": "Zavrieť / Ukončiť",
+  "shortcuts.zoomIn": "Priblížiť",
+  "shortcuts.zoomOut": "Oddialiť",
+  "shortcuts.zoomReset": "Obnoviť priblíženie",
+  "shortcuts.zoomWheel": "Priblížiť alebo oddialiť",
+  "shortcuts.ctrlWheel": "Ctrl+Koliesko",
   "statusbar.words": (n: number) => {
     if (n === 1) return `${n} slovo`;
     if (n >= 2 && n <= 4) return `${n} slová`;
@@ -253,6 +258,7 @@ export const sk = {
   "statusbar.cursor": (line: number, column: number) => `Ria. ${line}, stĺ. ${column}`,
   "statusbar.cursorTitle": "Riadok a stĺpec kurzora",
   "statusbar.dirtyTitle": "Neuložené zmeny",
+  "statusbar.zoomTitle": "Úroveň priblíženia — kliknutím obnovíte",
   "lang.searchPlaceholder": "Hľadať jazyk…",
   "lang.searchAria": "Hľadať jazyk",
   "lang.clearSearch": "Vymazať hľadanie",

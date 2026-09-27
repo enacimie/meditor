@@ -249,6 +249,11 @@ export const ko = {
   "shortcuts.quit": "끝내기",
   "shortcuts.print": "인쇄",
   "shortcuts.esc": "닫기 / 종료",
+  "shortcuts.zoomIn": "확대",
+  "shortcuts.zoomOut": "축소",
+  "shortcuts.zoomReset": "확대/축소 재설정",
+  "shortcuts.zoomWheel": "확대 또는 축소",
+  "shortcuts.ctrlWheel": "Ctrl+휠",
   // 줄로 이동
   // Status bar
   "statusbar.words": (n: number) => `${n}단어`,
@@ -262,6 +267,7 @@ export const ko = {
   "statusbar.cursor": (line: number, column: number) => `줄 ${line}, 열 ${column}`,
   "statusbar.cursorTitle": "커서의 줄과 열",
   "statusbar.dirtyTitle": "저장되지 않은 변경 사항",
+  "statusbar.zoomTitle": "확대 수준 — 클릭하여 재설정",
   // Language picker
   "lang.searchPlaceholder": "언어 검색…",
   "lang.searchAria": "언어 검색",

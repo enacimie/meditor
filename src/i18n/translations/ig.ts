@@ -249,6 +249,11 @@ export const ig = {
   "shortcuts.quit": "Kwụsị",
   "shortcuts.print": "Bipụta",
   "shortcuts.esc": "Mechie / Pụọ",
+  "shortcuts.zoomIn": "Mụbaa",
+  "shortcuts.zoomOut": "Belata",
+  "shortcuts.zoomReset": "Tọgharịa mmụba",
+  "shortcuts.zoomWheel": "Mụbaa ma ọ bụ belata",
+  "shortcuts.ctrlWheel": "Ctrl+Wiilị",
   // Go to line
   // Status bar
   "statusbar.words": (n: number) => `Mkpụrụokwu ${n}`,
@@ -262,6 +267,7 @@ export const ig = {
   "statusbar.cursor": (line: number, column: number) => `Ahịrị ${line}, Kọlụm ${column}`,
   "statusbar.cursorTitle": "Ahịrị na kọlụm nke ihe nchọta",
   "statusbar.dirtyTitle": "Mgbanwe a na-echekwabeghị",
+  "statusbar.zoomTitle": "Ọkwa mmụba — pịa ka ịtọgharịa",
   // Language picker
   "lang.searchPlaceholder": "Chọọ asụsụ…",
   "lang.searchAria": "Chọọ asụsụ",

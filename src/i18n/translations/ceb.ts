@@ -250,6 +250,11 @@ export const ceb = {
   "shortcuts.quit": "Mobiya",
   "shortcuts.print": "I-print",
   "shortcuts.esc": "Isira / Gawas",
+  "shortcuts.zoomIn": "Padak-on",
+  "shortcuts.zoomOut": "Pagamayon",
+  "shortcuts.zoomReset": "I-reset ang zoom",
+  "shortcuts.zoomWheel": "Padak-on o pagamayon",
+  "shortcuts.ctrlWheel": "Ctrl+Ligid",
   // Go to line
   // Status bar
   "statusbar.words": (n: number) => `${n} ka pulong`,
@@ -263,6 +268,7 @@ export const ceb = {
   "statusbar.cursor": (line: number, column: number) => `Linya ${line}, Kolum ${column}`,
   "statusbar.cursorTitle": "Linya ug kolum sa cursor",
   "statusbar.dirtyTitle": "Wala ma-save nga mga kausaban",
+  "statusbar.zoomTitle": "Lebel sa zoom — i-klik aron i-reset",
   // Language picker
   "lang.searchPlaceholder": "Pangitaa ang pinulongan…",
   "lang.searchAria": "Pangitaa ang pinulongan",
