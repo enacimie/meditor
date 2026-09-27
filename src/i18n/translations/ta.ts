@@ -275,12 +275,12 @@ export const ta = {
   "lang.clearSearch": "தேடலை அழி",
   "lang.noResults": "மொழிகள் எதுவும் இல்லை",
   // Misc
-  "topbar.newTypst": "New .typ",
-  "topbar.newLatex": "New .tex",
+  "topbar.newTypst": "புதிய .typ",
+  "topbar.newLatex": "புதிய .tex",
   "topbar.newMarp": "புதிய Marp தொகுப்பு",
-  "preview.typstCompiling": "Compiling Typst...",
+  "preview.typstCompiling": "Typst தொகுக்கப்படுகிறது...",
   "preview.typstError": "Typst:",
-  "preview.pages": "pages",
+  "preview.pages": "பக்கங்கள்",
   "preview.typstFilesUnsaved": "Typst அருகிலுள்ள கோப்புகளைப் படிக்க ஆவணத்தைச் சேமிக்கவும்.",
   "preview.typstFilesDesktopOnly": "ஆவணத்தின் அருகிலுள்ள கோப்புகளை Typst-க்கு வழங்க டெஸ்க்டாப் செயலியால் மட்டுமே முடியும்.",
   "preview.typstFilesLeftOut": "இந்த கோப்புகள் Typst-க்கு வழங்கப்படவில்லை:",
@@ -289,9 +289,9 @@ export const ta = {
   "preview.typstFileTooLarge": (mib: number) => `${mib} MiB-ஐ விட பெரியது`,
   "preview.typstFileLimit": (files: number, mib: number, depth: number) =>
     `ஒரு ஆவணம் படிக்கக்கூடிய அதிகபட்சத்தை மீறியது: ${files} கோப்புகள், ${mib} MiB, ${depth} அடுக்கு include`,
-  "preview.latexCompiling": "Compiling LaTeX...",
+  "preview.latexCompiling": "LaTeX தொகுக்கப்படுகிறது...",
   "preview.latexError": "LaTeX:",
-  "preview.latexEmpty": "Empty LaTeX document.",
+  "preview.latexEmpty": "வெற்று LaTeX ஆவணம்.",
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 

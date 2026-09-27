@@ -276,12 +276,12 @@ export const mr = {
   "lang.clearSearch": "शोध साफ करा",
   "lang.noResults": "कोणतीही भाषा सापडली नाही",
   // Misc
-  "topbar.newTypst": "New .typ",
-  "topbar.newLatex": "New .tex",
+  "topbar.newTypst": "नवीन .typ",
+  "topbar.newLatex": "नवीन .tex",
   "topbar.newMarp": "नवीन Marp सादरीकरण",
-  "preview.typstCompiling": "Compiling Typst...",
+  "preview.typstCompiling": "Typst संकलित होत आहे...",
   "preview.typstError": "Typst:",
-  "preview.pages": "pages",
+  "preview.pages": "पाने",
   "preview.typstFilesUnsaved": "Typst ला शेजारील फाइल वाचता याव्यात म्हणून दस्तऐवज जतन करा.",
   "preview.typstFilesDesktopOnly": "दस्तऐवजाच्या शेजारील फाइल Typst ला देऊ शकणारे फक्त डेस्कटॉप ॲप आहे.",
   "preview.typstFilesLeftOut": "या फाइल Typst ला दिल्या गेल्या नाहीत:",
@@ -290,9 +290,9 @@ export const mr = {
   "preview.typstFileTooLarge": (mib: number) => `${mib} MiB पेक्षा मोठी`,
   "preview.typstFileLimit": (files: number, mib: number, depth: number) =>
     `एका दस्तऐवजाला वाचता येईल त्यापेक्षा जास्त: ${files} फाइल, ${mib} MiB, ${depth} स्तरांचे include`,
-  "preview.latexCompiling": "Compiling LaTeX...",
+  "preview.latexCompiling": "LaTeX संकलित होत आहे...",
   "preview.latexError": "LaTeX:",
-  "preview.latexEmpty": "Empty LaTeX document.",
+  "preview.latexEmpty": "रिकामे LaTeX दस्तऐवज.",
   "menu.shortcut.newTypst": "Ctrl+Shift+N",
   "menu.shortcut.newLatex": "Ctrl+Shift+L",
 

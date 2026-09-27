@@ -227,16 +227,28 @@ compile of the sample (3 pages, one `<svg>`).
 
 ## Bundle 6 — translation content
 
+**Status: landed (PR #206).** An audit script compared every one of the 104
+dictionaries against English and found 1 174 exact copies and 161
+word-by-word hybrids ("Empty or invalid датотека path") across 88
+languages — all retranslated (12 batches), including the Amazigh four's
+plural functions, which the structural tests could not see, and the
+`*ErrorPrefix` keys that had lost the space the alert concatenation needs.
+What was reported as ~39 languages with English function bodies was
+re-measured at 4 × 9 once the strings the September batches had already
+translated were accounted for. `translations.test.ts` now carries three
+content tests — no translatable value left in English (with a reviewed
+allowlist of internationalisms and of the words that *are* the local word,
+like "document" in Catalan), no English bigram fingerprints inside
+translated values, and no English bodies in the Amazigh functions — so
+parity now means translation, not presence.
+
 - [high] (verified, pre-dates the September batches — `git blame` to the
   August i18n expansion) structural parity is perfect across the 104
-  languages, but nothing checks content: word-by-word hybrids ("Документ is
-  no longer доступно for сачувај", sr), a corrupt word ("Bukaing", id),
-  `file.*`/`session.*` clusters untranslated or hybrid in ~39 languages,
-  `preview.pages`="pages" in ~87, the nine plural functions still English
-  in the four Amazigh languages, trailing-space loss in `*ErrorPrefix`
-  keys. Plan: retranslate the affected clusters and add a content test
-  (English-word runs in non-EN values) so parity means translation, not
-  presence.
+  languages, but nothing checks content: word-by-word hybrids, a corrupt
+  word ("Bukaing", id), whole clusters in English (~87 languages for
+  `preview.pages`), the plural functions still English in the four Amazigh
+  languages, trailing-space loss in `*ErrorPrefix` keys. — **fixed, with
+  the content tests above as the ratchet**
 
 ## Bundle 7 — e2e harness, CI and Rust hardening
 
