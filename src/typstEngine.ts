@@ -91,23 +91,70 @@ export function createTypstClient(startWorker: () => WorkerLike, fontBase: () =>
       const id = ++nextId;
       waiting.set(id, { resolve, reject });
       const request: TypstRequest = { id, kind, mainContent: input.mainContent, fontBase: fontBase() };
+      let sentPaths: string[] | null = null;
       if (input.folder) {
         request.mainPath = input.folder.mainPath;
         request.files = delta(input.folder);
+        // delta() prefixes the paths it sends with "/" (the compiler's view
+        // of the folder); `held` keys them without it.
+        sentPaths = request.files.set.map((file) => file.path.replace(/^\//, ""));
       } else if (heldFor !== null) {
         // A document without a folder must not find another's files there.
         request.files = { reset: true, set: [], drop: [] };
         heldFor = null;
         held.clear();
       }
+      // The WASM's mapping calls report failure by returning false, which
+      // the bindings turn into nothing this side can see: a file the worker
+      // never received would be believed delivered, and every later delta
+      // would leave it out. A request that carried files and failed forgets
+      // them, so the next attempt sends them again.
+      const settle = waiting.get(id);
+      waiting.set(id, {
+        resolve: (answer) => {
+          if ("error" in answer && sentPaths) {
+            for (const path of sentPaths) held.delete(path);
+          }
+          settle?.resolve(answer);
+        },
+        reject,
+      });
       worker.postMessage(request);
     });
-    if ("error" in reply) throw new Error(reply.error);
+    if ("skipped" in reply) return reply;
+    if ("error" in reply) {
+      if (reply.fatal && worker) {
+        /*
+         * This worker's compiler never came up, and typst.ts caches the
+         * failed initialisation: it will answer every request the same way.
+         * Drop it — the next request starts a fresh one — and fail whatever
+         * else was queued behind this one, rather than leaving those callers
+         * waiting on a worker that no longer exists.
+         */
+        const dead = worker;
+        worker = null;
+        heldFor = null;
+        held.clear();
+        dead.terminate();
+        const startup = new Error("the Typst compiler did not start");
+        for (const [id, request] of waiting) {
+          if (id !== reply.id) request.reject(startup);
+        }
+        waiting.clear();
+      }
+      throw new Error(reply.error);
+    }
     return reply;
   };
 
   return {
-    svg: async (input) => ((await ask("svg", input)) as { svg: string }).svg,
+    svg: async (input) => {
+      const reply = await ask("svg", input);
+      // An overtaken draft: nobody is waiting for this text anymore (the
+      // preview has asked for a newer one and discards what comes back for
+      // an older sequence number), so an empty answer is a true one.
+      return "svg" in reply ? reply.svg : "";
+    },
     pdf: async (input) => ((await ask("pdf", input)) as { pdf: Uint8Array | undefined }).pdf,
   };
 }

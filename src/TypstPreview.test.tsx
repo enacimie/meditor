@@ -16,6 +16,10 @@ const disk = vi.hoisted(() => ({
 const host = vi.hoisted(() => ({ tauri: true, platform: "linux" as string | null }));
 /** What the compiler was asked for, in order. */
 const compiled = vi.hoisted(() => [] as TypstInput[]);
+/** What the compiler hands back, per test. */
+const engine = vi.hoisted(() => ({
+  svg: '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"></svg>',
+}));
 
 vi.mock("@tauri-apps/api/core", () => ({ isTauri: () => host.tauri }));
 vi.mock("./hooks/usePlatform", async (importOriginal) => ({
@@ -41,7 +45,7 @@ vi.mock("./typstEngine", () => ({
     $typst: {
       svg: async (input: TypstInput) => {
         compiled.push(input);
-        return '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"></svg>';
+        return engine.svg;
       },
       pdf: async () => undefined,
     },
@@ -61,7 +65,7 @@ const t = ((key: string, ...args: unknown[]) => {
 const SAVED = { fileSource: { handle: "doc", locale: "en" }, docPath: "/docs/report.typ" };
 
 function renderPreview(value: string, props: Partial<typeof SAVED> = {}) {
-  return render(<TypstPreview value={value} t={t} onReverseSync={vi.fn()} {...props} />);
+  return render(<TypstPreview value={value} t={t} {...props} />);
 }
 
 /** Let time pass, and whatever it set off finish: a look, a compile. */
@@ -79,6 +83,7 @@ async function wait(ms: number) {
 const noticeText = (container: HTMLElement) => container.querySelector(".typst-files-notice")?.textContent ?? null;
 
 beforeEach(() => {
+  engine.svg = '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"></svg>';
   vi.useFakeTimers();
   disk.files.clear();
   disk.refused.clear();
@@ -211,5 +216,29 @@ describe("the files the Typst preview compiles with", () => {
     const looked = vi.mocked(backend.typstFileStat).mock.calls.length;
     await wait(6000);
     expect(vi.mocked(backend.typstFileStat).mock.calls.length).toBe(looked);
+  });
+});
+
+describe("the page counter", () => {
+  it("counts the pages the document rendered, not the svg tags", async () => {
+    // typst.ts draws the whole document as ONE <svg class="typst-doc"> with
+    // a <g class="typst-page"> per page. Counting <svg> tags — what this
+    // component used to do — always said nothing, because one is never
+    // "more than one".
+    engine.svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" class="typst-doc">' +
+      '<g class="typst-page" transform="translate(0,0)"></g>' +
+      '<g class="typst-page" transform="translate(0,100)"></g>' +
+      "</svg>";
+    renderPreview("= one\n#pagebreak()\n= two", SAVED);
+    await wait(400);
+    const counter = document.querySelector(".typst-page-counter");
+    expect(counter?.textContent).toBe("2 pages");
+  });
+
+  it("stays quiet for a single page", async () => {
+    renderPreview("= one", SAVED);
+    await wait(400);
+    expect(document.querySelector(".typst-page-counter")).toBeNull();
   });
 });

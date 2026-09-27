@@ -4,7 +4,6 @@ import {
   useImperativeHandle,
   useRef,
   useState,
-  type MouseEvent,
 } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import type { TranslationFn } from "./i18n/translations";
@@ -61,17 +60,14 @@ function problemText(problem: TypstFileProblem, t: TranslationFn): string {
 }
 
 /**
- * Parse a data-source-loc attribute from typst.ts SVGs.
- * Format is typically "line:column" or "startLine:startCol,endLine:endCol".
- * Returns the start line (1-based from Typst, 0-based for the editor).
+ * How many pages the rendered document has.
+ *
+ * typst.ts draws the whole document as one `<svg class="typst-doc">` with a
+ * `<g class="typst-page">` per page — counting `<svg` tags, as this once
+ * did, always counted one.
  */
-function parseSourceLine(loc: string): number {
-  const comma = loc.indexOf(",");
-  const segment = comma > 0 ? loc.slice(0, comma) : loc;
-  const colon = segment.indexOf(":");
-  const lineStr = colon > 0 ? segment.slice(0, colon) : segment;
-  const line = parseInt(lineStr, 10);
-  return isNaN(line) ? -1 : line;
+function countPages(svg: string): number {
+  return (svg.match(/<g[^>]*class="[^"]*\btypst-page\b/g) ?? []).length;
 }
 
 export type TypstPreviewHandle = {
@@ -91,13 +87,10 @@ type Props = {
   fileSource?: TypstFileSource;
   /** The document's path, whose last part is its name in that folder. */
   docPath?: string | null;
-  onReverseSync: (line: number) => void;
 };
 
 const TypstPreview = forwardRef<TypstPreviewHandle, Props>(
-  function TypstPreview({ value, t, fileSource, docPath = null, onReverseSync }, ref) {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const outputRef = useRef<HTMLDivElement>(null);
+  function TypstPreview({ value, t, fileSource, docPath = null }, ref) {
     const [svg, setSvg] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
@@ -119,67 +112,24 @@ const TypstPreview = forwardRef<TypstPreviewHandle, Props>(
     // anywhere else, saving it gives the backend no folder to read.
     const savingHelps = isTauri() && !isMobilePlatform(platform);
     const seqRef = useRef(0);
-    const markedElRef = useRef<Element | null>(null);
-    const markedLineRef = useRef<number | null>(null);
-    const flashTimerRef = useRef<number | undefined>(undefined);
 
+    /*
+     * The handle exists so the outline, the reverse sync and the preview's
+     * marking can treat every document kind alike — and for Typst they do
+     * nothing, honestly. Syncing needs a map from the rendered page back to
+     * source lines, and the SVG this version of typst.ts produces carries
+     * no source locations at all: no `data-source-loc` (an attribute no
+     * part of the toolchain emits), and the `data-span` its own interactive
+     * viewer reads comes from a renderer pipeline this build does not use.
+     * The code that queried those attributes could therefore never find
+     * anything; what follows says so instead of pretending to look.
+     */
     useImperativeHandle(ref, () => ({
-      scrollToLine(line: number) {
-        const container = containerRef.current;
-        if (!container) return;
-        // Typst lines are 1-based, editor lines are 0-based
-        const typstLine = line + 1;
-        // Find the first element whose source-loc starts at this line
-        const candidates = Array.from(
-          container.querySelectorAll<HTMLElement>("[data-source-loc]"),
-        );
-        let target: HTMLElement | null = null;
-        for (const el of candidates) {
-          const loc = el.getAttribute("data-source-loc");
-          if (!loc) continue;
-          const parsed = parseSourceLine(loc);
-          if (parsed < 0) continue;
-          if (parsed <= typstLine) target = el;
-          else break;
-        }
-        if (!target && candidates.length) target = candidates[0];
-        if (!target) return;
-        target.scrollIntoView({ behavior: "smooth", block: "center" });
-        target.classList.remove("sync-flash");
-        void (target as HTMLElement).offsetWidth;
-        target.classList.add("sync-flash");
-        if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
-        flashTimerRef.current = window.setTimeout(() => {
-          flashTimerRef.current = undefined;
-          target?.classList.remove("sync-flash");
-        }, 1300);
-      },
-      getTargetLine(): number {
-        if (markedLineRef.current !== null) return markedLineRef.current;
-        const container = containerRef.current;
-        if (!container) return 0;
-        const scroller = container.closest(".preview-scroll") as HTMLElement | null;
-        const top = scroller ? scroller.getBoundingClientRect().top : 0;
-        const nodes = Array.from(
-          container.querySelectorAll<HTMLElement>("[data-source-loc]"),
-        );
-        for (const n of nodes) {
-          if (n.getBoundingClientRect().bottom >= top) {
-            const loc = n.getAttribute("data-source-loc") ?? "";
-            const parsed = parseSourceLine(loc);
-            // Convert 1-based Typst line to 0-based editor line
-            return parsed > 0 ? parsed - 1 : 0;
-          }
-        }
+      scrollToLine(_line: number) {},
+      getTargetLine() {
         return 0;
       },
-      clearMark() {
-        if (markedElRef.current) {
-          markedElRef.current.classList.remove("sync-marked");
-        }
-        markedElRef.current = null;
-        markedLineRef.current = null;
-      },
+      clearMark() {},
     }));
 
     useEffect(() => {
@@ -214,10 +164,8 @@ const TypstPreview = forwardRef<TypstPreviewHandle, Props>(
           if (!safeSvg) throw new Error("Typst produced invalid or unsafe SVG");
           if (cancelled || mySeq !== seqRef.current) return;
           setSvg(safeSvg);
+          setPageCount(countPages(safeSvg));
           setLoading(false);
-          // Count <svg> elements to know how many pages were rendered
-          const count = (safeSvg.match(/<svg[\s>]/g) || []).length;
-          setPageCount(count);
         } catch (e) {
           if (cancelled || mySeq !== seqRef.current) return;
           const message = e instanceof Error ? e.message : String(e);
@@ -259,37 +207,8 @@ const TypstPreview = forwardRef<TypstPreviewHandle, Props>(
       };
     }, [fileSource, mainName]);
 
-    function handleClick(e: MouseEvent) {
-      const el = (e.target as HTMLElement).closest<HTMLElement>(
-        "[data-source-loc]",
-      );
-      if (el) {
-        if (markedElRef.current && markedElRef.current !== el) {
-          markedElRef.current.classList.remove("sync-marked");
-        }
-        el.classList.add("sync-marked");
-        markedElRef.current = el;
-        const loc = el.getAttribute("data-source-loc") ?? "";
-        const parsed = parseSourceLine(loc);
-        if (parsed > 0) {
-          markedLineRef.current = parsed - 1; // 0-based
-          onReverseSync(markedLineRef.current);
-        }
-      } else {
-        if (markedElRef.current) {
-          markedElRef.current.classList.remove("sync-marked");
-        }
-        markedElRef.current = null;
-        markedLineRef.current = null;
-      }
-    }
-
     return (
-      <div
-        ref={containerRef}
-        className="typst-preview"
-        onClick={handleClick}
-      >
+      <div className="typst-preview">
         {(files.unavailable || files.problems.length > 0) && (
           <div className="typst-files-notice" role="status">
             {files.unavailable && (
@@ -323,17 +242,13 @@ const TypstPreview = forwardRef<TypstPreviewHandle, Props>(
           <div className="preview-error" role="alert" aria-live="assertive">
             <strong>{t("preview.unavailable")}</strong>
             <span>{error}</span>
-            <button type="button" onClick={() => setRetryToken((t) => t + 1)}>
+            <button type="button" onClick={() => setRetryToken((n) => n + 1)}>
               {t("preview.retry")}
             </button>
           </div>
         )}
         {svg && (
-          <div
-            ref={outputRef}
-            className="typst-output"
-            aria-label="Typst preview"
-          >
+          <div className="typst-output" aria-label="Typst preview">
             {pageCount > 1 && (
               <span className="typst-page-counter" aria-live="polite">
                 {pageCount} {t("preview.pages")}

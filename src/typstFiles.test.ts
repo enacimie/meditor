@@ -131,6 +131,11 @@ describe("a path a Typst file writes", () => {
     expect(resolveTypstPath("report.typ", "https://example.com/x.png")).toBeNull();
     expect(resolveTypstPath("report.typ", ".")).toBeNull();
   });
+
+  it("reads a backslash as the separator it is on Windows", () => {
+    expect(resolveTypstPath("report.typ", "chapters\\one.typ")).toBe("chapters/one.typ");
+    expect(resolveTypstPath("chapters\\one.typ", "..\\fig.png")).toBe("fig.png");
+  });
 });
 
 describe("collecting a document's files", () => {

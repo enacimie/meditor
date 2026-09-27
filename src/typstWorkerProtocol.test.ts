@@ -4,6 +4,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   answer,
+  humanizeTypstError,
   oneAtATime,
   serve,
   type TypstReply,
@@ -181,11 +182,16 @@ describe("the worker", () => {
       if (asked === 1) throw new Error("no compiler");
       return typst;
     });
+    // Sent one at a time: in a burst the first would be skipped as an
+    // overtaken draft, and this test is about the failure, not the queue.
     send(request("svg", { id: 1 }));
+    await vi.waitFor(() => expect(posted).toHaveLength(1));
     send(request("svg", { id: 2 }));
     await vi.waitFor(() => expect(posted).toHaveLength(2));
     expect(posted.map((entry) => entry.message)).toEqual([
-      { id: 1, error: "no compiler" },
+      // The worker's first-ever failure is fatal: typst.ts caches the failed
+      // initialisation, so nothing it attempts next can succeed.
+      { id: 1, error: "no compiler", fatal: true },
       { id: 2, svg: "<svg/>" },
     ]);
   });
@@ -199,5 +205,120 @@ describe("the worker", () => {
     await vi.waitFor(() => expect(posted).toHaveLength(1));
     expect(posted[0].message).toEqual({ id: 7, pdf: bytes });
     expect(posted[0].transfer).toEqual([bytes.buffer]);
+  });
+});
+
+describe("a worker that cannot go on, and drafts nobody waits for", () => {
+  /** The same stand-in scope the worker tests above use. */
+  function workerScope() {
+    let listener: ((event: MessageEvent<TypstRequest>) => void) | null = null;
+    const posted: Array<{ message: TypstReply; transfer: Transferable[] }> = [];
+    const scope: WorkerScope = {
+      addEventListener: (_type, added) => {
+        listener = added;
+      },
+      postMessage: (message, transfer) => void posted.push({ message, transfer }),
+    };
+    const send = (sent: TypstRequest) => listener!({ data: sent } as MessageEvent<TypstRequest>);
+    return { scope, posted, send };
+  }
+
+  it("calls the first-ever failure fatal, and a later one the document's", async () => {
+    const { scope, posted, send } = workerScope();
+    let fail = true;
+    const { typst } = compiler({
+      svg: vi.fn(async () => {
+        if (fail) throw new Error("no fonts");
+        return "<svg/>";
+      }),
+    });
+    serve(scope, () => typst);
+
+    send(request("svg", { id: 1 }));
+    await vi.waitFor(() => expect(posted).toHaveLength(1));
+    expect(posted[0].message).toEqual({ id: 1, error: "no fonts", fatal: true });
+
+    fail = false;
+    send(request("svg", { id: 2 }));
+    await vi.waitFor(() => expect(posted).toHaveLength(2));
+    expect(posted[1].message).toEqual({ id: 2, svg: "<svg/>" });
+
+    // The worker has compiled once: it is healthy, and this failure is the
+    // document's, not an excuse to throw the worker away.
+    fail = true;
+    send(request("svg", { id: 3 }));
+    await vi.waitFor(() => expect(posted).toHaveLength(3));
+    expect(posted[2].message).toEqual({ id: 3, error: "no fonts" });
+  });
+
+  it("answers an overtaken SVG without compiling it, and never skips a PDF", async () => {
+    const { scope, posted, send } = workerScope();
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const { typst } = compiler({
+      svg: vi.fn(async () => {
+        await gate;
+        return "<svg/>";
+      }),
+    });
+    serve(scope, () => typst);
+
+    // id1 gets a head start and is already at the compiler when the burst
+    // arrives; of the three queued behind it, only the newest is worth
+    // compiling. The PDF is an export somebody asked for: never skipped.
+    send(request("svg", { id: 1 }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    send(request("svg", { id: 2 }));
+    send(request("svg", { id: 3 }));
+    send(request("pdf", { id: 4 }));
+    release();
+
+    await vi.waitFor(() => expect(posted).toHaveLength(4));
+    const byId = new Map(posted.map((entry) => [entry.message.id, entry.message]));
+    expect(byId.get(1)).toEqual({ id: 1, svg: "<svg/>" });
+    expect(byId.get(2)).toEqual({ id: 2, skipped: true });
+    expect(byId.get(3)).toEqual({ id: 3, svg: "<svg/>" });
+    expect(byId.get(4)).toMatchObject({ id: 4, pdf: expect.any(Uint8Array) });
+    expect(typst.svg).toHaveBeenCalledTimes(2);
+  });
+
+  it("skips every draft of a burst but the one the writer waits for", async () => {
+    const { scope, posted, send } = workerScope();
+    const { typst } = compiler();
+    serve(scope, () => typst);
+
+    // Three keystroke pauses land before the worker picks any of them up:
+    // only the last one is still on screen.
+    send(request("svg", { id: 1 }));
+    send(request("svg", { id: 2 }));
+    send(request("svg", { id: 3 }));
+
+    await vi.waitFor(() => expect(posted).toHaveLength(3));
+    const byId = new Map(posted.map((entry) => [entry.message.id, entry.message]));
+    expect(byId.get(1)).toEqual({ id: 1, skipped: true });
+    expect(byId.get(2)).toEqual({ id: 2, skipped: true });
+    expect(byId.get(3)).toEqual({ id: 3, svg: "<svg/>" });
+    expect(typst.svg).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("the compile error the writer reads", () => {
+  it("takes the message and the hints out of the compiler's Debug dump", () => {
+    const dump =
+      '[SourceDiagnostic { severity: Error, span: Span { id: SourceId(3), number: 553 }, trace: [], message: "unknown variable: x", hints: ["did you mean \\"y\\"?"] }]';
+    expect(humanizeTypstError(dump)).toBe('unknown variable: x (did you mean "y"?)');
+  });
+
+  it("joins several diagnostics, one to a line", () => {
+    const dump =
+      '[SourceDiagnostic { severity: Error, span: Span { id: SourceId(1), number: 2 }, trace: [], message: "expected expression", hints: [] }, SourceDiagnostic { severity: Error, span: Span { id: SourceId(1), number: 9 }, trace: [], message: "unexpected end", hints: [] }]';
+    expect(humanizeTypstError(dump)).toBe("expected expression\nunexpected end");
+  });
+
+  it("passes through what it does not recognise", () => {
+    expect(humanizeTypstError("boom")).toBe("boom");
+    expect(humanizeTypstError("")).toBe("");
   });
 });

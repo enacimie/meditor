@@ -69,6 +69,9 @@ const LatexPreview = forwardRef<LatexPreviewHandle, Props>(
         revokePdfUrl(pdfUrlRef, setPdfUrl);
         setLog(null);
         setError(null);
+        // Without this, emptying the document mid-compile left the spinner
+        // up for good: the cancelled task never reaches its setLoading.
+        setLoading(false);
         return;
       }
 
@@ -139,8 +142,9 @@ const LatexPreview = forwardRef<LatexPreviewHandle, Props>(
               setPdfUrl(url);
             } else {
               revokePdfUrl(pdfUrlRef, setPdfUrl);
-              const msg = result.log || `Exit status ${result.status}`;
-              setError(`${t("preview.latexError")} ${msg}`);
+              // The log renders once, in its own <pre>: folding it into the
+              // error message printed the same wall of text twice.
+              setError(`${t("preview.latexError")} Exit status ${result.status}`);
             }
             setLoading(false);
           } catch (e) {
@@ -200,7 +204,7 @@ const LatexPreview = forwardRef<LatexPreviewHandle, Props>(
             <p className="latex-notice-text">{t("preview.latexNotice")}</p>
             {log && <pre className="latex-log">{log}</pre>}
             <pre className="latex-log">{error}</pre>
-            <button type="button" onClick={() => setRetryToken((t) => t + 1)}>
+            <button type="button" onClick={() => setRetryToken((n) => n + 1)}>
               {t("preview.retry")}
             </button>
           </div>
