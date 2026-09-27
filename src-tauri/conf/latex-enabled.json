@@ -1,23 +1,38 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
+  "app": {
+    "security": {
+      "csp": "default-src 'self' customprotocol: asset:; connect-src 'self' ipc: http://ipc.localhost http://127.0.0.1:5000 http://localhost:5000 https://texlive2.swiftlatex.com; img-src 'self' asset: data: blob: https:; style-src 'self' 'unsafe-inline'; font-src 'self' asset: data:; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; frame-src 'self' blob:"
+    }
+  },
   "bundle": {
     "fileAssociations": [
       {
-        "ext": ["md", "markdown"],
+        "ext": [
+          "md",
+          "markdown"
+        ],
         "name": "Markdown",
         "description": "Markdown document",
         "role": "Editor",
         "mimeType": "text/markdown"
       },
       {
-        "ext": ["typ", "typst"],
+        "ext": [
+          "typ",
+          "typst"
+        ],
         "name": "Typst",
         "description": "Typst document",
         "role": "Editor",
         "mimeType": "text/x-typst"
       },
       {
-        "ext": ["tex", "latex", "ltx"],
+        "ext": [
+          "tex",
+          "latex",
+          "ltx"
+        ],
         "name": "LaTeX",
         "description": "LaTeX document",
         "role": "Editor",

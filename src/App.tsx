@@ -791,7 +791,15 @@ export default function App() {
   }, [ready, splitRatioRef]);
 
   useEffect(() => {
-    if (!ready || !isTauri()) return;
+    /*
+     * Every backend, not only the desktop's. This writer used to be gated
+     * on `isTauri()`, which left the web build checkpointing only on
+     * `visibilitychange`/`pagehide` — a browser that crashes, or a tab the
+     * OS kills in the background, took the whole session with it, silently.
+     * The comment on the flush below has always claimed the debounce covers
+     * ordinary typing; now that is true on the web too.
+     */
+    if (!ready) return;
     if (sessionTimerRef.current !== undefined) {
       window.clearTimeout(sessionTimerRef.current);
     }

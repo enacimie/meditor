@@ -193,10 +193,16 @@ jobs:
           status=$?
           set -e
           cat start.log
-          # 124 is timeout killing a window that was still up, which is the
-          # healthy outcome. A panic exits 101 and prints; either is a failure.
-          if [ "$status" = "101" ] || grep -q "panicked at" start.log; then
-            echo "::error::the application does not start (exit $status)"
+          # 124 is timeout killing a window that was still up, and it is the
+          # ONLY healthy outcome: a silent exit 0 or 1 — a WebView that never
+          # came up, an init error that returns instead of panicking — used
+          # to walk through this check.
+          if [ "$status" != "124" ]; then
+            echo "::error::the application did not stay up (exit $status)"
+            exit 1
+          fi
+          if grep -q "panicked at" start.log; then
+            echo "::error::the application panicked while starting"
             exit 1
           fi
 

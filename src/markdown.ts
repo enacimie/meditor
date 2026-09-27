@@ -656,7 +656,10 @@ export const md = new MarkdownIt({
   .use(texmath, {
     engine: katex,
     delimiters: "dollars",
-    katexOptions: { throwOnError: false },
+    // maxSize bounds how enormous one formula may draw itself: without it a
+    // single `\rule{1e9em}{1e9em}` in somebody else's document hangs the
+    // preview's layout for everybody. 10em is far beyond any real equation.
+    katexOptions: { throwOnError: false, maxSize: 10 },
   })
   .use(container, "warning")
   .use(container, "note")

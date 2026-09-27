@@ -191,13 +191,17 @@ export const TAURI_SHIM = `(() => {
       case "save_session":
       case "save_document":
       case "save_as":
-      case "open_files":
       case "export_pdf":
       case "alert":
       case "exit_app":
       case "plugin:window|destroy":
       case "plugin:window|set_allow_close":
         return null;
+      // The contract is Doc[], and App maps over the answer: a null here is
+      // a TypeError in any spec that ever presses Open, where the real
+      // backend hands back an empty picker.
+      case "open_files":
+        return [];
       case "plugin:event|listen": {
         // args: { event, target, handler: <transformCallback id> }
         const { event, handler } = args ?? {};

@@ -116,11 +116,35 @@ type Props = {
  */
 function destroyPreviewer(previewer: Previewer | undefined): void {
   if (!previewer) return;
+  const p = previewer as unknown as Record<string, unknown>;
+  const polisher = p["polisher"] as { destroy?: () => void } | undefined;
+  const chunker = p["chunker"] as
+    | { stop?: () => void; destroy?: () => void }
+    | undefined;
+  /*
+   * Stop before destroy. `destroy()` only unhooks the page containers; the
+   * pagination in flight keeps running its layout generator over nodes that
+   * are no longer in the document, and with a 250 ms debounce between
+   * keystrokes and a long document, those stack up by the dozen — the
+   * Document view grinding to a halt while typing is this, not the layout
+   * itself. `stop()` is what makes the running render finish early.
+   *
+   * One try per part, not one around all of them: `polisher.destroy()`
+   * throws for a Previewer that was created but never paginated (its style
+   * element does not exist yet), and that throw used to skip the chunker's
+   * cleanup — "best-effort" that stopped at the first effort.
+   */
   try {
-    const p = previewer as unknown as Record<string, unknown>;
-    const polisher = p["polisher"] as { destroy?: () => void } | undefined;
-    const chunker = p["chunker"] as { destroy?: () => void } | undefined;
+    chunker?.stop?.();
+  } catch {
+    // Best-effort cleanup
+  }
+  try {
     polisher?.destroy?.();
+  } catch {
+    // Best-effort cleanup
+  }
+  try {
     chunker?.destroy?.();
   } catch {
     // Best-effort cleanup

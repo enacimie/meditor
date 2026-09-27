@@ -200,6 +200,7 @@ try {
 } finally {
   // Remove the shim so it cannot leak into later specs (the runner shares
   // one Chrome/page across specs).
-  await page.removeInitScript(shimId);
+  // A rejection here (target already gone) must not skip page.close().
+  await page.removeInitScript(shimId).catch(() => {});
   page.close();
 }

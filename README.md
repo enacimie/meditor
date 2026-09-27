@@ -156,7 +156,7 @@ where the preview would be, and it has no PDF export. To work on it, see
 ## Prerequisites
 
 - [Rust](https://rustup.rs) (cargo).
-- [Node.js](https://nodejs.org) 20.19+ or 22.12+ (what Vite 7 requires) and [pnpm](https://pnpm.io). CI builds on 22.
+- [Node.js](https://nodejs.org) 22+ and [pnpm](https://pnpm.io). Vite itself runs on 20.19+, but the e2e harness uses the global `WebSocket`, which Node only exposes from 21 — and CI builds on 22, so 22 is the honest floor (`engines` says the same).
 - **Linux** (Ubuntu/Debian): system dependencies for Tauri/WebKitGTK:
 
   ```bash

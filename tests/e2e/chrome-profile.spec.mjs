@@ -11,8 +11,13 @@ import { launchChrome, assert } from "./cdp.mjs";
 
 const chrome = await launchChrome({ url: "about:blank" });
 const { profileDir } = chrome;
-assert(existsSync(profileDir), `the profile should exist while Chrome runs: ${profileDir}`);
-await chrome.stop();
+try {
+  assert(existsSync(profileDir), `the profile should exist while Chrome runs: ${profileDir}`);
+} finally {
+  // Even when the assert above failed: this Chrome is the spec's own, and
+  // the runner only reaps the one it launched, never a spec's grandchild.
+  await chrome.stop();
+}
 assert(!existsSync(profileDir), `stopping Chrome left its profile behind: ${profileDir}`);
 
 console.log("PASS: chrome-profile.spec — a stopped Chrome takes its profile with it");

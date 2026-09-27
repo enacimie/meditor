@@ -46,7 +46,11 @@ jobs:
   # The standing notes live in .github/release-notes.md, so editing what every
   # release says no longer means editing this file.
   create-release:
+    # workflow_dispatch from a branch has a branch as ref_name: without this
+    # guard the button creates a tag and a release named after the branch.
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       release_id: ${{ steps.draft.outputs.id }}
     steps:
@@ -92,7 +96,9 @@ jobs:
           echo "draft release id: $id"
 
   build:
+    if: startsWith(github.ref, 'refs/tags/')
     needs: create-release
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:

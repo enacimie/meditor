@@ -265,6 +265,9 @@ async function startWith(bin, cdpPort, url) {
  *
  * @returns {Promise<CdpSession>}
  */
+/** The storage flag that arms the document-start wipe (see connect()). */
+const FRESH_PAGE_MARKER = "__meditor_fresh_page";
+
 export async function connect(port) {
   // Always create a brand-new page target instead of attaching to whatever
   // is lying around: Page.addScriptToEvaluateOnNewDocument registrations
@@ -354,6 +357,22 @@ export async function connect(port) {
   await session.send("Debugger.setAsyncCallStackDepth", { maxDepth: 16 });
   await session.send("Runtime.addBinding", { name: CSP_BINDING });
   await session.addInitScript(CSP_LISTENER);
+  /*
+   * freshPage's document-start wipe, armed by a marker in storage and
+   * registered here — ahead of every script a spec registers — so that when
+   * it fires it runs first in document-start order: it erases whatever the
+   * departing page's `pagehide` flush re-seeded, and the spec's own seeding
+   * scripts (the Tauri shim, a preferences fixture) then write into clean
+   * storage. Inert on every other navigation: no marker, no wipe — a spec
+   * that reloads to test persistence keeps exactly what it stored.
+   */
+  await session.addInitScript(`(() => {
+    try {
+      if (localStorage.getItem("${FRESH_PAGE_MARKER}") === "1") localStorage.clear();
+    } catch {
+      // Storage that refuses is the spec's own problem, not the wipe's.
+    }
+  })();`);
   return session;
 }
 
@@ -642,7 +661,21 @@ export class CdpSession {
     await this.evaluateRepeatable("localStorage.clear(); true");
     await sleep(700);
     await this.evaluateRepeatable("localStorage.clear(); true");
+    /*
+     * And a third wipe, armed for the document-start of the reloaded page.
+     * The two clears above run against the page that is about to go away,
+     * and a web build flushes its session on `pagehide` — during the reload,
+     * after both — re-seeding the storage the next spec believed was clean.
+     * The incident this closes is written down in three specs' own comments:
+     * a deck left behind made shortcuts.spec search for a word only the
+     * sample has. The wipe itself was registered in connect(), ahead of any
+     * seeding script a spec installs, and consumes the marker as it fires.
+     */
+    await this.evaluateRepeatable(
+      `localStorage.setItem(${JSON.stringify(FRESH_PAGE_MARKER)}, "1"); true`,
+    );
     await this.reload();
+    await this.waitFor("document.readyState === 'complete'", { timeout: 15000 });
   }
 
   /** Capture a full-page PNG screenshot to `path`. */

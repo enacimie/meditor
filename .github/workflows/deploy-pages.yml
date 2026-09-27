@@ -18,8 +18,11 @@ permissions:
 concurrency:
   group: pages
   # A queued redeploy of an older commit adds nothing once a newer one is
-  # already going out.
-  cancel-in-progress: true
+  # already going out — but cancelling one between the artifact upload and
+  # the deployment step leaves Pages serving a half-written release, which
+  # is worse than the minute the older run would have cost. Queued runs
+  # still get cancelled; only the one on the wire runs to its end.
+  cancel-in-progress: false
 
 jobs:
   deploy:
