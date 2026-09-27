@@ -196,3 +196,62 @@ describe("the files the Typst client sends", () => {
     });
   });
 });
+
+describe("a worker the page has to replace, and files it cannot trust", () => {
+  it("drops a worker whose first compile failed, and fails what was queued behind it", async () => {
+    const { typst, workers } = setup();
+    const first = typst.svg({ mainContent: "a" });
+    const second = typst.svg({ mainContent: "b" });
+
+    workers[0].reply({ id: 1, error: "no fonts", fatal: true });
+
+    await expect(first).rejects.toThrow("no fonts");
+    // The second was queued behind the first in the dying worker: it has to
+    // fail too, not wait forever on a worker that no longer exists.
+    await expect(second).rejects.toThrow("did not start");
+    expect(workers[0].terminated).toBe(true);
+
+    // And the next request starts a worker of its own.
+    const third = typst.svg({ mainContent: "c" });
+    expect(workers).toHaveLength(2);
+    workers[1].reply({ id: 3, svg: "<svg/>" });
+    await expect(third).resolves.toBe("<svg/>");
+  });
+
+  it("takes an overtaken SVG as an empty answer, not an error", async () => {
+    const { typst, workers } = setup();
+    const svg = typst.svg({ mainContent: "a" });
+    workers[0].reply({ id: 1, skipped: true });
+    await expect(svg).resolves.toBe("");
+  });
+
+  it("sends the files again after a failed request that carried them", async () => {
+    const { typst, workers } = setup();
+    const bytes = new Uint8Array([1]);
+    const folder = {
+      id: "doc",
+      mainPath: "/report.typ",
+      files: new Map([["fig.png", { key: "k1", bytes }]]),
+    };
+
+    // The WASM's mapping calls fail by returning false, which crosses back
+    // as nothing: a file the worker never received would be believed
+    // delivered, and every later delta would leave it out. A failure forgets
+    // what it sent, so the retry sends it again.
+    const first = typst.svg({ mainContent: "a", folder });
+    expect(workers[0].posted[0].files?.set).toHaveLength(1);
+    workers[0].reply({ id: 1, error: "mapping failed" });
+    await expect(first).rejects.toThrow("mapping failed");
+
+    const second = typst.svg({ mainContent: "a", folder });
+    expect(workers[0].posted[1].files?.set).toHaveLength(1);
+    workers[0].reply({ id: 2, svg: "<svg/>" });
+    await second;
+
+    // A success, on the other hand, is believed.
+    const third = typst.svg({ mainContent: "a", folder });
+    expect(workers[0].posted[2].files?.set).toHaveLength(0);
+    workers[0].reply({ id: 3, svg: "<svg/>" });
+    await third;
+  });
+});

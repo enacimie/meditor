@@ -179,23 +179,51 @@ Still open from this bundle, deliberately:
 
 ## Bundle 5 — Typst
 
+**Status: landed (PR #205), except the CSP's dead SwiftLaTeX origins, which
+travel with Bundle 7's configuration items.** Two review claims did not
+survive contact with the toolchain and were corrected before fixing: the
+compiler WASM emits *no* source locations at all (so `data-span`, the
+suggested replacement for the dead `data-source-loc`, does not exist either
+— it belongs to a renderer-side interactive viewer this build never uses),
+and the page counter's fix is `g.typst-page`, verified against a real
+compile of the sample (3 pages, one `<svg>`).
+
 - [high] (verified) the whole Typst sync surface queries `[data-source-loc]`,
-  an attribute the typst.ts WASM never emits (it emits `data-span`) and that
-  `sanitizeSvg` strips anyway: scroll-to-line, reverse sync and the page
-  count are dead code with no test coverage.
+  an attribute the typst.ts WASM never emits and that `sanitizeSvg` strips
+  anyway: scroll-to-line, reverse sync and the page count are dead code with
+  no test coverage. — **fixed by removal**: the handle stays (so the outline
+  and the preview treat every kind alike) as documented no-ops that say what
+  the toolchain lacks, the click marking goes with them, and the page count
+  is real (`g.typst-page`, with a test). Sync returns when typst.ts emits
+  locations in its SVG pipeline.
 - [high] the worker registers the default package registry: a document with
   `#import "@preview/…"` makes it download and compile third-party code
-  from the network, which the CSP does not cover and the comments deny.
+  from the network, which the CSP does not cover and the comments deny. —
+  **fixed**: an offline registry is registered through
+  `$typst.use(TypstSnippet.withPackageRegistry(…))`; the import becomes a
+  compile error that says meditor compiles offline.
 - [medium] file mappings are marked held on `postMessage` although the WASM
-  returns a bool nobody reads; no compile cancellation in the protocol (a
-  stale queue delays the fresh result); a failed `beforeBuild` poisons the
-  cached global compiler promise and Retry reuses the dead worker; compile
-  errors surface as Rust `Debug` dumps instead of `unix` diagnostics mapped
-  to editor lines.
-- [low] `pageCount` counts `<svg` tags but typst.ts emits one SVG with
-  `<g class="typst-page">` pages; LaTeX spinner sticks on an emptied
-  document; duplicated log rendering on LaTeX failure; CSP keeps the dead
-  SwiftLaTeX origins.
+  returns a bool nobody reads — **fixed** (a failed request forgets the
+  files it carried, so the retry sends them again); no compile cancellation
+  in the protocol — **fixed** (an SVG request a newer one overtook answers
+  `skipped` without touching the compiler; a PDF is never skipped); a failed
+  `beforeBuild` poisons the cached global compiler promise and Retry reuses
+  the dead worker — **fixed** (the first-ever failure of a worker is marked
+  `fatal`; the page drops it, fails what was queued behind it, and the next
+  request starts clean); compile errors surface as Rust `Debug` dumps —
+  **fixed** (`humanizeTypstError` lifts the messages and hints out of the
+  dump and passes through anything it does not recognise; the snippet API
+  hard-codes `diagnostics: 'none'`, so 'unix' is not available).
+- [low] `pageCount` counts `<svg` tags — **fixed**; LaTeX spinner sticks on
+  an emptied document — **fixed**; duplicated log rendering on LaTeX
+  failure — **fixed** (the error names the exit status; the log renders
+  once); CSP keeps the dead SwiftLaTeX origins — *Bundle 7*; the failed
+  engine `<script>` accumulating in `<head>` — **fixed**; `setRetryToken`
+  shadowing the translation function — **fixed**; the dead `outputRef` —
+  **gone** with the marking code; backslash paths on Windows — **fixed**
+  (both `written` and `from` normalise, with tests); the first request's
+  `fontBase` winning forever — **documented** (every request in a run comes
+  from the same page).
 
 ## Bundle 6 — translation content
 

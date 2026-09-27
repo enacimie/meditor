@@ -152,7 +152,11 @@ export function typstFileReferences(source: string): string[] {
  * or, starting with `/`, to the folder itself. A path that climbs out of the
  * folder keeps its `..`, so that the backend refuses it and says why.
  */
-export function resolveTypstPath(from: string, written: string): string | null {
+export function resolveTypstPath(fromRaw: string, writtenRaw: string): string | null {
+  // A path written with backslashes, as Windows does, separates the same:
+  // typstMainName and the backend's beside.rs already treat both as one.
+  const from = fromRaw.replace(/\\/g, "/");
+  const written = writtenRaw.replace(/\\/g, "/");
   if (!written || written.startsWith("@") || written.includes("://")) return null;
   const base = written.startsWith("/") ? [] : from.split("/").slice(0, -1);
   const parts = [...base];

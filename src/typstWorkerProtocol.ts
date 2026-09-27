@@ -43,7 +43,23 @@ export type TypstFilesDelta = {
 export type TypstReply =
   | { id: number; svg: string }
   | { id: number; pdf: Uint8Array | undefined }
-  | { id: number; error: string };
+  | {
+      id: number;
+      error: string;
+      /**
+       * The worker itself is broken, not the document: its first compile
+       * ever failed, and typst.ts caches the failed initialisation, so
+       * nothing this worker attempts next can succeed. The page drops it
+       * and the next request starts a fresh one.
+       */
+      fatal?: boolean;
+    }
+  /**
+   * An SVG request a newer one overtook before the compiler reached it.
+   * Answered without compiling: the draft nobody is waiting for anymore
+   * must not delay the one they are.
+   */
+  | { id: number; skipped: true };
 
 /** What the page asks for: the document, and the folder it reads from if it has one. */
 export type TypstInput = {
@@ -85,6 +101,52 @@ export type WorkerScope = {
 };
 
 const messageOf = (error: unknown): string => (error instanceof Error ? error.message : String(error));
+
+/** Undo Rust's `Debug` string escaping: `\"`, `\\`, `\n`, `\u{2026}`… */
+function unescapeRust(text: string): string {
+  return text.replace(/\\(u\{([0-9a-fA-F]+)\}|.)/g, (_all, char: string, hex?: string) =>
+    hex
+      ? String.fromCodePoint(parseInt(hex, 16))
+      : char === "n"
+        ? "\n"
+        : char === "t"
+          ? "\t"
+          : char === "r"
+            ? "\r"
+            : char,
+  );
+}
+
+/** The quoted strings inside a Rust `Debug` list, unescaped. */
+function rustList(body: string): string[] {
+  return [...body.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map((m) => unescapeRust(m[1]));
+}
+
+/**
+ * The compile error as the writer should read it.
+ *
+ * The snippet API compiles with `diagnostics: 'none'`, and in that mode the
+ * WASM throws Rust's own `Debug` dump of the diagnostics — something like
+ * `SourceDiagnostic { severity: Error, span: …, trace: [], message:
+ * "unknown variable: x", hints: ["…"] }`. The message and the hints inside
+ * it are what helps; the struct around them, the span's internal ids and
+ * the crate paths are noise. A dump this cannot recognise is passed through
+ * untouched: half an error is worse than an ugly one.
+ */
+export function humanizeTypstError(raw: string): string {
+  const diagnostics: string[] = [];
+  for (const match of raw.matchAll(
+    /message: "((?:[^"\\]|\\.)*)", hints: \[([^\]]*)\]/g,
+  )) {
+    const hints = rustList(match[2]);
+    diagnostics.push(
+      hints.length
+        ? `${unescapeRust(match[1])} (${hints.join("; ")})`
+        : unescapeRust(match[1]),
+    );
+  }
+  return diagnostics.length ? diagnostics.join("\n") : raw;
+}
 
 /**
  * Answer requests one at a time, in the order they came.
@@ -131,7 +193,7 @@ export async function answer(typst: TypstSnippet, request: TypstRequest): Promis
     const pdf = await typst.pdf(options);
     return { reply: { id: request.id, pdf }, transfer: pdf ? [pdf.buffer as ArrayBuffer] : [] };
   } catch (error) {
-    return { reply: { id: request.id, error: messageOf(error) }, transfer: [] };
+    return { reply: { id: request.id, error: humanizeTypstError(messageOf(error)) }, transfer: [] };
   }
 }
 
@@ -144,12 +206,52 @@ export async function answer(typst: TypstSnippet, request: TypstRequest): Promis
  * and one that never comes would leave the preview compiling for good.
  */
 export function serve(scope: WorkerScope, snippetFor: (request: TypstRequest) => TypstSnippet): void {
-  const respond = oneAtATime((request) => answer(snippetFor(request), request));
-  scope.addEventListener("message", (event) => {
+  /*
+   * The newest SVG request seen, and whether this worker has ever compiled
+   * anything successfully.
+   *
+   * Every pause in typing queues a compile, and one-at-a-time means a slow
+   * one delays the draft the writer is actually looking at; an overtaken
+   * SVG request answers `skipped` without touching the compiler. A PDF is
+   * never skipped: each is a file somebody asked for.
+   *
+   * The first-ever failure is fatal because of how typst.ts initialises:
+   * the compiler-instance promise is cached, and a rejected one is cached
+   * too, so a worker whose fonts failed to load (or whose WASM refused to
+   * start) fails every compile after it the same way. Saying so lets the
+   * page drop it and start clean — which is also why "has it ever worked"
+   * is the test: after one success, a failure is the document's, not the
+   * worker's.
+   */
+  let newestSvg = -1;
+  let healthy = false;
+  const respond = oneAtATime(async (request) => {
+    if (request.kind === "svg" && request.id < newestSvg) {
+      return { reply: { id: request.id, skipped: true as const }, transfer: [] };
+    }
+    return answer(snippetFor(request), request);
+  });
+  scope.addEventListener("message", (event: MessageEvent<TypstRequest>) => {
     const request = event.data;
+    if (request.kind === "svg" && request.id > newestSvg) newestSvg = request.id;
     respond(request).then(
-      ({ reply, transfer }) => scope.postMessage(reply, transfer),
-      (error: unknown) => scope.postMessage({ id: request.id, error: messageOf(error) }, []),
+      ({ reply, transfer }) => {
+        if ("error" in reply) {
+          // A worker that has never compiled anything and just failed is a
+          // worker whose compiler never came up; say so, and the page drops
+          // it instead of asking it again. A skipped draft says nothing
+          // either way: the compiler was not reached.
+          if (!healthy) reply.fatal = true;
+        } else if (!("skipped" in reply)) {
+          healthy = true;
+        }
+        scope.postMessage(reply, transfer);
+      },
+      (error: unknown) => {
+        const reply: TypstReply = { id: request.id, error: messageOf(error) };
+        if (!healthy) (reply as { fatal?: boolean }).fatal = true;
+        scope.postMessage(reply, []);
+      },
     );
   });
 }

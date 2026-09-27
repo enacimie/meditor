@@ -606,7 +606,6 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
           t={t}
           fileSource={imageSource}
           docPath={docPath}
-          onReverseSync={onReverseSync}
         />
       </Suspense>
     );

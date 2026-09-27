@@ -72,9 +72,17 @@ function loadEngineScript(): Promise<PdfTeXEngineClass> {
     script.onload = () => {
       const loaded = getGlobalEngineClass();
       if (loaded) resolve(loaded);
-      else reject(new Error("PdfTeXEngine.js did not expose PdfTeXEngine"));
+      else {
+        // Retried loads each append a script of their own; one that led
+        // nowhere is removed rather than left in the head to accumulate.
+        script.remove();
+        reject(new Error("PdfTeXEngine.js did not expose PdfTeXEngine"));
+      }
     };
-    script.onerror = () => reject(new Error("Failed to load PdfTeXEngine.js"));
+    script.onerror = () => {
+      script.remove();
+      reject(new Error("Failed to load PdfTeXEngine.js"));
+    };
     document.head.appendChild(script);
   });
 }
