@@ -10,6 +10,14 @@ type Props = {
   /** Where the caret is, one-based, as a reader counts. */
   cursorLine?: number;
   cursorColumn?: number;
+  /**
+   * The window's zoom factor, 1 being natural size. Shown only while it is
+   * something other than 1, and clickable to go back — a small percentage in
+   * the corner is what tells someone who pressed Ctrl+= by accident how to
+   * undo it.
+   */
+  zoom?: number;
+  onZoomReset?: () => void;
 };
 
 /**
@@ -40,6 +48,8 @@ const StatusBar = memo(function StatusBar({
   dirty,
   cursorLine,
   cursorColumn,
+  zoom,
+  onZoomReset,
 }: Props) {
   const { words, lines, chars, minutes } = useMemo(() => countStats(content), [content]);
 
@@ -48,6 +58,22 @@ const StatusBar = memo(function StatusBar({
       {dirty && <span className="statusbar-dirty" title={t("statusbar.dirtyTitle")} aria-label={t("statusbar.dirtyTitle")}>●</span>}
       {docName && <span className="statusbar-doc" title={docName}>{docName}</span>}
       <span className="statusbar-spacer" />
+      {/*
+        The window's zoom, while it is off natural size. A button rather than a
+        count because it does something: one click puts the page back to 100%,
+        which is the way out for whoever got here by accident.
+      */}
+      {zoom !== undefined && zoom !== 1 && onZoomReset && (
+        <button
+          type="button"
+          className="statusbar-stat statusbar-zoom"
+          onClick={onZoomReset}
+          title={t("statusbar.zoomTitle")}
+          aria-label={t("statusbar.zoomTitle")}
+        >
+          {Math.round(zoom * 100)}%
+        </button>
+      )}
       {/*
         The caret's own position, which the editor already knew and only the
         outline was being told. Secondary because a phone has no room for it,

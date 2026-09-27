@@ -249,6 +249,11 @@ export const km = {
   "shortcuts.quit": "ចេញ",
   "shortcuts.print": "បោះពុម្ព",
   "shortcuts.esc": "បិទ / ចាកចេញ",
+  "shortcuts.zoomIn": "ពង្រីក",
+  "shortcuts.zoomOut": "បង្រួម",
+  "shortcuts.zoomReset": "កំណត់ការពង្រីកឡើងវិញ",
+  "shortcuts.zoomWheel": "ពង្រីក ឬបង្រួម",
+  "shortcuts.ctrlWheel": "Ctrl+កង់",
   // Go to line
   // Status bar
   "statusbar.words": (n: number) => `${n} ពាក្យ`,
@@ -262,6 +267,7 @@ export const km = {
   "statusbar.cursor": (line: number, column: number) => `បន្ទាត់ ${line} ជួរឈរ ${column}`,
   "statusbar.cursorTitle": "បន្ទាត់ និងជួរឈរនៃទ្រនិច",
   "statusbar.dirtyTitle": "ការផ្លាស់ប្ដូរមិនបានរក្សាទុក",
+  "statusbar.zoomTitle": "កម្រិតពង្រីក — ចុចដើម្បីកំណត់ឡើងវិញ",
   // Language picker
   "lang.searchPlaceholder": "ស្វែងរកភាសា…",
   "lang.searchAria": "ស្វែងរកភាសា",

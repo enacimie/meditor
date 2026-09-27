@@ -250,6 +250,11 @@ export const ru = {
   "shortcuts.quit": "Выход",
   "shortcuts.print": "Печать",
   "shortcuts.esc": "Закрыть / Выйти",
+  "shortcuts.zoomIn": "Увеличить",
+  "shortcuts.zoomOut": "Уменьшить",
+  "shortcuts.zoomReset": "Сбросить масштаб",
+  "shortcuts.zoomWheel": "Увеличить или уменьшить",
+  "shortcuts.ctrlWheel": "Ctrl+Колесо",
   // Перейти к строке
   // Status bar
   "statusbar.words": (n: number) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? "слово" : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? "слова" : "слов"}`,
@@ -263,6 +268,7 @@ export const ru = {
   "statusbar.cursor": (line: number, column: number) => `Стр ${line}, стлб ${column}`,
   "statusbar.cursorTitle": "Строка и столбец курсора",
   "statusbar.dirtyTitle": "Несохранённые изменения",
+  "statusbar.zoomTitle": "Масштаб — нажмите, чтобы сбросить",
   // Language picker
   "lang.searchPlaceholder": "Поиск языка…",
   "lang.searchAria": "Поиск языка",

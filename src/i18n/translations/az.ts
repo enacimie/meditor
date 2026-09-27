@@ -249,6 +249,11 @@ export const az = {
   "shortcuts.quit": "Çıx",
   "shortcuts.print": "Çap et",
   "shortcuts.esc": "Bağla / Çıx",
+  "shortcuts.zoomIn": "Yaxınlaşdır",
+  "shortcuts.zoomOut": "Uzaqlaşdır",
+  "shortcuts.zoomReset": "Miqyası sıfırla",
+  "shortcuts.zoomWheel": "Yaxınlaşdır və ya uzaqlaşdır",
+  "shortcuts.ctrlWheel": "Ctrl+Təkər",
   // Go to line
   // Status bar
   "statusbar.words": (n: number) => `${n} söz`,
@@ -262,6 +267,7 @@ export const az = {
   "statusbar.cursor": (line: number, column: number) => `Sətir ${line}, Sütun ${column}`,
   "statusbar.cursorTitle": "Kursorun sətri və sütunu",
   "statusbar.dirtyTitle": "Saxlanılmamış dəyişikliklər",
+  "statusbar.zoomTitle": "Miqyas səviyyəsi — sıfırlamaq üçün kliklə",
   // Language picker
   "lang.searchPlaceholder": "Dil axtar…",
   "lang.searchAria": "Dil axtar",

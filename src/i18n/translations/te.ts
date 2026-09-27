@@ -251,6 +251,11 @@ export const te = {
   "shortcuts.quit": "నిష్క్రమించు",
   "shortcuts.print": "ముద్రించు",
   "shortcuts.esc": "మూసివేయి / నిష్క్రమించు",
+  "shortcuts.zoomIn": "జూమ్ ఇన్",
+  "shortcuts.zoomOut": "జూమ్ అవుట్",
+  "shortcuts.zoomReset": "జూమ్‌ను రీసెట్ చేయండి",
+  "shortcuts.zoomWheel": "జూమ్ ఇన్ లేదా అవుట్",
+  "shortcuts.ctrlWheel": "Ctrl+చక్రం",
   // Go to line
   // Status bar
   "statusbar.words": (n: number) => `${n} పదా${n === 1 ? "" : "లు"}`,
@@ -264,6 +269,7 @@ export const te = {
   "statusbar.cursor": (line: number, column: number) => `పంక్తి ${line}, నిలువు వరుస ${column}`,
   "statusbar.cursorTitle": "కర్సర్ యొక్క పంక్తి మరియు నిలువు వరుస",
   "statusbar.dirtyTitle": "సేవ్ చేయని మార్పులు",
+  "statusbar.zoomTitle": "జూమ్ స్థాయి — రీసెట్ చేయడానికి క్లిక్ చేయండి",
   // Language picker
   "lang.searchPlaceholder": "భాషను వెతకండి…",
   "lang.searchAria": "భాషను వెతకండి",

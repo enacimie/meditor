@@ -249,6 +249,11 @@ export const ht = {
   "shortcuts.quit": "Kite",
   "shortcuts.print": "Enprime",
   "shortcuts.esc": "Fèmen / Sòti",
+  "shortcuts.zoomIn": "Agrandi",
+  "shortcuts.zoomOut": "Piti",
+  "shortcuts.zoomReset": "Reyinisyalize zoum nan",
+  "shortcuts.zoomWheel": "Agrandi oswa piti",
+  "shortcuts.ctrlWheel": "Ctrl+Wou",
   // Go to line
   // Status bar
   "statusbar.words": (n: number) => `${n} mo`,
@@ -262,6 +267,7 @@ export const ht = {
   "statusbar.cursor": (line: number, column: number) => `Liy ${line}, Kolòn ${column}`,
   "statusbar.cursorTitle": "Liy ak kolòn kirsè a",
   "statusbar.dirtyTitle": "Chanjman ki pa anrejistre",
+  "statusbar.zoomTitle": "Nivo zoum — klike pou reyinisyalize",
   // Language picker
   "lang.searchPlaceholder": "Chèche lang…",
   "lang.searchAria": "Chèche lang",

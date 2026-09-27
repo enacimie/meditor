@@ -251,6 +251,11 @@ export const fr = {
   "shortcuts.quit": "Quitter",
   "shortcuts.print": "Imprimer",
   "shortcuts.esc": "Fermer / Quitter",
+  "shortcuts.zoomIn": "Zoom avant",
+  "shortcuts.zoomOut": "Zoom arrière",
+  "shortcuts.zoomReset": "Réinitialiser le zoom",
+  "shortcuts.zoomWheel": "Zoom avant ou arrière",
+  "shortcuts.ctrlWheel": "Ctrl+Molette",
   // Aller à la ligne
   // Status bar
   "statusbar.words": (n: number) => `${n} mot${n === 1 ? "" : "s"}`,
@@ -264,6 +269,7 @@ export const fr = {
   "statusbar.cursor": (line: number, column: number) => `Ln ${line}, col ${column}`,
   "statusbar.cursorTitle": "Ligne et colonne du curseur",
   "statusbar.dirtyTitle": "Modifications non enregistrées",
+  "statusbar.zoomTitle": "Niveau de zoom — cliquez pour réinitialiser",
   // Language picker
   "lang.searchPlaceholder": "Rechercher une langue…",
   "lang.searchAria": "Rechercher une langue",

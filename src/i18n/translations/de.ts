@@ -252,6 +252,11 @@ export const de = {
   "shortcuts.quit": "Beenden",
   "shortcuts.print": "Drucken",
   "shortcuts.esc": "Schließen / Beenden",
+  "shortcuts.zoomIn": "Vergrößern",
+  "shortcuts.zoomOut": "Verkleinern",
+  "shortcuts.zoomReset": "Zoom zurücksetzen",
+  "shortcuts.zoomWheel": "Vergrößern oder verkleinern",
+  "shortcuts.ctrlWheel": "Ctrl+Mausrad",
   // Gehe zu Zeile
   // Status bar
   "statusbar.words": (n: number) => `${n} Wort${n === 1 ? "" : "e"}`,
@@ -265,6 +270,7 @@ export const de = {
   "statusbar.cursor": (line: number, column: number) => `Z. ${line}, Sp. ${column}`,
   "statusbar.cursorTitle": "Zeile und Spalte des Cursors",
   "statusbar.dirtyTitle": "Ungespeicherte Änderungen",
+  "statusbar.zoomTitle": "Zoomstufe — zum Zurücksetzen klicken",
   // Language picker
   "lang.searchPlaceholder": "Sprache suchen…",
   "lang.searchAria": "Sprache suchen",

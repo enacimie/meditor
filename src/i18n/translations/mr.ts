@@ -251,6 +251,11 @@ export const mr = {
   "shortcuts.quit": "बाहेर पडा",
   "shortcuts.print": "छापा",
   "shortcuts.esc": "बंद करा / बाहेर पडा",
+  "shortcuts.zoomIn": "झूम इन",
+  "shortcuts.zoomOut": "झूम आउट",
+  "shortcuts.zoomReset": "झूम रीसेट करा",
+  "shortcuts.zoomWheel": "झूम इन किंवा आउट",
+  "shortcuts.ctrlWheel": "Ctrl+व्हील",
   // Go to line
   // Status bar
   "statusbar.words": (n: number) => `${n} शब्द`,
@@ -264,6 +269,7 @@ export const mr = {
   "statusbar.cursor": (line: number, column: number) => `ओळ ${line}, स्तंभ ${column}`,
   "statusbar.cursorTitle": "कर्सरची ओळ आणि स्तंभ",
   "statusbar.dirtyTitle": "जतन न केलेले बदल",
+  "statusbar.zoomTitle": "झूम स्तर — रीसेट करण्यासाठी क्लिक करा",
   // Language picker
   "lang.searchPlaceholder": "भाषा शोधा…",
   "lang.searchAria": "भाषा शोधा",

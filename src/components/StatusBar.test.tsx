@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { describe, it, expect, vi, afterEach } from "vitest";
+import { render, screen, cleanup, fireEvent } from "@testing-library/react";
 import StatusBar from "./StatusBar";
 import { translations } from "../i18n/translations";
 import type { TranslationFn } from "../i18n/translations";
@@ -81,6 +81,30 @@ describe("the status bar", () => {
       // than none.
       render(<StatusBar t={t} content="uno" />);
       expect(screen.queryByText(/^Ln /)).toBeNull();
+    });
+  });
+
+  describe("the zoom readout", () => {
+    it("says nothing at natural size", () => {
+      render(<StatusBar t={t} content="uno" zoom={1} onZoomReset={vi.fn()} />);
+      expect(document.querySelector(".statusbar-zoom")).toBeNull();
+    });
+
+    it("shows the percentage while the window is off natural size", () => {
+      render(<StatusBar t={t} content="uno" zoom={1.5} onZoomReset={vi.fn()} />);
+      expect(screen.getByText("150%")).toBeDefined();
+    });
+
+    it("rounds the level the way a reader would", () => {
+      render(<StatusBar t={t} content="uno" zoom={1.25} onZoomReset={vi.fn()} />);
+      expect(screen.getByText("125%")).toBeDefined();
+    });
+
+    it("goes back to natural size when clicked", () => {
+      const onZoomReset = vi.fn();
+      render(<StatusBar t={t} content="uno" zoom={0.8} onZoomReset={onZoomReset} />);
+      fireEvent.click(screen.getByText("80%"));
+      expect(onZoomReset).toHaveBeenCalledTimes(1);
     });
   });
 });

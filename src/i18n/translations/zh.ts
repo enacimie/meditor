@@ -247,6 +247,11 @@ export const zh = {
   "shortcuts.quit": "退出",
   "shortcuts.print": "打印",
   "shortcuts.esc": "关闭 / 退出",
+  "shortcuts.zoomIn": "放大",
+  "shortcuts.zoomOut": "缩小",
+  "shortcuts.zoomReset": "重置缩放",
+  "shortcuts.zoomWheel": "放大或缩小",
+  "shortcuts.ctrlWheel": "Ctrl+滚轮",
   // 转到行
   // Status bar
   "statusbar.words": (n: number) => `${n} 个字`,
@@ -260,6 +265,7 @@ export const zh = {
   "statusbar.cursor": (line: number, column: number) => `行 ${line}，列 ${column}`,
   "statusbar.cursorTitle": "光标的行和列",
   "statusbar.dirtyTitle": "未保存的更改",
+  "statusbar.zoomTitle": "缩放级别 — 点击重置",
   // Language picker
   "lang.searchPlaceholder": "搜索语言…",
   "lang.searchAria": "搜索语言",

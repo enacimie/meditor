@@ -250,6 +250,11 @@ export const tr = {
   "shortcuts.quit": "Çık",
   "shortcuts.print": "Yazdır",
   "shortcuts.esc": "Kapat / Çık",
+  "shortcuts.zoomIn": "Yakınlaştır",
+  "shortcuts.zoomOut": "Uzaklaştır",
+  "shortcuts.zoomReset": "Yakınlaştırmayı sıfırla",
+  "shortcuts.zoomWheel": "Yakınlaştır veya uzaklaştır",
+  "shortcuts.ctrlWheel": "Ctrl+Tekerlek",
   // Satıra git
   // Status bar
   "statusbar.words": (n: number) => `${n} kelime`,
@@ -263,6 +268,7 @@ export const tr = {
   "statusbar.cursor": (line: number, column: number) => `Satır ${line}, sütun ${column}`,
   "statusbar.cursorTitle": "İmlecin satırı ve sütunu",
   "statusbar.dirtyTitle": "Kaydedilmemiş değişiklikler",
+  "statusbar.zoomTitle": "Yakınlaştırma düzeyi — sıfırlamak için tıklayın",
   // Language picker
   "lang.searchPlaceholder": "Dil ara…",
   "lang.searchAria": "Dil ara",

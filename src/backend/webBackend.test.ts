@@ -185,3 +185,12 @@ describe("webBackend files with the File System Access API", () => {
     expect(await webBackend.openRecent(0, "en")).toBeNull();
   });
 });
+
+describe("zoom", () => {
+  it("scales the page with CSS, a browser having no webview of its own to ask", async () => {
+    await webBackend.setZoom(1.5);
+    expect(document.documentElement.style.getPropertyValue("zoom")).toBe("1.5");
+    await webBackend.setZoom(1);
+    expect(document.documentElement.style.getPropertyValue("zoom")).toBe("1");
+  });
+});

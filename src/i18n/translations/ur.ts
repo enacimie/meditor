@@ -251,6 +251,11 @@ export const ur = {
   "shortcuts.quit": "اختتام",
   "shortcuts.print": "چھاپیں",
   "shortcuts.esc": "بند کریں / باہر نکلیں",
+  "shortcuts.zoomIn": "زوم اِن",
+  "shortcuts.zoomOut": "زوم آؤٹ",
+  "shortcuts.zoomReset": "زوم دوبارہ ترتیب دیں",
+  "shortcuts.zoomWheel": "زوم اِن یا آؤٹ",
+  "shortcuts.ctrlWheel": "Ctrl+پہیہ",
   // Go to line
   // Status bar
   "statusbar.words": (n: number) => `${n} لفظ`,
@@ -264,6 +269,7 @@ export const ur = {
   "statusbar.cursor": (line: number, column: number) => `سطر ${line}، کالم ${column}`,
   "statusbar.cursorTitle": "کرسر کی سطر اور کالم",
   "statusbar.dirtyTitle": "غیر محفوظ شدہ تبدیلیاں",
+  "statusbar.zoomTitle": "زوم کی سطح — دوبارہ ترتیب دینے کے لیے کلک کریں",
   // Language picker
   "lang.searchPlaceholder": "زبان تلاش کریں…",
   "lang.searchAria": "زبان تلاش کریں",

@@ -249,6 +249,11 @@ export const ne = {
   "shortcuts.quit": "बाहिर निस्कनुहोस्",
   "shortcuts.print": "प्रिन्ट गर्नुहोस्",
   "shortcuts.esc": "बन्द गर्नुहोस् / बाहिरिनुहोस्",
+  "shortcuts.zoomIn": "जुम इन",
+  "shortcuts.zoomOut": "जुम आउट",
+  "shortcuts.zoomReset": "जुम रिसेट गर्नुहोस्",
+  "shortcuts.zoomWheel": "जुम इन वा आउट",
+  "shortcuts.ctrlWheel": "Ctrl+व्हील",
   // Go to line
   // Status bar
   "statusbar.words": (n: number) => `${n} शब्द${n === 1 ? "" : "हरू"}`,
@@ -262,6 +267,7 @@ export const ne = {
   "statusbar.cursor": (line: number, column: number) => `पंक्ति ${line}, स्तम्भ ${column}`,
   "statusbar.cursorTitle": "कर्सरको पंक्ति र स्तम्भ",
   "statusbar.dirtyTitle": "सुरक्षित नगरिएका परिवर्तनहरू",
+  "statusbar.zoomTitle": "जुम स्तर — रिसेट गर्न क्लिक गर्नुहोस्",
   // Language picker
   "lang.searchPlaceholder": "भाषा खोज्नुहोस्…",
   "lang.searchAria": "भाषा खोज्नुहोस्",

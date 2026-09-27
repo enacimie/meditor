@@ -251,6 +251,11 @@ export const pt = {
   "shortcuts.quit": "Sair",
   "shortcuts.print": "Imprimir",
   "shortcuts.esc": "Fechar / Sair",
+  "shortcuts.zoomIn": "Ampliar",
+  "shortcuts.zoomOut": "Reduzir",
+  "shortcuts.zoomReset": "Redefinir o zoom",
+  "shortcuts.zoomWheel": "Ampliar ou reduzir",
+  "shortcuts.ctrlWheel": "Ctrl+Roda",
   // Ir para linha
   // Status bar
   "statusbar.words": (n: number) => `${n} palavra${n === 1 ? "" : "s"}`,
@@ -264,6 +269,7 @@ export const pt = {
   "statusbar.cursor": (line: number, column: number) => `Ln ${line}, col ${column}`,
   "statusbar.cursorTitle": "Linha e coluna do cursor",
   "statusbar.dirtyTitle": "Alterações não salvas",
+  "statusbar.zoomTitle": "Nível de zoom — clique para redefinir",
   // Language picker
   "lang.searchPlaceholder": "Buscar idioma…",
   "lang.searchAria": "Buscar idioma",

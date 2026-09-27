@@ -436,4 +436,16 @@ export const webBackend: Backend = {
   async exitApp() {
     window.close();
   },
+
+  async setZoom(factor) {
+    /*
+     * The page has no webview of its own to zoom, so the document scales
+     * itself: CSS `zoom` relays out at the new size and keeps text crisp, and
+     * every engine this build can be opened in now implements it. Setting the
+     * property by hand rather than through the style object because `zoom`
+     * only recently became standard and the CSS type declarations do not all
+     * carry it yet.
+     */
+    document.documentElement.style.setProperty("zoom", String(factor));
+  },
 };

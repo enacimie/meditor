@@ -249,6 +249,11 @@ export const ar = {
   "shortcuts.quit": "خروج",
   "shortcuts.print": "طباعة",
   "shortcuts.esc": "إغلاق / خروج",
+  "shortcuts.zoomIn": "تكبير",
+  "shortcuts.zoomOut": "تصغير",
+  "shortcuts.zoomReset": "إعادة تعيين التكبير",
+  "shortcuts.zoomWheel": "تكبير أو تصغير",
+  "shortcuts.ctrlWheel": "Ctrl+عجلة الفأرة",
   // Go to line
   // Status bar
   "statusbar.words": (n: number) => `${n} كلمة${n === 1 ? "" : "ات"}`,
@@ -262,6 +267,7 @@ export const ar = {
   "statusbar.cursor": (line: number, column: number) => `سطر ${line}، عمود ${column}`,
   "statusbar.cursorTitle": "سطر المؤشر وعموده",
   "statusbar.dirtyTitle": "تغييرات غير محفوظة",
+  "statusbar.zoomTitle": "مستوى التكبير — انقر لإعادة التعيين",
   // Language picker
   "lang.searchPlaceholder": "بحث عن لغة…",
   "lang.searchAria": "بحث عن لغة",

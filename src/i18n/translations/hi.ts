@@ -250,6 +250,11 @@ export const hi = {
   "shortcuts.quit": "बंद करें",
   "shortcuts.print": "प्रिंट करें",
   "shortcuts.esc": "बंद करें / बाहर निकलें",
+  "shortcuts.zoomIn": "ज़ूम इन",
+  "shortcuts.zoomOut": "ज़ूम आउट",
+  "shortcuts.zoomReset": "ज़ूम रीसेट करें",
+  "shortcuts.zoomWheel": "ज़ूम इन या आउट",
+  "shortcuts.ctrlWheel": "Ctrl+व्हील",
   // Go to line
   // Status bar
   "statusbar.words": (n: number) => `${n} शब्द`,
@@ -263,6 +268,7 @@ export const hi = {
   "statusbar.cursor": (line: number, column: number) => `पंक्ति ${line}, स्तंभ ${column}`,
   "statusbar.cursorTitle": "कर्सर की पंक्ति और स्तंभ",
   "statusbar.dirtyTitle": "बिना सहेजे बदलाव",
+  "statusbar.zoomTitle": "ज़ूम स्तर — रीसेट करने के लिए क्लिक करें",
   // Language picker
   "lang.searchPlaceholder": "भाषा खोजें…",
   "lang.searchAria": "भाषा खोजें",
