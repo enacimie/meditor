@@ -51,6 +51,18 @@ export type ShortcutHandlers = {
 };
 
 /**
+ * Whether a modal of the application's own is on screen.
+ *
+ * Read from the DOM rather than from the app's state because the state is
+ * spread over half a dozen flags in App, and what matters here is the one
+ * fact every dialog, overlay and slideshow shares once it is mounted: an
+ * `aria-modal` surface the rest of the keyboard must not answer over.
+ */
+function modalOpen(): boolean {
+  return document.querySelector('[role="dialog"], [role="alertdialog"]') !== null;
+}
+
+/**
  * Registers global keyboard shortcuts for the app.
  *
  * Replaces the inline `useEffect` with the `onKey` handler that was
@@ -91,18 +103,35 @@ export function useKeyboardShortcuts(
       }
 
       if (e.key === "F2") {
-        e.preventDefault();
-        h.rename();
+        // Not over a modal: F2 answers the dialog's own keyboard first, and
+        // stacking a rename on a question already on screen traps the focus
+        // in whichever of the two dialogs mounted last.
+        if (!modalOpen()) {
+          e.preventDefault();
+          h.rename();
+        }
         return;
       }
 
       if (e.key === "F1") {
-        e.preventDefault();
-        h.openShortcuts();
+        if (!modalOpen()) {
+          e.preventDefault();
+          h.openShortcuts();
+        }
         return;
       }
 
       if (!(e.ctrlKey || e.metaKey)) return;
+
+      /*
+       * AltGr arrives as Ctrl+Alt, and on Spanish and other European layouts
+       * it is the way to type half the keyboard: AltGr+O is nothing, but
+       * without this guard it is "open files" for anybody who reaches past
+       * Ctrl for a character. No shortcut in this app wants Alt held, so one
+       * global gate replaces the per-branch checks that used to protect only
+       * the digits and the letters that had complained.
+       */
+      if (e.altKey) return;
 
       // Ctrl+Tab cycles tabs, matching the arrow-key behaviour of the tab bar.
       if (e.key === "Tab") {
@@ -121,7 +150,7 @@ export function useKeyboardShortcuts(
       } else if (k === "o") {
         e.preventDefault();
         h.openFiles();
-      } else if (k === "f" && !e.shiftKey && !e.altKey) {
+      } else if (k === "f" && !e.shiftKey) {
         // Inside the editor the key is CodeMirror's: its Mod-f opens the panel
         // there, and on macOS Ctrl+F is its Emacs-style "caret right", even at
         // the end of the text where the caret has nowhere to go. Answering it
@@ -156,23 +185,21 @@ export function useKeyboardShortcuts(
       } else if (k === ",") {
         e.preventDefault();
         h.openPreferences();
-      } else if (!e.shiftKey && !e.altKey && (k === "1" || k === "2" || k === "3")) {
-        // !altKey matters on Spanish keyboards, where AltGr arrives as
-        // Ctrl+Alt and would otherwise swallow the digits.
+      } else if (!e.shiftKey && (k === "1" || k === "2" || k === "3")) {
         e.preventDefault();
         h.setLayout(k === "1" ? "editor" : k === "2" ? "split" : "preview");
-      } else if (!e.altKey && (k === "+" || k === "=")) {
+      } else if (k === "+" || k === "=") {
         // Both keys: `=` is where the plus sign lives unshifted on a US
         // keyboard, and every browser takes either for zooming in. The
         // numpad's plus arrives as "+" on its own.
         e.preventDefault();
         h.zoomIn();
-      } else if (!e.altKey && (k === "-" || k === "_")) {
+      } else if (k === "-" || k === "_") {
         // "_" is "-" with Shift on a US keyboard, and browsers honour that
         // combination for zooming out too.
         e.preventDefault();
         h.zoomOut();
-      } else if (!e.shiftKey && !e.altKey && k === "0") {
+      } else if (!e.shiftKey && k === "0") {
         e.preventDefault();
         h.zoomReset();
       }

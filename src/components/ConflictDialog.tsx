@@ -1,4 +1,5 @@
 import { memo, useEffect, useRef, useState } from "react";
+import { useDialogKeys } from "../hooks/useDialogKeys";
 import "./ConflictDialog.css";
 
 type Props = {
@@ -19,7 +20,9 @@ const EXIT_MS = 140;
  * Three-way resolution for a document that changed on disk while carrying
  * unsaved edits. Deliberately not dismissible: Escape and the backdrop both
  * route to "keep mine" so no keypress can silently discard either version,
- * and every exit is one of the three explicit choices.
+ * and every exit is one of the three explicit choices. The Tab trap runs on
+ * the document and knows all three buttons — cycling only the two refs that
+ * happen to exist used to walk the focus out of the modal from the third.
  */
 const ConflictDialog = memo(function ConflictDialog({
   title,
@@ -32,7 +35,7 @@ const ConflictDialog = memo(function ConflictDialog({
   onSaveAs,
 }: Props) {
   const keepRef = useRef<HTMLButtonElement>(null);
-  const reloadRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const closeTimerRef = useRef<number | undefined>(undefined);
   const [closing, setClosing] = useState(false);
 
@@ -62,25 +65,7 @@ const ConflictDialog = memo(function ConflictDialog({
     closeTimerRef.current = window.setTimeout(finish, reduced ? 0 : EXIT_MS);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      requestClose(onKeep);
-      return;
-    }
-    if (e.key === "Tab") {
-      // Three buttons: cycle within the dialog instead of into the page
-      // behind the modal.
-      const buttons = [reloadRef.current, keepRef.current];
-      const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
-      if (index === -1) return;
-      e.preventDefault();
-      const next = e.shiftKey
-        ? buttons[(index + buttons.length - 1) % buttons.length]
-        : buttons[(index + 1) % buttons.length];
-      next?.focus();
-    }
-  };
+  useDialogKeys(panelRef, () => requestClose(onKeep));
 
   return (
     <div
@@ -89,12 +74,11 @@ const ConflictDialog = memo(function ConflictDialog({
       aria-modal="true"
       aria-labelledby="conflict-title"
       aria-describedby="conflict-message"
-      onKeyDown={handleKeyDown}
       onClick={(e) => {
         if (e.target === e.currentTarget) requestClose(onKeep);
       }}
     >
-      <div className="conflict-dialog">
+      <div className="conflict-dialog" ref={panelRef}>
         <h2 id="conflict-title" className="conflict-title">
           {title}
         </h2>
@@ -103,7 +87,6 @@ const ConflictDialog = memo(function ConflictDialog({
         </p>
         <div className="conflict-actions">
           <button
-            ref={reloadRef}
             type="button"
             className="confirm-btn conflict-btn--danger"
             onClick={() => requestClose(onReload)}

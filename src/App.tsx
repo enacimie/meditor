@@ -2591,7 +2591,20 @@ export default function App() {
           }}
         />
       )}
-      {updates.offer && (
+      {/*
+        One modal at a time. The offer waits its turn behind whichever
+        dialog is up — it is state, not a queue entry that expires, so the
+        moment the last one closes this renders. Two `aria-modal` surfaces
+        at once trap the focus in whichever mounted last, and the Escape
+        that closes one lands on the other.
+      */}
+      {updates.offer &&
+        !confirmRequest &&
+        !conflictRequest &&
+        !renameRequest &&
+        !preferencesOpen &&
+        !aboutOpen &&
+        !shortcutsOpen && (
         <ConfirmDialog
           title={t("update.title")}
           message={t("update.available", updates.offer.version, updates.offer.current)}
@@ -2617,6 +2630,9 @@ export default function App() {
       )}
       {renameRequest && (
         <RenameDialog
+          // Remount per request, as ConfirmDialog does: a reuse would carry
+          // the previous rename's focus, its input value and its exit timer.
+          key={renameRequest.id}
           title={t("tab.renameTitle")}
           label={t("tab.renamePrompt")}
           initialValue={renameRequest.name}

@@ -386,3 +386,59 @@ describe("window zoom", () => {
     );
   });
 });
+
+describe("shortcuts that must not answer over a modal", () => {
+  it("F2 does not stack a rename over an open overlay", async () => {
+    render(
+      <I18nProvider>
+        <App />
+      </I18nProvider>,
+    );
+    await waitFor(
+      () => expect(document.querySelector(".cm-editor")).toBeTruthy(),
+      { timeout: 8000 },
+    );
+
+    fireEvent.keyDown(window, { key: "F1" });
+    await waitFor(() =>
+      expect(document.querySelector(".shortcuts-overlay")).toBeTruthy(),
+    );
+
+    fireEvent.keyDown(window, { key: "F2" });
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(
+      document.querySelector(".rename-overlay"),
+      "two aria-modal surfaces at once trap the focus in whichever mounted last",
+    ).toBeNull();
+    expect(document.querySelector(".shortcuts-overlay")).toBeTruthy();
+  });
+
+  it("leaves AltGr combinations to the keyboard layout", async () => {
+    // AltGr arrives as Ctrl+Alt. On a Spanish layout it is the way to type
+    // half the keyboard, so Ctrl+Alt+S belongs to the writer's next
+    // character, not to "save".
+    render(
+      <I18nProvider>
+        <App />
+      </I18nProvider>,
+    );
+    await waitFor(
+      () => expect(document.querySelector(".cm-editor")).toBeTruthy(),
+      { timeout: 8000 },
+    );
+    invokeMock.mockClear();
+
+    fireEvent.keyDown(window, { key: "s", ctrlKey: true, altKey: true });
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(invokeMock).not.toHaveBeenCalledWith(
+      "save_document",
+      expect.anything(),
+    );
+  });
+});

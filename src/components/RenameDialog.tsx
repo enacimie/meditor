@@ -1,4 +1,5 @@
 import { memo, useEffect, useRef, useState } from "react";
+import { useDialogKeys } from "../hooks/useDialogKeys";
 import "./RenameDialog.css";
 
 type Props = {
@@ -18,7 +19,10 @@ const EXIT_MS = 140;
  * In-window rename dialog (replaces the native window.prompt).
  * Styled with the app theme variables and rendered above the whole UI.
  * Keyboard: Enter confirms (from the input), Escape cancels, Tab/Shift+Tab
- * cycle input → Cancel → Rename (focus is trapped inside the dialog).
+ * cycle input → Cancel → Rename — trapped on the document, and around the
+ * buttons that can actually take the focus: with an empty name the Rename
+ * button is disabled, and a trap that counted it handed the focus to a
+ * button the browser refuses to focus, i.e. out of the dialog.
  * On close, focus is restored to the element that opened the dialog.
  */
 const RenameDialog = memo(function RenameDialog({
@@ -31,8 +35,7 @@ const RenameDialog = memo(function RenameDialog({
   onCancel,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const cancelRef = useRef<HTMLButtonElement>(null);
-  const confirmRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const closeTimerRef = useRef<number | undefined>(undefined);
   const [value, setValue] = useState(initialValue);
   const [closing, setClosing] = useState(false);
@@ -74,32 +77,7 @@ const RenameDialog = memo(function RenameDialog({
     if (canConfirm) requestClose(() => onConfirm(trimmed));
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      requestClose(onCancel);
-      return;
-    }
-    if (e.key === "Tab") {
-      // Trap the focus inside the dialog: wrap at both ends of
-      // input → Cancel → Rename, and pull stray focus back in.
-      const active = document.activeElement;
-      if (!e.shiftKey && active === confirmRef.current) {
-        e.preventDefault();
-        cancelRef.current?.focus();
-      } else if (e.shiftKey && active === inputRef.current) {
-        e.preventDefault();
-        confirmRef.current?.focus();
-      } else if (
-        active !== inputRef.current &&
-        active !== cancelRef.current &&
-        active !== confirmRef.current
-      ) {
-        e.preventDefault();
-        (e.shiftKey ? confirmRef.current : inputRef.current)?.focus();
-      }
-    }
-  };
+  useDialogKeys(panelRef, () => requestClose(onCancel));
 
   return (
     <div
@@ -107,12 +85,11 @@ const RenameDialog = memo(function RenameDialog({
       role="dialog"
       aria-modal="true"
       aria-labelledby="rename-title"
-      onKeyDown={handleKeyDown}
       onClick={(e) => {
         if (e.target === e.currentTarget) requestClose(onCancel);
       }}
     >
-      <div className="rename-dialog">
+      <div className="rename-dialog" ref={panelRef}>
         <h2 id="rename-title" className="rename-title">
           {title}
         </h2>
@@ -126,7 +103,6 @@ const RenameDialog = memo(function RenameDialog({
           type="text"
           value={value}
           maxLength={120}
-          aria-label={label}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
@@ -137,7 +113,6 @@ const RenameDialog = memo(function RenameDialog({
         />
         <div className="rename-actions">
           <button
-            ref={cancelRef}
             type="button"
             className="rename-btn"
             onClick={() => requestClose(onCancel)}
@@ -145,7 +120,6 @@ const RenameDialog = memo(function RenameDialog({
             {cancelLabel}
           </button>
           <button
-            ref={confirmRef}
             type="button"
             className="rename-btn rename-btn--primary"
             disabled={!canConfirm}

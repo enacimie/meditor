@@ -1,4 +1,5 @@
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useEffect, useId, useRef, useState } from "react";
+import { useDialogKeys } from "../hooks/useDialogKeys";
 import "./ConfirmDialog.css";
 
 type Props = {
@@ -17,7 +18,8 @@ const EXIT_MS = 140;
  * In-window confirmation dialog (replaces the native GTK/system dialog).
  * Styled with the app theme variables and rendered above the whole UI.
  * Keyboard: Enter/Space activate the focused button, Escape cancels,
- * Tab cycles between the two buttons.
+ * Tab cycles between the two buttons — owned on the document, so they
+ * keep working when a click on the panel has put the focus on the body.
  */
 const ConfirmDialog = memo(function ConfirmDialog({
   title,
@@ -28,9 +30,16 @@ const ConfirmDialog = memo(function ConfirmDialog({
   onCancel,
 }: Props) {
   const cancelRef = useRef<HTMLButtonElement>(null);
-  const confirmRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const closeTimerRef = useRef<number | undefined>(undefined);
   const [closing, setClosing] = useState(false);
+  /*
+   * Generated, not static: the application can mount two of these at once
+   * (a question and the update offer), and two `confirm-title` ids in the
+   * DOM would point both `aria-labelledby`s at whichever came first.
+   */
+  const titleId = useId();
+  const messageId = useId();
 
   // Focus the safe default (Cancel) on mount, and restore focus to the
   // element that opened the dialog when it closes (a11y).
@@ -64,44 +73,24 @@ const ConfirmDialog = memo(function ConfirmDialog({
     closeTimerRef.current = window.setTimeout(finish, reduced ? 0 : EXIT_MS);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      requestClose(onCancel);
-      return;
-    }
-    if (e.key === "Tab") {
-      const cancel = cancelRef.current;
-      const confirm = confirmRef.current;
-      if (!cancel || !confirm) return;
-      const active = document.activeElement;
-      if (e.shiftKey && active === cancel) {
-        e.preventDefault();
-        confirm.focus();
-      } else if (!e.shiftKey && active === confirm) {
-        e.preventDefault();
-        cancel.focus();
-      }
-    }
-  };
+  useDialogKeys(panelRef, () => requestClose(onCancel));
 
   return (
     <div
       className={"confirm-overlay" + (closing ? " closing" : "")}
       role="alertdialog"
       aria-modal="true"
-      aria-labelledby="confirm-title"
-      aria-describedby="confirm-message"
-      onKeyDown={handleKeyDown}
+      aria-labelledby={titleId}
+      aria-describedby={messageId}
       onClick={(e) => {
         if (e.target === e.currentTarget) requestClose(onCancel);
       }}
     >
-      <div className="confirm-dialog">
-        <h2 id="confirm-title" className="confirm-title">
+      <div className="confirm-dialog" ref={panelRef}>
+        <h2 id={titleId} className="confirm-title">
           {title}
         </h2>
-        <p id="confirm-message" className="confirm-message">
+        <p id={messageId} className="confirm-message">
           {message}
         </p>
         <div className="confirm-actions">
@@ -114,7 +103,6 @@ const ConfirmDialog = memo(function ConfirmDialog({
             {cancelLabel}
           </button>
           <button
-            ref={confirmRef}
             type="button"
             className="confirm-btn confirm-btn--primary"
             onClick={() => requestClose(onConfirm)}
