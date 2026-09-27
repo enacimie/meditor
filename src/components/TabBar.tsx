@@ -8,6 +8,12 @@ type Props = {
   docs: Doc[];
   activeId: string;
   busyOperation: string | null;
+  /**
+   * Whether the interface reads right-to-left, where the arrow that means
+   * "the next tab" points the other way. The topbar's layout switch already
+   * mirrors for this; the tabs did not.
+   */
+  rtl?: boolean;
   onSelectTab: (id: string) => void;
   onCloseTab: (id: string) => void;
   onRenameTab: (id: string) => void;
@@ -19,6 +25,7 @@ const TabBar = memo(function TabBar({
   docs,
   activeId,
   busyOperation,
+  rtl = false,
   onSelectTab,
   onCloseTab,
   onRenameTab,
@@ -34,7 +41,14 @@ const TabBar = memo(function TabBar({
   }, [activeId]);
 
   return (
-    <div ref={tabbarRef} className="tabbar" role="tablist" aria-label={t("tab.documentsOpen")}>
+    <div ref={tabbarRef} className="tabbar">
+      {/*
+        The tablist wraps the tabs alone. The "+" button used to sit inside
+        it, and a tablist may own nothing but tabs: assistive tech walking
+        the list met a control that was not one, and could skip it.
+        display:contents keeps the flex layout exactly as it was.
+      */}
+      <div className="tabbar-list" role="tablist" aria-label={t("tab.documentsOpen")}>
       {docs.map((d) => (
         <div
           key={d.id}
@@ -52,14 +66,17 @@ const TabBar = memo(function TabBar({
             aria-controls="workspace-panels"
             onKeyDown={(e) => {
               const index = docs.findIndex((item) => item.id === d.id);
-              if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+              // Mirrored in RTL, where the next tab is to the left.
+              const nextKey = rtl ? "ArrowLeft" : "ArrowRight";
+              const prevKey = rtl ? "ArrowRight" : "ArrowLeft";
+              if (e.key === nextKey || e.key === "ArrowDown") {
                 e.preventDefault();
                 const next = docs[(index + 1) % docs.length];
                 onSelectTab(next.id);
                 (e.currentTarget.parentElement?.parentElement?.querySelectorAll<HTMLElement>("[role=tab]")[
                   (index + 1) % docs.length
                 ])?.focus();
-              } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+              } else if (e.key === prevKey || e.key === "ArrowUp") {
                 e.preventDefault();
                 const previous = docs[(index - 1 + docs.length) % docs.length];
                 onSelectTab(previous.id);
@@ -76,7 +93,9 @@ const TabBar = memo(function TabBar({
             aria-label={`${d.name}${d.dirty ? ", " + t("tab.unsaved") : ""}`}
             title={d.path ?? d.name}
           >
-            {d.dirty && <span className="tab-dirty" aria-label={t("tab.unsaved")}>•</span>}
+            {/* The button's own aria-label already says "unsaved"; a second
+                name on the dot would announce it twice. */}
+            {d.dirty && <span className="tab-dirty" aria-hidden="true">•</span>}
             <span className="tab-name">{d.name}</span>
           </button>
           {docs.length > 1 && (
@@ -92,6 +111,7 @@ const TabBar = memo(function TabBar({
           )}
         </div>
       ))}
+      </div>
       <button
         type="button"
         className="tab-add"

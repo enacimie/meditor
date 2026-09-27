@@ -2330,6 +2330,7 @@ export default function App() {
         docs={docs}
         activeId={activeId}
         busyOperation={busyOperation}
+        rtl={isRtl(lang)}
         onSelectTab={setActiveId}
         onCloseTab={closeTab}
         onRenameTab={renameTab}

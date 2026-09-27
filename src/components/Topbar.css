@@ -19,7 +19,7 @@
   align-items: center;
   gap: 7px;
   min-width: 0;
-  margin-left: auto;
+  margin-inline-start: auto;
   padding: 4px 10px;
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -137,7 +137,12 @@
   transform: none;
 }
 
-.actions button:disabled:hover,
+.actions button:disabled:hover {
+  border-color: var(--border);
+  background: var(--bg);
+  color: var(--fg);
+}
+
 .menu-panel button:disabled:hover,
 .tab-add:disabled:hover {
   border-color: var(--border);
@@ -172,7 +177,10 @@
 .menu-panel {
   position: absolute;
   top: calc(100% + 4px);
-  right: 0;
+  /* Logical: in the six RTL languages the toggle this hangs from sits at
+     the physical left, and a panel anchored to the physical right grows
+     off a viewport the app clips. */
+  inset-inline-end: 0;
   min-width: 220px;
   background: var(--bg);
   border: 1px solid var(--border);
@@ -204,7 +212,7 @@
   padding: 8px 10px;
   font-size: 13px;
   cursor: pointer;
-  text-align: left;
+  text-align: start;
   line-height: 1;
 }
 
@@ -229,7 +237,7 @@
   font-weight: 600;
   letter-spacing: 0.02em;
   color: var(--fg);
-  opacity: 0.6;
+  opacity: 0.78;
   text-transform: uppercase;
 }
 
@@ -273,7 +281,7 @@
 }
 
 .menu-panel .shortcut {
-  margin-left: auto;
+  margin-inline-start: auto;
   color: var(--fg);
   font-size: 11px;
   opacity: 0.78;
@@ -321,7 +329,7 @@
 }
 
 .theme-check {
-  margin-left: auto;
+  margin-inline-start: auto;
   color: var(--accent);
   font-weight: 700;
 }

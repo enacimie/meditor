@@ -97,7 +97,10 @@ const AboutDialog = memo(function AboutDialog({ t, onClose }: Props) {
         >
           ✕
         </button>
-        <div className="about-brand">{t("app.brand")}</div>
+        {/* A heading, so the dialog has one like its four siblings: an
+            overlay announced as a dialog with no heading inside gives a
+            screen reader nothing to jump to. */}
+        <h2 className="about-brand">{t("app.brand")}</h2>
         {version && (
           <div className="about-version">{t("about.version", version)}</div>
         )}

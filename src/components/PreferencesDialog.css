@@ -46,7 +46,7 @@
    * always got, and below 520 px the rows still stack.
    */
   width: min(720px, calc(100vw - 48px));
-  max-height: calc(100vh - 64px);
+  max-height: calc(100dvh - 64px);
   overflow-y: auto;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
   animation: prefs-panel-in 0.18s cubic-bezier(0.22, 1, 0.36, 1);

@@ -28,9 +28,9 @@ const Outline = memo(function Outline({ t, headings, cursorLine, onGoToLine }: P
   return (
     <nav className="outline" aria-label={t("outline.label")}>
       <ul className="outline-list" role="list">
-        {headings.map((h, i) => (
+        {headings.map((h) => (
           <li
-            key={i}
+            key={`${h.line}:${h.text}`}
             className={
               "outline-item" +
               (activeLine === h.line ? " outline-active" : "")
@@ -41,7 +41,8 @@ const Outline = memo(function Outline({ t, headings, cursorLine, onGoToLine }: P
               type="button"
               className="outline-link"
               onClick={() => onGoToLine(h.line)}
-              title={`${"#".repeat(h.level)} ${h.text}`}
+              title={h.text}
+              aria-current={activeLine === h.line ? "location" : undefined}
             >
               <span className="outline-marker" aria-hidden="true">
                 {"#".repeat(h.level)}

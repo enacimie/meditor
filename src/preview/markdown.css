@@ -88,7 +88,7 @@
 }
 
 .markdown-body blockquote {
-  border-left: 4px solid var(--border);
+  border-inline-start: 4px solid var(--border);
   margin: 0;
   padding: 0 1em;
   opacity: 0.85;
@@ -173,11 +173,11 @@
 }
 
 .markdown-body .task-list-item input {
-  margin-right: 0.5em;
+  margin-inline-end: 0.5em;
 }
 
 .markdown-body .warning {
-  border-left: 4px solid #d29922;
+  border-inline-start: 4px solid #d29922;
   background: #fff8c5;
   padding: 8px 16px;
   border-radius: 4px;
@@ -199,7 +199,7 @@
 }
 
 .markdown-body .note {
-  border-left: 4px solid var(--accent);
+  border-inline-start: 4px solid var(--accent);
   background: var(--bg-alt);
   padding: 8px 16px;
   border-radius: 4px;
@@ -285,7 +285,7 @@
  */
 .markdown-body .markdown-toc ol {
   list-style: none;
-  padding-left: 0;
+  padding-inline-start: 0;
   margin: 0.5em 0;
 }
 
@@ -294,11 +294,11 @@
 }
 
 .markdown-body .markdown-toc .toc-level-2 {
-  padding-left: 1.5em;
+  padding-inline-start: 1.5em;
 }
 
 .markdown-body .markdown-toc .toc-level-3 {
-  padding-left: 3em;
+  padding-inline-start: 3em;
 }
 
 /*

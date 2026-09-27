@@ -34,6 +34,21 @@ describe("parseHeadings", () => {
     expect(parseHeadings("=\nNot a heading\n", "typst")).toEqual([]);
   });
 
+  it("finds an ATX heading indented up to three spaces, and no further", () => {
+    // CommonMark: three spaces still make a heading — and markdown-it
+    // renders it, so an outline that skipped it listed fewer headings than
+    // the page shows. Four spaces are an indented code block, and a hash
+    // with no space after it is text.
+    const headings = parseHeadings(
+      "   # three spaces\n# flush\n    # four is code\n#glued is text",
+      "markdown",
+    );
+    expect(headings.map((h) => [h.level, h.text, h.line])).toEqual([
+      [1, "three spaces", 0],
+      [1, "flush", 1],
+    ]);
+  });
+
   it("trims trailing whitespace from heading text", () => {
     expect(parseHeadings("# Spaced out   ", "markdown")).toEqual([
       { level: 1, text: "Spaced out", line: 0 },

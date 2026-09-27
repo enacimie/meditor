@@ -37,7 +37,7 @@
 /* Slide counter + exit, tucked away until needed. */
 .present-hud {
   position: absolute;
-  right: 18px;
+  inset-inline-end: 18px;
   bottom: 14px;
   display: flex;
   align-items: center;
