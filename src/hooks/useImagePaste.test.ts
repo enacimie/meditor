@@ -26,6 +26,7 @@ vi.mock("../backend", () => ({
 const {
   useImagePaste,
   imagePlaceholderField,
+  imagePasteHandlerFns,
 }: typeof import("./useImagePaste") = await import("./useImagePaste");
 type ImagePasteError = import("./useImagePaste").ImagePasteError;
 
@@ -421,5 +422,73 @@ describe("a document with nowhere to write", () => {
 
     await waitFor(() => expect(text(view)).toContain(DATA_URL));
     expect(errors).toEqual([{ kind: "notStored", name: "shot.png" }]);
+  });
+});
+
+describe("the handlers the editor itself answers", () => {
+  /*
+   * These run through CodeMirror's domEventHandlers, ahead of the built-in
+   * paste/drop — the built-in drop reads a file's text and inserts it, which
+   * is how an SVG dropped on the editor used to land twice: source and link.
+   */
+  const imageItem = (file: File) => ({
+    kind: "file",
+    type: file.type,
+    getAsFile: () => file,
+  });
+
+  /** The handlers hand the focus back to the view once the read lands. */
+  const fakeView = () => ({ focus: vi.fn() }) as never;
+
+  it("takes a paste that carries an image, and leaves a text paste alone", async () => {
+    const inserted: File[] = [];
+    const fns = imagePasteHandlerFns(async (_view, file) => {
+      inserted.push(file);
+    });
+    const file = new File(["x"], "shot.png", { type: "image/png" });
+    const preventDefault = vi.fn();
+    const took = fns.paste(
+      { clipboardData: { items: [imageItem(file)] }, preventDefault } as never,
+      fakeView(),
+    );
+    expect(took).toBe(true);
+    expect(preventDefault).toHaveBeenCalled();
+    await Promise.resolve();
+    expect(inserted).toEqual([file]);
+
+    const textPrevent = vi.fn();
+    const tookText = fns.paste(
+      {
+        clipboardData: { items: [{ kind: "string", type: "text/plain" }] },
+        preventDefault: textPrevent,
+      } as never,
+      fakeView(),
+    );
+    expect(tookText).toBe(false);
+    expect(textPrevent).not.toHaveBeenCalled();
+  });
+
+  it("takes a drop with an image in it, and leaves a dropped text file to the editor", () => {
+    const fns = imagePasteHandlerFns(async () => {});
+    const png = new File(["x"], "a.png", { type: "image/png" });
+    const imagePrevent = vi.fn();
+    expect(
+      fns.drop({
+        dataTransfer: { files: [png] },
+        preventDefault: imagePrevent,
+      } as never, fakeView()),
+    ).toBe(true);
+    expect(imagePrevent).toHaveBeenCalled();
+
+    // A dropped .md keeps the editor's own behaviour: its text goes in.
+    const md = new File(["x"], "notes.md", { type: "text/markdown" });
+    const textPrevent = vi.fn();
+    expect(
+      fns.drop({
+        dataTransfer: { files: [md] },
+        preventDefault: textPrevent,
+      } as never, fakeView()),
+    ).toBe(false);
+    expect(textPrevent).not.toHaveBeenCalled();
   });
 });
