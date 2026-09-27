@@ -27,6 +27,13 @@ const MAX_INITIAL_CHUNK_BYTES = 2_200_000;
  */
 const NEVER_IN_THE_FIRST_LOAD = [
   { modules: "/node_modules/@myriaddreamin/", belongs: "in the Typst worker (src/typstWorker.ts)" },
+  // Both are lazily imported and both are megabytes: the budget alone would
+  // not object to them riding along, and a shared helper landing inside
+  // either chunk once already dragged paged.js into the first load (the
+  // entry needs the helper, and downloading a module means downloading all
+  // of it). Named here so the next such helper fails the build instead.
+  { modules: "/node_modules/pagedjs/", belongs: "in its own chunk, loaded when the Document view paginates" },
+  { modules: "/node_modules/mermaid/", belongs: "in its own chunk, loaded when a document has a diagram" },
 ];
 
 function bundleBudgetPlugin(): Plugin {
@@ -53,7 +60,28 @@ function bundleBudgetPlugin(): Plugin {
 
       for (const entry of chunks.filter((output) => output.isEntry)) {
         const initial = initialChunks(entry);
-        const bytes = initial.reduce((total, chunk) => total + chunk.code.length, 0);
+        /*
+         * Real bytes, not `code.length`: that counts UTF-16 units, and the
+         * 104 translation tables are full of scripts where a character costs
+         * three bytes — the difference was 13% of the first load, enough for
+         * a bundle over the limit to walk through as one under it. The CSS
+         * the entry links statically is part of the first load too, and used
+         * to go uncounted entirely.
+         */
+        const bytes = initial.reduce((total, chunk) => {
+          // @ts-expect-error Buffer is a nodejs global
+          let size = Buffer.byteLength(chunk.code);
+          for (const name of chunk.viteMetadata?.importedCss ?? []) {
+            const asset = bundle[name];
+            if (asset?.type !== "asset") continue;
+            size +=
+              typeof asset.source === "string"
+                ? // @ts-expect-error Buffer is a nodejs global
+                  Buffer.byteLength(asset.source)
+                : asset.source.byteLength;
+          }
+          return total + size;
+        }, 0);
         if (bytes > MAX_INITIAL_CHUNK_BYTES) {
           this.error(
             `Initial bundle exceeds ${MAX_INITIAL_CHUNK_BYTES} bytes: ${entry.fileName} (${bytes} bytes including static imports)`,
@@ -198,6 +226,15 @@ export default defineConfig(async () => ({
           // It sat in the Typst chunk until Typst moved into its worker; the
           // next in line was Mermaid, 3 MB, straight into the first load.
           if (id.includes("vite/preload-helper")) return "preload-helper";
+          /*
+           * Rollup's CommonJS interop helpers, on their own, for the same
+           * reason as the preload helper above: the entry needs them (react
+           * and react-dom arrive as CJS), and left loose they land in
+           * whichever manual chunk below uses them first. That was pagedjs,
+           * and the entry then loaded all 513 kB of paged.js to reach one
+           * two-line function.
+           */
+          if (id.includes("commonjsHelpers")) return "cjs-helpers";
           // Match the package directory itself, not similarly named
           // transitive dependencies (e.g. Mermaid's diagram definitions).
           // This keeps lazy feature chunks bounded while leaving workers,

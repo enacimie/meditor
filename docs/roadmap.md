@@ -85,15 +85,24 @@ longer overruling the writer's font size.
 
 ## Bundle 3 — bundle and budget
 
+**Status: landed (PR #202).** The CJS interop helpers ride their own chunk
+(`cjs-helpers`, 0.76 kB) instead of living inside pagedjs, so the first load
+drops paged.js's 513 kB entirely (only `cjs-helpers` and `preload-helper`
+are preloaded now); the budget counts real UTF-8 bytes and the statically
+linked CSS, and `NEVER_IN_THE_FIRST_LOAD` now names pagedjs and mermaid too,
+so the next shared helper that lands in a lazy chunk fails the build instead
+of quietly riding the entry. The first load measures ≈1.94 MB against the
+2.2 MB limit; it was ≈2.41 MB real while being counted as 2.13 M.
+
 - [high] (verified) Rollup packs the shared CJS interop helper inside the
   `pagedjs` manual chunk, so the entry statically imports it and 513 KB of
   paged.js ride the first load (entry `import{g}from"./pagedjs-…"`,
   `modulepreload` in dist/index.html). `NEVER_IN_THE_FIRST_LOAD` does not
-  cover it.
+  cover it. — **fixed**
 - [high] (verified) the budget plugin sums `chunk.code.length` — UTF-16
   code units, not bytes. With the 104-language tables the real first load
   is ~2.41 MB against a 2.2 MB limit, and the build passes counting 2.13 M.
-  Static CSS is not counted either.
+  Static CSS is not counted either. — **fixed**
 
 ## Bundle 4 — dialogs, a11y and RTL
 
