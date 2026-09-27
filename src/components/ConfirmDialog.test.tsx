@@ -52,8 +52,15 @@ describe("ConfirmDialog", () => {
     renderDialog();
     const dialog = screen.getByRole("alertdialog");
     expect(dialog.getAttribute("aria-modal")).toBe("true");
-    expect(dialog.getAttribute("aria-labelledby")).toBe("confirm-title");
-    expect(dialog.getAttribute("aria-describedby")).toBe("confirm-message");
+    // The ids are generated (useId), not static: two ConfirmDialogs can be
+    // mounted at once — a question and the update offer — and two identical
+    // ids would resolve both aria-labelledby to whichever came first.
+    const titleId = dialog.getAttribute("aria-labelledby");
+    const messageId = dialog.getAttribute("aria-describedby");
+    expect(titleId).toBeTruthy();
+    expect(messageId).toBeTruthy();
+    expect(document.getElementById(titleId!)?.classList.contains("confirm-title")).toBe(true);
+    expect(document.getElementById(messageId!)?.classList.contains("confirm-message")).toBe(true);
   });
 
   it("focuses the safe default (cancel) on mount", () => {
@@ -111,6 +118,26 @@ describe("ConfirmDialog", () => {
     expect(onCancel).not.toHaveBeenCalled();
     flushExit();
     expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it("cancels on Escape even after the focus has left the panel", () => {
+    // A click on the title or the padding puts the focus on the body, and a
+    // handler on the overlay subtree hears nothing from there: the dialog has
+    // to own its Escape wherever the focus has wandered, or the key falls to
+    // the app's global handler, which reads it as "exit zen".
+    const { onCancel } = renderDialog();
+    (document.activeElement as HTMLElement | null)?.blur();
+    expect(document.activeElement).toBe(document.body);
+    fireEvent.keyDown(document.body, { key: "Escape" });
+    flushExit();
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it("pulls a stray Tab back into the dialog", () => {
+    renderDialog();
+    (document.activeElement as HTMLElement | null)?.blur();
+    fireEvent.keyDown(document.body, { key: "Tab" });
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "No" }));
   });
 
   it("cancels when clicking the overlay backdrop", () => {

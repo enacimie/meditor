@@ -37,6 +37,19 @@ function flushExit() {
   });
 }
 
+describe("the trap around a disabled button", () => {
+  it("keeps Tab inside while Rename is disabled", () => {
+    // An empty name disables the confirm button. A trap that counted it
+    // cycled to a control the browser refuses to focus — which in a real
+    // window hands the focus to the page behind the dialog.
+    renderDialog({ initialValue: "" });
+    const cancel = screen.getByRole("button", { name: "Cancel" });
+    cancel.focus();
+    fireEvent.keyDown(cancel, { key: "Tab" });
+    expect(document.activeElement).toBe(document.getElementById("rename-input"));
+  });
+});
+
 describe("RenameDialog", () => {
   it("renders the current name in the input", () => {
     renderDialog();

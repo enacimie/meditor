@@ -106,26 +106,45 @@ of quietly riding the entry. The first load measures ≈1.94 MB against the
 
 ## Bundle 4 — dialogs, a11y and RTL
 
+**Status: landing in two parts.** Part 1, the keyboard and the modals, is
+PR #203: a shared `useDialogKeys` hook owns Escape and the Tab trap on the
+*document* for all six dialogs, so they survive the focus escaping to the
+body (a click on the panel's padding used to hand Escape to the global
+handler, which read it as "exit zen"); the trap counts every enabled button
+(ConflictDialog's third was outside it, RenameDialog's disabled confirm
+leaked the focus out); F1/F2 no longer stack a dialog over an open one; one
+global AltGr gate replaces the per-branch guards that only some letters
+had; the update offer waits behind any other modal; the status bar stopped
+being an `aria-atomic` live region re-read on every caret move. Part 2 —
+the physical properties that break RTL, contrast under AA, the language
+picker's initial row and listbox structure, menu tab semantics, indented
+ATX headings in the outline, `dvh`, and the platform's own modifier in the
+overlay — follows in its own PR.
+
 - [high] dialog keyboard handling (Escape + focus trap) hangs off the
   overlay's React `onKeyDown`: once focus escapes the subtree (a click on
   the panel's padding focuses `body`), Escape no longer closes and the
   global handler fires `exitZen` instead. ConflictDialog's trap cycles two
-  of its three buttons.
+  of its three buttons. — **fixed (part 1)**
 - [high] `.menu-panel { right: 0 }` and ~10 more physical properties with
   no `[dir="rtl"]` counterpart anywhere in the CSS: the main menu grows off
-  the clipped viewport in the six RTL languages.
+  the clipped viewport in the six RTL languages. — *part 2*
 - [high] StatusBar is `role="status" aria-atomic="true"` around the caret
-  readout: screen readers re-announce the whole bar on every arrow key.
+  readout: screen readers re-announce the whole bar on every arrow key. —
+  **fixed (part 1)**
 - [medium] F1/F2 answer before any modal guard (dialogs stack over
   Preferences/About/presentation); the AltGr guard (`!e.altKey`) covers
   only f, the digits and the zoom keys, so AltGr+O/W/P fire on Spanish
-  keyboards; contrast below AA in dark (`--accent-fg` 3.10:1), `--danger`
+  keyboards. — **fixed (part 1)**
+- [medium] contrast below AA in dark (`--accent-fg` 3.10:1), `--danger`
   undefined (fallback 3.07:1), LanguagePicker muted text 3.16:1;
   LanguagePicker `activeIndex` starts at 0 (an immediate Enter switches the
-  UI to English); menu role/tab semantics; `vh` where `dvh` is needed.
-- [low] ConfirmDialog ids are static while two instances can coexist;
+  UI to English); menu role/tab semantics; `vh` where `dvh` is needed. —
+  *part 2 (picker activeIndex included)*
+- [low] ConfirmDialog ids are static while two instances can coexist —
+  **fixed (part 1, `useId` + the offer waits behind other modals)**;
   outline ignores indented ATX and setext headings; hardcoded "Ctrl+" in
-  the overlay on macOS; assorted aria-label/role fixes.
+  the overlay on macOS; assorted aria-label/role fixes. — *part 2*
 
 ## Bundle 5 — Typst
 

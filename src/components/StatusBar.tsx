@@ -54,7 +54,14 @@ const StatusBar = memo(function StatusBar({
   const { words, lines, chars, minutes } = useMemo(() => countStats(content), [content]);
 
   return (
-    <footer className="statusbar" role="status" aria-live="polite" aria-atomic="true">
+    <footer className="statusbar">
+      {/*
+        No role="status" on the bar: the caret's line and column sit inside
+        it and move with every arrow key, and an aria-live region re-announces
+        the whole of it — document name, counts and all — on each one. What
+        is worth announcing has its own label (the unsaved dot) or belongs to
+        the editor, which already tells assistive tech where the caret is.
+      */}
       {dirty && <span className="statusbar-dirty" title={t("statusbar.dirtyTitle")} aria-label={t("statusbar.dirtyTitle")}>●</span>}
       {docName && <span className="statusbar-doc" title={docName}>{docName}</span>}
       <span className="statusbar-spacer" />

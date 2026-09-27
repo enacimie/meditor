@@ -33,6 +33,31 @@ afterEach(() => {
 });
 
 describe("ConflictDialog", () => {
+  it("keeps all three buttons inside the Tab trap", () => {
+    // The trap used to cycle the two refs that existed and skip "Save as…":
+    // from it, Tab walked the focus out of a dialog that announces itself
+    // aria-modal, and into the page behind.
+    render(<ConflictDialog {...props()} />);
+    const buttons = document.querySelectorAll<HTMLButtonElement>(
+      ".conflict-actions button",
+    );
+    expect(buttons.length).toBe(3);
+    const saveAs = buttons[2];
+    saveAs.focus();
+    fireEvent.keyDown(saveAs, { key: "Tab" });
+    expect(document.activeElement).toBe(buttons[0]);
+  });
+
+  it("cancels to 'keep mine' on Escape from the body", () => {
+    vi.useFakeTimers();
+    const p = props();
+    render(<ConflictDialog {...p} />);
+    (document.activeElement as HTMLElement | null)?.blur();
+    fireEvent.keyDown(document.body, { key: "Escape" });
+    vi.advanceTimersByTime(200);
+    expect(p.onKeep).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
   it("renders title and message", () => {
     render(<ConflictDialog {...props()} />);
     expect(screen.getByText("File changed on disk")).toBeTruthy();
