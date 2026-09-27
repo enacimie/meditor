@@ -45,9 +45,12 @@ writing.
 
 ## Bundle 2 — editor correctness
 
-**Status: landed (PR #201), except the two image-pipeline mediums, which
-move to a follow-up because they reach into `useImagePaste` and the Rust
-`write_image` command.** Landed: the formatting compartment (pairs now ride
+**Status: landed (PR #201), plus the image paste/drop ordering in a
+follow-up (PR #208): the handlers moved into CodeMirror's own event
+pipeline (`domEventHandlers`), ahead of the built-in drop that reads a
+file's text — an SVG used to land twice, source and link — while the React
+handlers stay as the wrapper-padding fallback, guarded by
+`defaultPrevented`. A dropped text file keeps the editor's own behaviour.** Landed: the formatting compartment (pairs now ride
 with the toggles, per document kind, and `syncCompartments` restores the
 lot), the pair context (code and math nodes decline; Typst loses the tilde,
 LaTeX keeps only `$`; every cursor of a multi-selection is served through
@@ -74,9 +77,13 @@ longer overruling the writer's font size.
   highlighting stuck. — **fixed**
 - [medium] image paste/drop handlers ride React props on the wrapper div,
   so they run after CodeMirror's own: `preventDefault` arrives late and
-  dropping an SVG inserts both the raw text and the link. — *follow-up*
+  dropping an SVG inserts both the raw text and the link. — **fixed
+  (PR #208)**
 - [medium] `writeImage` crosses the IPC as `Array.from(bytes)` — a JSON
-  array of millions of numbers for a screenshot. — *follow-up (Rust)*
+  array of millions of numbers for a screenshot. — *deferred: the fix is a
+  raw-payload command (`tauri::ipc::Request`) with its arguments in
+  headers, which reaches the Rust command, the shim and every mock; pure
+  performance, no misbehaviour, and it deserves its own change.*
 - [low] `toggleTask` does not recognise `> - [ ] task` inside blockquotes;
   `Mod-g` binding does not declare `shift`; `wrap` sits unused in the
   content effect's deps; `suppress` is dead for `setState`; the zen

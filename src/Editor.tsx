@@ -30,6 +30,7 @@ import {
 import { taskToggleOnLine } from "./taskList";
 import {
   useImagePaste,
+  imagePasteHandlers,
   imagePlaceholderField,
   type ImagePasteError,
 } from "./hooks/useImagePaste";
@@ -430,7 +431,7 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
   }, []);
 
   // Image drag-and-drop + clipboard paste
-  const { dragOver, busy, handleDragOver, handleDragEnter, handleDragLeave, handleDrop, handlePaste } =
+  const { dragOver, busy, insert, handleDragOver, handleDragEnter, handleDragLeave, handleDrop, handlePaste } =
     useImagePaste({ viewRef, onError: onImageError, docHandle, locale });
 
   useLayoutEffect(() => {
@@ -564,6 +565,11 @@ const Editor = forwardRef<EditorHandle, Props>(function Editor(
       // shared extension list, so a state created for another tab carries it
       // too.
       imagePlaceholderField,
+      // Images arriving through the editor's own paste/drop events, ahead of
+      // CodeMirror's built-in handling of both — see imagePasteHandlers.
+      // `insert` reads its dependencies through refs and never changes
+      // identity, so the mount-time capture below stays current.
+      imagePasteHandlers(insert),
       wrapCompartment.current.of(initialWrap.current ? EditorView.lineWrapping : []),
       placeholderCompartment.current.of(
         initialZenMode.current && initialZenPlaceholder.current ? placeholder(initialZenPlaceholder.current) : [],

@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState, type ClipboardEvent, type DragEvent } from "react";
 import { EditorView } from "codemirror";
-import { StateEffect, StateField, Transaction } from "@codemirror/state";
+import { StateEffect, StateField, Transaction, type Extension } from "@codemirror/state";
 import { backend } from "../backend";
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 MiB
@@ -101,6 +101,62 @@ function linkTarget(relPath: string): string {
     .join("/");
 }
 
+/**
+ * The paste and drop handlers, where the editor itself can see them.
+ *
+ * CodeMirror answers both events on its own DOM before anything wrapped
+ * around the editor does, and its drop handler reads a dropped file's text
+ * and inserts it — so handlers riding React props on the wrapper arrived
+ * second and *in addition*: dropping an SVG wrote the file's source into the
+ * document and the image link after it. Registered through
+ * `domEventHandlers` these run ahead of the built-in ones, and returning
+ * `true` is what keeps the built-in from ever seeing the event.
+ *
+ * Exported split from its extension so a test can call the handlers with a
+ * hand-built event instead of teaching jsdom about DataTransfer. The
+ * argument order is this CodeMirror's: the event first, the view second.
+ */
+export function imagePasteHandlerFns(insert: (view: EditorView, file: File) => Promise<void>) {
+  return {
+    paste(event: globalThis.ClipboardEvent, view: EditorView): boolean {
+      const items = event.clipboardData?.items;
+      if (!items) return false;
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.kind === "file" && item.type.startsWith("image/")) {
+          event.preventDefault();
+          const file = item.getAsFile();
+          if (file) void insert(view, file).then(() => view.focus());
+          return true;
+        }
+      }
+      return false;
+    },
+    drop(event: globalThis.DragEvent, view: EditorView): boolean {
+      const files = event.dataTransfer?.files;
+      if (!files || files.length === 0) return false;
+      const dropped = Array.from(files);
+      // A drop with no image in it stays the editor's own business: its
+      // built-in handler inserts a dropped text file's contents, and taking
+      // that event away would quietly remove a behaviour writers have.
+      if (!dropped.some(isImageFile)) return false;
+      event.preventDefault();
+      void (async () => {
+        for (const file of dropped) await insert(view, file);
+        view.focus();
+      })();
+      return true;
+    },
+  };
+}
+
+/** The handlers above, as the extension that registers them. */
+export function imagePasteHandlers(
+  insert: (view: EditorView, file: File) => Promise<void>,
+): Extension {
+  return EditorView.domEventHandlers(imagePasteHandlerFns(insert));
+}
+
 export type ImagePasteProps = {
   viewRef: React.RefObject<EditorView | null>;
   /**
@@ -119,6 +175,13 @@ export type ImagePasteAPI = {
   dragOver: boolean;
   /** Whether an image is currently being read (for progress feedback). */
   busy: boolean;
+  /**
+   * Read one image file into the document. The editor's own paste/drop
+   * extension (imagePasteHandlers) drives this; the React handlers below
+   * are the fallback for the wrapper's padding, where CodeMirror's DOM
+   * never sees the event.
+   */
+  insert: (view: EditorView, file: File) => Promise<void>;
   handleDragOver: (e: DragEvent<HTMLDivElement>) => void;
   handleDragEnter: (e: DragEvent<HTMLDivElement>) => void;
   handleDragLeave: (e: DragEvent<HTMLDivElement>) => void;
@@ -259,6 +322,9 @@ export function useImagePaste({
   }, []);
 
   function handlePaste(e: ClipboardEvent<HTMLDivElement>) {
+    // The editor's own handler already took this one inside CodeMirror's
+    // DOM; answering again would insert the image twice.
+    if (e.defaultPrevented) return;
     const view = viewRef.current;
     if (!view) return;
     const items = e.clipboardData?.items;
@@ -295,6 +361,8 @@ export function useImagePaste({
   }
 
   async function handleDrop(e: DragEvent<HTMLDivElement>) {
+    // As in handlePaste: a drop inside CodeMirror's DOM is already handled.
+    if (e.defaultPrevented) return;
     e.preventDefault();
     dragCounterRef.current = 0;
     setDragOver(false);
@@ -310,6 +378,7 @@ export function useImagePaste({
   return {
     dragOver,
     busy,
+    insert: insertImageFile,
     handleDragOver,
     handleDragEnter,
     handleDragLeave,
