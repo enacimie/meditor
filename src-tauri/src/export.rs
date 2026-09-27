@@ -37,13 +37,15 @@ use std::path::Path;
 use std::sync::mpsc;
 use tauri_plugin_dialog::DialogExt;
 
-// Only the GTK path waits here now; the Windows routes wait in `webview2`.
+// The GTK export path and the Windows print dialog both wait on a channel
+// with a timeout, from a blocking thread rather than the async runtime's.
 #[cfg(any(
     target_os = "linux",
     target_os = "dragonfly",
     target_os = "freebsd",
     target_os = "netbsd",
-    target_os = "openbsd"
+    target_os = "openbsd",
+    target_os = "windows"
 ))]
 use std::time::Duration;
 
@@ -188,7 +190,20 @@ pub async fn print_document(
                 let _ = tx.send(result);
             })
             .map_err(|e| e.to_string())?;
-        rx.recv().unwrap_or(Ok(()))?;
+        /*
+         * The wait belongs on a blocking thread, as in the export paths
+         * below: `recv()` inside an `async fn` parks one of the runtime's
+         * workers for as long as the dialog is open, and parks it for good
+         * if the window dies before the closure ever runs. The timeout
+         * turns that into an error instead of a hung task, and a closed
+         * channel is now a failure rather than the silent success
+         * `unwrap_or(Ok(()))` used to report for a dialog nobody saw.
+         */
+        let completion =
+            tauri::async_runtime::spawn_blocking(move || rx.recv_timeout(Duration::from_secs(300)))
+                .await
+                .map_err(|e| e.to_string())?;
+        completion.map_err(|_| t(parse_locale(locale), "pdf.timeout"))??;
         Ok(())
     }
 

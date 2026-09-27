@@ -246,7 +246,8 @@ try {
       `and a pasted one written to ${stored.relPath}`,
   );
 } finally {
-  await page.removeInitScript(shimId);
-  await page.removeInitScript(configId);
+  // A rejection here (target already gone) must not skip page.close().
+  await page.removeInitScript(shimId).catch(() => {});
+  await page.removeInitScript(configId).catch(() => {});
   await page.close();
 }

@@ -49,4 +49,33 @@ describe("Tauri config overlays", () => {
         `build gets a different app than the release does:\n  ${missing.join("\n  ")}`,
     ).toEqual([]);
   });
+
+  it("keeps the LaTeX overlay's policy one edit away from the base one", () => {
+    /*
+     * The base CSP does not name SwiftLaTeX's origins — a build with LaTeX
+     * switched off has no business letting the page reach an unmaintained
+     * server or anybody's localhost:5000. The overlay puts them back for
+     * the builds that flip LaTeX on, and an overlay is a whole-string
+     * replacement: if the base policy moves and this copy does not, the
+     * LaTeX build silently ships the old policy. Same invariant as the
+     * overlay names above — two files that must agree — measured.
+     */
+    const base = JSON.parse(read("../src-tauri/tauri.conf.json")) as {
+      app: { security: { csp: string } };
+    };
+    const overlay = JSON.parse(read("../src-tauri/conf/latex-enabled.json")) as {
+      app?: { security?: { csp?: string } };
+    };
+    const latexCsp = overlay.app?.security?.csp;
+    expect(latexCsp, "the LaTeX overlay must carry a CSP of its own").toBeTruthy();
+    const LATEX_ORIGINS =
+      " http://127.0.0.1:5000 http://localhost:5000 https://texlive2.swiftlatex.com";
+    expect(base.app.security.csp).not.toContain("swiftlatex");
+    expect(latexCsp).toBe(
+      base.app.security.csp.replace(
+        "connect-src 'self' ipc: http://ipc.localhost;",
+        `connect-src 'self' ipc: http://ipc.localhost${LATEX_ORIGINS};`,
+      ),
+    );
+  });
 });

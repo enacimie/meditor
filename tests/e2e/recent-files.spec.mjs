@@ -160,8 +160,9 @@ try {
       "still draws its section",
   );
 } finally {
-  await page.removeInitScript(shimId);
-  if (configId) await page.removeInitScript(configId);
-  if (emptyConfigId) await page.removeInitScript(emptyConfigId);
+  // A rejection here (target already gone) must not skip page.close().
+  await page.removeInitScript(shimId).catch(() => {});
+  if (configId) await page.removeInitScript(configId).catch(() => {});
+  if (emptyConfigId) await page.removeInitScript(emptyConfigId).catch(() => {});
   await page.close();
 }

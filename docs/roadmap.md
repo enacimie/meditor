@@ -252,31 +252,60 @@ parity now means translation, not presence.
 
 ## Bundle 7 — e2e harness, CI and Rust hardening
 
+**Status: landed (PR #207).** The web session's debounced writer lost its
+`isTauri()` gate on the way — the specs' dependence on the `freshPage` leak
+and the silent web session loss turned out to be the same finding, and the
+honest fix was to write the session in every backend, not to preserve a
+stale seed for the tests to find.
+
 - [high] (verified, the specs' own comments document past incidents)
   `freshPage` does not isolate the web session: the `pagehide` flush during
   its reload re-seeds localStorage after the second clear, so one spec's
   document survives into the next; the suite depends on alphabetical order
-  and per-spec manual restores.
+  and per-spec manual restores. — **fixed**: the reload carries a
+  document-start `localStorage.clear()` init script, removed right after,
+  and the debounced session writer now runs in the web build too (a browser
+  crash used to take the whole session silently).
 - [medium] `release.yml` `workflow_dispatch` has no tag guard (a branch run
   creates a release named after the branch) and interpolates
-  `github.ref_name` straight into a script; `deploy-pages` cancels
-  in-flight deployments; the CI smoke test accepts a silent exit 0 as
-  "started"; `print_document` (Windows) blocks an async worker on `recv()`
-  with no timeout; export fallbacks write the destination before
-  validating the bytes; `capabilities` grant `dialog:default` that the
-  frontend never uses and lack `core:window:allow-destroy` that App's last
-  resort calls; sync I/O commands run on the main thread.
-- [low] tauri-shim `open_files` returns null instead of []; unused npm deps
-  (`plugin-dialog`, `@testing-library/jest-dom`); README promises Node 20
-  while the harness needs 21+; `tsc --noEmit` skips vite.config.ts; dead
-  template assets in `public/`; assorted spec cleanups without `.catch`;
-  eleven specs never assert console health; recent-menu index race; macOS
-  `alert` blocks the main thread; `image.rs` climb depth; remote images
-  beacon on document open (preference to come); KaTeX without
-  `maxSize`/`maxExpand`; "Rendering diagram…" untranslated; Mermaid errors
-  re-render every keystroke; paged.js abandoned paginations keep running
-  (`chunker.stop()` never called); theme memo misses OS scheme changes
-  under `system`.
+  `github.ref_name` straight into a script — **fixed** (`if:
+  startsWith(github.ref, 'refs/tags/')` on the jobs, `$TAG` through env);
+  `deploy-pages` cancels in-flight deployments — **fixed**
+  (`cancel-in-progress: false`: queued runs still cancel, the one between
+  upload and deploy no longer does); the CI smoke test accepts a silent
+  exit 0 as "started" — **fixed** (124 is the only healthy outcome);
+  `print_document` (Windows) blocks an async worker on `recv()` with no
+  timeout — **fixed** (`spawn_blocking` + `recv_timeout(300s)`, and a
+  disconnected channel is an error, not a silent success); `capabilities`
+  grant `dialog:default` that the frontend never uses and lack
+  `core:window:allow-destroy` that App's last resort calls — **fixed**
+  (swapped); the base CSP names SwiftLaTeX's dead origins — **fixed** (the
+  `latex-enabled.json` overlay carries them now, and
+  `configOverlays.test` measures that the overlay is the base plus exactly
+  those origins).
+- [low] tauri-shim `open_files` returns null instead of [] — **fixed**;
+  unused npm deps (`plugin-dialog`, `@testing-library/jest-dom`) —
+  **removed**; README promises Node 20 while the harness needs the global
+  `WebSocket` — **fixed** (`engines: node >=22`, README says why); dead
+  template assets in `public/` — **removed**; assorted spec cleanups
+  without `.catch` — **fixed** (images, recent-files, dialogs), plus
+  preferences' cleanup moved to its `finally` and chrome-profile's Chrome
+  stopped in one; KaTeX without `maxSize` — **fixed** (one hostile `\rule`
+  no longer hangs the preview layout); abandoned paginations keep running —
+  **fixed** (`chunker.stop()` before destroy, one try per part).
+
+Deliberately deferred (each is its own change, none is a regression):
+`tsc -b` so vite.config.ts is typechecked; console-health asserts in the
+eleven specs that lack them; `reachableUrl` accepting any 200; the
+latex-full spec's two 150 s legs against a 180 s runner timeout; the
+export fallbacks that write the destination before validating the bytes
+(needs the Windows/GTK engines in hand); async I/O commands off the main
+thread; the recent-menu index race; the macOS `alert` blocking the main
+thread; `image.rs` climb depth; remote images beaconing on document open
+(wants a preference); "Rendering diagram…" untranslated (wants a key in
+104 languages); Mermaid errors re-rendered per keystroke; the diagram theme
+missing OS scheme changes under `system`; the presentation overlay's
+keyboard isolation; the `memo`/`useCallback` performance pass.
 
 ## Dismissed after verification
 

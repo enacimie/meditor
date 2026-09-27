@@ -146,11 +146,6 @@ try {
     { message: "font size should survive a reload" },
   );
 
-  // Leave the stored preferences as they were for the next spec.
-  await page.evaluate(
-    "localStorage.removeItem('meditor.preferences.v1'); true",
-  );
-
   assert(
     page.consoleErrors.length === 0,
     "console errors: " + page.consoleErrors.join(" | "),
@@ -159,5 +154,11 @@ try {
     "PASS: preferences.spec — Ctrl+, opens, font size + spell check apply live and persist",
   );
 } finally {
+  // Leave the stored preferences as they were for the next spec — in the
+  // finally, because a failed assert above used to skip this and hand the
+  // next spec an editorFontSize of 20.
+  await page
+    .evaluate("localStorage.removeItem('meditor.preferences.v1'); true")
+    .catch(() => {});
   page.close();
 }
