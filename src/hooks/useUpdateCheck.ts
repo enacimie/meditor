@@ -56,7 +56,7 @@ type Loaders = {
  * @param notice - the app's notice banner, for progress and failures.
  * @param loaders - injectable module loaders; the tests pass fakes.
  */
-/** Who the update check says it is; see `AUTOSAVE_NOTICE` in App.tsx. */
+/** Who the update check says it is; see `AUTOSAVE_NOTICE` in useAutosave.ts. */
 const UPDATE_NOTICE = "update";
 
 export function useUpdateCheck(
