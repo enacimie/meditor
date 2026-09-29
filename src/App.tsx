@@ -28,7 +28,8 @@ import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useZoom } from "./hooks/useZoom";
 import { usePlatform, canPrintNatively } from "./hooks/usePlatform";
 import { useCursorPosition } from "./hooks/useCursorPosition";
-import { useAutosaveNudge } from "./hooks/useAutosave";
+import { useAutosave, useAutosaveNudge } from "./hooks/useAutosave";
+import { useExternalChangeWatch } from "./hooks/useExternalChangeWatch";
 import { useDocumentFacts } from "./hooks/useDocumentFacts";
 import { useConfirmRequest, useRenameRequest } from "./hooks/useDialogRequests";
 import { useRecentDocuments } from "./hooks/useRecentDocuments";
@@ -71,29 +72,9 @@ import { getTypst } from "./typstEngine";
 import { prepareTypst, typstMainName } from "./typstFiles";
 import { compileLatexToPdf } from "./latexEngine";
 import { LATEX_ENABLED } from "./latexSupport";
-import { classifyExternalChange, type DocumentStat } from "./externalChange";
+import type { DocumentStat } from "./externalChange";
 import { backend } from "./backend";
 import "./App.css";
-
-/**
- * How long after the last edit an autosave writes.
- *
- * Long enough that a pause for thought mid-sentence does not write half a
- * word to the file, short enough that the work is on disk before the writer
- * has moved on. Two seconds is what VS Code and Typora settled on.
- */
-const AUTOSAVE_DELAY_MS = 2000;
-
-/**
- * Who autosave says it is when it puts a notice up.
- *
- * Its failure message has no timer, so somebody has to take it down, and the
- * one that does must be able to prove the message was autosave's. The update
- * check also shows a notice with no timer — "Downloading…" — and a successful
- * autosave used to clear that one too, leaving a download running with
- * nothing on screen to say so.
- */
-const AUTOSAVE_NOTICE = "autosave";
 
 const INITIAL_PREFERENCES = loadPreferences();
 
@@ -166,13 +147,7 @@ export default function App() {
   const statsRef = useRef<Map<string, DocumentStat>>(new Map());
   const watchInflightRef = useRef(false);
   const conflictBusyRef = useRef(false);
-  // "The standing notice on screen is an autosave failure", so a later write
-  // that works can take it down again.
-  const autosaveFailedRef = useRef(false);
   const { autosaveNudge, nudgeAutosave } = useAutosaveNudge();
-  // Latest poll routine, so the once-scheduled interval always calls the
-  // current render's version (fresh docs/lang) without re-registering.
-  const checkExternalChangesRef = useRef<() => Promise<void>>(async () => {});
   const active = docs.find((d) => d.id === activeId) ?? docs[0];
   activeIdRef.current = activeId;
   const {
@@ -238,6 +213,8 @@ export default function App() {
     shortcutsOpen,
     preferencesOpen,
     aboutOpen,
+    editorPrefs,
+    autosaveNudge,
     docsRef,
     activeIdRef,
     statsRef,
@@ -250,6 +227,8 @@ export default function App() {
     closeTRef,
     closeLangRef,
     conflictBusyRef,
+    watchInflightRef,
+    confirmBusyRef,
     closedTabsRef,
     splitRatioRef,
     editorRef,
@@ -266,6 +245,7 @@ export default function App() {
     setPreferencesOpen,
     setConflictRequest,
     showNotice,
+    dismissNotice,
     nudgeAutosave,
     openPaths,
     confirmDialog,
@@ -346,153 +326,9 @@ export default function App() {
     document.title = active?.name ?? "meditor";
   }, [active?.name]);
 
-  /*
-   * Autosave, when it is switched on.
-   *
-   * Every dirty document that has a file, not just the one on screen. Saving
-   * only the active tab would mean the answer to "was my work written?"
-   * depended on which tab happened to be in front when the writer stopped
-   * typing, which is not an answer anybody can hold in their head.
-   *
-   * It stays out of the way of the writer rather than competing with them:
-   *
-   * - `beginOperation` is deliberately not used. That guard is for the things
-   *   a person starts — it puts a notice up and blocks the others — and an
-   *   autosave that announced itself every two seconds would be worse than no
-   *   autosave. It waits for those operations instead.
-   * - Nothing is written while a conflict is on screen. The whole question
-   *   there is which version wins, and answering it by writing is answering it
-   *   for the writer.
-   * - Success is silent. The dirty dot going out is the feedback; a "Saved"
-   *   notice on a timer is noise.
-   *
-   * Writes go through the same ordered queue as Ctrl+S, so an autosave and a
-   * manual save cannot interleave, and the queue adopts the file's new
-   * fingerprint on the way out — without which the watcher would read this
-   * write back as somebody else's and raise a conflict over it every couple of
-   * seconds.
-   */
-  async function autosaveDirtyDocuments(): Promise<void> {
-    if (
-      busyOperationRef.current !== null ||
-      conflictBusyRef.current ||
-      confirmBusyRef.current ||
-      // The application is on its way out. A write armed by the last
-      // keystroke is still pending when "exit anyway?" is answered yes, and
-      // `requestQuit` then spends up to five seconds on its close tasks
-      // holding no file lock -- long enough for that write to land and put
-      // on disk exactly the work the dialog said would be lost.
-      closingRef.current
-    ) {
-      return;
-    }
-    let wrote = false;
-    const unwritable: string[] = [];
-    for (const doc of docsRef.current) {
-      if (!doc.dirty || !doc.handle) continue;
-      const { id, handle } = doc;
-      const savedContent = doc.content;
-      try {
-        await writeFileOrdered(handle, savedContent);
-        refreshRecentAfterSave(doc.path);
-        wrote = true;
-        setDocs((prev) =>
-          prev.map((d) =>
-            // Only if the buffer is still what was written: the writer may
-            // have carried on while the write was in flight, and calling that
-            // clean would lose the difference.
-            d.id === id && d.content === savedContent ? { ...d, dirty: false } : d,
-          ),
-        );
-      } catch (error) {
-        /*
-         * Remembered, and the pass carries on to the next document.
-         *
-         * It used to return here, and that was worse than it looks: the
-         * documents are walked in tab order, a file that cannot be written
-         * stays dirty and stays first, so the next pass died in the same
-         * place — and every tab behind it went unsaved for as long as that
-         * one file was read-only, with nothing on screen to say so.
-         */
-        console.error("autosave failed:", error);
-        unwritable.push(doc.name);
-      }
-    }
+  useAutosave(scope, { writeFileOrdered });
 
-    /*
-     * Said once for the whole pass, with a name, and it stays up.
-     *
-     * A file that cannot be written — read-only, unplugged, gone — is worth
-     * knowing about, because the writer is relying on this now and nothing
-     * else is going to tell them. A modal every two seconds would be
-     * unusable, and so would a notice per document; naming the first and
-     * counting the rest fits the one line the notice has.
-     *
-     * A notice with no timer needs somebody to take it down, and success is
-     * silent, so the next pass that writes everything it tried does it. Left
-     * to itself this would still be claiming a file cannot be written long
-     * after the drive came back.
-     */
-    if (unwritable.length > 0) {
-      autosaveFailedRef.current = true;
-      showNotice(
-        t("autosave.failed", unwritable[0], unwritable.length - 1),
-        "error",
-        0,
-        AUTOSAVE_NOTICE,
-      );
-    } else if (wrote && autosaveFailedRef.current) {
-      autosaveFailedRef.current = false;
-      // Only if what is on screen is still autosave's own message. An update
-      // download puts a notice up with no timer too, and clearing that one
-      // would leave a download running with nothing to show for it.
-      dismissNotice(AUTOSAVE_NOTICE);
-    }
-  }
-
-  useEffect(() => {
-    if (!ready || !editorPrefs.autosave) return;
-    // `docs` in the dependencies is the debounce: every keystroke replaces the
-    // document and restarts the clock, so this fires once the typing stops
-    // rather than once per edit.
-    //
-    // `autosaveNudge` is the other way in, for the passes that decline to run:
-    // a skipped pass changes nothing, so without it nothing would ever ask
-    // again. See `nudgeAutosave`.
-    const timer = window.setTimeout(() => {
-      void autosaveDirtyDocuments();
-    }, AUTOSAVE_DELAY_MS);
-    return () => window.clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, editorPrefs.autosave, docs, autosaveNudge]);
-
-  /*
-   * Watch open files for edits made behind our back.
-   *
-   * Polling rather than fs events on purpose: desktop has watchers, but
-   * Android's content URIs have nothing to watch — no path, no inotify — and
-   * this way both worlds run exactly the same code. A tick fingerprints every
-   * file-backed document (mtime + size, cheap); the file is only actually
-   * read when its fingerprint moved.
-   */
-  useEffect(() => {
-    if (!ready) return;
-    /*
-     * The first tick is immediate, not three seconds out.
-     *
-     * Autosave arms its own two-second clock the moment `ready` flips, and a
-     * session restored dirty over a file that changed while meditor was
-     * closed has to be classified — and the conflict lock set — before an
-     * autosave is allowed anywhere near it. Polling first also means the
-     * common restart case (nothing changed) costs one early fingerprint
-     * sweep and nothing else.
-     */
-    void checkExternalChangesRef.current();
-    const timer = window.setInterval(() => {
-      void checkExternalChangesRef.current();
-    }, 3000);
-    return () => window.clearInterval(timer);
-  }, [ready]);
+  useExternalChangeWatch(scope);
 
 
 
@@ -506,135 +342,6 @@ export default function App() {
   useEffect(() => {
     void refreshRecent();
   }, [refreshRecent]);
-
-  /**
-   * One poll tick over every file-backed document. Serialized against
-   * itself, skipped while a native dialog owns the UI, a conflict modal is up
-   * or a question about unsaved work is waiting to be answered, and stopped
-   * at the first conflict so documents resolve one at a time.
-   */
-  async function checkExternalChanges() {
-    if (
-      watchInflightRef.current ||
-      busyOperationRef.current !== null ||
-      conflictBusyRef.current ||
-      // A question about unsaved work is already on screen, and the conflict
-      // this could raise would be about the same unsaved work: two modals,
-      // each trapping the focus, and answering one changes what the other
-      // was asked about. Nothing rearms this — it is an interval, so the tick
-      // that stands down is followed by another one three seconds later.
-      confirmBusyRef.current
-    ) {
-      return;
-    }
-    const handled = docsRef.current.filter((d) => d.handle);
-    if (!handled.length) return;
-    watchInflightRef.current = true;
-    try {
-      for (const doc of handled) {
-        const live = docsRef.current.find((d) => d.id === doc.id);
-        const handle = live?.handle;
-        if (!live || !handle) continue;
-        let stat: DocumentStat = null;
-        let diskContent = "";
-        try {
-          stat = await backend.documentStat(handle, lang);
-          const seen = statsRef.current.get(handle);
-          if (
-            !stat ||
-            (seen &&
-              seen.modifiedMs === stat.modifiedMs &&
-              seen.size === stat.size)
-          ) {
-            continue;
-          }
-          diskContent = await backend.readDocument(handle, lang);
-        } catch {
-          // Unwatchable right now (deleted, provider gone). Deletion surfaces
-          // on the next save, where it can be explained properly.
-          continue;
-        }
-        /*
-         * Read again, now that two awaits have passed.
-         *
-         * The guards at the top of this function were true when the tick
-         * started; a file dialog, an export or a question can have opened
-         * since. Raising the conflict anyway paints a second `aria-modal`
-         * over the first, and answering it with "save mine elsewhere" then
-         * does nothing at all -- `saveAs` declines silently while another
-         * operation holds the lock, so the dialog goes away and the buffer
-         * the reader chose to protect is not written.
-         *
-         * Nothing is lost by leaving: this is an interval, and the next
-         * tick is three seconds behind.
-         */
-        if (
-          busyOperationRef.current !== null ||
-          conflictBusyRef.current ||
-          confirmBusyRef.current ||
-          closingRef.current
-        ) {
-          return;
-        }
-        const verdict = classifyExternalChange({
-          baseline: statsRef.current.get(handle) ?? null,
-          current: stat,
-          diskContent,
-          bufferContent: live.content,
-          dirty: live.dirty,
-        });
-        if (verdict.action === "refresh-baseline") {
-          statsRef.current.set(handle, stat);
-        } else if (verdict.action === "reload") {
-          applyExternalReload(live, handle, stat, verdict.diskContent);
-        } else if (verdict.action === "conflict") {
-          // Adopted up front so this tick stays single-shot; whichever way
-          // the dialog resolves, the baseline is already correct.
-          statsRef.current.set(handle, stat);
-          conflictBusyRef.current = true;
-          setConflictRequest({
-            id: live.id,
-            name: live.name,
-            diskContent: verdict.diskContent,
-          });
-          return;
-        }
-      }
-    } finally {
-      watchInflightRef.current = false;
-    }
-  }
-  checkExternalChangesRef.current = checkExternalChanges;
-
-  /**
-   * Silent reload of a clean document whose file moved underneath it.
-   *
-   * The snapshot inside the updater guards a race: if the user typed between
-   * reading the disk and applying, the buffer is no longer what was judged
-   * clean — drop the just-adopted fingerprint (idempotent under StrictMode's
-   * double-invoke) so the next tick re-classifies against the now-dirty
-   * buffer instead of clobbering the fresh keystrokes.
-   */
-  function applyExternalReload(
-    doc: Doc,
-    handle: string,
-    stat: DocumentStat,
-    diskContent: string,
-  ) {
-    statsRef.current.set(handle, stat);
-    const snapshot = doc.content;
-    setDocs((prev) => {
-      const current = prev.find((d) => d.id === doc.id);
-      if (!current || current.content !== snapshot || current.dirty) {
-        statsRef.current.delete(handle);
-        return prev;
-      }
-      return prev.map((d) =>
-        d.id === doc.id ? { ...d, content: diskContent, dirty: false } : d,
-      );
-    });
-    showNotice(t("conflict.reloadedNotice", doc.name), "info");
-  }
 
   async function exportPdf() {
     // Both backends export: the desktop prints the webview to a file, and the

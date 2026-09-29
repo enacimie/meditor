@@ -7,6 +7,7 @@ import type {
   RenameRequest,
 } from "./components/types";
 import type { EditorHandle } from "./Editor";
+import type { EditorPreferences } from "./editorPreferences";
 import type { DocumentStat } from "./externalChange";
 import type { FileOperation } from "./fileOperations";
 import type { NoticeAPI } from "./hooks/useNotice";
@@ -49,6 +50,8 @@ export type AppScope = {
   shortcutsOpen: boolean;
   preferencesOpen: boolean;
   aboutOpen: boolean;
+  editorPrefs: EditorPreferences;
+  autosaveNudge: number;
 
   // Refs, read when a command runs.
   docsRef: RefObject<Doc[]>;
@@ -63,6 +66,8 @@ export type AppScope = {
   closeTRef: RefObject<TranslationFn>;
   closeLangRef: RefObject<Language>;
   conflictBusyRef: RefObject<boolean>;
+  watchInflightRef: RefObject<boolean>;
+  confirmBusyRef: RefObject<boolean>;
   closedTabsRef: RefObject<Doc[]>;
   splitRatioRef: RefObject<number>;
   editorRef: RefObject<EditorHandle | null>;
@@ -81,6 +86,7 @@ export type AppScope = {
   setPreferencesOpen: Dispatch<SetStateAction<boolean>>;
   setConflictRequest: Dispatch<SetStateAction<ConflictRequest | null>>;
   showNotice: NoticeAPI["showNotice"];
+  dismissNotice: NoticeAPI["dismissNotice"];
   nudgeAutosave: () => void;
   openPaths: (documents: Doc[]) => Promise<void>;
   confirmDialog: (message: string) => Promise<boolean>;
