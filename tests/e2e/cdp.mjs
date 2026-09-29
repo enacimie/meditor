@@ -217,6 +217,17 @@ async function startWith(bin, cdpPort, url) {
     bin,
     [
       "--headless=new",
+      /*
+       * Keep the page painting and its timers running whatever Chrome decides
+       * about the window. paged.js lays out each page in an animation frame,
+       * so a renderer that stops getting frames stops paginating mid-document
+       * while it still answers every evaluation. That is what print.spec on
+       * macOS CI looked like when it waited forty seconds on a single page.
+       * Puppeteer and Playwright pass these three by default.
+       */
+      "--disable-background-timer-throttling",
+      "--disable-backgrounding-occluded-windows",
+      "--disable-renderer-backgrounding",
       "--no-sandbox",
       "--disable-gpu",
       "--disable-dev-shm-usage",

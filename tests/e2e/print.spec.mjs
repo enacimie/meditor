@@ -11,6 +11,7 @@
  * media type does.
  */
 import { connect, assert } from "./cdp.mjs";
+import { settledReading } from "./pagedReadings.mjs";
 
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:1420";
 const CDP_PORT = Number(process.env.CDP_PORT);
@@ -39,42 +40,6 @@ const visibleChrome = () =>
     .map(([sel]) => sel))()`);
 
 const setMedia = (media) => page.send("Emulation.setEmulatedMedia", { media });
-
-/**
- * A reading of the paged view, taken once it holds what `ready` asks for and
- * has stopped changing: three polls in a row that read the same.
- *
- * paged.js lays the pages out one by one in the container on screen, so a
- * page count that holds still between two polls can be a pagination halfway
- * through. On a slow runner this spec once took that for the end and read
- * three portrait pages and no table at all, a moment after the table had been
- * on screen. The reading returned is the one the decision was made on, not a
- * later look that could land in the middle of another pass.
- *
- * `read` and `ready` are the source of two functions run in the page.
- */
-async function settledReading(read, ready, { key, message }) {
-  const last = `${key}Last`;
-  const settled = await page
-    .waitFor(
-      `(() => {
-        const now = (${read})();
-        const seen = (window[${JSON.stringify(key)}] ??= []);
-        seen.push(JSON.stringify(now));
-        if (seen.length > 3) seen.shift();
-        window[${JSON.stringify(last)}] = now;
-        return (${ready})(now) && seen.length === 3 && seen.every((s) => s === seen[0]);
-      })()`,
-      { timeout: 40000, interval: 500, message },
-    )
-    .then(
-      () => true,
-      () => false,
-    );
-  const reading = await page.evaluate(`window[${JSON.stringify(last)}] ?? null`);
-  assert(settled, `${message}: ${JSON.stringify(reading)}`);
-  return reading;
-}
 
 try {
   await page.freshPage(BASE_URL);
@@ -269,6 +234,7 @@ try {
   })()`);
 
   const tables = await settledReading(
+    page,
     `() => {
       const out = [];
       for (const table of document.querySelectorAll('.paged-view table')) {
@@ -445,11 +411,15 @@ try {
   })()`);
   await page.reload();
   await page.waitFor("!!document.querySelector('.cm-content')", { timeout: 20000 });
-  await page.waitFor("document.querySelectorAll('.pagedjs_page').length > 0", {
-    timeout: 40000,
-    interval: 500,
-    message: "the session should repaginate after the reload",
-  });
+  // Settled, as the first phase waits: typed while the restored session is
+  // still being laid out, the table's pass would start over that one's, and a
+  // pass that stalls there would be blamed on the table.
+  await settledReading(
+    page,
+    "() => document.querySelectorAll('.pagedjs_page').length",
+    "(pages) => pages > 0",
+    { key: "__reloadReadings", message: "the session should repaginate after the reload" },
+  );
 
   // A wide table aimed at the landscape band: a probe column, measured once
   // the real fonts are in, sizes the column count. On runners where the fonts
@@ -491,6 +461,7 @@ try {
   })()`);
 
   const afterOptIn = await settledReading(
+    page,
     `() => {
       const cols = (t) =>
         t.querySelectorAll('th').length || t.querySelectorAll('tr:first-child td').length;
