@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 /**
  * Unit tests for the application close guard (the once-registered
- * `onCloseRequested` handler in App.tsx).
+ * `onCloseRequested` handler, in hooks/useCloseGuard.ts).
  *
  * Verifies the guarantees that fixed the "double-click to close" bug:
  *  1. The FIRST close request actually closes: session is saved, then the

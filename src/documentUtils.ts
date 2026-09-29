@@ -1,3 +1,4 @@
+import type { DocumentStat } from "./externalChange";
 import type { Doc, DocKind } from "./types";
 
 /**
@@ -36,4 +37,62 @@ export function normalizeDoc(doc: Doc): Doc {
         ? kindFromPath(raw.path)
         : "markdown";
   return { ...doc, kind };
+}
+
+function baseName(path: string): string {
+  return path.split(/[/\\]/).pop() ?? path;
+}
+
+export function newId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+}
+
+/**
+ * @param existing - documents already open, so an untitled one gets a name none
+ * of them is using. Required rather than optional: getting it wrong produces
+ * two tabs called the same thing.
+ */
+export function makeDoc(
+  content: string,
+  existing: Doc[],
+  path: string | null = null,
+  name?: string,
+  kind?: DocKind,
+): Doc {
+  return {
+    id: newId(),
+    path,
+    content,
+    dirty: false,
+    name: name ?? (path ? baseName(path) : nextUntitledName(existing)),
+    kind: kind ?? (path ? kindFromPath(path) : "markdown"),
+  };
+}
+
+/**
+ * Start watching documents from the files their bytes came from.
+ *
+ * A backend hands the fingerprint over with the document — when it is
+ * opened, when it comes back from the recents, and when a session restores
+ * it — and this is where the watch learns it. Without a baseline the first
+ * tick sees a buffer that differs from the disk the moment the writer types
+ * a character, and cannot tell whose change it is: a document opened and
+ * edited inside one poll interval would be accused of conflicting with
+ * itself.
+ *
+ * Documents already being watched are left alone: a live fingerprint is
+ * newer than anything a payload carries.
+ */
+export function seedWatchBaselines(
+  stats: Map<string, DocumentStat>,
+  documents: Doc[],
+): void {
+  for (const doc of documents) {
+    if (!doc.handle || !doc.stat) continue;
+    if (stats.has(doc.handle)) continue;
+    stats.set(doc.handle, doc.stat);
+  }
 }

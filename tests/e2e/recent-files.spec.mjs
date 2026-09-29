@@ -104,8 +104,8 @@ try {
   // A fresh install has an empty list, and the section has to survive it:
   // a menu whose rows appear only once they are populated never teaches
   // anyone that reopening exists. Only the frontend can be caught getting
-  // this wrong — `recentAvailable` in App.tsx decides it, and no unit test
-  // sees that decision.
+  // this wrong — `isRecentAvailable` in menuAvailability.ts decides it, and
+  // no unit test sees that decision.
   await page.removeInitScript(configId);
   configId = undefined;
   emptyConfigId = await page.addInitScript(

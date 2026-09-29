@@ -348,8 +348,10 @@ meditor/
 ├── index.html
 ├── src/
 │   ├── main.tsx              # React entry point
-│   ├── App.tsx               # Global state, tabs, sync, and panels
+│   ├── App.tsx               # Global state, and the panels it lays out
 │   ├── App.css               # Styles (screen and print)
+│   ├── appScope.ts           # What the commands read from App, render by render
+│   ├── commands/             # Open, save, export, tabs, navigation, quit: built from that scope
 │   ├── Editor.tsx            # CodeMirror 6 (per-tab state)
 │   ├── Preview.tsx           # Render + mermaid + pagination (paged.js)
 │   ├── markdown.ts           # markdown-it config + data-line
