@@ -2,7 +2,6 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -13,26 +12,17 @@ import type { EditorHandle } from "./Editor";
 import type { PreviewHandle } from "./Preview";
 import PreviewPane from "./components/PreviewPane";
 import type { LineRange } from "./editorSelection";
-import { SAMPLE, TYPST_SAMPLE, LATEX_SAMPLE, MARP_SAMPLE } from "./sample";
+import { SAMPLE } from "./sample";
 import { isMarpDocument } from "./marpDetect";
 import { pdfTitle, withDocumentTitle } from "./pdfTitle";
 import { pdfMetadata } from "./pdfMetadata";
-import { documentLanguage } from "./documentLanguage";
-import { frontMatterValue } from "./frontMatter";
 import Topbar from "./components/Topbar";
 import TabBar from "./components/TabBar";
 import StatusBar from "./components/StatusBar";
 import AppDialogs from "./components/AppDialogs";
 import EditorPane from "./components/EditorPane";
 import SplitDivider from "./components/SplitDivider";
-import { parseHeadings, type Heading } from "./components/outlineUtils";
 import { useTranslation } from "./i18n/I18nProvider";
-import {
-  paperById,
-  paperByName,
-  marginByName,
-  pageMetrics as metricsFor,
-} from "./pageSetup";
 import { isRtl } from "./i18n/translations";
 import { useThemeEffect } from "./hooks/useThemeEffect";
 import { useSplitDivider } from "./hooks/useSplitDivider";
@@ -42,15 +32,15 @@ import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useZoom } from "./hooks/useZoom";
 import { useCoarsePointer } from "./hooks/useCoarsePointer";
 import { usePlatform, canPrintNatively } from "./hooks/usePlatform";
+import { useCursorPosition } from "./hooks/useCursorPosition";
+import { useAutosaveNudge } from "./hooks/useAutosave";
+import { useDocumentFacts } from "./hooks/useDocumentFacts";
+import { useConfirmRequest, useRenameRequest } from "./hooks/useDialogRequests";
+import { useRecentDocuments } from "./hooks/useRecentDocuments";
+import { useDocumentActions } from "./hooks/useDocumentActions";
 
 import type { Doc } from "./types";
-import type {
-  ConfirmRequest,
-  ConflictRequest,
-  LayoutMode,
-  RenameRequest,
-  Theme,
-} from "./components/types";
+import type { ConflictRequest, LayoutMode, Theme } from "./components/types";
 import { makeDoc, newId, normalizeDoc, seedWatchBaselines } from "./documentUtils";
 import type { EditorPreferences } from "./editorPreferences";
 import { loadPreferences, savePreferences } from "./appPreferences";
@@ -74,7 +64,6 @@ import { compileLatexToPdf } from "./latexEngine";
 import { LATEX_ENABLED } from "./latexSupport";
 import { classifyExternalChange, type DocumentStat } from "./externalChange";
 import { backend } from "./backend";
-import type { RecentEntry } from "./backend/types";
 import "./App.css";
 
 /**
@@ -98,8 +87,6 @@ const AUTOSAVE_DELAY_MS = 2000;
 const AUTOSAVE_NOTICE = "autosave";
 
 const MAX_PENDING_OPEN_DOCS = 256;
-/** Stable empty list, so a closed outline does not re-render its consumers. */
-const EMPTY_HEADINGS: Heading[] = [];
 
 const INITIAL_PREFERENCES = loadPreferences();
 
@@ -156,8 +143,6 @@ export default function App() {
   const [zenMode, setZenMode] = useState(false);
   const [compactLayout, setCompactLayout] = useState(false);
   const [busyOperation, setBusyOperation] = useState<FileOperation | null>(null);
-  const [confirmRequest, setConfirmRequest] = useState<ConfirmRequest | null>(null);
-  const [renameRequest, setRenameRequest] = useState<RenameRequest | null>(null);
   const [conflictRequest, setConflictRequest] = useState<ConflictRequest | null>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [outlineOpen, setOutlineOpen] = useState(false);
@@ -175,20 +160,7 @@ export default function App() {
     autosave: INITIAL_PREFERENCES.autosave,
     pageMarginMm: INITIAL_PREFERENCES.pageMarginMm,
   });
-  /*
-   * Where the caret is. The line has always been tracked, for the outline to
-   * highlight the heading being written under; the column joins it so the
-   * status bar can say the position the way an editor is expected to.
-   *
-   * The line is zero-based here because that is what the outline indexes with.
-   * The status bar adds one.
-   */
-  const [cursorLine, setCursorLine] = useState(0);
-  const [cursorColumn, setCursorColumn] = useState(1);
-  const onCursorMoved = useCallback((line: number, column: number) => {
-    setCursorLine(line);
-    setCursorColumn(column);
-  }, []);
+  const { cursorLine, cursorColumn, onCursorMoved } = useCursorPosition();
 
   // Extracted hooks
   useThemeEffect(theme);
@@ -211,7 +183,6 @@ export default function App() {
   const sessionSaveQueueRef = useRef<Promise<void>>(Promise.resolve());
   const sessionTimerRef = useRef<number | undefined>(undefined);
   const activeIdRef = useRef("");
-  const openQueueRef = useRef<Promise<void>>(Promise.resolve());
   const pendingOpenDocsRef = useRef<Doc[]>([]);
   const closingRef = useRef(false);
   const busyOperationRef = useRef<FileOperation | null>(null);
@@ -234,144 +205,50 @@ export default function App() {
   const statsRef = useRef<Map<string, DocumentStat>>(new Map());
   const watchInflightRef = useRef(false);
   const conflictBusyRef = useRef(false);
-  /**
-   * "A question about unsaved work is on screen."
-   *
-   * Every "close anyway?" states an outcome — these changes are not on disk,
-   * and going ahead loses them. Autosave writes two seconds after the last
-   * edit and opening a dialog changes no document, so the timer that was
-   * already running keeps running: a pass lands while the question is up, the
-   * edits become the file, and the writer who answered "close anyway" keeps
-   * them after all. The dialog said one thing and another happened.
-   *
-   * The external-change watch reads it too, for a milder reason: no work is
-   * lost, but its conflict modal would land on top of the question, about the
-   * same unsaved work, and answering one would change what the other was
-   * asked about.
-   *
-   * A ref rather than the `confirmRequest` state because both readers are
-   * timer callbacks, holding the closure from the render their effect last
-   * ran on — and neither effect lists the dialog among its dependencies.
-   */
-  const confirmBusyRef = useRef(false);
-  /**
-   * The answer the question on screen is still waiting for.
-   *
-   * A ref and not the `confirmRequest` state: `confirmDialog` is a stable
-   * callback with no dependencies, so it cannot read state as it is now —
-   * and a question being replaced has to be answered from outside the
-   * render that put it up.
-   */
-  const pendingConfirmRef = useRef<((ok: boolean) => void) | null>(null);
-  const confirmSeqRef = useRef(0);
   // "The standing notice on screen is an autosave failure", so a later write
   // that works can take it down again.
   const autosaveFailedRef = useRef(false);
-  /**
-   * Ask autosave to look again.
-   *
-   * Its timer is armed by `docs` changing, which is the debounce and is right
-   * for typing — but a pass that *declines* to run changes no document, so on
-   * its own nothing would ever ask a second time. Waiting out a file dialog,
-   * an export, or a conflict dialog therefore meant the edits behind it were
-   * never written at all: not late, never. Answering "keep mine" to a
-   * conflict was the worst of them, because the buffer the writer had just
-   * chosen to defend was the one left unsaved.
-   */
-  const [autosaveNudge, setAutosaveNudge] = useState(0);
-  const nudgeAutosave = () => setAutosaveNudge((n) => n + 1);
+  const { autosaveNudge, nudgeAutosave } = useAutosaveNudge();
   // Latest poll routine, so the once-scheduled interval always calls the
   // current render's version (fresh docs/lang) without re-registering.
   const checkExternalChangesRef = useRef<() => Promise<void>>(async () => {});
   const active = docs.find((d) => d.id === activeId) ?? docs[0];
   activeIdRef.current = activeId;
-  // Parsing runs over the whole document, so keep it off the keystroke path:
-  // only the outline panel consumes this, and it is closed by default.
-  const activeContent = active?.content ?? "";
-  const activeKind = active?.kind ?? "markdown";
-  const headings = useMemo(
-    () => (outlineOpen ? parseHeadings(activeContent, activeKind) : EMPTY_HEADINGS),
-    [outlineOpen, activeContent, activeKind],
-  );
-  // Typst and LaTeX currently do not expose stable source locations in their
-  // rendered output, so their preview↔editor sync controls must not pretend
-  // to work. Markdown provides data-line metadata for both directions.
-  const markdownSyncAvailable = (active?.kind ?? "markdown") === "markdown";
-  // A Markdown deck that opts into Marp renders as slides, so the paged
-  // Document/Web toggle and the A4 paper background do not apply to it.
-  const isActiveMarp = useMemo(
-    () => markdownSyncAvailable && isMarpDocument(activeContent),
-    [markdownSyncAvailable, activeContent],
-  );
+  const {
+    activeContent,
+    activeKind,
+    headings,
+    markdownSyncAvailable,
+    isActiveMarp,
+    docLanguage,
+    pageMetrics,
+  } = useDocumentFacts(active, outlineOpen, editorPrefs);
+  const { confirmRequest, confirmBusyRef, confirmDialog, answerConfirm } =
+    useConfirmRequest(nudgeAutosave);
+  const { renameRequest, setRenameRequest, renameDialog } = useRenameRequest();
+  const { recent, refreshRecent, refreshRecentAfterSave } = useRecentDocuments();
+  const { openPaths, updateContent, newTab, newTypstTab, newLatexTab, newMarpTab, cycleTab } =
+    useDocumentActions({
+      docsRef,
+      activeIdRef,
+      busyOperationRef,
+      statsRef,
+      setDocs,
+      setActiveId,
+    });
 
-  /*
-   * The paper this document asks for, if it asks.
-   *
-   * `papersize` in the front-matter, which is Pandoc's key and reaches this
-   * application by the same route `title` and `numbersections` already do.
-   * The document wins over the preference because the preference is about the
-   * reader — the paper in their printer — and this is about the document: a
-   * thesis submitted on Letter is on Letter wherever it is opened, and being
-   * repaginated by whoever opens it is the failure, not the feature.
-   *
-   * Markdown only. Typst and LaTeX describe their own page in their own
-   * syntax, and a YAML block is not part of either language.
-   */
-  const declaredPaper = useMemo(
-    () => (markdownSyncAvailable ? frontMatterValue(activeContent, "papersize") : null),
-    [markdownSyncAvailable, activeContent],
-  );
+  const toggleZen = useCallback(() => {
+    setZenMode((z) => !z);
+  }, []);
 
-  /*
-   * And the margin it asks for, by the same route and for the same reason.
-   *
-   * `margin: 1in` is what a document written to a house style says, and it
-   * has to travel with the document rather than depend on who opens it.
-   */
-  const declaredMargin = useMemo(
-    () => (markdownSyncAvailable ? frontMatterValue(activeContent, "margin") : null),
-    [markdownSyncAvailable, activeContent],
-  );
+  const startPresent = useCallback(() => {
+    if (isOperationBusy(busyOperationRef)) return;
+    setPresenting(true);
+  }, []);
 
-  /*
-   * And the language it is written in: `lang`, Pandoc's key once more.
-   *
-   * Hyphenation, the spell checker and a screen reader all go by the `lang` of
-   * the text in front of them, and that used to be the interface's whatever
-   * the document was in: an English document opened in a Spanish interface
-   * was marked as Spanish. What the document says wins, for the reason above.
-   * One that says nothing, or something that is not a language, follows the
-   * interface as before.
-   *
-   * The same two steps as the paper: the string first, so the object below is
-   * rebuilt only when the front-matter changes and not on every keystroke.
-   */
-  const declaredLanguage = useMemo(
-    () => (markdownSyncAvailable ? frontMatterValue(activeContent, "lang") : null),
-    [markdownSyncAvailable, activeContent],
-  );
-  const docLanguage = useMemo(() => documentLanguage(declaredLanguage), [declaredLanguage]);
-
-  /*
-   * The sheet everything paginated agrees on: the Document view, the
-   * measuring passes behind it, the HTML export and the printer. One value,
-   * because a document laid out for one paper and printed on another does not
-   * shift, it spills.
-   *
-   * Two memos and not one, and that is deliberate: the inner one runs over
-   * the document on every keystroke, and the outer one depends on the *name*
-   * it found. So typing produces a new string only when the front-matter
-   * itself changes, and the metrics object — which repaginating keys off —
-   * stays identical through a paragraph.
-   */
-  const pageMetrics = useMemo(
-    () =>
-      metricsFor(
-        paperByName(declaredPaper) ?? paperById(editorPrefs.paperSize),
-        marginByName(declaredMargin) ?? editorPrefs.pageMarginMm,
-      ),
-    [declaredPaper, declaredMargin, editorPrefs.paperSize, editorPrefs.pageMarginMm],
-  );
+  const exitPresent = useCallback(() => {
+    setPresenting(false);
+  }, []);
 
   // Switching away from the deck (another tab, or the front-matter removed)
   // leaves nothing to present, so drop out of the overlay instead of letting
@@ -379,38 +256,6 @@ export default function App() {
   useEffect(() => {
     if (presenting && !isActiveMarp) setPresenting(false);
   }, [presenting, isActiveMarp]);
-
-  const mergeDocuments = useCallback((incoming: Doc[]): void => {
-    if (!incoming.length) return;
-    const next = [...docsRef.current];
-    let activateId = "";
-    for (const incomingDoc of incoming) {
-      const ex = next.find((d) => d.path === incomingDoc.path);
-      if (ex) {
-        if (!activateId) activateId = ex.id;
-        continue;
-      }
-      const doc = { ...normalizeDoc(incomingDoc), id: newId() };
-      next.push(doc);
-      if (!activateId) activateId = doc.id;
-    }
-    // Whatever the backend handed over carries the file's fingerprint with
-    // it; the watch has to start from there, or a writer who types inside
-    // the first poll interval is accused of conflicting with the file they
-    // just opened.
-    seedWatchBaselines(statsRef.current, incoming);
-    docsRef.current = next;
-    setDocs(next);
-    if (activateId) setActiveId(activateId);
-  }, []);
-
-  const openPaths = useCallback((documents: Doc[]): Promise<void> => {
-    const next = openQueueRef.current.then(() => {
-      mergeDocuments(documents);
-    });
-    openQueueRef.current = next.catch(() => undefined);
-    return next;
-  }, [mergeDocuments]);
 
   useEffect(() => {
     let cancelled = false;
@@ -792,199 +637,6 @@ export default function App() {
     media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
   }, []);
-
-  const updateContent = useCallback((content: string) => {
-    setDocs((prev) =>
-      prev.map((d) =>
-        d.id === activeIdRef.current && d.content !== content
-          ? { ...d, content, dirty: true }
-          : d,
-      ),
-    );
-  }, []);
-
-  const newTab = useCallback(() => {
-    if (isOperationBusy(busyOperationRef)) return;
-    const doc = makeDoc("", docsRef.current);
-    setDocs((prev) => [...prev, doc]);
-    setActiveId(doc.id);
-  }, []);
-
-  const newTypstTab = useCallback(() => {
-    if (isOperationBusy(busyOperationRef)) return;
-    const doc = makeDoc(TYPST_SAMPLE, docsRef.current, null, undefined, "typst");
-    setDocs((prev) => [...prev, doc]);
-    setActiveId(doc.id);
-  }, []);
-
-  const newLatexTab = useCallback(() => {
-    if (isOperationBusy(busyOperationRef)) return;
-    const doc = makeDoc(LATEX_SAMPLE, docsRef.current, null, undefined, "latex");
-    setDocs((prev) => [...prev, doc]);
-    setActiveId(doc.id);
-  }, []);
-
-  const newMarpTab = useCallback(() => {
-    if (isOperationBusy(busyOperationRef)) return;
-    // A Marp deck is Markdown that opts in via front-matter, so the kind stays
-    // "markdown"; the preview detects the opt-in and renders slides.
-    const doc = makeDoc(MARP_SAMPLE, docsRef.current, null, undefined, "markdown");
-    setDocs((prev) => [...prev, doc]);
-    setActiveId(doc.id);
-  }, []);
-
-  const toggleZen = useCallback(() => {
-    setZenMode((z) => !z);
-  }, []);
-
-  const startPresent = useCallback(() => {
-    if (isOperationBusy(busyOperationRef)) return;
-    setPresenting(true);
-  }, []);
-
-  const exitPresent = useCallback(() => {
-    setPresenting(false);
-  }, []);
-
-  /** Move `step` tabs from the active one, wrapping around like the tab bar. */
-  const cycleTab = useCallback((step: number) => {
-    const list = docsRef.current;
-    if (list.length < 2) return;
-    const current = list.findIndex((d) => d.id === activeIdRef.current);
-    if (current === -1) return;
-    const next = (current + step + list.length) % list.length;
-    setActiveId(list[next].id);
-  }, []);
-
-  // In-window confirmation (replaces the native GTK/system dialog). Stable
-  // identity so the once-registered close guard can reference it safely.
-  const confirmDialog = useCallback((message: string): Promise<boolean> => {
-    return new Promise((resolve) => {
-      /*
-       * One question at a time, and a new one supersedes the old.
-       *
-       * Only one request can be on screen, so asking a second thing used to
-       * drop the first `resolve` and leave its `await` pending for ever.
-       * That was survivable while no caller held anything across the
-       * question. `reloadFromDisk` holds the file lock across it, and a lock
-       * released in a `finally` that never runs takes autosave, the
-       * external-change watch and every file command down with it, silently,
-       * for the rest of the session — reachable with one Ctrl+Q, since
-       * neither the shortcut nor the window's close guard asks whether
-       * something is already being asked.
-       *
-       * The one being replaced is answered "no": the safe answer, and the
-       * one that sends its caller down a cancel path it already has.
-       */
-      pendingConfirmRef.current?.(false);
-      // The single place every "are you sure?" passes through, which is why
-      // the flag is raised here rather than in each of the four callers.
-      confirmBusyRef.current = true;
-      pendingConfirmRef.current = resolve;
-      confirmSeqRef.current += 1;
-      setConfirmRequest({ seq: confirmSeqRef.current, message, resolve });
-    });
-  }, []);
-
-  /**
-   * Hand back the answer and put the application back in motion.
-   *
-   * One function for both buttons so that lowering the flag and asking for
-   * the autosave pass that stood down cannot be done on one branch and
-   * forgotten on the other.
-   *
-   * The nudge is not decoration. The autosave effect rearms when `docs`
-   * changes, and answering a question changes no document: after a "no" the
-   * tab is still dirty, still open, and nothing else would ever ask for it
-   * again — the document would go unsaved until the next keystroke. That is
-   * the same hole a skipped pass left behind a file dialog, and it is the
-   * half of this that rots quietly.
-   */
-  function answerConfirm(answer: boolean): void {
-    confirmBusyRef.current = false;
-    // Through the ref rather than the captured state: this is the one
-    // resolver still owed an answer, whichever render put it there.
-    const resolve = pendingConfirmRef.current;
-    pendingConfirmRef.current = null;
-    setConfirmRequest(null);
-    resolve?.(answer);
-    nudgeAutosave();
-  }
-
-  // In-window rename dialog (replaces the native window.prompt).
-  const renameDialog = useCallback(
-    (id: string, name: string): Promise<string | null> => {
-      return new Promise((resolve) => {
-        setRenameRequest({ id, name, resolve });
-      });
-    },
-    [],
-  );
-
-  /*
-   * The recent documents, as the backend last listed them.
-   *
-   * Refreshed after anything that reorders the backend's list, and that is not
-   * cosmetic: a click sends the *position* in this list, so a copy that has
-   * gone stale would open the document that took the clicked one's place.
-   * Opening a recent document reorders it too — the one just opened moves to
-   * the top — so that path refreshes as well.
-   */
-  const [recent, setRecent] = useState<RecentEntry[]>([]);
-  // The same list without waiting for a render, for the saves that have to
-  // know whether they moved it. Written wherever `setRecent` is.
-  const recentRef = useRef<RecentEntry[]>([]);
-
-  /**
-   * Re-read the list, and hand it back as well as storing it.
-   *
-   * Returned because the backend prunes the entries whose files have gone on
-   * the way out, so what comes back answers a question the caller cannot
-   * otherwise ask: whether the document somebody just clicked is still there.
-   * The state is a render behind at that point and cannot be consulted.
-   */
-  const refreshRecent = useCallback(async (): Promise<RecentEntry[]> => {
-    try {
-      // Whatever comes back, the list this holds is a list. A save consults
-      // it, and a save must not be able to fail over the menu's bookkeeping.
-      const entries = (await backend.recentFiles()) ?? [];
-      recentRef.current = entries;
-      setRecent(entries);
-      return entries;
-    } catch (error) {
-      // A menu section that fails to load is not worth interrupting anyone
-      // over; the rest of the menu still works.
-      console.error("could not read the recent documents:", error);
-      recentRef.current = [];
-      setRecent([]);
-      return [];
-    }
-  }, []);
-
-  /**
-   * Re-read the list after a save that will have reordered it.
-   *
-   * Saving promotes the document to the front of the backend's list — that is
-   * deliberate, it is how a document worked on all week keeps its place — and
-   * the menu is clicked by *position*. So a stale copy does not merely look
-   * out of date: click the row labelled `A.md` after saving `B.md`, and the
-   * index that travels is the one `B.md` now occupies, and `B.md` opens.
-   *
-   * Only when the order actually moved. `remember` returns early when the
-   * path is already at the front, so a document saved twice running rewrites
-   * nothing, and neither does this — which matters with an autosave writing
-   * every couple of seconds.
-   */
-  function refreshRecentAfterSave(path: string | null | undefined): void {
-    // Nothing in here may throw. It is called from inside the write, whose
-    // `catch` means "this document could not be saved" — and the first
-    // version of this could throw, on a backend that answered the list with
-    // something other than an array. A successful save then reported itself
-    // as a failure, which the autosave tests caught and which would have been
-    // a great deal harder to work out from a bug report.
-    if (!path || recentRef.current[0]?.path === path) return;
-    void refreshRecent();
-  }
 
   useEffect(() => {
     void refreshRecent();
