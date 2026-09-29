@@ -21,11 +21,18 @@ import type { createOperationLock } from "./operationLock";
 export function createExportCommands(
   scope: Pick<
     AppScope,
-    "t" | "lang" | "platform" | "active" | "docView" | "pageMetrics" | "showNotice"
+    | "t"
+    | "lang"
+    | "platform"
+    | "active"
+    | "docView"
+    | "pageMetrics"
+    | "previewRef"
+    | "showNotice"
   >,
   { beginOperation, endOperation }: ReturnType<typeof createOperationLock>,
 ) {
-  const { t, lang, platform, active, docView, pageMetrics, showNotice } = scope;
+  const { t, lang, platform, active, docView, pageMetrics, previewRef, showNotice } = scope;
 
   async function exportPdf() {
     // Both backends export: the desktop prints the webview to a file, and the
@@ -108,6 +115,9 @@ export function createExportCommands(
             // with or every page spills onto the next.
             pageMetrics.paper.id,
             pdfMetadata(active),
+            // The pages the headings landed on, for bookmarks where the
+            // engine writes none. Only the Document view has pages.
+            previewRef.current?.outline() ?? undefined,
           ),
         );
       }

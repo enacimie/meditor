@@ -17,6 +17,19 @@ export type PdfMeta = {
   keywords?: string;
 };
 
+/**
+ * One heading of the Document view, as a bookmark for the PDF: its level
+ * (1–6), its text, its page (0 for the first) and how far down that page it
+ * starts, as a fraction of the page's height. Mirrors the Rust
+ * `PdfOutlineEntry` in `export.rs`.
+ */
+export type PdfOutlineEntry = {
+  level: number;
+  title: string;
+  page: number;
+  top: number;
+};
+
 /** One row of the recent-documents menu. */
 export type RecentEntry = {
   /** The file's own name, which is what the row says. */
@@ -148,6 +161,11 @@ export type Backend = {
      * build hands the page to the browser's print dialog and cannot.
      */
     meta?: PdfMeta,
+    /**
+     * The Document view's headings, for the desktop backend to write as the
+     * PDF's bookmarks where the engine wrote none.
+     */
+    outline?: PdfOutlineEntry[],
   ): Promise<void>;
   /**
    * Print what is on screen.

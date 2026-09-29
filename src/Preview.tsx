@@ -30,6 +30,8 @@ import { isMarpDocument } from "./marpDetect";
 import { LATEX_ENABLED } from "./latexSupport";
 import { blockForLine, markLines } from "./previewSync";
 import type { LineRange } from "./editorSelection";
+import type { PdfOutlineEntry } from "./backend/types";
+import { pdfOutline } from "./pdfOutline";
 import { footnotesToCalls } from "./pagedFootnotes";
 import { limitFootnotePages } from "./pagedFootnotePages";
 import { useSetAsideWhileHidden } from "./hooks/useSetAsideWhileHidden";
@@ -73,6 +75,11 @@ export type PreviewHandle = {
    * Markdown preview marks them; the others draw their own kind of page.
    */
   showEditorSelection: (lines: LineRange | null) => void;
+  /**
+   * The Document view's headings with the pages they landed on, for the PDF's
+   * bookmarks; null anywhere else, where there are no pages to name.
+   */
+  outline: () => PdfOutlineEntry[] | null;
 };
 
 type Props = {
@@ -349,8 +356,12 @@ const Preview = forwardRef<PreviewHandle, Props>(function Preview(
       if (childHandleRef.current) return;
       markEditorSelection(true);
     },
+    outline() {
+      if (childHandleRef.current || !docView || !pagedRef.current) return null;
+      return pdfOutline(pagedRef.current);
+    },
   }),
-  [scrollToLineNow, markEditorSelection]);
+  [scrollToLineNow, markEditorSelection, docView]);
 
   function clearMark() {
     if (markedElRef.current) markedElRef.current.classList.remove("sync-marked");
