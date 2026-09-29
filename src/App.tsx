@@ -38,6 +38,11 @@ import { useDocumentFacts } from "./hooks/useDocumentFacts";
 import { useConfirmRequest, useRenameRequest } from "./hooks/useDialogRequests";
 import { useRecentDocuments } from "./hooks/useRecentDocuments";
 import { useDocumentActions } from "./hooks/useDocumentActions";
+import type { AppScope } from "./appScope";
+import { createWriters } from "./commands/writers";
+import { createOperationLock } from "./commands/operationLock";
+import { createFileCommands } from "./commands/fileCommands";
+import { createQuit } from "./commands/quit";
 
 import type { Doc } from "./types";
 import type { ConflictRequest, LayoutMode, Theme } from "./components/types";
@@ -48,7 +53,6 @@ import {
   type FileOperation,
   showNativeAlert,
   isOperationBusy,
-  operationNotice,
   operationNoticeDone,
   operationNoticeError,
   operationErrorPrefix,
@@ -89,22 +93,6 @@ const AUTOSAVE_NOTICE = "autosave";
 const MAX_PENDING_OPEN_DOCS = 256;
 
 const INITIAL_PREFERENCES = loadPreferences();
-
-function waitForCloseTasks(tasks: Promise<unknown>[], timeoutMs = 5000): Promise<boolean> {
-  return new Promise((resolve) => {
-    let finished = false;
-    const finish = (completed: boolean) => {
-      if (finished) return;
-      finished = true;
-      window.clearTimeout(timeout);
-      resolve(completed);
-    };
-    const timeout = window.setTimeout(() => finish(false), timeoutMs);
-    void Promise.allSettled(tasks).then((results) =>
-      finish(results.every((result) => result.status === "fulfilled")),
-    );
-  });
-}
 
 export default function App() {
   const { t, lang, setLanguage } = useTranslation();
@@ -249,6 +237,50 @@ export default function App() {
   const exitPresent = useCallback(() => {
     setPresenting(false);
   }, []);
+
+  /*
+   * What the commands read, as this render has it. A plain object, made
+   * afresh on every render and never memoised or changed: each factory below
+   * destructures its part before declaring its functions, so every command
+   * still closes over the values of the render that made it.
+   */
+  const scope: AppScope = {
+    t,
+    lang,
+    active,
+    recent,
+    docsRef,
+    activeIdRef,
+    statsRef,
+    saveQueueRef,
+    sessionSaveQueueRef,
+    sessionTimerRef,
+    closingRef,
+    busyOperationRef,
+    pendingOpenDocsRef,
+    closeTRef,
+    closeLangRef,
+    conflictBusyRef,
+    splitRatioRef,
+    setDocs,
+    setBusyOperation,
+    showNotice,
+    nudgeAutosave,
+    openPaths,
+    confirmDialog,
+    refreshRecent,
+    refreshRecentAfterSave,
+  };
+  const { adoptOwnWrite, writeFileOrdered, writeSessionOrdered } = createWriters(scope);
+  const { beginOperation, endOperation } = createOperationLock(scope);
+  const { openRecent, reloadFromDisk, openFiles, saveAs, save } = createFileCommands(scope, {
+    beginOperation,
+    endOperation,
+    adoptOwnWrite,
+    writeFileOrdered,
+  });
+  const { requestQuit } = createQuit(scope, { writeSessionOrdered });
+  requestQuitRef.current = requestQuit;
 
   // Switching away from the deck (another tab, or the front-matter removed)
   // leaves nothing to present, so drop out of the overlay instead of letting
@@ -611,25 +643,6 @@ export default function App() {
     savePreferences({ docView, wrap, theme, layoutMode, ...editorPrefs });
   }, [docView, wrap, theme, layoutMode, editorPrefs, ready]);
 
-  function beginOperation(operation: FileOperation): boolean {
-    if (isOperationBusy(busyOperationRef)) return false;
-    busyOperationRef.current = operation;
-    setBusyOperation(operation);
-    showNotice(operationNotice(t, operation), "info", 0);
-    return true;
-  }
-
-  function endOperation(operation: FileOperation): void {
-    if (busyOperationRef.current !== operation) return;
-    busyOperationRef.current = null;
-    setBusyOperation(null);
-    // Whatever was in the way has gone, so anything autosave declined to
-    // write while it was there can be asked for again.
-    nudgeAutosave();
-    const pending = pendingOpenDocsRef.current.splice(0);
-    if (pending.length) void openPaths(pending);
-  }
-
   useEffect(() => {
     const media = window.matchMedia("(max-width: 760px)");
     const update = () => setCompactLayout(media.matches);
@@ -641,389 +654,6 @@ export default function App() {
   useEffect(() => {
     void refreshRecent();
   }, [refreshRecent]);
-
-  /**
-   * Open the nth remembered document.
-   *
-   * Both ways this can fail end in the same place, because to the person who
-   * clicked they are the same thing: the document is not there any more. The
-   * backend answers with nothing when the position has gone, and throws when
-   * the file has; either way the refreshed list no longer carries that entry,
-   * because reading it prunes what is missing.
-   *
-   * Which is worth checking rather than guessing, because the alternative
-   * message is bad: a file deleted since the menu was drawn fails inside
-   * `std::fs`, and what reaches the writer is the operating system's own
-   * words for it, in English, in a modal — "The system cannot find the file
-   * specified. (os error 2)". A permission error or a file grown too large
-   * still gets that route, and should: those are worth the details. A file
-   * that is simply gone is not.
-   */
-  async function openRecent(index: number) {
-    if (!beginOperation("open")) return;
-    // Captured before anything can refresh the list underneath it: this is
-    // the row the writer clicked, whatever the list says afterwards.
-    const clicked = recent[index];
-    try {
-      const payload = await backend.openRecent(index, lang);
-      if (!payload) {
-        /*
-         * Nothing to open: either the position went away between the menu
-         * being drawn and the click, or the file itself has. The backend
-         * answers the same way for both, and to the person who clicked they
-         * are the same event — the row they aimed at is not there.
-         *
-         * It used to be decided here instead, by re-reading the list and
-         * seeing whether the entry survived the pruning. That read every
-         * failure as an absence: a file on a disconnected share or one whose
-         * permissions changed is pruned too, and the writer was told it "is
-         * no longer where it was" while the real reason went in the console.
-         */
-        await refreshRecent();
-        showNotice(
-          clicked ? t("menu.recentGone", clicked.name) : t("op.cancelled"),
-          "info",
-        );
-        return;
-      }
-      const opened = normalizeDoc(payload);
-      await openPaths([opened]);
-      await refreshRecent();
-      showNotice(t("op.filesOpened", 1), "success");
-    } catch (error) {
-      // Everything that reaches here is a file that is present and would not
-      // open — locked, unreadable, too large — and for those the details are
-      // the whole of the help.
-      await refreshRecent();
-      showNotice(operationNoticeError(t, "open"), "error", 0);
-      await showNativeAlert(operationErrorPrefix(t, "open") + String(error), lang);
-    } finally {
-      endOperation("open");
-    }
-  }
-
-  /**
-   * Read the document's file again and take what is there.
-   *
-   * The watch already does this on its own when it notices a file move, and
-   * that covers the ordinary case. This is for the times it cannot: a file
-   * whose fingerprint did not move although its bytes did — some editors
-   * preserve the modification time — or a reader who simply wants to be sure
-   * they are looking at what is on disk rather than trusting a poll. Every
-   * editor of this kind has the command; meditor did not, and the button
-   * people found instead was "Check for updates".
-   *
-   * Unsaved work is never thrown away without being asked, because that is
-   * exactly what this does: the file wins, whole.
-   */
-  async function reloadFromDisk() {
-    const target = active;
-    const handle = target?.handle;
-    if (!target || !handle) return;
-    /*
-     * The lock goes on before the question, not after the answer.
-     *
-     * Autosave writes two seconds after the last edit and stands down only
-     * while an operation is in flight. Ask first and it lands while the
-     * dialog is still on screen: the buffer this command exists to throw
-     * away becomes the file, and the "Yes" reads it straight back. The
-     * command would report having reloaded the document, having in fact
-     * overwritten the file with the very thing the writer asked to discard.
-     *
-     * Holding it across the question is also what `openFiles` does while the
-     * file dialog is up, cancellation included.
-     */
-    if (!beginOperation("reload")) return;
-    try {
-      if (target.dirty) {
-        const ok = await confirmDialog(t("confirm.reloadDiscards", target.name));
-        if (!ok) {
-          // Replaces the persistent "Reloading…" that `beginOperation` put up.
-          showNotice(t("op.cancelled"), "info");
-          return;
-        }
-      }
-      const content = await backend.readDocument(handle, lang);
-      /*
-       * The fingerprint too, and before the buffer is replaced.
-       *
-       * Without it the next poll finds a file whose fingerprint has moved
-       * since the baseline and reads it all over again — harmless, but it
-       * would also classify: a document made clean here would simply be
-       * reloaded a second time, and one the writer starts typing into within
-       * three seconds would raise a conflict over the very reload they asked
-       * for.
-       */
-      const stat = await backend.documentStat(handle, lang);
-      if (stat) statsRef.current.set(handle, stat);
-      const id = target.id;
-      setDocs((prev) => prev.map((d) => (d.id === id ? { ...d, content, dirty: false } : d)));
-      showNotice(t("op.reloaded", target.name), "success");
-    } catch (error) {
-      showNotice(operationNoticeError(t, "reload"), "error", 0);
-      await showNativeAlert(operationErrorPrefix(t, "reload") + String(error), lang);
-    } finally {
-      endOperation("reload");
-    }
-  }
-
-  async function openFiles() {
-    if (!beginOperation("open")) return;
-    try {
-      const opened = (await backend.openFiles(lang)).map(normalizeDoc);
-      if (opened.length) {
-        await openPaths(opened);
-        await refreshRecent();
-        showNotice(
-          t("op.filesOpened", opened.length),
-          "success",
-        );
-      } else {
-        showNotice(t("op.cancelled"), "info");
-      }
-    } catch (error) {
-      showNotice(operationNoticeError(t, "open"), "error", 0);
-      await showNativeAlert(operationErrorPrefix(t, "open") + String(error), lang);
-    } finally {
-      endOperation("open");
-    }
-  }
-
-  /**
-   * Adopt the fingerprint of a file this application has just written.
-   *
-   * Without this, saving looks exactly like somebody else editing the file.
-   * The write moves the mtime, so the next poll reads the disk and compares it
-   * to the buffer — and if the writer typed anything in between, the two
-   * differ and the document is dirty again, which the watcher calls a conflict
-   * and puts a dialog in front of a change this application made itself.
-   *
-   * Rare with Ctrl+S, which needs the writer to type inside the three-second
-   * poll window. Constant with an autosave.
-   *
-   * The fingerprint comes back from the write itself, taken beside it rather
-   * than fetched afterwards. Asking for it in a second call left a window in
-   * which another process could write the same file: its fingerprint would be
-   * adopted as ours, and the watcher would then believe the disk matched a
-   * buffer it no longer does — silently, and until the file moved again.
-   *
-   * `stat` is null only where a backend cannot answer at all, and there the
-   * fallback is what this used to do all the time.
-   */
-  async function adoptOwnWrite(handle: string, stat: DocumentStat): Promise<void> {
-    if (stat) {
-      statsRef.current.set(handle, stat);
-      return;
-    }
-    try {
-      const fetched = await backend.documentStat(handle, lang);
-      if (fetched) statsRef.current.set(handle, fetched);
-    } catch {
-      // A fingerprint that cannot be read back is a missed nicety, not a
-      // failed save. The next poll will treat the file as changed and, since
-      // the bytes match, adopt it quietly anyway.
-    }
-  }
-
-  function writeFileOrdered(handle: string, content: string): Promise<void> {
-    const next = saveQueueRef.current
-      .then(() => backend.saveDocument(handle, content, lang))
-      .then((stat) => adoptOwnWrite(handle, stat));
-    saveQueueRef.current = next.catch(() => undefined);
-    return next;
-  }
-
-  function writeSessionOrdered(
-    documents: Doc[],
-    currentActiveId: string,
-    ratio: number,
-  ): Promise<void> {
-    const next = sessionSaveQueueRef.current.then(() =>
-      backend.saveSession(
-        {
-          docs: documents.map(({ id, name, path, content, dirty, handle, kind }) => ({
-            id,
-            name,
-            path,
-            content,
-            dirty,
-            handle: handle ?? null,
-            kind,
-            /*
-             * The file as the watch last saw it, not as the document was born.
-             *
-             * This is what a restart needs to tell two identical-looking
-             * situations apart: a buffer that differs from its file because
-             * the writer had unsaved work, which comes back quietly, and one
-             * that differs because something else wrote the file while
-             * meditor was closed, which has to be reloaded or asked about.
-             * Without it the next launch can only guess, and it used to guess
-             * by dropping the file altogether.
-             */
-            stat: handle ? (statsRef.current.get(handle) ?? null) : null,
-          })),
-          activeId: currentActiveId,
-          split: ratio,
-        },
-        lang,
-      ),
-    );
-    sessionSaveQueueRef.current = next.catch(() => undefined);
-    return next;
-  }
-
-  /**
-   * Quit the app, running the same cleanup as a window close: confirm unsaved
-   * changes, flush the final session, then exit through Rust. Shared by the
-   * close guard and the Ctrl+Q shortcut, so both behave identically.
-   */
-  async function requestQuit() {
-    if (!isTauri() || closingRef.current) return;
-    closingRef.current = true;
-    try {
-      const hasDirtyDocuments = docsRef.current.some((d) => d.dirty);
-      if (hasDirtyDocuments) {
-        const ok = await confirmDialog(
-          closeTRef.current("confirm.unsavedClose"),
-        );
-        if (!ok) return;
-      }
-      if (sessionTimerRef.current !== undefined) {
-        window.clearTimeout(sessionTimerRef.current);
-        sessionTimerRef.current = undefined;
-      }
-      const finalSession = writeSessionOrdered(
-        docsRef.current,
-        activeIdRef.current,
-        splitRatioRef.current,
-      );
-      const closeTasksCompleted = await waitForCloseTasks([
-        saveQueueRef.current,
-        finalSession,
-        sessionSaveQueueRef.current,
-      ]);
-      if (!closeTasksCompleted) {
-        // Say the loss, and leave anyway. Trapping somebody in an application
-        // that refuses to close is worse than the cache that failed to
-        // write: the session has a five-megabyte ceiling and the disk can be
-        // full, and retrying walks into the same wall every time. The
-        // documents' own saves ran ahead of this in the queue; what is lost
-        // is the restore point, not silently the writing.
-        await showNativeAlert(
-          closeTRef.current("session.saveError"),
-          closeLangRef.current,
-        );
-      }
-      await backend.exitApp();
-    } catch (error) {
-      console.error("Could not close application", error);
-      // Last resort: try a plain destroy. It is unreliable on WebKitGTK, but
-      // works on other platforms and sometimes here.
-      try {
-        await getCurrentWindow().destroy();
-      } catch {
-        // The window stays open; the user can retry the close.
-      }
-    } finally {
-      closingRef.current = false;
-    }
-  }
-  requestQuitRef.current = requestQuit;
-
-  async function saveAs(targetId?: string) {
-    // Same lock as save(): while the conflict dialog is up, the only route
-    // to a write is the dialog's own "Save As", which clears the lock first.
-    if (conflictBusyRef.current) return;
-    // The conflict dialog routes a background tab here, so the target is
-    // resolved by id when given; the menu and Ctrl+Shift+S keep saving the
-    // active document.
-    const target = targetId ? docsRef.current.find((d) => d.id === targetId) : active;
-    if (!target || !beginOperation("saveAs")) return;
-    const documentId = target.id;
-    const savedContent = target.content;
-    const ext =
-      target.kind === "typst" ? ".typ" : target.kind === "latex" ? ".tex" : ".md";
-    const base = target.name.replace(/\.(md|markdown|txt|typ|typst|tex|latex|ltx)$/i, "");
-    const defaultName = `${base}${ext}`;
-    try {
-      const savedPayload = await backend.saveAs(savedContent, defaultName, lang);
-      if (!savedPayload) {
-        showNotice(t("op.cancelled"), "info");
-        return;
-      }
-      const saved = normalizeDoc(savedPayload);
-      /*
-       * The same adoption Ctrl+S does, for the same reason.
-       *
-       * The file is new to the watcher, so without this its first poll finds
-       * no baseline for the handle, reads the disk, and compares it to the
-       * buffer. Type anything in the seconds after choosing a name and the
-       * two differ with the document dirty — which the watcher calls a
-       * conflict, and puts a "changed on disk" dialog in front of a file the
-       * writer created a moment ago.
-       *
-       * Awaited inside the operation, so it is settled before `endOperation`
-       * lets the poll run at all.
-       */
-      // Nothing to pass: the file dialog wrote this one, so there is no
-      // fingerprint travelling back with it and the stat has to be asked for.
-      if (saved.handle) await adoptOwnWrite(saved.handle, null);
-      void refreshRecent();
-      setDocs((prev) =>
-        prev.map((d) =>
-          d.id === documentId
-            ? {
-                ...d,
-                path: saved.path,
-                name: saved.name,
-                handle: saved.handle,
-                kind: saved.kind,
-                dirty: d.content === savedContent ? false : d.dirty,
-              }
-            : d,
-        ),
-      );
-      showNotice(operationNoticeDone(t, "saveAs"), "success");
-    } catch (e) {
-      showNotice(operationNoticeError(t, "saveAs"), "error", 0);
-      await showNativeAlert(operationErrorPrefix(t, "saveAs") + String(e), lang);
-    } finally {
-      endOperation("saveAs");
-    }
-  }
-
-  async function save() {
-    if (!active) return;
-    // The conflict dialog is a question about this very file, and a
-    // shortcut must not answer behind its back: Ctrl+S reaches this
-    // function with the dialog up (the global key handler knows nothing of
-    // it), and a write from here would make the dialog's later "Reload from
-    // disk" install stale content over the save nobody sees. The dialog's
-    // own buttons clear the lock before they route anywhere.
-    if (conflictBusyRef.current) return;
-    if (!active.handle) {
-      await saveAs();
-      return;
-    }
-    if (!beginOperation("save")) return;
-    try {
-      const savedContent = active.content;
-      await writeFileOrdered(active.handle, savedContent);
-      refreshRecentAfterSave(active.path);
-      const id = active.id;
-      setDocs((prev) =>
-        prev.map((d) =>
-          d.id === id && d.content === savedContent ? { ...d, dirty: false } : d,
-        ),
-      );
-      showNotice(operationNoticeDone(t, "save"), "success");
-    } catch (e) {
-      showNotice(operationNoticeError(t, "save"), "error", 0);
-      await showNativeAlert(operationErrorPrefix(t, "save") + String(e), lang);
-    } finally {
-      endOperation("save");
-    }
-  }
 
   /**
    * One poll tick over every file-backed document. Serialized against
