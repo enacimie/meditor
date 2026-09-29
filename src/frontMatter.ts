@@ -39,8 +39,8 @@ export function frontMatterLines(content: string): string[] | null {
    * the page geometry, once for Marp detection in App and once more in
    * Preview. On a small document that is nothing; measured on a 5.75 MB one
    * it was 17 ms a call, so 67 ms of every keypress went on cutting up text
-   * that was going to be thrown away. `App.tsx` states the rule twenty lines
-   * above the callers — parsing the whole document belongs off the keystroke
+   * that was going to be thrown away. `useDocumentFacts` states the rule
+   * above its callers — parsing the whole document belongs off the keystroke
    * path — and this was quietly breaking it.
    *
    * Now the work is proportional to the front-matter rather than to the

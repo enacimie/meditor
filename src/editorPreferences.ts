@@ -3,8 +3,9 @@ import { PAPERS, type PaperId } from "./pageSetup";
 /**
  * Editor appearance preferences.
  *
- * Kept apart from App's Preferences type so both the dialog and the CodeMirror
- * setup can share the validation without importing each other.
+ * Kept apart from the Preferences type in appPreferences.ts so both the dialog
+ * and the CodeMirror setup can share the validation without importing each
+ * other.
  */
 
 export const MIN_EDITOR_FONT_SIZE = 10;

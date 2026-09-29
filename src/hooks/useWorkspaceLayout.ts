@@ -15,8 +15,9 @@ export function useWorkspaceLayout(initialLayout: LayoutMode) {
    * So on a touch screen the workspace is one pane or the other, and every
    * route into `split` lands on the reader instead — the stored preference
    * from a desktop session, Ctrl+2 from an attached keyboard, and the jumps
-   * between panes, which get their own treatment further down because they
-   * are aiming at a particular pane rather than at both.
+   * between panes, which get their own treatment in the navigation commands
+   * (`revealing`) because they are aiming at a particular pane rather than at
+   * both.
    */
   const chooseLayout = useCallback(
     (mode: LayoutMode) => {

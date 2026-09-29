@@ -1,7 +1,7 @@
 /**
  * Tauri backend shim for E2E specs.
  *
- * The real app (`src/App.tsx`) imports `isTauri`, `invoke` and
+ * The real app (`src/App.tsx` and its modules) imports `isTauri`, `invoke` and
  * `getCurrentWindow` from `@tauri-apps/api`. Those modules (v2.11.1) read
  * `window.isTauri` and `window.__TAURI_INTERNALS__` at runtime, so injecting
  * this shim via `Page.addScriptToEvaluateOnNewDocument` lets the *real* app

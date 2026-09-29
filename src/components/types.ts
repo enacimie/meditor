@@ -35,7 +35,7 @@ export type LayoutMode = "editor" | "split" | "preview";
  */
 export type ConfirmRequest = {
   // Rises with every question so the dialog remounts instead of swapping
-  // its text under whatever the reader had focused. See the `key` below.
+  // its text under whatever the reader had focused. See its `key` in AppDialogs.
   seq: number;
   message: string;
   resolve: (ok: boolean) => void;

@@ -40,7 +40,7 @@ export function isPdfExportAvailable(activeKind: DocKind, platform: Platform): b
  * build, so the menu entry is absent there rather than failing when
  * pressed. `platform` is null until Rust answers; treating that as
  * "not mobile" is what keeps a desktop from flickering the entry in and
- * out on startup, and matches what pdfExportAvailable above does.
+ * out on startup, and matches what `isPdfExportAvailable` above does.
  *
  * It is also absent when the build has no updater configured, which is
  * every build until the signing keys exist. Without it `check()` throws on

@@ -19,8 +19,8 @@ export function useSessionPersistence(
   /*
    * Write the session out the moment the app stops being visible.
    *
-   * The close guard below covers a window being closed, and the debounce
-   * above covers ordinary typing — but Android fires neither. The system
+   * The close guard covers a window being closed, and the debounced write
+   * below covers ordinary typing — but Android fires neither. The system
    * freezes the WebView when you switch away and may kill the process later
    * without running anything else, so a pending debounce simply never lands
    * and the last edits are gone.
@@ -64,7 +64,7 @@ export function useSessionPersistence(
      * on `isTauri()`, which left the web build checkpointing only on
      * `visibilitychange`/`pagehide` — a browser that crashes, or a tab the
      * OS kills in the background, took the whole session with it, silently.
-     * The comment on the flush below has always claimed the debounce covers
+     * The comment on the flush above has always claimed the debounce covers
      * ordinary typing; now that is true on the web too.
      */
     if (!ready) return;
