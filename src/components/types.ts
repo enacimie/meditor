@@ -29,3 +29,34 @@ export type Notice = {
  * restores whichever layout was chosen.
  */
 export type LayoutMode = "editor" | "split" | "preview";
+
+/**
+ * A yes-or-no question on screen, and the answer it is waiting for.
+ */
+export type ConfirmRequest = {
+  // Rises with every question so the dialog remounts instead of swapping
+  // its text under whatever the reader had focused. See the `key` below.
+  seq: number;
+  message: string;
+  resolve: (ok: boolean) => void;
+};
+
+/**
+ * A tab being renamed: which one, the name it has now, and where the new
+ * name goes — `null` when the rename is cancelled.
+ */
+export type RenameRequest = {
+  id: string;
+  name: string;
+  resolve: (name: string | null) => void;
+};
+
+/**
+ * A file that changed on disk while its tab had edits of its own: which tab,
+ * its name, and what the file holds now.
+ */
+export type ConflictRequest = {
+  id: string;
+  name: string;
+  diskContent: string;
+};

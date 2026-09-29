@@ -1,6 +1,4 @@
 import {
-  lazy,
-  Suspense,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -12,9 +10,8 @@ import { isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { listen } from "@tauri-apps/api/event";
 import type { EditorHandle } from "./Editor";
-
-const Editor = lazy(() => import("./Editor"));
-import Preview, { type PreviewHandle } from "./Preview";
+import type { PreviewHandle } from "./Preview";
+import PreviewPane from "./components/PreviewPane";
 import type { LineRange } from "./editorSelection";
 import { SAMPLE, TYPST_SAMPLE, LATEX_SAMPLE, MARP_SAMPLE } from "./sample";
 import { isMarpDocument } from "./marpDetect";
@@ -25,14 +22,9 @@ import { frontMatterValue } from "./frontMatter";
 import Topbar from "./components/Topbar";
 import TabBar from "./components/TabBar";
 import StatusBar from "./components/StatusBar";
-import ConfirmDialog from "./components/ConfirmDialog";
-import ConflictDialog from "./components/ConflictDialog";
-import RenameDialog from "./components/RenameDialog";
-import ShortcutsOverlay from "./components/ShortcutsOverlay";
-import AboutDialog from "./components/AboutDialog";
-const PreferencesDialog = lazy(() => import("./components/PreferencesDialog"));
-const PresentOverlay = lazy(() => import("./components/PresentOverlay"));
-import Outline from "./components/Outline";
+import AppDialogs from "./components/AppDialogs";
+import EditorPane from "./components/EditorPane";
+import SplitDivider from "./components/SplitDivider";
 import { parseHeadings, type Heading } from "./components/outlineUtils";
 import { useTranslation } from "./i18n/I18nProvider";
 import {
@@ -52,7 +44,13 @@ import { useCoarsePointer } from "./hooks/useCoarsePointer";
 import { usePlatform, canPrintNatively } from "./hooks/usePlatform";
 
 import type { Doc } from "./types";
-import type { LayoutMode, Theme } from "./components/types";
+import type {
+  ConfirmRequest,
+  ConflictRequest,
+  LayoutMode,
+  RenameRequest,
+  Theme,
+} from "./components/types";
 import { makeDoc, newId, normalizeDoc, seedWatchBaselines } from "./documentUtils";
 import type { EditorPreferences } from "./editorPreferences";
 import { loadPreferences, savePreferences } from "./appPreferences";
@@ -158,23 +156,9 @@ export default function App() {
   const [zenMode, setZenMode] = useState(false);
   const [compactLayout, setCompactLayout] = useState(false);
   const [busyOperation, setBusyOperation] = useState<FileOperation | null>(null);
-  const [confirmRequest, setConfirmRequest] = useState<{
-    // Rises with every question so the dialog remounts instead of swapping
-    // its text under whatever the reader had focused. See the `key` below.
-    seq: number;
-    message: string;
-    resolve: (ok: boolean) => void;
-  } | null>(null);
-  const [renameRequest, setRenameRequest] = useState<{
-    id: string;
-    name: string;
-    resolve: (name: string | null) => void;
-  } | null>(null);
-  const [conflictRequest, setConflictRequest] = useState<{
-    id: string;
-    name: string;
-    diskContent: string;
-  } | null>(null);
+  const [confirmRequest, setConfirmRequest] = useState<ConfirmRequest | null>(null);
+  const [renameRequest, setRenameRequest] = useState<RenameRequest | null>(null);
+  const [conflictRequest, setConflictRequest] = useState<ConflictRequest | null>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [outlineOpen, setOutlineOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
@@ -2104,224 +2088,58 @@ export default function App() {
         aria-label={active?.name ?? ""}
         tabIndex={-1}
       >
-        <div
-          className="pane"
-          style={{ flex: paneFlex(split) }}
-        >
-          <div className="pane-header">
-            <span className="pane-title">{t("pane.editor")}</span>
-            {/* Shown whenever the editor is, like its counterpart in the
-                other pane: from an editor-only layout it brings the preview
-                back and scrolls there. */}
-            {markdownSyncAvailable && (
-              <button
-                type="button"
-                className="sync-btn"
-                onClick={handleForwardSync}
-                aria-label={t("pane.scrollToPreview")}
-                title={t("pane.scrollToPreview")}
-              >
-                <svg aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M5 12h14" />
-                  <path d="m13 6 6 6-6 6" />
-                </svg>
-                {t("pane.goToPreview")}
-              </button>
-            )}
-            {/* Only where they are the only way. A touch keyboard has no Ctrl,
-                so without these there is no undo at all; on a desktop Ctrl+Z
-                is right there and two more buttons would just be clutter. */}
-            {coarsePointer && (
-              <>
-                <button
-                  type="button"
-                  className="sync-btn history-btn"
-                  onClick={() => editorRef.current?.undo()}
-                  aria-label={t("editor.undo")}
-                  title={t("editor.undo")}
-                >
-                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 7v6h6" />
-                    <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  className="sync-btn history-btn"
-                  onClick={() => editorRef.current?.redo()}
-                  aria-label={t("editor.redo")}
-                  title={t("editor.redo")}
-                >
-                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 7v6h-6" />
-                    <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7" />
-                  </svg>
-                </button>
-              </>
-            )}
-            <button
-              type="button"
-              className={wrap ? "sync-btn on" : "sync-btn"}
-              aria-pressed={wrap}
-              aria-label={wrap ? t("pane.wrapOn") : t("pane.wrapOff")}
-              onClick={() => setWrap((w) => !w)}
-              title={t("pane.wrapTitle")}
-            >
-              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12H3" />
-                <path d="M21 6H3" />
-                <path d="M21 18H3" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              className={outlineOpen ? "sync-btn on" : "sync-btn"}
-              aria-expanded={outlineOpen}
-              aria-controls="document-outline"
-              aria-label={t("outline.toggle")}
-              title={t("outline.toggle")}
-              onClick={() => setOutlineOpen((v) => !v)}
-            >
-              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M8 6h13" />
-                <path d="M8 12h13" />
-                <path d="M8 18h13" />
-                <path d="M3 6h.01" />
-                <path d="M3 12h.01" />
-                <path d="M3 18h.01" />
-              </svg>
-            </button>
-          </div>
-          <div id="document-outline" hidden={!outlineOpen}>
-            {outlineOpen && (
-              <Outline
-                t={t}
-                headings={headings}
-                cursorLine={cursorLine}
-                onGoToLine={(line) => editorRef.current?.scrollToLine(line)}
-              />
-            )}
-          </div>
-          <Suspense fallback={<div className="editor-loading" role="status">{t("editor.loading")}</div>}>
-            <Editor
-              ref={editorRef}
-              activeId={activeId}
-              ids={idsRef.current}
-              content={active?.content ?? ""}
-              onChange={updateContent}
-              wrap={wrap}
-              fontSize={editorPrefs.editorFontSize}
-              fontFamily={editorPrefs.editorFontFamily}
-              spellcheck={editorPrefs.spellcheck}
-              focusMode={editorPrefs.focusMode}
-              typewriterMode={editorPrefs.typewriterMode}
-              zenMode={zenMode}
-              zenPlaceholder={t("zen.placeholder")}
-              kind={active?.kind ?? "markdown"}
-              docHandle={active?.handle ?? null}
-              locale={lang}
-              textLanguage={docLanguage?.tag ?? null}
-              onCursorLineChange={onCursorMoved}
-              onSelectionLinesChange={onSelectionLines}
-              onImageError={(error) =>
-                showNotice(
-                  error.kind === "tooLarge"
-                    ? t("image.tooLarge", error.name, error.maxMiB)
-                    : error.kind === "notStored"
-                      ? t("image.notStored", error.name)
-                      : t("image.insertFailed", error.name),
-                  "error",
-                )
-              }
-            />
-          </Suspense>
-        </div>
-        <div
-          className="split-divider"
-          role="separator"
-          aria-orientation={compactLayout ? "horizontal" : "vertical"}
-          aria-label={t("pane.resize")}
-          aria-valuemin={20}
-          aria-valuemax={80}
-          aria-valuenow={Math.round(split)}
-          tabIndex={0}
-          onKeyDown={(e) => {
-            const decrease = compactLayout ? "ArrowUp" : "ArrowLeft";
-            const increase = compactLayout ? "ArrowDown" : "ArrowRight";
-            if (e.key === decrease || e.key === increase) {
-              e.preventDefault();
-              const delta = e.key === decrease ? -5 : 5;
-              setSplit((value) => {
-                const next = Math.max(20, Math.min(80, value + delta));
-                splitRatioRef.current = next;
-                return next;
-              });
-            }
-          }}
-          onPointerDown={onDividerDown}
-          onPointerMove={onDividerMove}
-          onPointerUp={onDividerUp}
-          onLostPointerCapture={onDividerUp}
+        <EditorPane
+          t={t}
+          flex={paneFlex(split)}
+          markdownSyncAvailable={markdownSyncAvailable}
+          handleForwardSync={handleForwardSync}
+          coarsePointer={coarsePointer}
+          editorRef={editorRef}
+          wrap={wrap}
+          setWrap={setWrap}
+          outlineOpen={outlineOpen}
+          setOutlineOpen={setOutlineOpen}
+          headings={headings}
+          cursorLine={cursorLine}
+          activeId={activeId}
+          ids={idsRef.current}
+          active={active}
+          updateContent={updateContent}
+          editorPrefs={editorPrefs}
+          zenMode={zenMode}
+          lang={lang}
+          docLanguage={docLanguage}
+          onCursorMoved={onCursorMoved}
+          onSelectionLines={onSelectionLines}
+          showNotice={showNotice}
         />
-        <div className="pane" style={{ flex: paneFlex(100 - split) }}>
-          <div className="pane-header">
-            <span className="pane-title">{t("pane.preview")}</span>
-            {markdownSyncAvailable && (
-              <button
-                type="button"
-                className="sync-btn"
-                onClick={handleReverseSyncButton}
-                aria-label={t("pane.scrollToCode")}
-                title={t("pane.scrollToCode")}
-              >
-                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 12H5" />
-                  <path d="m11 18-6-6 6-6" />
-                </svg>
-                {t("pane.goToCode")}
-              </button>
-            )}
-            {(active?.kind ?? "markdown") !== "typst" && (active?.kind ?? "markdown") !== "latex" && !isActiveMarp && (
-              <button
-                type="button"
-                className={docView ? "sync-btn on" : "sync-btn"}
-                onClick={() => setDocView((v) => !v)}
-                aria-label={t("pane.viewMode")}
-                title={t("pane.viewMode")}
-              >
-                <span className="pane-view-label">{docView ? t("pane.document") : t("pane.web")}</span>
-              </button>
-            )}
-          </div>
-          <div
-            className={
-              "preview-scroll" +
-              (docView && (active?.kind ?? "markdown") === "markdown" && !isActiveMarp ? " doc-bg" : "")
-            }
-          >
-            <Preview
-              ref={previewRef}
-              value={active?.content ?? ""}
-              docView={docView}
-              kind={active?.kind ?? "markdown"}
-              landscapeTables={editorPrefs.landscapeTables}
-              pageMetrics={pageMetrics}
-              language={docLanguage}
-              docHandle={active?.handle ?? null}
-              docPath={active?.path ?? null}
-              theme={theme}
-              onToggleTask={toggleTask}
-              onReverseSync={handleReverseSync}
-            />
-          </div>
-        </div>
+        <SplitDivider
+          t={t}
+          compactLayout={compactLayout}
+          split={split}
+          setSplit={setSplit}
+          splitRatioRef={splitRatioRef}
+          onDividerDown={onDividerDown}
+          onDividerMove={onDividerMove}
+          onDividerUp={onDividerUp}
+        />
+        <PreviewPane
+          t={t}
+          flex={paneFlex(100 - split)}
+          markdownSyncAvailable={markdownSyncAvailable}
+          handleReverseSyncButton={handleReverseSyncButton}
+          active={active}
+          isActiveMarp={isActiveMarp}
+          docView={docView}
+          setDocView={setDocView}
+          previewRef={previewRef}
+          editorPrefs={editorPrefs}
+          pageMetrics={pageMetrics}
+          docLanguage={docLanguage}
+          theme={theme}
+          toggleTask={toggleTask}
+          handleReverseSync={handleReverseSync}
+        />
       </div>
       <StatusBar
         t={t}
@@ -2333,98 +2151,30 @@ export default function App() {
         zoom={zoom}
         onZoomReset={zoomReset}
       />
-      {confirmRequest && (
-        <ConfirmDialog
-          // Remount, do not reuse: without this the dialog keeps its focus
-          // and its exit timer across a replacement, so the text changes
-          // under the reader and a pending close can fire the old answer.
-          key={confirmRequest.seq}
-          title={t("confirm.title")}
-          message={confirmRequest.message}
-          confirmLabel={t("confirm.yes")}
-          cancelLabel={t("confirm.no")}
-          onConfirm={() => {
-            answerConfirm(true);
-          }}
-          onCancel={() => {
-            answerConfirm(false);
-          }}
-        />
-      )}
-      {/*
-        One modal at a time. The offer waits its turn behind whichever
-        dialog is up — it is state, not a queue entry that expires, so the
-        moment the last one closes this renders. Two `aria-modal` surfaces
-        at once trap the focus in whichever mounted last, and the Escape
-        that closes one lands on the other.
-      */}
-      {updates.offer &&
-        !confirmRequest &&
-        !conflictRequest &&
-        !renameRequest &&
-        !preferencesOpen &&
-        !aboutOpen &&
-        !shortcutsOpen && (
-        <ConfirmDialog
-          title={t("update.title")}
-          message={t("update.available", updates.offer.version, updates.offer.current)}
-          confirmLabel={t("update.install")}
-          cancelLabel={t("update.later")}
-          onConfirm={() => {
-            void updates.offer?.install();
-          }}
-          onCancel={updates.dismiss}
-        />
-      )}
-      {conflictRequest && (
-        <ConflictDialog
-          title={t("conflict.externalTitle")}
-          message={t("conflict.externalMessage", conflictRequest.name)}
-          reloadLabel={t("conflict.reload")}
-          keepLabel={t("conflict.keepMine")}
-          saveAsLabel={t("conflict.saveAsAction")}
-          onReload={resolveConflictReload}
-          onKeep={resolveConflictKeep}
-          onSaveAs={resolveConflictSaveAs}
-        />
-      )}
-      {renameRequest && (
-        <RenameDialog
-          // Remount per request, as ConfirmDialog does: a reuse would carry
-          // the previous rename's focus, its input value and its exit timer.
-          key={renameRequest.id}
-          title={t("tab.renameTitle")}
-          label={t("tab.renamePrompt")}
-          initialValue={renameRequest.name}
-          confirmLabel={t("tab.rename")}
-          cancelLabel={t("tab.renameCancel")}
-          onConfirm={(name) => {
-            renameRequest.resolve(name);
-            setRenameRequest(null);
-          }}
-          onCancel={() => {
-            renameRequest.resolve(null);
-            setRenameRequest(null);
-          }}
-        />
-      )}
-      {shortcutsOpen && <ShortcutsOverlay t={t} onClose={() => setShortcutsOpen(false)} />}
-      {aboutOpen && <AboutDialog t={t} onClose={() => setAboutOpen(false)} />}
-      {preferencesOpen && (
-        <Suspense fallback={null}>
-          <PreferencesDialog
-            t={t}
-            value={editorPrefs}
-            onChange={setEditorPrefs}
-            onClose={() => setPreferencesOpen(false)}
-          />
-        </Suspense>
-      )}
-      {presenting && isActiveMarp && (
-        <Suspense fallback={null}>
-          <PresentOverlay content={activeContent} t={t} onExit={exitPresent} />
-        </Suspense>
-      )}
+      <AppDialogs
+        t={t}
+        confirmRequest={confirmRequest}
+        answerConfirm={answerConfirm}
+        updates={updates}
+        conflictRequest={conflictRequest}
+        renameRequest={renameRequest}
+        resolveConflictReload={resolveConflictReload}
+        resolveConflictKeep={resolveConflictKeep}
+        resolveConflictSaveAs={resolveConflictSaveAs}
+        setRenameRequest={setRenameRequest}
+        preferencesOpen={preferencesOpen}
+        setPreferencesOpen={setPreferencesOpen}
+        aboutOpen={aboutOpen}
+        setAboutOpen={setAboutOpen}
+        shortcutsOpen={shortcutsOpen}
+        setShortcutsOpen={setShortcutsOpen}
+        editorPrefs={editorPrefs}
+        setEditorPrefs={setEditorPrefs}
+        presenting={presenting}
+        isActiveMarp={isActiveMarp}
+        activeContent={activeContent}
+        exitPresent={exitPresent}
+      />
     </div>
   );
 }
