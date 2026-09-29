@@ -43,6 +43,11 @@ import { createWriters } from "./commands/writers";
 import { createOperationLock } from "./commands/operationLock";
 import { createFileCommands } from "./commands/fileCommands";
 import { createQuit } from "./commands/quit";
+import { createConflictCommands } from "./commands/conflictCommands";
+import { createExportCommands } from "./commands/exportCommands";
+import { createTabCommands } from "./commands/tabCommands";
+import { createNavigationCommands } from "./commands/navigationCommands";
+import { createShortcutHandlers } from "./commands/shortcutHandlers";
 
 import type { Doc } from "./types";
 import type { ConflictRequest, LayoutMode, Theme } from "./components/types";
@@ -247,8 +252,24 @@ export default function App() {
   const scope: AppScope = {
     t,
     lang,
+    ready,
+    docs,
+    activeId,
     active,
     recent,
+    platform,
+    coarsePointer,
+    layoutMode,
+    zenMode,
+    docView,
+    presenting,
+    pageMetrics,
+    confirmRequest,
+    renameRequest,
+    conflictRequest,
+    shortcutsOpen,
+    preferencesOpen,
+    aboutOpen,
     docsRef,
     activeIdRef,
     statsRef,
@@ -261,15 +282,35 @@ export default function App() {
     closeTRef,
     closeLangRef,
     conflictBusyRef,
+    closedTabsRef,
     splitRatioRef,
+    editorRef,
+    previewRef,
     setDocs,
+    setActiveId,
     setBusyOperation,
+    setLayoutMode,
+    setZenMode,
+    setMenuOpen,
+    setShortcutsOpen,
+    setPreferencesOpen,
+    setConflictRequest,
     showNotice,
     nudgeAutosave,
     openPaths,
     confirmDialog,
+    renameDialog,
     refreshRecent,
     refreshRecentAfterSave,
+    newTab,
+    newTypstTab,
+    newLatexTab,
+    cycleTab,
+    toggleZen,
+    chooseLayout,
+    zoomIn,
+    zoomOut,
+    zoomReset,
   };
   const { adoptOwnWrite, writeFileOrdered, writeSessionOrdered } = createWriters(scope);
   const { beginOperation, endOperation } = createOperationLock(scope);
@@ -281,6 +322,35 @@ export default function App() {
   });
   const { requestQuit } = createQuit(scope, { writeSessionOrdered });
   requestQuitRef.current = requestQuit;
+  const { resolveConflictReload, resolveConflictKeep, resolveConflictSaveAs } =
+    createConflictCommands(scope, { saveAs });
+  const { printDocument, exportHtml } = createExportCommands(scope, {
+    beginOperation,
+    endOperation,
+  });
+  const { closeTab, closeAllTabs, closeOtherTabs, reopenTab, renameTab } =
+    createTabCommands(scope);
+  const {
+    handleReverseSync,
+    handleForwardSync,
+    handleReverseSyncButton,
+    toggleTask,
+    findInDocument,
+    findPanelReachable,
+  } = createNavigationCommands(scope);
+  const shortcutHandlers = createShortcutHandlers(scope, {
+    save,
+    saveAs,
+    openFiles,
+    exportPdf,
+    printDocument,
+    closeTab,
+    reopenTab,
+    renameTab,
+    requestQuit,
+    findInDocument,
+    findPanelReachable,
+  });
 
   // Switching away from the deck (another tab, or the front-matter removed)
   // leaves nothing to present, so drop out of the overlay instead of letting
@@ -784,44 +854,6 @@ export default function App() {
     showNotice(t("conflict.reloadedNotice", doc.name), "info");
   }
 
-  function resolveConflictReload() {
-    if (!conflictRequest) return;
-    // The modal blocked editing while it was up, so the buffer still matches
-    // what the user chose to throw away.
-    const { id, diskContent } = conflictRequest;
-    setDocs((prev) =>
-      prev.map((d) => (d.id === id ? { ...d, content: diskContent, dirty: false } : d)),
-    );
-    conflictBusyRef.current = false;
-    setConflictRequest(null);
-  }
-
-  function resolveConflictKeep() {
-    conflictBusyRef.current = false;
-    setConflictRequest(null);
-    // The buffer the writer has just chosen to defend is still unsaved, and
-    // keeping it changes no document, so nothing else would ask for it.
-    nudgeAutosave();
-  }
-
-  function resolveConflictSaveAs() {
-    const req = conflictRequest;
-    if (!req) return;
-    /*
-     * The lock before the dismissal.
-     *
-     * `saveAs` declines in silence while another operation holds it, and
-     * this used to clear the dialog first -- so the reader's choice
-     * vanished with their buffer unwritten and nothing on screen saying
-     * so. Leaving the question up is the honest answer: it can be given
-     * again once whatever is in the way has finished.
-     */
-    if (isOperationBusy(busyOperationRef)) return;
-    conflictBusyRef.current = false;
-    setConflictRequest(null);
-    void saveAs(req.id);
-  }
-
   async function exportPdf() {
     // Both backends export: the desktop prints the webview to a file, and the
     // web build hands the page to the browser's own dialog or downloads the
@@ -915,346 +947,8 @@ export default function App() {
     }
   }
 
-  async function printDocument() {
-    // Ctrl+P is the only way here, and where the webview cannot print it
-    // would only pass on Rust's refusal.
-    if (!canPrintNatively(platform)) {
-      showNotice(t("op.printUnavailableHere"), "info");
-      return;
-    }
-    try {
-      // A Marp deck is a stack of slides, each already its own page; the
-      // paginated view draws pages with their own margins. Either way the
-      // printer must not inset them a second time.
-      const paged = docView || (!!active && isMarpDocument(active.content));
-      /*
-       * The paper only for the documents this application lays out.
-       *
-       * `pageMetrics` describes the Document view's sheet, and a Typst or
-       * LaTeX document is not on it: those compose their own page, from their
-       * own `#set page` or `geometry`, and the preview shows what the engine
-       * produced. Handing the printer a paper the document never chose is how
-       * a Typst file written for A4 came to be printed on Letter — 17 mm
-       * shorter, so every page spilled onto a second. On Linux, at least;
-       * Windows shows its own dialog and ignores what it is told here, which
-       * is why this went unnoticed.
-       */
-      const paper = (active?.kind ?? "markdown") === "markdown" ? pageMetrics.paper.id : undefined;
-      await backend.printDocument(lang, paged, paper);
-    } catch (e) {
-      await showNativeAlert(String(e), lang);
-    }
-  }
-
-  async function exportHtml() {
-    // Markdown only: Typst and LaTeX render through their own engines, which
-    // produce PDF rather than the HTML the preview builds.
-    if (!active || active.kind !== "markdown") return;
-    if (!beginOperation("exportHtml")) return;
-    try {
-      const base =
-        active.name.replace(/\.(md|markdown|txt)$/i, "") || t("doc.defaultExport");
-      // A Marp deck exports as stacked slides; anything else as a document.
-      const html = isMarpDocument(active.content)
-        ? await (
-            await import("./exportMarpHtml")
-          ).exportMarpToHtml(active.content, {
-            fileName: base,
-            lang,
-            rtl: isRtl(lang),
-            t,
-          })
-        : await (
-            await import("./exportHtml")
-          ).exportMarkdownToHtml(active.content, {
-            fileName: base,
-            lang,
-            rtl: isRtl(lang),
-            t,
-            docHandle: active.handle ?? null,
-            metrics: pageMetrics,
-          });
-      const saved = await backend.writeHtmlFile(html, `${base}.html`, lang);
-      // Cancelling the save dialog is not a failure, but it is not a success
-      // either: announcing "HTML exported" with no file is worse than silence.
-      if (saved) showNotice(operationNoticeDone(t, "exportHtml"), "success");
-    } catch (e) {
-      showNotice(operationNoticeError(t, "exportHtml"), "error", 0);
-      await showNativeAlert(operationErrorPrefix(t, "exportHtml") + String(e), lang);
-    } finally {
-      endOperation("exportHtml");
-    }
-  }
-
-  async function closeTab(id: string) {
-    if (isOperationBusy(busyOperationRef)) return;
-    const initial = docsRef.current.find((d) => d.id === id);
-    if (!initial) return;
-    if (initial.dirty) {
-      const ok = await confirmDialog(t("confirm.unsavedTab", initial.name));
-      if (!ok) return;
-    }
-    const current = docsRef.current;
-    const idx = current.findIndex((d) => d.id === id);
-    if (idx < 0) return;
-    const removed = current[idx];
-    const next = current.filter((d) => d.id !== id);
-    closedTabsRef.current = [...closedTabsRef.current, removed];
-    if (next.length === 0) {
-      const fresh = makeDoc("", []);
-      docsRef.current = [fresh];
-      setDocs([fresh]);
-      setActiveId(fresh.id);
-      return;
-    }
-    docsRef.current = next;
-    setDocs(next);
-    if (id === activeIdRef.current) {
-      setActiveId(next[Math.max(0, idx - 1)].id);
-    }
-  }
-
-  async function closeAllTabs() {
-    if (isOperationBusy(busyOperationRef)) return;
-    const hasDirty = docsRef.current.some((d) => d.dirty);
-    if (hasDirty) {
-      const ok = await confirmDialog(t("confirm.unsavedClose"));
-      if (!ok) return;
-    }
-    const removed = docsRef.current;
-    if (removed.length) {
-      closedTabsRef.current = [...closedTabsRef.current, ...removed];
-    }
-    const fresh = makeDoc("", []);
-    docsRef.current = [fresh];
-    setDocs([fresh]);
-    setActiveId(fresh.id);
-  }
-
-  async function closeOtherTabs() {
-    if (isOperationBusy(busyOperationRef)) return;
-    const current = docsRef.current;
-    if (current.length <= 1) return;
-    const others = current.filter((d) => d.id !== activeIdRef.current);
-    const hasDirty = others.some((d) => d.dirty);
-    if (hasDirty) {
-      const ok = await confirmDialog(t("confirm.unsavedClose"));
-      if (!ok) return;
-    }
-    const kept = current.filter((d) => d.id === activeIdRef.current);
-    const removed = current.filter((d) => d.id !== activeIdRef.current);
-    if (removed.length) {
-      closedTabsRef.current = [...closedTabsRef.current, ...removed];
-    }
-    if (kept.length === 0) {
-      const fresh = makeDoc("", []);
-      docsRef.current = [fresh];
-      setDocs([fresh]);
-      setActiveId(fresh.id);
-      return;
-    }
-    docsRef.current = kept;
-    setDocs(kept);
-  }
-
-  function reopenTab() {
-    const stack = closedTabsRef.current;
-    if (stack.length === 0) return;
-    const doc = stack[stack.length - 1];
-    closedTabsRef.current = stack.slice(0, -1);
-    const current = docsRef.current;
-    // Replace the empty untitled tab that closeTab/closeAllTabs leave behind
-    // when nothing else is open, instead of piling a duplicate next to it.
-    const placeholder =
-      current.length === 1 &&
-      current[0].path === null &&
-      current[0].content === "" &&
-      !current[0].dirty;
-    const next = placeholder ? [doc] : [...current, doc];
-    docsRef.current = next;
-    setDocs(next);
-    setActiveId(doc.id);
-  }
-
-  async function renameTab(id: string) {
-    const current = docs.find((d) => d.id === id);
-    if (!current || renameRequest) return;
-    const name = await renameDialog(id, current.name);
-    if (name) {
-      setDocs((prev) =>
-        prev.map((d) => (d.id === id ? { ...d, name } : d)),
-      );
-    }
-  }
-
-  /**
-   * The layout that brings `pane` into view.
-   *
-   * On a desktop that is the split, which keeps the pane you were in. A touch
-   * screen has no split to fall back on, so the jump has to hand the whole
-   * workspace to the pane it is aiming at — otherwise "go to code" from the
-   * reader would go nowhere at all.
-   */
-  function revealing(pane: "editor" | "preview"): LayoutMode {
-    return coarsePointer ? pane : "split";
-  }
-
-  /**
-   * Jump to a line of the source, bringing the editor back if it is hidden.
-   *
-   * In preview-only mode the editor is display:none, so CodeMirror cannot
-   * measure anything: the scroll has to wait for the layout to come back,
-   * hence the frame. scrollToLine() ends in view.focus(), so the reader lands
-   * ready to type.
-   */
-  function goToCode(line: number) {
-    if (layoutMode === "preview") {
-      setLayoutMode(revealing("editor"));
-      requestAnimationFrame(() => editorRef.current?.scrollToLine(line));
-      return;
-    }
-    editorRef.current?.scrollToLine(line);
-  }
-
-  function handleReverseSync(line: number) {
-    /*
-     * Only a mouse means this. A tap is how you read on a phone, and turning
-     * every tap into "jump to the source" would throw the reader into the
-     * editor — with the on-screen keyboard over half the screen — for touching
-     * the paragraph they were reading. The mark still lands, so the "go to
-     * code" button in the header has somewhere to go.
-     */
-    if (coarsePointer) return;
-    goToCode(line);
-  }
-
-  /*
-   * Mirror of goToCode. Both panes offer a jump to the other one, and both
-   * bring that pane back when it is off screen — otherwise the button in the
-   * solo layouts would point at something the user cannot see.
-   *
-   * The preview needs more care than the editor: while its pane is hidden its
-   * rendering is deferred, so right after the switch it holds nothing to
-   * scroll to. It remembers the request and applies it once it has rendered.
-   */
-  function goToPreview(line: number) {
-    if (layoutMode === "editor") {
-      setLayoutMode(revealing("preview"));
-      requestAnimationFrame(() => previewRef.current?.scrollToLine(line));
-      return;
-    }
-    previewRef.current?.scrollToLine(line);
-  }
-
-  function handleForwardSync() {
-    goToPreview(editorRef.current?.getCursorLine() ?? 0);
-  }
-
-  function handleReverseSyncButton() {
-    const line = previewRef.current?.getTargetLine() ?? 0;
-    goToCode(line);
-  }
-
-  /**
-   * Tick a task off from the preview.
-   *
-   * Handed straight to the editor, which owns the text. Going through
-   * `updateContent` would work and be shorter, but a whole-document update
-   * rebuilds the `EditorState`, and losing the undo history because you
-   * ticked a box is a worse bug than the one this fixes.
-   */
-  function toggleTask(line: number) {
-    editorRef.current?.toggleTask(line);
-  }
-
-  /**
-   * Open the find panel, bringing the editor back if it is hidden.
-   *
-   * Picking Find from the menu, or pressing Ctrl+F, the key that menu entry
-   * shows, is an explicit request, so it takes the reader to the source
-   * instead of quietly failing.
-   *
-   * Zen mode always shows the editor, whatever layout it will return to, so
-   * there is nothing to reveal there; switching the layout would only change
-   * what the reader finds on leaving it.
-   */
-  function findInDocument() {
-    if (!ready) return;
-    if (layoutMode === "preview" && !zenMode) {
-      setLayoutMode(revealing("editor"));
-      requestAnimationFrame(() => editorRef.current?.focusSearch());
-      return;
-    }
-    editorRef.current?.focusSearch();
-  }
-
-  /**
-   * Whether a shortcut may move focus into the find panel.
-   *
-   * Ctrl+F puts the caret in a field that is already on screen rather than
-   * opening something of its own, so it must not take it from another field
-   * (LanguagePicker search, rename dialog) or open the panel behind a modal
-   * dialog.
-   */
-  function findPanelReachable() {
-    if (!ready) return false;
-    const active = document.activeElement;
-    if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) {
-      return false;
-    }
-    if (confirmRequest || renameRequest || shortcutsOpen) return false;
-    if (preferencesOpen || aboutOpen) return false;
-    return true;
-  }
-
   // Keyboard shortcuts — extracted to its own hook
-  useKeyboardShortcuts(ready, {
-    save,
-    saveAs,
-    openFiles,
-    newTab,
-    newTypst: newTypstTab,
-    newLatex: newLatexTab,
-    exportPdf,
-    print: printDocument,
-    closeTab: () => closeTab(activeId),
-    reopenTab,
-    quit: requestQuit,
-    toggleZen,
-    rename: () => renameTab(activeId),
-    // Open-only on purpose: closing always routes through the overlay's
-    // animated path (Esc/backdrop/✕). Toggling off here would unmount the
-    // overlay directly and skip the exit transition. Guarded with `ready` so
-    // F1 during the splash screen cannot queue an overlay to pop on mount.
-    openShortcuts: () => {
-      if (!ready || shortcutsOpen) return;
-      setShortcutsOpen(true);
-    },
-    find: () => {
-      if (!findPanelReachable()) return;
-      // A slideshow covers the whole window: the panel would open behind it
-      // and take the keys the presentation is listening for.
-      if (presenting) return;
-      // The menu's own Find entry closes the menu; its shortcut does too.
-      setMenuOpen(false);
-      findInDocument();
-    },
-    setLayout: chooseLayout,
-    zoomIn,
-    zoomOut,
-    zoomReset,
-    openPreferences: () => {
-      if (!ready || confirmRequest || renameRequest) return;
-      // Two aria-modal dialogs at once would trap focus in the wrong one.
-      if (shortcutsOpen || aboutOpen) return;
-      setPreferencesOpen(true);
-    },
-    nextTab: () => cycleTab(1),
-    prevTab: () => cycleTab(-1),
-    exitZen: () => {
-      if (zenMode) setZenMode(false);
-    },
-  });
+  useKeyboardShortcuts(ready, shortcutHandlers);
 
   if (!ready) {
     return (
