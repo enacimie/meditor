@@ -5,14 +5,10 @@ import {
   useRef,
   useState,
 } from "react";
-import { isTauri } from "@tauri-apps/api/core";
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import { listen } from "@tauri-apps/api/event";
 import type { EditorHandle } from "./Editor";
 import type { PreviewHandle } from "./Preview";
 import PreviewPane from "./components/PreviewPane";
 import type { LineRange } from "./editorSelection";
-import { SAMPLE } from "./sample";
 import { isMarpDocument } from "./marpDetect";
 import { pdfTitle, withDocumentTitle } from "./pdfTitle";
 import { pdfMetadata } from "./pdfMetadata";
@@ -30,7 +26,6 @@ import { useNotice } from "./hooks/useNotice";
 import { useUpdateCheck } from "./hooks/useUpdateCheck";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useZoom } from "./hooks/useZoom";
-import { useCoarsePointer } from "./hooks/useCoarsePointer";
 import { usePlatform, canPrintNatively } from "./hooks/usePlatform";
 import { useCursorPosition } from "./hooks/useCursorPosition";
 import { useAutosaveNudge } from "./hooks/useAutosave";
@@ -38,6 +33,12 @@ import { useDocumentFacts } from "./hooks/useDocumentFacts";
 import { useConfirmRequest, useRenameRequest } from "./hooks/useDialogRequests";
 import { useRecentDocuments } from "./hooks/useRecentDocuments";
 import { useDocumentActions } from "./hooks/useDocumentActions";
+import { useWorkspaceLayout } from "./hooks/useWorkspaceLayout";
+import { useSessionRestore } from "./hooks/useSessionRestore";
+import { useExternalOpens } from "./hooks/useExternalOpens";
+import { useCloseGuard } from "./hooks/useCloseGuard";
+import { useSessionPersistence } from "./hooks/useSessionPersistence";
+import { useCompactLayout } from "./hooks/useCompactLayout";
 import type { AppScope } from "./appScope";
 import { createWriters } from "./commands/writers";
 import { createOperationLock } from "./commands/operationLock";
@@ -50,8 +51,7 @@ import { createNavigationCommands } from "./commands/navigationCommands";
 import { createShortcutHandlers } from "./commands/shortcutHandlers";
 
 import type { Doc } from "./types";
-import type { ConflictRequest, LayoutMode, Theme } from "./components/types";
-import { makeDoc, newId, normalizeDoc, seedWatchBaselines } from "./documentUtils";
+import type { ConflictRequest, Theme } from "./components/types";
 import type { EditorPreferences } from "./editorPreferences";
 import { loadPreferences, savePreferences } from "./appPreferences";
 import {
@@ -95,8 +95,6 @@ const AUTOSAVE_DELAY_MS = 2000;
  */
 const AUTOSAVE_NOTICE = "autosave";
 
-const MAX_PENDING_OPEN_DOCS = 256;
-
 const INITIAL_PREFERENCES = loadPreferences();
 
 export default function App() {
@@ -108,33 +106,10 @@ export default function App() {
   const [wrap, setWrap] = useState(INITIAL_PREFERENCES.wrap);
   const [theme, setTheme] = useState<Theme>(INITIAL_PREFERENCES.theme);
   const platform = usePlatform();
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>(
-    INITIAL_PREFERENCES.layoutMode,
-  );
-  const coarsePointer = useCoarsePointer();
-
-  /*
-   * Side-by-side panes need a mouse and a wide screen; a phone has neither.
-   * So on a touch screen the workspace is one pane or the other, and every
-   * route into `split` lands on the reader instead — the stored preference
-   * from a desktop session, Ctrl+2 from an attached keyboard, and the jumps
-   * between panes, which get their own treatment further down because they
-   * are aiming at a particular pane rather than at both.
-   */
-  const chooseLayout = useCallback(
-    (mode: LayoutMode) => {
-      setLayoutMode(coarsePointer && mode === "split" ? "preview" : mode);
-    },
-    [coarsePointer],
-  );
-
-  useEffect(() => {
-    if (!coarsePointer) return;
-    setLayoutMode((mode) => (mode === "split" ? "preview" : mode));
-  }, [coarsePointer]);
+  const { layoutMode, setLayoutMode, coarsePointer, chooseLayout } =
+    useWorkspaceLayout(INITIAL_PREFERENCES.layoutMode);
   const [menuOpen, setMenuOpen] = useState(false);
   const [zenMode, setZenMode] = useState(false);
-  const [compactLayout, setCompactLayout] = useState(false);
   const [busyOperation, setBusyOperation] = useState<FileOperation | null>(null);
   const [conflictRequest, setConflictRequest] = useState<ConflictRequest | null>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
@@ -184,13 +159,6 @@ export default function App() {
   closeTRef.current = t;
   const closeLangRef = useRef(lang);
   closeLangRef.current = lang;
-  // Ensures the close guard is registered exactly once (StrictMode's dev
-  // double-mount must not leave duplicate listeners that re-swallow closes).
-  // The resolved value is never used; the promise only acts as a guard.
-  const closeGuardRef = useRef<Promise<unknown> | null>(null);
-  // Latest quit routine, so the once-registered close guard and Ctrl+Q both
-  // run the same flow without capturing a stale render.
-  const requestQuitRef = useRef<() => Promise<void>>(async () => {});
   // Most recently closed tabs, so Ctrl+Shift+T can bring them back.
   const closedTabsRef = useRef<Doc[]>([]);
   // External-change watch: last seen fingerprint per registry handle, a poll
@@ -288,6 +256,8 @@ export default function App() {
     previewRef,
     setDocs,
     setActiveId,
+    setReady,
+    setSplit,
     setBusyOperation,
     setLayoutMode,
     setZenMode,
@@ -321,7 +291,6 @@ export default function App() {
     writeFileOrdered,
   });
   const { requestQuit } = createQuit(scope, { writeSessionOrdered });
-  requestQuitRef.current = requestQuit;
   const { resolveConflictReload, resolveConflictKeep, resolveConflictSaveAs } =
     createConflictCommands(scope, { saveAs });
   const { printDocument, exportHtml } = createExportCommands(scope, {
@@ -359,64 +328,7 @@ export default function App() {
     if (presenting && !isActiveMarp) setPresenting(false);
   }, [presenting, isActiveMarp]);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    (async () => {
-      let base: Doc[] = [];
-      let startActive = "";
-      let cliDocs: Doc[] = [];
-      // Both backends answer these: Rust reads its session file, the web
-      // backend localStorage; an empty result means "start with the sample".
-      try {
-        cliDocs = (await backend.cliFiles(lang)).map(normalizeDoc);
-      } catch {
-        cliDocs = [];
-      }
-      try {
-        const restored = await backend.loadSession(lang);
-        if (restored) {
-          base = restored.docs.map(normalizeDoc);
-          startActive = restored.activeId;
-          splitRatioRef.current = restored.split;
-        }
-      } catch (error) {
-        console.warn("Could not restore session", error);
-        base = [];
-      }
-      if (!base.length) {
-        const d = makeDoc(SAMPLE, base);
-        base = [d];
-        startActive = d.id;
-      }
-      let cliActive = "";
-      for (const incoming of cliDocs) {
-        const ex = base.find((d) => d.path === incoming.path);
-        if (ex) {
-          if (!cliActive) cliActive = ex.id;
-          continue;
-        }
-        base.push({ ...normalizeDoc(incoming), id: newId() });
-        if (!cliActive) cliActive = base[base.length - 1].id;
-      }
-      if (cancelled) return;
-      if (cliActive) startActive = cliActive;
-      seedWatchBaselines(statsRef.current, base);
-      setDocs(base);
-      if (!startActive || !base.some((d) => d.id === startActive)) {
-        startActive = base[0]?.id ?? "";
-      }
-      setActiveId(startActive);
-      setSplit(splitRatioRef.current);
-      setReady(true);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  // Startup should run once; language is read from the render that starts it.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setSplit, splitRatioRef]);
+  useSessionRestore(scope);
 
   useLayoutEffect(() => {
     docsRef.current = docs;
@@ -426,133 +338,9 @@ export default function App() {
     if (!same) idsRef.current = newIds;
   }, [docs]);
 
-  useEffect(() => {
-    if (!isTauri()) return;
-    let cancelled = false;
-    let unlisten: (() => void) | undefined;
-    listen<Doc[]>("open-documents", (e) => {
-      if (busyOperationRef.current !== null) {
-        pendingOpenDocsRef.current.push(...e.payload);
-        if (pendingOpenDocsRef.current.length > MAX_PENDING_OPEN_DOCS) {
-          pendingOpenDocsRef.current.splice(
-            0,
-            pendingOpenDocsRef.current.length - MAX_PENDING_OPEN_DOCS,
-          );
-          console.warn("Dropped stale external opens due to queue overflow");
-        }
-      } else {
-        void openPaths(e.payload);
-      }
-    }).then((f) => {
-      if (cancelled) f();
-      else unlisten = f;
-    });
-    return () => {
-      cancelled = true;
-      unlisten?.();
-    };
-  }, [openPaths]);
-
-  useEffect(() => {
-    if (!isTauri()) return;
-    const win = getCurrentWindow();
-    if (!closeGuardRef.current) {
-      // The guard runs the cleanup (dirty confirm + final session save) while
-      // the window is kept open via preventDefault, then finishes by exiting
-      // the whole app through Rust. We cannot rely on window.close()/
-      // destroy() here: on Linux/WebKitGTK, once this JS listener is
-      // registered, Tauri auto-prevent_close()s the request and the JS
-      // destroy() does not tear the window down (first click is swallowed).
-      closeGuardRef.current = win
-        .onCloseRequested(async (e) => {
-          e.preventDefault();
-          await requestQuitRef.current();
-        })
-        .catch(() => {
-          // Registration failed (IPC error): allow a future render to retry.
-          closeGuardRef.current = null;
-        });
-    }
-    return () => {
-      // Intentionally keep the close guard registered for the app's lifetime.
-      // Re-registering on re-renders (or on StrictMode's dev double-mount,
-      // where the async unlisten cannot be applied during the synchronous
-      // cleanup) previously left zero or duplicate listeners that swallowed
-      // the first close request or skipped the final session save.
-    };
-  }, []);
-
-  /*
-   * Write the session out the moment the app stops being visible.
-   *
-   * The close guard below covers a window being closed, and the debounce
-   * above covers ordinary typing — but Android fires neither. The system
-   * freezes the WebView when you switch away and may kill the process later
-   * without running anything else, so a pending debounce simply never lands
-   * and the last edits are gone.
-   *
-   * `visibilitychange` is the last moment anything is guaranteed to run, so
-   * the debounce is collapsed into an immediate write there. `pagehide`
-   * catches the cases visibility does not: a reload, a tab closing.
-   *
-   * Desktop gets the same treatment, where it is a small win rather than a
-   * necessity — minimising or switching workspaces now checkpoints the
-   * session instead of leaving it to the timer.
-   */
-  useEffect(() => {
-    if (!ready) return;
-    const flush = () => {
-      if (sessionTimerRef.current !== undefined) {
-        window.clearTimeout(sessionTimerRef.current);
-        sessionTimerRef.current = undefined;
-      }
-      writeSessionOrdered(
-        docsRef.current,
-        activeIdRef.current,
-        splitRatioRef.current,
-      ).catch((error) => console.error("Could not save session", error));
-    };
-    const onVisibility = () => {
-      if (document.visibilityState === "hidden") flush();
-    };
-    document.addEventListener("visibilitychange", onVisibility);
-    window.addEventListener("pagehide", flush);
-    return () => {
-      document.removeEventListener("visibilitychange", onVisibility);
-      window.removeEventListener("pagehide", flush);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, splitRatioRef]);
-
-  useEffect(() => {
-    /*
-     * Every backend, not only the desktop's. This writer used to be gated
-     * on `isTauri()`, which left the web build checkpointing only on
-     * `visibilitychange`/`pagehide` — a browser that crashes, or a tab the
-     * OS kills in the background, took the whole session with it, silently.
-     * The comment on the flush below has always claimed the debounce covers
-     * ordinary typing; now that is true on the web too.
-     */
-    if (!ready) return;
-    if (sessionTimerRef.current !== undefined) {
-      window.clearTimeout(sessionTimerRef.current);
-    }
-    sessionTimerRef.current = window.setTimeout(() => {
-      sessionTimerRef.current = undefined;
-      writeSessionOrdered(docs, activeId, splitRatioRef.current).catch((error) =>
-        console.error("Could not save session", error),
-      );
-    }, 500);
-    return () => {
-      if (sessionTimerRef.current !== undefined) {
-        window.clearTimeout(sessionTimerRef.current);
-        sessionTimerRef.current = undefined;
-      }
-    };
-  // The writer is intentionally recreated with the current locale; this
-  // effect is scheduled only by document/session state changes.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [docs, activeId, ready, splitRatioRef]);
+  useExternalOpens(scope);
+  useCloseGuard(requestQuit);
+  useSessionPersistence(scope, writeSessionOrdered);
 
   useEffect(() => {
     document.title = active?.name ?? "meditor";
@@ -713,13 +501,7 @@ export default function App() {
     savePreferences({ docView, wrap, theme, layoutMode, ...editorPrefs });
   }, [docView, wrap, theme, layoutMode, editorPrefs, ready]);
 
-  useEffect(() => {
-    const media = window.matchMedia("(max-width: 760px)");
-    const update = () => setCompactLayout(media.matches);
-    update();
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
+  const compactLayout = useCompactLayout();
 
   useEffect(() => {
     void refreshRecent();

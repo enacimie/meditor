@@ -71,6 +71,8 @@ export type AppScope = {
   // State setters, and the callbacks App's hooks hand back.
   setDocs: Dispatch<SetStateAction<Doc[]>>;
   setActiveId: Dispatch<SetStateAction<string>>;
+  setReady: Dispatch<SetStateAction<boolean>>;
+  setSplit: Dispatch<SetStateAction<number>>;
   setBusyOperation: Dispatch<SetStateAction<FileOperation | null>>;
   setLayoutMode: Dispatch<SetStateAction<LayoutMode>>;
   setZenMode: Dispatch<SetStateAction<boolean>>;
