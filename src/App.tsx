@@ -7,7 +7,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type MutableRefObject,
 } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -49,33 +48,28 @@ import { useNotice } from "./hooks/useNotice";
 import { useUpdateCheck } from "./hooks/useUpdateCheck";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useZoom } from "./hooks/useZoom";
-import { useCoarsePointer, prefersCoarsePointer } from "./hooks/useCoarsePointer";
-import { usePlatform, isMobilePlatform, canPrintNatively } from "./hooks/usePlatform";
+import { useCoarsePointer } from "./hooks/useCoarsePointer";
+import { usePlatform, canPrintNatively } from "./hooks/usePlatform";
 
-import type { Doc, DocKind } from "./types";
+import type { Doc } from "./types";
 import type { LayoutMode, Theme } from "./components/types";
-import { kindFromPath, nextUntitledName, normalizeDoc } from "./documentUtils";
+import { makeDoc, newId, normalizeDoc, seedWatchBaselines } from "./documentUtils";
+import type { EditorPreferences } from "./editorPreferences";
+import { loadPreferences, savePreferences } from "./appPreferences";
 import {
-  clampFontSize,
-  normalizeFontFamily,
-  normalizeSpellcheck,
-  normalizeFocusMode,
-  normalizeLandscapeTables,
-  normalizeTypewriterMode,
-  DEFAULT_EDITOR_FONT_FAMILY,
-  DEFAULT_SPELLCHECK,
-  DEFAULT_FOCUS_MODE,
-  DEFAULT_LANDSCAPE_TABLES,
-  DEFAULT_TYPEWRITER_MODE,
-  DEFAULT_EDITOR_FONT_SIZE,
-  type EditorPreferences,
-  DEFAULT_PAPER_SIZE,
-  DEFAULT_AUTOSAVE,
-  DEFAULT_PAGE_MARGIN_MM,
-  normalizePaperSize,
-  normalizeAutosave,
-  normalizePageMargin,
-} from "./editorPreferences";
+  type FileOperation,
+  showNativeAlert,
+  isOperationBusy,
+  operationNotice,
+  operationNoticeDone,
+  operationNoticeError,
+  operationErrorPrefix,
+} from "./fileOperations";
+import {
+  isPdfExportAvailable,
+  isUpdateCheckAvailable,
+  isRecentAvailable,
+} from "./menuAvailability";
 import { getTypst } from "./typstEngine";
 import { prepareTypst, typstMainName } from "./typstFiles";
 import { compileLatexToPdf } from "./latexEngine";
@@ -84,18 +78,6 @@ import { classifyExternalChange, type DocumentStat } from "./externalChange";
 import { backend } from "./backend";
 import type { RecentEntry } from "./backend/types";
 import "./App.css";
-
-type FileOperation = "open" | "save" | "saveAs" | "export" | "exportHtml" | "reload";
-
-// Editor/preview preferences. The interface language is NOT part of this
-// object: I18nProvider owns it (meditor.language.v1, validated against the
-// languages that exist) so there is a single source of truth for the locale.
-type Preferences = {
-  docView: boolean;
-  wrap: boolean;
-  theme: Theme;
-  layoutMode: LayoutMode;
-} & EditorPreferences;
 
 /**
  * How long after the last edit an autosave writes.
@@ -117,165 +99,11 @@ const AUTOSAVE_DELAY_MS = 2000;
  */
 const AUTOSAVE_NOTICE = "autosave";
 
-const PREFERENCES_KEY = "meditor.preferences.v1";
-const DEFAULT_PREFERENCES: Preferences = {
-  docView: true,
-  wrap: true,
-  theme: "system",
-  layoutMode: "split",
-  editorFontSize: DEFAULT_EDITOR_FONT_SIZE,
-  editorFontFamily: DEFAULT_EDITOR_FONT_FAMILY,
-  spellcheck: DEFAULT_SPELLCHECK,
-  landscapeTables: DEFAULT_LANDSCAPE_TABLES,
-  focusMode: DEFAULT_FOCUS_MODE,
-  typewriterMode: DEFAULT_TYPEWRITER_MODE,
-  paperSize: DEFAULT_PAPER_SIZE,
-  autosave: DEFAULT_AUTOSAVE,
-  pageMarginMm: DEFAULT_PAGE_MARGIN_MM,
-};
-/**
- * Whether a first run should open in the paginated A4 view.
- *
- * On a desktop, yes — it is the nicer way to read a document. On a phone it is
- * the wrong answer twice over: an A4 page is 794px wide and a phone is not, so
- * it arrives either shrunk past legibility or needing sideways scrolling to
- * read a line. Only the default moves; a choice made explicitly, on either
- * kind of device, is what gets stored and what comes back.
- */
-function defaultDocView(): boolean {
-  return !prefersCoarsePointer();
-}
-
 const MAX_PENDING_OPEN_DOCS = 256;
 /** Stable empty list, so a closed outline does not re-render its consumers. */
 const EMPTY_HEADINGS: Heading[] = [];
 
-function loadPreferences(): Preferences {
-  if (typeof window === "undefined") return DEFAULT_PREFERENCES;
-  try {
-    const raw = window.localStorage.getItem(PREFERENCES_KEY);
-    if (!raw) return { ...DEFAULT_PREFERENCES, docView: defaultDocView() };
-    const value: unknown = JSON.parse(raw);
-    if (!value || typeof value !== "object") return DEFAULT_PREFERENCES;
-    const stored = value as Partial<Preferences>;
-    const theme =
-      stored.theme === "light" ||
-      stored.theme === "dark" ||
-      stored.theme === "system" ||
-      stored.theme === "contrast"
-        ? stored.theme
-        : DEFAULT_PREFERENCES.theme;
-    const layoutMode =
-      stored.layoutMode === "editor" ||
-      stored.layoutMode === "split" ||
-      stored.layoutMode === "preview"
-        ? stored.layoutMode
-        : DEFAULT_PREFERENCES.layoutMode;
-    return {
-      docView: typeof stored.docView === "boolean" ? stored.docView : defaultDocView(),
-      wrap: typeof stored.wrap === "boolean" ? stored.wrap : DEFAULT_PREFERENCES.wrap,
-      theme,
-      layoutMode,
-      // Clamped/whitelisted: a stale or hand-edited value must not break the
-      // editor, only fall back to the default.
-      editorFontSize: clampFontSize(stored.editorFontSize),
-      editorFontFamily: normalizeFontFamily(stored.editorFontFamily),
-      spellcheck: normalizeSpellcheck(stored.spellcheck),
-      landscapeTables: normalizeLandscapeTables(stored.landscapeTables),
-      focusMode: normalizeFocusMode(stored.focusMode),
-      typewriterMode: normalizeTypewriterMode(stored.typewriterMode),
-      paperSize: normalizePaperSize(stored.paperSize),
-      autosave: normalizeAutosave(stored.autosave),
-      pageMarginMm: normalizePageMargin(stored.pageMarginMm),
-    };
-  } catch {
-    return DEFAULT_PREFERENCES;
-  }
-}
-
-function savePreferences(preferences: Preferences): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(PREFERENCES_KEY, JSON.stringify(preferences));
-  } catch {
-    // Storage may be disabled or unavailable in a WebView.
-  }
-}
-
-async function showNativeAlert(message: string, locale: string): Promise<void> {
-  await backend.alert(message, locale);
-}
-
-function isOperationBusy(ref: MutableRefObject<FileOperation | null>): boolean {
-  return ref.current !== null;
-}
-
-function operationNotice(t: ReturnType<typeof useTranslation>["t"], op: FileOperation): string {
-  if (op === "open") return t("op.opening");
-  if (op === "reload") return t("op.reloading");
-  if (op === "save") return t("op.saving");
-  if (op === "saveAs") return t("op.savingAs");
-  if (op === "exportHtml") return t("op.exportingHtml");
-  return t("op.exporting");
-}
-
-function operationNoticeDone(t: ReturnType<typeof useTranslation>["t"], op: FileOperation): string {
-  if (op === "open") return t("op.opened");
-  if (op === "export") return t("op.pdfExported");
-  if (op === "exportHtml") return t("op.htmlExported");
-  return t("op.saved");
-}
-
-function operationNoticeError(t: ReturnType<typeof useTranslation>["t"], op: FileOperation): string {
-  if (op === "open") return t("op.openError");
-  if (op === "reload") return t("op.reloadError");
-  if (op === "export") return t("op.exportError");
-  if (op === "exportHtml") return t("op.exportHtmlError");
-  return t("op.saveError");
-}
-
-function operationErrorPrefix(t: ReturnType<typeof useTranslation>["t"], op: FileOperation): string {
-  if (op === "open") return t("op.openErrorPrefix");
-  if (op === "reload") return t("op.reloadErrorPrefix");
-  if (op === "export") return t("op.exportErrorPrefix");
-  if (op === "exportHtml") return t("op.exportHtmlErrorPrefix");
-  return t("op.saveErrorPrefix");
-}
-
 const INITIAL_PREFERENCES = loadPreferences();
-
-function baseName(path: string): string {
-  return path.split(/[/\\]/).pop() ?? path;
-}
-
-function newId(): string {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
-  }
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
-}
-
-/**
- * @param existing - documents already open, so an untitled one gets a name none
- * of them is using. Required rather than optional: getting it wrong produces
- * two tabs called the same thing.
- */
-function makeDoc(
-  content: string,
-  existing: Doc[],
-  path: string | null = null,
-  name?: string,
-  kind?: DocKind,
-): Doc {
-  return {
-    id: newId(),
-    path,
-    content,
-    dirty: false,
-    name: name ?? (path ? baseName(path) : nextUntitledName(existing)),
-    kind: kind ?? (path ? kindFromPath(path) : "markdown"),
-  };
-}
 
 function waitForCloseTasks(tasks: Promise<unknown>[], timeoutMs = 5000): Promise<boolean> {
   return new Promise((resolve) => {
@@ -291,31 +119,6 @@ function waitForCloseTasks(tasks: Promise<unknown>[], timeoutMs = 5000): Promise
       finish(results.every((result) => result.status === "fulfilled")),
     );
   });
-}
-
-/**
- * Start watching documents from the files their bytes came from.
- *
- * A backend hands the fingerprint over with the document — when it is
- * opened, when it comes back from the recents, and when a session restores
- * it — and this is where the watch learns it. Without a baseline the first
- * tick sees a buffer that differs from the disk the moment the writer types
- * a character, and cannot tell whose change it is: a document opened and
- * edited inside one poll interval would be accused of conflicting with
- * itself.
- *
- * Documents already being watched are left alone: a live fingerprint is
- * newer than anything a payload carries.
- */
-function seedWatchBaselines(
-  stats: Map<string, DocumentStat>,
-  documents: Doc[],
-): void {
-  for (const doc of documents) {
-    if (!doc.handle || !doc.stat) continue;
-    if (stats.has(doc.handle)) continue;
-    stats.set(doc.handle, doc.stat);
-  }
 }
 
 export default function App() {
@@ -2201,6 +2004,10 @@ export default function App() {
     );
   }
 
+  const pdfExportAvailable = isPdfExportAvailable(activeKind, platform);
+  const updateCheckAvailable = isUpdateCheckAvailable(platform);
+  const recentAvailable = isRecentAvailable(platform);
+
   /*
    * Pane sizing is decided here rather than left to the stylesheet. The divider
    * ratio only means anything while both panes share the workspace; the rest of
@@ -2214,62 +2021,6 @@ export default function App() {
    * left a narrower version of the same race. An inline value that is simply
    * correct for the current mode has neither problem.
    */
-  /*
-   * Whether "export to PDF" leads anywhere for the document in front of us.
-   *
-   * Not a single answer per platform, because the two routes are different.
-   * Typst and LaTeX compile to PDF in the frontend's own WASM and hand the
-   * bytes to Rust to write, which works anywhere the file dialog does —
-   * Android included. Markdown goes through the webview's native printing,
-   * which exists on Windows, Linux and the BSDs only (`canPrintNatively`), so
-   * on a Mac or a phone the entry would be a menu row whose entire job is to
-   * raise an error. exportPdf asks the same question, for Ctrl+E.
-   *
-   * `platform` is null until Rust answers, and in a browser where there is
-   * nothing to ask; that counts as available so the menu does not flicker.
-   *
-   * LaTeX is a third case: while LATEX_ENABLED is false the preview says so,
-   * but a .tex file can still be opened — the picker still accepts one, and a
-   * restored session still brings one back — so the entry has to go too.
-   * Otherwise the document reads "LaTeX is disabled" and the menu still
-   * offers to compile it with the engine that was disabled.
-   */
-  const pdfExportAvailable =
-    (LATEX_ENABLED || activeKind !== "latex") &&
-    (canPrintNatively(platform) || activeKind !== "markdown");
-
-  /*
-   * The updater is a desktop plugin and is not compiled into the mobile
-   * build, so the menu entry is absent there rather than failing when
-   * pressed. `platform` is null until Rust answers; treating that as
-   * "not mobile" is what keeps a desktop from flickering the entry in and
-   * out on startup, and matches what pdfExportAvailable above does.
-   *
-   * It is also absent when the build has no updater configured, which is
-   * every build until the signing keys exist. Without it `check()` throws on
-   * the missing endpoints, and 0.1.9 shipped an entry that could only ever
-   * answer with a red "could not check". Offering a control that cannot work
-   * is worse than not offering it.
-   */
-  const updateCheckAvailable =
-    __UPDATER_ENABLED__ && isTauri() && !isMobilePlatform(platform);
-
-  /*
-   * Whether this build can have recent documents at all, which decides
-   * whether the menu shows the section — empty or not — or leaves it out.
-   *
-   * Only a real path can be reopened later, so only a real path is
-   * remembered (see `recent.rs`). A browser has file handles it cannot name,
-   * and Android hands the app a `content://` URI whose permission dies with
-   * the process, so on both the list is not merely empty today: it can never
-   * fill. Drawing "No recent documents" there would promise a door that does
-   * not open.
-   *
-   * Null platform counts as desktop for the same reason it does above: so a
-   * desktop does not flicker the section in and out while Rust answers.
-   */
-  const recentAvailable = isTauri() && !isMobilePlatform(platform);
-
   const sharingTheWorkspace = layoutMode === "split" && !zenMode;
   const paneFlex = (percent: number) =>
     sharingTheWorkspace ? `0 0 ${percent}%` : "1 1 100%";
