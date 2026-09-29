@@ -7,12 +7,10 @@ import type { createQuit } from "./quit";
 import type { createTabCommands } from "./tabCommands";
 
 type Siblings = Pick<ReturnType<typeof createFileCommands>, "save" | "saveAs" | "openFiles"> &
-  Pick<ReturnType<typeof createExportCommands>, "printDocument"> &
+  Pick<ReturnType<typeof createExportCommands>, "exportPdf" | "printDocument"> &
   Pick<ReturnType<typeof createTabCommands>, "closeTab" | "reopenTab" | "renameTab"> &
   ReturnType<typeof createQuit> &
-  Pick<ReturnType<typeof createNavigationCommands>, "findInDocument" | "findPanelReachable"> & {
-    exportPdf: () => Promise<void>;
-  };
+  Pick<ReturnType<typeof createNavigationCommands>, "findInDocument" | "findPanelReachable">;
 
 /** What each keyboard shortcut does, as this render has it. */
 export function createShortcutHandlers(

@@ -9,9 +9,6 @@ import type { EditorHandle } from "./Editor";
 import type { PreviewHandle } from "./Preview";
 import PreviewPane from "./components/PreviewPane";
 import type { LineRange } from "./editorSelection";
-import { isMarpDocument } from "./marpDetect";
-import { pdfTitle, withDocumentTitle } from "./pdfTitle";
-import { pdfMetadata } from "./pdfMetadata";
 import Topbar from "./components/Topbar";
 import TabBar from "./components/TabBar";
 import StatusBar from "./components/StatusBar";
@@ -26,7 +23,7 @@ import { useNotice } from "./hooks/useNotice";
 import { useUpdateCheck } from "./hooks/useUpdateCheck";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useZoom } from "./hooks/useZoom";
-import { usePlatform, canPrintNatively } from "./hooks/usePlatform";
+import { usePlatform } from "./hooks/usePlatform";
 import { useCursorPosition } from "./hooks/useCursorPosition";
 import { useAutosave, useAutosaveNudge } from "./hooks/useAutosave";
 import { useExternalChangeWatch } from "./hooks/useExternalChangeWatch";
@@ -55,25 +52,13 @@ import type { Doc } from "./types";
 import type { ConflictRequest, Theme } from "./components/types";
 import type { EditorPreferences } from "./editorPreferences";
 import { loadPreferences, savePreferences } from "./appPreferences";
-import {
-  type FileOperation,
-  showNativeAlert,
-  isOperationBusy,
-  operationNoticeDone,
-  operationNoticeError,
-  operationErrorPrefix,
-} from "./fileOperations";
+import { type FileOperation, isOperationBusy } from "./fileOperations";
 import {
   isPdfExportAvailable,
   isUpdateCheckAvailable,
   isRecentAvailable,
 } from "./menuAvailability";
-import { getTypst } from "./typstEngine";
-import { prepareTypst, typstMainName } from "./typstFiles";
-import { compileLatexToPdf } from "./latexEngine";
-import { LATEX_ENABLED } from "./latexSupport";
 import type { DocumentStat } from "./externalChange";
-import { backend } from "./backend";
 import "./App.css";
 
 const INITIAL_PREFERENCES = loadPreferences();
@@ -273,7 +258,7 @@ export default function App() {
   const { requestQuit } = createQuit(scope, { writeSessionOrdered });
   const { resolveConflictReload, resolveConflictKeep, resolveConflictSaveAs } =
     createConflictCommands(scope, { saveAs });
-  const { printDocument, exportHtml } = createExportCommands(scope, {
+  const { exportPdf, printDocument, exportHtml } = createExportCommands(scope, {
     beginOperation,
     endOperation,
   });
@@ -342,99 +327,6 @@ export default function App() {
   useEffect(() => {
     void refreshRecent();
   }, [refreshRecent]);
-
-  async function exportPdf() {
-    // Both backends export: the desktop prints the webview to a file, and the
-    // web build hands the page to the browser's own dialog or downloads the
-    // PDF a WASM engine produced. Asking `isTauri()` here left the web build's
-    // menu entry doing nothing at all.
-    if (!active) return;
-    // Hiding the menu entry is not enough: Ctrl+E comes here directly. A
-    // Markdown document, a Marp deck included, reaches PDF only through the
-    // webview's printing, which a Mac or a phone does not have; say so rather
-    // than hand Rust a request it can only refuse.
-    if (active.kind === "markdown" && !canPrintNatively(platform)) {
-      showNotice(t("op.pdfUnavailableHere"), "info");
-      return;
-    }
-    if (!beginOperation("export")) return;
-    try {
-      const base = active.name.replace(/\.(md|markdown|txt|typ|typst|tex|latex|ltx)$/i, "") || t("doc.defaultExport");
-      if (active.kind === "typst") {
-        // Typst: compile to PDF in the Typst worker, the one the preview
-        // uses, with the files beside the document as the preview had them,
-        // then save through the backend.
-        const { $typst } = await getTypst();
-        const { input } = await prepareTypst(
-          active.content,
-          typstMainName(active.path),
-          active.handle ? { handle: active.handle, locale: lang } : undefined,
-        );
-        const pdfBytes = await $typst.pdf(input);
-        if (!pdfBytes) throw new Error("Typst compilation produced no output");
-        const defaultName = `${base}.pdf`;
-        await backend.writePdfBytes(pdfBytes, defaultName, lang);
-      } else if (active.kind === "latex") {
-        // Hiding the menu entry is not enough: Ctrl+E reaches this directly,
-        // without passing through the menu. Without this guard the shortcut
-        // would still hand the document to the very engine that was switched
-        // off — and that engine's package endpoint is the reason it was.
-        if (!LATEX_ENABLED) throw new Error(t("preview.latexDisabled"));
-        // LaTeX: compile to PDF via SwiftLaTeX WASM, then save via Tauri dialog.
-        const pdfBytes = await compileLatexToPdf(active.content);
-        if (!pdfBytes) throw new Error("LaTeX compilation produced no output");
-        const defaultName = `${base}.pdf`;
-        await backend.writePdfBytes(pdfBytes, defaultName, lang);
-      } else if (isMarpDocument(active.content)) {
-        // Marp: one slide per page, and that page is the slide itself. Read the
-        // real size from the rendered viewBox rather than assuming 16:9, since
-        // a `size` directive or theme can change it.
-        const { renderMarp } = await import("./marpEngine");
-        const { html } = renderMarp(active.content);
-        const viewBox = /viewBox="0 0 (\d+(?:\.\d+)?) (\d+(?:\.\d+)?)"/.exec(html);
-        const widthIn = viewBox ? Number(viewBox[1]) / 96 : 1280 / 96;
-        const heightIn = viewBox ? Number(viewBox[2]) / 96 : 720 / 96;
-        // Here and below, the PDF takes its title from `document.title` as it
-        // prints: the document's own, when its front-matter names one, rather
-        // than the tab's. The author, subject and keywords, which no engine
-        // writes, go to the backend to add afterwards.
-        await withDocumentTitle(pdfTitle(active), () =>
-          backend.exportPdf(
-            `${base}.pdf`,
-            lang,
-            true,
-            widthIn,
-            heightIn,
-            undefined,
-            pdfMetadata(active),
-          ),
-        );
-      } else {
-        await withDocumentTitle(pdfTitle(active), () =>
-          backend.exportPdf(
-            `${base}.pdf`,
-            lang,
-            // The paginated preview already draws its pages with their own
-            // margins; asking the printer for margins too would inset every
-            // page a second time and split it across two sheets.
-            docView,
-            undefined,
-            undefined,
-            // And the sheet it drew them on, which the printer has to agree
-            // with or every page spills onto the next.
-            pageMetrics.paper.id,
-            pdfMetadata(active),
-          ),
-        );
-      }
-      showNotice(operationNoticeDone(t, "export"), "success");
-    } catch (e) {
-      showNotice(operationNoticeError(t, "export"), "error", 0);
-      await showNativeAlert(operationErrorPrefix(t, "export") + String(e), lang);
-    } finally {
-      endOperation("export");
-    }
-  }
 
   // Keyboard shortcuts — extracted to its own hook
   useKeyboardShortcuts(ready, shortcutHandlers);
