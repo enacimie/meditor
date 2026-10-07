@@ -139,6 +139,21 @@ describe("renderMermaidMainThread", () => {
     );
   });
 
+  it("asks for labels the SVG sanitizer cannot throw away", async () => {
+    // The preview runs every diagram through sanitizeSvg, which removes
+    // blocked elements — foreignObject among them, on purpose — with their
+    // contents. Mermaid's default puts its labels inside exactly that
+    // element, so diagrams used to arrive as empty shapes and the label
+    // words never reached the page. Both spellings of the flag are checked:
+    // the root one is what every renderer reads in v11, and the flowchart
+    // one is still read directly by swimlane clusters, which treat a missing
+    // value as HTML. The e2e mermaid-theme spec guards the words themselves.
+    await renderMermaidMainThread("mmd-4", "graph TD; A[Start] --> B[Finish]", "dark");
+    const config = mermaidMock.initialize.mock.calls[0][0];
+    expect(config.htmlLabels).toBe(false);
+    expect(config.flowchart.htmlLabels).toBe(false);
+  });
+
   it("hands back the SVG mermaid produced", async () => {
     expect(await renderMermaidMainThread("mmd-3", "graph TD; A-->B")).toBe(
       "<svg>drawn</svg>",

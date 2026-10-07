@@ -20,6 +20,27 @@ describe("sanitizeSvg", () => {
     expect(output).not.toContain("javascript:");
   });
 
+  /*
+   * The other half of the mermaid label bug lives here. A blocked element
+   * goes with its contents, so a diagram label written as HTML inside a
+   * foreignObject — which is Mermaid's default — is deleted along with the
+   * word it spells, while the same word as an SVG `<text>` walks untouched
+   * through the same door. This records which side of that line Mermaid has
+   * to be asked to stand on.
+   */
+  it("keeps a label drawn as text and loses one drawn as HTML", () => {
+    const svg =
+      '<svg><g class="node">' +
+      '<text class="nodeLabel"><tspan>Start</tspan></text>' +
+      '<foreignObject><div><span class="nodeLabel">Finish</span></div></foreignObject>' +
+      "</g></svg>";
+    const output = sanitizeSvg(svg);
+    expect(output).toContain("<text");
+    expect(output).toContain("Start");
+    expect(output).not.toContain("foreignObject");
+    expect(output).not.toContain("Finish");
+  });
+
   it("removes malformed executable helpers before strict XML parsing", () => {
     const output = sanitizeSvg(
       '<svg><script>const ready = left && right;</script><path d="M0 0" /></svg>',
