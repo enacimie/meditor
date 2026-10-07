@@ -82,6 +82,7 @@ const BUILT_SPECS = [
   "page-break.spec.mjs",
   "page-margin.spec.mjs",
   "page-numbers.spec.mjs",
+  "pdf-bookmarks.spec.mjs",
   "pdf-outline.spec.mjs",
   "preview-selection.spec.mjs",
   "print.spec.mjs",

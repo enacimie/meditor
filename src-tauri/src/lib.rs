@@ -16,6 +16,15 @@ mod paper;
     target_os = "windows"
 ))]
 mod pdf_meta;
+#[cfg(any(
+    target_os = "linux",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd",
+    target_os = "windows"
+))]
+mod pdf_outline;
 mod recent;
 mod recent_menu;
 mod session;

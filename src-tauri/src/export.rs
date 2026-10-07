@@ -270,6 +270,30 @@ pub struct PdfMeta {
     pub keywords: Option<String>,
 }
 
+/// One of the Document view's headings, for the PDF's bookmarks: its level
+/// (1–6), its text, its page (0 for the first) and how far down that page it
+/// starts, as a fraction of the page's height. `pdf_outline.rs` writes them
+/// where the engine wrote no outline of its own; elsewhere the command
+/// refuses before reading them, which is what the `allow` is for.
+#[derive(Debug, Clone, serde::Deserialize)]
+#[cfg_attr(
+    not(any(
+        target_os = "linux",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "windows"
+    )),
+    allow(dead_code)
+)]
+pub struct PdfOutlineEntry {
+    pub level: u8,
+    pub title: String,
+    pub page: u32,
+    pub top: f64,
+}
+
 /// Print the live webview to a PDF the user picks.
 ///
 /// `paged` is true when the preview is the paginated document view, which lays
@@ -277,7 +301,7 @@ pub struct PdfMeta {
 /// on top of that insets every page twice and spills each one onto a second
 /// sheet, so the export gains a blank page for every real one.
 /*
- * Nine arguments, and clippy is right that it is a lot.
+ * Ten arguments, and clippy is right that it is a lot.
  *
  * They are not a parameter list, though: they are this command's IPC surface,
  * the object the frontend sends. Folding four of them into a `PageRequest`
@@ -298,6 +322,7 @@ pub async fn export_pdf(
     page_height: Option<f64>,
     paper: Option<String>,
     meta: Option<PdfMeta>,
+    outline: Option<Vec<PdfOutlineEntry>>,
 ) -> Result<(), String> {
     let loc = parse_locale(locale);
     // A caller that supplies both dimensions wants exactly that page — a Marp
@@ -325,6 +350,7 @@ pub async fn export_pdf(
             custom_page,
             paper,
             meta,
+            outline,
         );
         Err(t(loc, "pdf.notSupported"))
     }
@@ -386,6 +412,9 @@ pub async fn export_pdf(
         // The front-matter's author, subject and keywords, which no engine
         // writes; left out, never failed, when they cannot be added.
         crate::pdf_meta::add_to_file(loc, &path, meta.as_ref());
+        // The headings as bookmarks when `PrintToPdf` printed, which writes
+        // none; the DevTools route's own outline is kept.
+        crate::pdf_outline::add_to_file(loc, &path, outline.as_deref());
         Ok(())
     }
 
@@ -491,6 +520,8 @@ pub async fn export_pdf(
         // The front-matter's author, subject and keywords, which no engine
         // writes; left out, never failed, when they cannot be added.
         crate::pdf_meta::add_to_file(loc, &path, meta.as_ref());
+        // The headings as bookmarks, which WebKitGTK never writes.
+        crate::pdf_outline::add_to_file(loc, &path, outline.as_deref());
         Ok(())
     }
 }
