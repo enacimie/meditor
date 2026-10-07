@@ -94,6 +94,31 @@ export async function renderMermaidMainThread(
       securityLevel: "strict",
       suppressErrorRendering: true,
       theme,
+      //
+      // Ask Mermaid to draw labels as SVG `<text>` rather than as HTML inside
+      // a `<foreignObject>`, which is its default.
+      //
+      // The preview hands every diagram to `sanitizeSvg` before it touches
+      // the page, and that sanitizer removes blocked elements with their
+      // contents — `foreignObject` is blocked on purpose, because an element
+      // that carries arbitrary HTML is an element that could carry arbitrary
+      // script, and a document's words come from wherever the document came
+      // from. Under Mermaid's default, then, every diagram arrived as its
+      // shapes and arrows with none of their label text: boxes with nothing
+      // in them. Drawing the words as `<text>` keeps them on the side of the
+      // security boundary that survives it, with the boundary itself intact.
+      //
+      // The root-level flag is what v11 reads for every diagram that has the
+      // choice — flowchart, class, state, ER, block and the rest. The
+      // `flowchart` one is its deprecated spelling, kept for the swimlane
+      // clusters, which read it directly and treat a missing value as HTML.
+      // What giving up the HTML labels costs is formatting inside a label:
+      // a markdown string in backticks comes out as its plain text, not as
+      // rich HTML — strictly better than coming out as nothing, which is
+      // what it did. Math (`$$…$$`) needs the HTML path and stays invisible,
+      // as it has always been here.
+      htmlLabels: false,
+      flowchart: { htmlLabels: false },
     });
   } catch {
     // Already initialized

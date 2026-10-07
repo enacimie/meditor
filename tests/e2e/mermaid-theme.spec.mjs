@@ -116,7 +116,10 @@ const setPreferences = (theme, docView) =>
     })()`,
   );
 
-/** The palette every rendered diagram was drawn with, and its surface. */
+/** The words of a drawing: every label the sanitised SVG still contains. */
+const EXPECTED_LABELS = ["Start", "Finish", "Left", "Right"];
+
+/** The palette every rendered diagram was drawn with, its surface, and its words. */
 const diagrams = () =>
   page.evaluate(`(() => {
     const hosts = [...document.querySelectorAll('.mermaid')];
@@ -125,11 +128,18 @@ const diagrams = () =>
       drawn: hosts.map((host) => {
         const svg = host.querySelector('svg');
         const style = svg ? [...svg.querySelectorAll('style')].map((s) => s.textContent).join('') : '';
+        // Whatever reads back from <text> here is exactly what survived the
+        // sanitizer on the way to the page: a drawing made the old way, with
+        // its labels in a foreignObject, says nothing at all.
+        const labels = svg
+          ? [...svg.querySelectorAll('text')].map((t) => t.textContent).join(' ')
+          : '';
         return {
           surface: getComputedStyle(host).backgroundColor,
           styled: style.length > 0,
           dark: ${DARK_PALETTE}.test(style),
           light: ${LIGHT_PALETTE}.test(style),
+          labels,
         };
       }),
     };
@@ -187,6 +197,20 @@ try {
     assert(d.light && !d.dark, `diagram ${i + 1} should be drawn light, got dark=${d.dark}`);
   }
 
+  // ── The words survive the sanitizer, not just the boxes ────────────────
+  // Mermaid draws a label as HTML inside a `<foreignObject>` unless asked
+  // otherwise, and the preview strips that element with its contents for
+  // security. Every diagram used to arrive as shapes and arrows with none of
+  // their text; these four words are the whole of the regression guard, read
+  // back from the SVG that actually reached the page.
+  const words = light.drawn.map((d) => d.labels).join(" ");
+  for (const label of EXPECTED_LABELS) {
+    assert(
+      words.includes(label),
+      `label "${label}" never reached the page — the diagrams read "${words}"`,
+    );
+  }
+
   const dark = await render("dark", false);
   assert(dark.root === "dark", `expected the dark theme, got ${dark.root}`);
   for (const [i, d] of dark.drawn.entries()) {
@@ -235,7 +259,8 @@ try {
 
   console.log(
     `PASS: mermaid-theme.spec — ${light.drawn.length} diagrams light on the light theme, ` +
-      `dark on the dark one, light again under high contrast and on an A4 page`,
+      `dark on the dark one, light again under high contrast and on an A4 page, ` +
+      `labels intact: "${words}"`,
   );
 } finally {
   // Leave the session as it was found: the document this replaced, and the
